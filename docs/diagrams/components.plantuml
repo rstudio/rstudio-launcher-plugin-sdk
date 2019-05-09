@@ -1,0 +1,48 @@
+@startuml
+
+() "HTTP/S" as HTTP
+() JSON
+
+[Launcher] --> HTTP
+[Launcher] - JSON
+
+folder Plugin {
+
+  folder Global {
+    [Async]
+    [Options]
+    [Logger]
+  }
+
+  folder Utilities {
+    [Process Utils] #LightGreen
+    [System Utils] #LightGreen
+    [Json Utils]
+  }
+
+  [Orch Sys Api] #LightBlue
+
+  JSON <. [Comms]: use
+  [Plugin Api] <-- [Comms]
+  [Json Utils] <-- [Comms]
+  [Plugin Api] -> [Orch Sys Api]
+  [Main] ..> Global : creates
+  [Comms] <. [Main] : creates
+  [Plugin Api] <.. [Main] : creates
+  [Orch Sys Api] <--> [Streamed Output]
+  [Plugin Api] ..> [Streamed Output] : owns
+  [Streamed Output] --> [Async]
+  [Main] ..> [Pruner] : creates
+  [Plugin Api] <-- [Pruner]
+  [Pruner] --> [Async]
+  [Job Repo] <.. [Plugin Api] : creates
+
+
+}
+
+() " " as OTool
+OTool - [Orchestration System]
+[Orch Sys Api] ..> OTool: use
+
+@enduml
+
