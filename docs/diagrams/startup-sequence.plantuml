@@ -1,0 +1,68 @@
+@startuml
+
+[-> Main : launch
+activate Main
+
+create Logger
+Main -> Logger : new
+Main -> Logger : add syslog destination
+Main -> Logger : add stderr destination
+
+create Options
+Main -> Options : new
+Main -> Options ++ : read options
+Main <-- Options -- : success
+
+Main -> Logger : remove stderr destination
+Main -> Logger : set log level from options
+
+create StdIOFrameworkCommunicator
+Main -> StdIOFrameworkCommunicator : new
+
+Main -> Main ++ : createLauncherPluginApi
+create PluginApi
+Main -> PluginApi ++ : new
+
+PluginApi -> PluginApi ++ : create job source
+create JobSource
+PluginApi -> JobSource : new
+deactivate PluginApi
+
+create JobStatusNotifier
+PluginApi -> JobStatusNotifier : new
+
+create JobPruner
+PluginApi -> JobPruner ++ : new
+JobPruner -> JobStatusNotifier : subscribe
+PluginApi <-- JobPruner --
+
+Main <-- PluginApi -- : success
+deactivate Main
+
+Main -> Main : register signal handlers
+
+Main -> PluginApi  ++ : initialize
+activate Main
+StdIOFrameworkCommunicator <- PluginApi ++ : register request handlers
+StdIOFrameworkCommunicator --> PluginApi -- : success
+
+PluginApi -> JobSource ++ : initialize
+
+create UserProfiles
+JobSource -> UserProfiles : new
+JobSource -> UserProfiles ++ : read options
+JobSource <-- UserProfiles -- : success
+
+create JobStatusWatcher
+JobSource -> JobStatusWatcher : new
+JobSource -> JobStatusWatcher ++ : start
+
+PluginApi <-- JobSource -- : success
+Main <-- PluginApi -- : success
+deactivate Main
+
+Main -> StdIOFrameworkCommunicator ++ : start
+
+Main -> Main ++ : wait for signal
+
+@enduml
