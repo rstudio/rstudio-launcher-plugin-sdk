@@ -43,6 +43,7 @@ package System <<Rectangle>>
 
   class Error
   {
+    + Error(in_code : int, in_message : const std::string&, in_location : const ErrorLocation&)
     - m_errorCode : int
     - m_errorMessage : std::string
     - m_location : ErrorLocation
@@ -50,7 +51,7 @@ package System <<Rectangle>>
 
   class ErrorLocation
   {
-
+    + ErrorLocation(in_file : const std::string&, in_line : long int, in_function : const std::string&)
     - m_line : long int
     - m_file : std:string
     - m_function : std::string
@@ -97,11 +98,11 @@ package "Job Management" as JMPackage <<Rectangle>>
   {
     + JobPruner(in_jobRepo : std::shared_ptr<IJobRepository>, in_jobSource : std::shared_ptr<IJobSource>, in_onJobPrune : const OnJobPrune&)
     - onJobStatusUpdate(in_job : std::shared_ptr<Job>) : void
-    - scheduleJobPrune(
+    - scheduleJobPrune(in_job : std::weak_ptr<Job>, in_pruneTime : boost::posix::posix_time)
     - m_jobRepo : std::shared_ptr<IJobRepository>
     - m_jobSource : std::shared_ptr<IJobSource>
     - m_onJobPrune : OnJobPrune
-    - m_jobExpiry : boost::posix::time_duration
+    - m_jobExpiryTime : boost::posix::time_duration
   }
 
   class JobStatusNotifier
@@ -219,8 +220,6 @@ package Options <<Rectangle>>
     - m_confProfile : ConfigProfile
   }
 
-  class ConfigProfile
-
   AbstractUserProfiles *-- ConfigProfile
   AbstractUserProfiles ..|> IOptions
   AbstractOptions ..|> IOptions
@@ -231,6 +230,7 @@ package "Job System Api" as JobApiPackage <<Rectangle>>
   note "This package will be mainly the responsibility of\nthe SDK user. Conceptually, an extension of\nJobRepository or a plugin specific implementation of\nan existing interface or abstract class would belong\nhere but they are not shown as their existence is up\nto the plugin developer." as JSANote
   interface IJobSource #lightblue
   {
+    + {abstract} initialize() : Error
     + {abstract} getJobs(in_user : const User&, out_jobs : JobList&) : Error
     + {abstract} getJob(in_jobId : const std::string&, in_user : const User&, in_onGetJob : const OnGetJob&, in_onError : const OnError&) : void
     + {abstract} submitJob(io_job : std::shared_ptr<Job>, in_user : const User&, in_onSubmitJob : const OnControlJob&, in_onError : const OnError&) : void
@@ -343,9 +343,13 @@ package "Launcher Plugin Api" as LPApiPackage <<Rectangle>>
     + handleGetJobNetwork(in_getJobNetworkRequest : std::shared_ptr<GetJobNetworkRequest>) : void
     + handleGetClusterInfo(in_getClusterInfoRequest : std::shared_ptr<GetClusterInfoRequest>) : void
     # {abstract} createJobSource() : std::shared_ptr<IJobSource>
+    # {abstract} createJobRepository() : std::shared_ptr<IJobRepository>
     - m_jobSource : std::shared_ptr<IJobSource>
     - m_comms : std::shared_ptr<AbstractFrameworkCommunicator>
     - m_statusHandles : std::map<uint64_t, SubscriptionHandle>
+    - m_jobRepository : std::shared_ptr<IJobRepository>
+    - m_jobStatusNotifier : std::shared_ptr<JobStatusNotifier>
+    - m_jobPruner : std::shared_ptr<JobPruner>
   }
 
   class ClusterInfo
@@ -536,6 +540,12 @@ package "Launcher Plugin Api" as LPApiPackage <<Rectangle>>
     - m_error : Error
   }
 
+  class AbstractMain #lightblue
+  {
+    + {static} main(argc : int, argv : char**) : int
+    + {abstract} createLauncherPluginApi() : AbstractPluginApi
+  }
+
   together
   {
     enum "Request::Type" <<enum class>>
@@ -595,9 +605,13 @@ package "Launcher Plugin Api" as LPApiPackage <<Rectangle>>
     }
   }
 
+  AbstractMain --> AbstractPluginApi : creates
   AbstractFrameworkCommunicator --> AbstractPluginApi : uses
   AbstractPluginApi *-- IJobSource : creates
-  HeartbeatTimer -down-|> AbstractTimedEvent
+  AbstractPluginApi *-- IJobRepository : creates
+  AbstractPluginApi *-- JobStatusNotifier : creates
+  AbstractPluginApi *-- JobPruner : creates
+  HeartbeatTimer --|> AbstractTimedEvent
   AbstractFrameworkCommunicator *-- HeartbeatTimer
   AbstractFrameworkCommunicator <|-- StdIOFrameworkCommunicator
 
