@@ -36,6 +36,9 @@ PluginApi -> JobPruner ++ : new
 JobPruner -> JobStatusNotifier : subscribe
 PluginApi <-- JobPruner --
 
+create JobStatusWatcher
+PluginApi -> JobStatusWatcher : new
+
 Main <-- PluginApi -- : success
 deactivate Main
 
@@ -47,18 +50,18 @@ StdIOFrameworkCommunicator <- PluginApi ++ : register request handlers
 StdIOFrameworkCommunicator --> PluginApi -- : success
 
 PluginApi -> JobSource ++ : initialize
-
 create UserProfiles
 JobSource -> UserProfiles : new
 JobSource -> UserProfiles ++ : read options
 JobSource <-- UserProfiles -- : success
-
-create JobStatusWatcher
-JobSource -> JobStatusWatcher : new
-JobSource -> JobStatusWatcher ++ : start
-
 PluginApi <-- JobSource -- : success
+
+PluginApi -> JobSource ++ : get all jobs
+PluginApi <-- JobSource -- : job list
+
+PluginApi -> JobStatusWatcher ++ : start
 Main <-- PluginApi -- : success
+
 deactivate Main
 
 Main -> StdIOFrameworkCommunicator ++ : start
