@@ -308,7 +308,13 @@ package "Job System Api" as JobApiPackage <<Rectangle>>
     - m_mutex : boost::mutex
   }
 
-  class AbstractJobStatusWatcher #lightblue
+  class IJobStatusWatcher #lightblue
+  {
+    + {abstract} startWatching()
+    + {abstract} stopWatching()
+  }
+
+  class AbstractJobStatusWatcher
   {
     + AbstractJobStatusWatcher(in_jobRepo : std::shared_ptr<IJobRepository>, io_jobStatusNotifier : std::shared_ptr<JobStatusNotifier>)
     # onTimer(in_error : const Error&) : void
@@ -319,8 +325,9 @@ package "Job System Api" as JobApiPackage <<Rectangle>>
 
   AbstractJobStatusWatcher .up. JPWNote
 
+  IJobStatusWatcher <|.. AbstractJobStatusWatcher
   AbstractJobStatusWatcher -down-|> AbstractTimedEvent
-  AbstractJobStatusWatcher --> JobStatusNotifier : updates
+  IJobStatusWatcher --> JobStatusNotifier : updates
   IResourceUtilStream <|.. AbstractResourceUtilStream
   IResourceUtilStream <|.. TimedResourceUtilStream
   AbstractTimedEvent <|-- TimedResourceUtilStream
@@ -344,12 +351,14 @@ package "Launcher Plugin Api" as LPApiPackage <<Rectangle>>
     + handleGetClusterInfo(in_getClusterInfoRequest : std::shared_ptr<GetClusterInfoRequest>) : void
     # {abstract} createJobSource() : std::shared_ptr<IJobSource>
     # {abstract} createJobRepository() : std::shared_ptr<IJobRepository>
+    # {abstract} createJobStatusWatcher() : std::shared_ptr<IJobStatusWatcher>
     - m_jobSource : std::shared_ptr<IJobSource>
     - m_comms : std::shared_ptr<AbstractFrameworkCommunicator>
     - m_statusHandles : std::map<uint64_t, SubscriptionHandle>
     - m_jobRepository : std::shared_ptr<IJobRepository>
     - m_jobStatusNotifier : std::shared_ptr<JobStatusNotifier>
     - m_jobPruner : std::shared_ptr<JobPruner>
+    - m_jobStatusWatcher : std::shared_ptr<IJobStatusWatcher>
   }
 
   class ClusterInfo
@@ -607,10 +616,11 @@ package "Launcher Plugin Api" as LPApiPackage <<Rectangle>>
 
   AbstractMain --> AbstractPluginApi : creates
   AbstractFrameworkCommunicator --> AbstractPluginApi : uses
-  AbstractPluginApi *-- IJobSource : creates
-  AbstractPluginApi *-- IJobRepository : creates
-  AbstractPluginApi *-- JobStatusNotifier : creates
-  AbstractPluginApi *-- JobPruner : creates
+  AbstractPluginApi *--> IJobSource : creates
+  AbstractPluginApi *--> IJobRepository : creates
+  AbstractPluginApi *--> JobStatusNotifier : creates
+  AbstractPluginApi *--> JobPruner : creates
+  AbstractPluginApi *--> IJobStatusWatcher : creates
   HeartbeatTimer --|> AbstractTimedEvent
   AbstractFrameworkCommunicator *-- HeartbeatTimer
   AbstractFrameworkCommunicator <|-- StdIOFrameworkCommunicator
