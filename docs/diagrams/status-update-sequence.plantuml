@@ -1,0 +1,20 @@
+@startuml
+
+"Jobs System" -> JobStatusWatcher ++: job(s) update notification
+loop foreach job
+  JobStatusWatcher -> JobStatusNotifier : updateJob(job)
+  JobStatusNotifier -> JobStatusNotifier : notifyAll
+  JobStatusNotifier -> JobPruner : notify
+  alt job status is terminal
+    JobPruner -> JobPruner ++ : invoke OnJobPrune(job)
+    JobPruner -> IJobSource -- : remove job via OnJobPrune
+  end
+  JobStatusNotifier -> AbstractPluginApi ++ : notify
+  AbstractPluginApi -> StdIOFrameworkCommunicator : send status update response
+  deactivate AbstractPluginApi
+end
+deactivate JobStatusWatcher
+
+
+
+@enduml
