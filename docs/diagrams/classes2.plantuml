@@ -18,12 +18,9 @@ package System <<Rectangle>>
 
   class AsioService
   {
-    + {static} asioService() : AsioService&
-    + asyncWait(waitTime : const TimeDuration&, in_onTimer : const OnTimer&)
-    + asyncOperation()
-    - AsioService()
-    - m_ioService : boost::asio::io_service
-    - m_mutex : boost::mutex
+    + {static} asioService() : boost::asio::io_service&
+    - s_ioService : boost::asio::io_service
+    - s_mutex : boost::mutex
   }
 
   class AbstractTimedEvent
@@ -32,7 +29,10 @@ package System <<Rectangle>>
     + start() : void
     + cancel() : void
     # {abstract} onTimer(in_error : const Error&) : void
-    - m_timer : boost::posix::time_duration
+    - m_timeout : boost::posix::time_duration
+    - m_deadlineTimer : std::shared_ptr<boost::asio::deadline_timer>
+    - m_mutex : boost::mutex
+    - m_isCanceled : bool
   }
 
   class Error
@@ -178,27 +178,42 @@ package "Typedef Reference" as TDPackage <<Rectangle>>
 
 package Options <<Rectangle>>
 {
-  interface IOptions <<template T>>
+  interface IOptions
   {
     + {abstract} initialize() : Error
-    + {abstract} readOptions(const FilePath& in_location) : Error
-    # {abstract} registerOption<typename N>(const std::string& in_name, std::weak_ptr<N> io_valuePtr, const T& in_defaultValue, const std::string& in_description) : void
+    + {abstract} readOptions(in_location : const FilePath&) : Error
+    + {abstract} getOption<typename N>(in_name : const std::string&, out_value : N&) : Error
+    # {abstract} registerOption<typename N>(const std::string& in_name, std::weak_ptr<N> io_valuePtr, const N& in_defaultValue, const std::string& in_description) : void
     # IOptions()
   }
 
   class AbstractOptions <<template T>> #lightblue
   {
-    + {static} options() : T&
+    + {static} options() : AbstractOptions&
     + {abstract} initialize() : Error
     + readOptions(const FilePath& in_location) : Error
-    # registerOption<typename N>(const std::string& name, std::weak_ptr<N> io_valuePtr, const T& in_defaultValue, const std::string& in_description) : void
+    + getScratchPath() : const std::string&
+    + getJobExpiryHours() : unsigned int
+    + getServerUser() : User
+    + getLogLevel() : LogLevel
+    + isDebugLoggingEnabled() : bool
+    + getThreadPoolSize() : unsigned int
+    + getHeartbeatIntervalSeconds() : unsigned int
+    # registerOption<typename N>(const std::string& name, std::weak_ptr<N> io_valuePtr, const N& in_defaultValue, const std::string& in_description) : void
     # AbstractOptions(const std::string& in_defaultConfigFile)
     - m_optionsDesc : boost::program_options::options_description
+    - m_scratchPath : std::string
+    - m_jobExpiryHours : unsigned int
+    - m_serverUser : std::string
+    - m_logLevel : std::string
+    - m_enableDebugLogging : bool
+    - m_threadPoolSize : unsigned int
+    - m_heartbeatIntervalSeconds : unsigned int
   }
 
   class AbstractUserProfiles <<template T>> #lightblue
   {
-    + {static} userProfiles() : T&
+    + {static} userProfiles() : AbstractUserProfiles&
     + {abstract} initialize() : Error
     + readOptions(const FilePath& in_location) : Error
     # registerOption<typename N>(const std::string& name, std::weak_ptr<N> io_valuePtr, const N& in_defaultValue, const std::string& in_description) : void
