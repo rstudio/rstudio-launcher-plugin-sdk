@@ -4,8 +4,6 @@ skinparam stereotypeCBackgroundColor<<Struct>> pink
 skinparam spotChar<<Struct>> S
 hide interface field
 
-note "The time duration for these will\ncome from AbstractOptions" as JPWNote
-
 package "Job Management" as JMPackage <<Rectangle>>
 {
   interface IJobRepository
@@ -149,6 +147,20 @@ package "Job Management" as JMPackage <<Rectangle>>
     + Value : std::string
   }
 
+  class ResourceLimit
+  {
+    + ResourceLimit(in_type : ResourceLimit::Type, in_value : double, in_maxValue = 0.0 : double, in_defaultValue = 0.0 : double)
+    + getType() : ResourceLimit::Type
+    + getValue() : const std::string&
+    + getDefaultValue() : boost::optional<std::string>
+    + getMaxValue() : boost::optional<std::string>
+    + toJson() :: rapid_json::Object
+    - m_type : ResourceLimit::Type
+    - m_value : std::string
+    - m_defaultValue : boost::optional<std::string>
+    - m_maxValue : boost::optional<std::string>
+  }
+
   enum "JobConfig::ValueType" <<enum class>>
   {
     + STRING
@@ -167,12 +179,22 @@ package "Job Management" as JMPackage <<Rectangle>>
     + FINISHED
     + FAILED
     + KILLED
-    + CANCELLED
+    + CANCELED
     + {static} toString(in_status : JobStatus) : std::string
     + {static} fromString(in_str : const std::string&) : JobStatus
   }
 
-  JobPruner .up. JPWNote
+  enum "ResourceLimit::Type" <<enum class>>
+  {
+    + CpuCount
+    + CpuFrequency
+    + CpuSet
+    + CpuTime
+    + Memory
+    + MemorySwap
+    + {static} fromString(in_str : const std::string&, out_type : ResourceLimit::Type&) : Error
+    + {static} toString(in_type : ResourceLimit::Type) : std::string
+  }
 
   JobStatusNotifier "1" *-- "0.." JobStatusSubscription
   JobPruner --> JobStatusNotifier : subscribes
@@ -262,7 +284,6 @@ package "Job System Api" as JobApiPackage <<Rectangle>>
     # reportOutput(in_resourceUtilization : const ResourceUtilization&)
     - m_jobId : std::string
     - m_onData : OnResourceUtilData
-    - m_timer : boost::posix::time_duration
     - m_requests : std::map<uint64_t, uint64_t>
     - m_mutex : boost::mutex
   }
@@ -275,14 +296,12 @@ package "Job System Api" as JobApiPackage <<Rectangle>>
 
   class AbstractJobStatusWatcher
   {
-    + AbstractJobStatusWatcher(in_jobRepo : std::shared_ptr<IJobRepository>, io_jobStatusNotifier : std::shared_ptr<JobStatusNotifier>)
+    + AbstractJobStatusWatcher(in_jobRepo : std::shared_ptr<IJobRepository>, io_jobStatusNotifier : std::shared_ptr<JobStatusNotifier>, in_pullStatusSeconds : unsigned int)
     # onTimer(in_error : const Error&) : void
     # {abstract} getJobStatuses(in_onGetJobStatuses : const OnGetJobStatuses&, in_onError : const OnError&) : void
     - m_jobRepo : std::shared_ptr<IJobRepository>
     - m_jobStatusNotifier : std::shared_ptr<JobStatusNotifier>
   }
-
-  AbstractJobStatusWatcher .up. JPWNote
 
   IJobStatusWatcher <|.. AbstractJobStatusWatcher
   AbstractJobStatusWatcher --|> AbstractTimedEvent
@@ -371,20 +390,6 @@ package "Launcher Plugin Api" as LPApiPackage <<Rectangle>>
     - m_resourceLimitTypes : std::vector<ResourceLimit::Type>
   }
 
-  class ResourceLimit
-  {
-    + ResourceLimit(in_type : ResourceLimit::Type, in_value : double, in_maxValue = 0.0 : double, in_defaultValue = 0.0 : double)
-    + getType() : ResourceLimit::Type
-    + getValue() : const std::string&
-    + getDefaultValue() : boost::optional<std::string>
-    + getMaxValue() : boost::optional<std::string>
-    + toJson() :: rapid_json::Object
-    - m_type : ResourceLimit::Type
-    - m_value : std::string
-    - m_defaultValue : boost::optional<std::string>
-    - m_maxValue : boost::optional<std::string>
-  }
-
   class NetworkInfo
   {
     + NetworkInfo()
@@ -409,6 +414,8 @@ package "Launcher Plugin Api" as LPApiPackage <<Rectangle>>
     + sendHeartbeat()
     # onTimer(in_error : const Error&) : void
   }
+  note "The time duration for these will\ncome from AbstractOptions" as HBNote
+  HBNote . HeartbeatTimer
 
   class AbstractFrameworkCommunicator
   {
@@ -584,18 +591,6 @@ package "Launcher Plugin Api" as LPApiPackage <<Rectangle>>
       + GetClusterInfoResponse = 8
     }
 
-    enum "ResourceLimit::Type" <<enum class>>
-    {
-      + CpuCount
-      + CpuFrequency
-      + CpuSet
-      + CpuTime
-      + Memory
-      + MemorySwap
-      + {static} fromString(in_str : const std::string&, out_type : ResourceLimit::Type&) : Error
-      + {static} toString(in_type : ResourceLimit::Type) : std::string
-    }
-
     enum ControlOperation <<enum class>>
     {
       + Suspend
@@ -615,10 +610,13 @@ package "Launcher Plugin Api" as LPApiPackage <<Rectangle>>
       + {static} fromString(in_typeStr : const std::string&, out_type : JobOutputType&) : Error
     }
 
+    "Request::Type" -[hidden] "Response::Type"
+    "Request::Type" -[hidden]- ControlOperation
+    ControlOperation -[hidden] JobOutputType
+
     note "Static methods on enums will likely end up as functions in a similarly (or same) named namespace since enums can't have methods." as EnumNote
     EnumNote .up. JobOutputType
     EnumNote .up. ControlOperation
-    EnumNote .up. "ResourceLimit::Type"
   }
 
   AbstractMain --> AbstractPluginApi : creates
@@ -664,6 +662,12 @@ package "Launcher Plugin Api" as LPApiPackage <<Rectangle>>
 ' The default layout is not very nice. This section helps to mitigate some of the layout issues.
 AbstractFrameworkCommunicator -[hidden] Request
 Request -[hidden] Response
+AbstractMain -[hidden] AbstractFrameworkCommunicator
+
+GetJobStatusResponse -[hidden]- ControlJobResult
+ControlJobResult -[hidden] NetworkInfo
+NetworkInfo -[hidden] ClusterInfo
+
 HeartbeatTimer -[hidden] MessageHandler
 NfsMount -[hidden] JobRepository
 JobRepository -[hidden] JobPruner
