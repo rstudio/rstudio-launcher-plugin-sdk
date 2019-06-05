@@ -1,78 +1,10 @@
 @startuml
-
+scale 4096x4096
 skinparam stereotypeCBackgroundColor<<Struct>> pink
 skinparam spotChar<<Struct>> S
 hide interface field
-hide enum method
 
 note "The time duration for these will\ncome from AbstractOptions" as JPWNote
-
-package System <<Rectangle>>
-{
-  class User
-  {
-    + User(in_username : const std::string&)
-    + isAllUsers() : bool
-    + username() : const std::string&
-    + homeDir(FilePath& out_homeDir) : Error
-    + group(std::string& out_userGroup) : Error
-    + id(std::string& out_userId) : Error
-    - m_username : std::string
-    - m_isAllUsers : bool
-  }
-  note bottom of User : The homeDir, group, and id\nmethods may be implemented\nlater, as needed.
-
-  class AsioService
-  {
-    + {static} asioService() : AsioService&
-    + asyncWait(waitTime : const TimeDuration&, in_onTimer :  const OnTimer&)
-    + asyncOperation()
-    - AsioService()
-    - m_ioService : boost::asio::io_service
-    - m_mutex : boost::mutex
-  }
-
-  class AbstractTimedEvent
-  {
-    + AbstractTimedEvent(in_timer : const TimeDuration&)
-    + start() : void
-    + cancel() : void
-    # {abstract} onTimer(in_error : const Error&) : void
-    - m_timer : boost::posix::time_duration
-  }
-
-  class Error
-  {
-    + Error(in_code : int, in_message : const std::string&, in_location : const ErrorLocation&)
-    - m_errorCode : int
-    - m_errorMessage : std::string
-    - m_location : ErrorLocation
-  }
-
-  class ErrorLocation
-  {
-    + ErrorLocation(in_file : const std::string&, in_line : long int, in_function : const std::string&)
-    - m_line : long int
-    - m_file : std:string
-    - m_function : std::string
-  }
-
-  class FilePath
-  class AsioSupervisor #lightgreen
-  class Process #lightgreen
-  class ProcessOptions #lightgreen
-  class ProcessResult <<struct>> #lightgreen
-  class ProcessCallbacks <<struct>> #lightgreen
-  class AsioAsyncChildProcess #lightgreen
-
-  AsioSupervisor -[hidden] Process
-  Process -[hidden] ProcessOptions
-  ProcessOptions -down[hidden]- ProcessResult
-  ProcessResult -[hidden] ProcessCallbacks
-  ProcessCallbacks -[hidden] AsioAsyncChildProcess
-
-  AbstractTimedEvent -down-> AsioService : use
-}
 
 package "Job Management" as JMPackage <<Rectangle>>
 {
@@ -107,6 +39,7 @@ package "Job Management" as JMPackage <<Rectangle>>
 
   class JobStatusNotifier
   {
+    + update(in_job : std::shared_ptr<Job>, in_status : JobStatus, in_statusMessage : const std::string&, in_invocationTime : boost::posix_time::ptime) : void
     + subscribe(in_onUpdate : const OnJobStatusUpdate&) : JobStatusSubscriptionHandle
     + subscribe(in_jobId : const std::string&, in_onUpdate : const OnJobStatusUpdate&) : JobStatusSubscriptionHandle
     - std::map<std::string, JobStatusSignal>
@@ -120,109 +53,131 @@ package "Job Management" as JMPackage <<Rectangle>>
     - m_conn : boost::signals2::connection
   }
 
+  class Job <<struct>>
+  {
+    + {static} fromJson(in_json : const rapid_json::Object&, out_job : std::shared_ptr<Job>) : Error
+    + toJson() : rapid_json::object
+    + lock() : boost::unique_lock<boost::mutex>
+    + matchesTags(in_tags : const std::vector<std::string>&) : bool
+    + getJobConfig(in_key : const std::string&, out_value : std::string&) : bool
+    + userCanAccess(in_username : const std::string&) : bool
+    + Id : std::string
+    + Cluster : std::string
+    + Name : std::string
+    + JobUser : User
+    + Queues : std::vector<std::string>
+    + WorkingDirectory : std::string
+    + Container : boost::optional<Container>
+    + ExposedPorts : std::vector<ExposedPort>
+    + Mounts : std::vector<Mount>
+    + Config : std::vector<Config>
+    + ResourceLimits : std::vector<ResourceLimit>
+    + Status : JobStatus
+    + StatusMessage : std::string
+    + Pid : boost::optional<pid_t>
+    + ExitCode : boost::optional<int>
+    + Command : std::string
+    + Exe : std::string
+    + Args : std::vector<std::string>
+    + StdIn : std::string
+    + Tags : std::vector<std::string>
+    + Environment : std::vector<std::pair<std::string, std::string>>
+    + StdOutFile : std::string
+    + StdErrFile : std::string
+    + LastUpdateTime : boost::posix_time::ptime
+    + SubmissionTime : boost::posix_time::ptime
+    + MiscData : std::map<std::string, boost::any>
+    - m_mutex : boost::mutex
+  }
+
+  class ExposedPort <<struct>>
+  {
+    + {static} fromJson(in_json : const rapid_json::Object&, out_port : ExposedPort&) : Error
+    + toJson() : rapid_json::Object
+    + TargetPort : unsigned int
+    + PublishedPort : boost::optional<unsigned int>
+    + Protocol : std::string
+  }
+
+  class HostMount <<struct>>
+  {
+    + {static} fromJson(in_json : const rapid_json::Object&, out_hostMount : HostMount&) : Error
+    + toJson() : rapid_json::Object
+    + Path : std::string
+  }
+
+  class NfsMount <<struct>>
+  {
+    + {static} fromJson(in_json : const rapid_json::Object&, out_nfsMount : NfsMount&) : Error
+    + toJson() : rapid_json::Object
+    + Host : std::string
+    + Path : std::string
+  }
+
+  class Mount <<struct>>
+  {
+    + {static} fromJson(in_json : const rapid_json::Object&, out_mount : Mount&) : Error
+    + toJson() : rapid_json::Object
+    + MountPath : std::string
+    + IsReadOnly : bool
+    + Mount : boost::variant<HostMount, NfsMount>
+  }
+
+  class JobConfig <<struct>>
+  {
+    + {static} fromJson(in_json : const rapid_json::Object&, out_jobConfig : JobConfig&) : Error
+    + toJson() : rapid_json::Object
+    + Name : std::string
+    + Value : std::string
+    + ValueType : JobConfig::ValueType
+  }
+
+  class Container <<struct>>
+  {
+    + {static} fromJson(in_json : const rapid_json::Object&, out_container : Container&) : Error
+    + toJson() : rapid_json::Object
+    + Image : std::string
+    + RunAsUser : boost::optional<User>
+  }
+
+  class PlacementConstraint <<struct>>
+  {
+    + {static} fromJson(in_json : const rapid_json::Object&, out_constraint : PlacementConstraint&) : Error
+    + {static} arrayFromString(in_constraintStr : const std::string&, out_constraints : std::vector<PlacementConstraint>&) : Error
+    + toJson() : rapid_json::Object
+    + Name : std::string
+    + Value : std::string
+  }
+
+  enum "JobConfig::ValueType" <<enum class>>
+  {
+    + STRING
+    + INT
+    + FLOAT
+    + ENUM
+    + {static} fromString(in_str : const std::string&, out_valueType : JobConfig::ValueType&) : Error
+    + {static} toString(in_valueType : JobConfig::ValueType) : std::string
+  }
+
+  enum JobStatus <<enum class>>
+  {
+    + PENDING
+    + RUNNING
+    + SUSPENDED
+    + FINISHED
+    + FAILED
+    + KILLED
+    + CANCELLED
+    + {static} toString(in_status : JobStatus) : std::string
+    + {static} fromString(in_str : const std::string&) : JobStatus
+  }
+
   JobPruner .up. JPWNote
 
   JobStatusNotifier "1" *-- "0.." JobStatusSubscription
   JobPruner --> JobStatusNotifier : subscribes
   JobRepository ..|> IJobRepository
   JobPruner --> IJobRepository : updates
-}
-
-package Logging <<Rectangle>>
-{
-  enum LogLevel <<enum class>>
-  {
-    + OFF = 0
-    + ERROR = 1
-    + WARNING = 2
-    + DEBUG = 3
-    + INFO = 4
-
-    + fromString(in_logLevelStr : const std::string&)
-  }
-
-  class Logger
-  {
-    + {static} logger(in_programId : const std::string&) : Logger&
-    + setLogLevel(in_logLevel : LogLevel) : void
-    + addLogDestination(in_destination : std::shared_ptr<ILogDestination>) : void
-    + removeLogDestination(in_destId : unsigned int) : void
-    + logError(in_error : const Error&) : void
-    + logErrorAsWarning(in_error : const Error&) : void
-    + logErrorAsDebug(in_error : const Error&) : void
-    + logErrorAsInfo(in_error : const Error&) : void
-    + logErrorMessage(in_message : const std::string&) : void
-    + logWarningMessage(in_message : const std::string&) : void
-    + logDebugMessage(in_message : const std::string&) : void
-    + logInfoMessage(in_message : const std::string&) : void
-    - formatLogEntry(in_message : const std::string&, in_escapeNewLines : bool)
-    - {static} s_mutex : boost::mutex
-    - m_logDestinations : std::map<unsigned int, std::shared_ptr<ILogDestination>>
-    - m_logLevel : LogLevel
-    - m_programId : std::string
-  }
-
-  class ILogDestination
-  {
-    + {abstract} getId() : unsigned int
-    + {abstract} writeLog(in_programId : const std::string&, in_message : const std::string&)
-  }
-
-  class SysLogDestination
-  {
-    + getId() : unsigned int
-    + writeLog(in_programId : const std::string&, in_message : const std::string&)
-  }
-
-  class StdErrLogDestination
-  {
-    + getId() : unsigned int
-    + writeLog(in_programId : const std::string&, in_message : const std::string&)
-  }
-
-  class FileLogDestination #lightgreen
-  {
-    + FileLogWriter(in_id : unsigned int, in_logDir : const FilePath&, in_logName : const std::string&)
-    + getId()
-    + writeLog(in_programId : const std::string&, in_message : const std::string&)
-    - m_logFile : const FilePath&
-    - m_rotatedLogFile : const FilePath&
-    - m_id : unsigned int
-  }
-}
-
-package Options <<Rectangle>>
-{
-  interface IOptions <<template T>>
-  {
-    + {abstract} initialize() : Error
-    + {abstract} readOptions(const FilePath& in_location) : Error
-    # {abstract} registerOption<typename N>(const std::string& in_name, std::weak_ptr<N> io_valuePtr, const T& in_defaultValue, const std::string& in_description) : void
-    # IOptions()
-  }
-
-  class AbstractOptions <<template T>> #lightblue
-  {
-    + {static} options() : T&
-    + {abstract} initialize() : Error
-    + readOptions(const FilePath& in_location) : Error
-    # registerOption<typename N>(const std::string& name, std::weak_ptr<N> io_valuePtr, const T& in_defaultValue, const std::string& in_description) : void
-    # AbstractOptions(const std::string& in_defaultConfigFile)
-    - m_optionsDesc : boost::program_options::options_description
-  }
-
-  class AbstractUserProfiles <<template T>> #lightblue
-  {
-    + {static} userProfiles() : T&
-    + {abstract} initialize() : Error
-    + readOptions(const FilePath& in_location) : Error
-    # registerOption<typename N>(const std::string& name, std::weak_ptr<N> io_valuePtr, const N& in_defaultValue, const std::string& in_description) : void
-    - m_confProfile : ConfigProfile
-  }
-
-  AbstractUserProfiles *-- ConfigProfile
-  AbstractUserProfiles ..|> IOptions
-  AbstractOptions ..|> IOptions
 }
 
 package "Job System Api" as JobApiPackage <<Rectangle>>
@@ -242,6 +197,8 @@ package "Job System Api" as JobApiPackage <<Rectangle>>
     + {abstract} getNetworkInfo(in_jobId : const std::string&, in_user : const User&, in_onGetNetworkInfo : const OnGetNetworkInfo&, in_onError : const OnError&) : void
     + {abstract} getClusterInfo(in_user : const User&, in_onGetClusterInfo : const OnGetClusterInfo&, in_onError : const OnError&) : void
     + {abstract} removeJob(in_job : std::shared_ptr<Job>, in_onRemove : const OnOperationComplete&, in_onError : OnError&) : void
+    + {abstract} createOutputStream(in_jobId : const std::string&, in_outputType : JobOutputType, in_onData : const OnOutputStreamData&, in_onError : const OnError&) : std::shared_ptr<AbstractOutputStream>
+    + {abstract} createResourceUtilStream(in_jobId : const std::string&, in_onResourceData : const OnResourceUtilData&, in_onError : const OnError&) : std::shared_ptr<IResourceUtilStream>
   }
 
   class AbstractOutputStream
@@ -278,13 +235,14 @@ package "Job System Api" as JobApiPackage <<Rectangle>>
 
   class AbstractResourceUtilStream
   {
-    + AbstractResourceUtilStream(in_onData : const OnResourceUtilData&)
+    + AbstractResourceUtilStream(in_jobId : const std::string&, in_onData : const OnResourceUtilData&)
     + {abstract} initialize() : Error
     + {abstract} endStream() : Error
     + addRequestId(in_requestId : uint64_t) : void
     + removeRequestId(in_requestId : uint64_t) : void
     # completeStream() : void
     # reportOutput(in_resourceUtilization : const ResourceUtilization&)
+    # m_jobId : std::string
     - m_onData : OnResourceUtilData
     - m_requestSequences : std::map<uint64_t, unit64_t>
     - m_mutex : boost::mutex
@@ -292,7 +250,7 @@ package "Job System Api" as JobApiPackage <<Rectangle>>
 
   class TimedResourceUtilStream #lightgreen
   {
-    + TimedResourceUtilStream(in_onData : const OnResourceUtilData&, in_seconds : unsigned int)
+    + TimedResourceUtilStream(in_jobId : const std::string&, in_onData : const OnResourceUtilData&, in_seconds : unsigned int)
     + start() : void
     + cancel() : void
     + initialize() : Error
@@ -302,6 +260,7 @@ package "Job System Api" as JobApiPackage <<Rectangle>>
     # onTimer(in_error : const Error&) : void
     # {abstract} getResourceUtilData() : void
     # reportOutput(in_resourceUtilization : const ResourceUtilization&)
+    - m_jobId : std::string
     - m_onData : OnResourceUtilData
     - m_timer : boost::posix::time_duration
     - m_requests : std::map<uint64_t, uint64_t>
@@ -326,7 +285,7 @@ package "Job System Api" as JobApiPackage <<Rectangle>>
   AbstractJobStatusWatcher .up. JPWNote
 
   IJobStatusWatcher <|.. AbstractJobStatusWatcher
-  AbstractJobStatusWatcher -down-|> AbstractTimedEvent
+  AbstractJobStatusWatcher --|> AbstractTimedEvent
   IJobStatusWatcher --> JobStatusNotifier : updates
   IResourceUtilStream <|.. AbstractResourceUtilStream
   IResourceUtilStream <|.. TimedResourceUtilStream
@@ -337,9 +296,20 @@ package "Launcher Plugin Api" as LPApiPackage <<Rectangle>>
 {
   note "Classes in this package are responsible for\nhandling the translation from the Launcher\nAPI to and from the IJobSource interface" as LPANote
 
+  class MessageHandler
+  {
+    + PluginMessageHandler(in_maxMessageSize : unsigned int)
+    + handleBytes (in_buffer : const char*, in_length : unsigned int, out_messages : std::vector<std::string>&) : Error
+    + {static} parseRequest(in_requestStr : const std::string&, out_request : Request*) : Error
+    + {static} formatResponse(in_response : const Response&) : std::string&
+    - m_maxMessageSize : unsigned int
+    - m_bytesToRead : unsigned int
+    - m_buffer : char*
+    - m_nextResponseId : std::atomic<unit64_t>
+  }
+
   class AbstractPluginApi #lightblue
   {
-    + {static} parseRequest(in_requestStr : const std::string&, out_request : Request*) : Error
     + handleBootstrap(in_bootstrapRequest : std::shared_ptr<BootstrapRequest>) : void
     + handleSubmitJob(in_submitJobRequest : std::shared_ptr<SubmitJobRequest>) : void
     + handleGetJob(in_getJobRequest : std::shared_ptr<GetJobRequest>) : void
@@ -359,6 +329,33 @@ package "Launcher Plugin Api" as LPApiPackage <<Rectangle>>
     - m_jobStatusNotifier : std::shared_ptr<JobStatusNotifier>
     - m_jobPruner : std::shared_ptr<JobPruner>
     - m_jobStatusWatcher : std::shared_ptr<IJobStatusWatcher>
+    - m_outputStreamManager : std::shared_ptr<OutputStreamManager>
+    - m_resourceStreamManager : std::shared_ptr<ResourceStreamManager>
+  }
+
+  class OutputStreamManager
+  {
+    + OutputStreamManager(in_jobSource : const std::shared_ptr<IJobSource>&, in_jobStatusNotifier : const std::shared_ptr<JobStatusNotifier>&)
+    + createStream(in_jobId : const std::string&, in_outputType: JobOutputType, in_onData : const OnOutputStreamData&) : void
+    + cancelStream(in_jobId : const std::string&) : void
+    - m_jobStatusNotifier : std::shared_ptr<JobStatusNotifier>
+    - m_jobSource : std::shared_ptr<IJobSource>
+    - m_outputStreams : std::map<std::string, std::shared_ptr<AbstractOutputStream>>
+    - m_jobStatusHandles : std::map<std::string, JobStatusSubscriptionHandle>
+    - m_mutex : boost::mutex
+  }
+
+  class ResourceStreamManager
+  {
+    + ResourceStreamManager(in_jobSource : const std::shared_ptr<IJobSource>&, in_jobStatusNotifier : const std::shared_ptr<JobStatusNotifier>&)
+    + createStream(in_jobId : const std::string&, in_requestId : uint64_t, in_onData : OnResourceUtilData&)
+    + cancelStream(in_jobId : const std::string&, in_requestId : uint64_t)
+    + hasStream(in_jobId) : bool
+    - m_jobStatusNotifier : std::shared_ptr<JobStatusNotifier>
+    - m_jobSource : std::shared_ptr<IJobSource>
+    - m_resourceStreams : std::map<std::string, std::shared_ptr<IResourceUtilStream>>
+    - m_jobStatusHandles : std::map<std::string, JobStatusSubscriptionHandle>
+    - m_mutex : boost::mutex
   }
 
   class ClusterInfo
@@ -379,13 +376,13 @@ package "Launcher Plugin Api" as LPApiPackage <<Rectangle>>
     + ResourceLimit(in_type : ResourceLimit::Type, in_value : double, in_maxValue = 0.0 : double, in_defaultValue = 0.0 : double)
     + getType() : ResourceLimit::Type
     + getValue() : const std::string&
-    + getDefaultValue() : std::optional<std::string>
-    + getMaxValue() : std::optional<std::string>
+    + getDefaultValue() : boost::optional<std::string>
+    + getMaxValue() : boost::optional<std::string>
     + toJson() :: rapid_json::Object
     - m_type : ResourceLimit::Type
     - m_value : std::string
-    - m_defaultValue : std::optional<std::string>
-    - m_maxValue : std::optional<std::string>
+    - m_defaultValue : boost::optional<std::string>
+    - m_maxValue : boost::optional<std::string>
   }
 
   class NetworkInfo
@@ -481,7 +478,9 @@ package "Launcher Plugin Api" as LPApiPackage <<Rectangle>>
   class GetJobOutputRequest
   {
     + getOutputType() : JobOutputType
+    + isCancel() : bool
     - m_outputType : JobOutputType
+    - m_cancel : bool
   }
 
   class Response
@@ -521,12 +520,12 @@ package "Launcher Plugin Api" as LPApiPackage <<Rectangle>>
 
   class GetJobResourceUtilResponse
   {
-    + GetJobResourceUtilResponse(in_cpuTime : const std::optional<double>&, in_cpuPercent : const std::optional<double>&, in_virtualMemory : const std::optional<double>&)
+    + GetJobResourceUtilResponse(in_cpuTime : const boost::optional<double>&, in_cpuPercent : const boost::optional<double>&, in_virtualMemory : const boost::optional<double>&)
     + toJson() : rapid_json::Object
-    - m_cpuTime : std::optional<double>
-    - m_cpuPercent : std::optional<double>
-    - m_residentMemory : std::optional<double>
-    - m_virtualMemory : std::optional<double>
+    - m_cpuTime : boost::optional<double>
+    - m_cpuPercent : boost::optional<double>
+    - m_residentMemory : boost::optional<double>
+    - m_virtualMemory : boost::optional<double>
   }
 
   class GetJobNetworkResponse
@@ -593,15 +592,19 @@ package "Launcher Plugin Api" as LPApiPackage <<Rectangle>>
       + CpuTime
       + Memory
       + MemorySwap
+      + {static} fromString(in_str : const std::string&, out_type : ResourceLimit::Type&) : Error
+      + {static} toString(in_type : ResourceLimit::Type) : std::string
     }
 
     enum ControlOperation <<enum class>>
     {
-      + Suspend = 0
-      + Resume = 1
-      + Stop = 2
-      + Kill = 3
-      + Cancel = 4
+      + Suspend
+      + Resume
+      + Stop
+      + Kill
+      + Cancel
+      + {static} fromString(in_str : const std::string&, out_operation : ControlOperation&) : Error
+      + {static} toString(in_operation : ControlOperation) : std::string
     }
 
     enum JobOutputType <<enum class>>
@@ -609,21 +612,29 @@ package "Launcher Plugin Api" as LPApiPackage <<Rectangle>>
       + Stdout = 0
       + Stderr = 1
       + Both = 2
-
-      + fromString(in_typeStr : const std::string&)
+      + {static} fromString(in_typeStr : const std::string&, out_type : JobOutputType&) : Error
     }
+
+    note "Static methods on enums will likely end up as functions in a similarly (or same) named namespace since enums can't have methods." as EnumNote
+    EnumNote .up. JobOutputType
+    EnumNote .up. ControlOperation
+    EnumNote .up. "ResourceLimit::Type"
   }
 
   AbstractMain --> AbstractPluginApi : creates
-  AbstractFrameworkCommunicator --> AbstractPluginApi : uses
+  AbstractFrameworkCommunicator <--> AbstractPluginApi : uses
   AbstractPluginApi *--> IJobSource : creates
   AbstractPluginApi *--> IJobRepository : creates
   AbstractPluginApi *--> JobStatusNotifier : creates
   AbstractPluginApi *--> JobPruner : creates
   AbstractPluginApi *--> IJobStatusWatcher : creates
+  AbstractPluginApi *-- OutputStreamManager
+  AbstractPluginApi *-- ResourceStreamManager
+  AbstractPluginApi --> ResponseId : uses
   HeartbeatTimer --|> AbstractTimedEvent
   AbstractFrameworkCommunicator *-- HeartbeatTimer
   AbstractFrameworkCommunicator <|-- StdIOFrameworkCommunicator
+  AbstractFrameworkCommunicator --> MessageHandler
 
   Request <|-- BootstrapRequest
   Request <|-- SubmitJobRequest
@@ -650,116 +661,22 @@ package "Launcher Plugin Api" as LPApiPackage <<Rectangle>>
   HeartbeatTimer .right. JPWNote
 }
 
-
-package "Typedef Reference" as TDPackage <<Rectangle>>
-{
-  hide <<typedef>> circle
-  hide <<typedef>> methods
-
-  class OnError <<typedef>>
-  {
-    {field} std::function<void(const Error&)>
-  }
-
-  class OnJobStatusUpdate <<typedef>>
-  {
-    {field} std::function<void(JobPtr)>
-  }
-
-  class OnTimer <<typedef>>
-  {
-    {field} std::function<void(bool)>
-  }
-
-  class OnOperationComplete <<typedef>>
-  {
-    {field} std::function<void()>
-  }
-
-  class OnJobPrune <<typedef>>
-  {
-    {field} std::function<void(std::shared_ptr<Job>, const OnOperationComplete&, const OnError&)>
-  }
-
-  class OnBootstrap <<typedef>>
-  {
-    {field} std::function<void(std::shared_ptr<BootstrapRequest>)>
-  }
-
-  class OnGetJobStatuses <<typedef>>
-  {
-    {field} std::function<void(const JobList&)>
-  }
-
-  class OnGetJob <<typedef>>
-  {
-    {field} std::function<void(std::shared_ptr<Job>)>
-  }
-
-  class OnGetNetworkInfo <<typedef>>
-  {
-    {field} std::function<void(const NetworkInfo&)>
-  }
-
-  class OnGetClusterInfo <<typedef>>
-  {
-    {field} std::function<void(const ClusterInfo&)>
-  }
-
-  class OnControlJob <<typedef>>
-  {
-    {field} std::function<void(const ControlJobResult&)>
-  }
-
-  class OnResourceUtilData <<typedef>>
-  {
-    {field} std::function<void(const ResourceUtilization&)>
-  }
-
-  class JobList <<typedef>>
-  {
-    std::vector<std::shared_ptr<Job>>
-  }
-
-  class JobStatusSubscriptionHandle <<typedef>>
-  {
-    std::shared_ptr<JobStatusSubscription>
-  }
-
-  class JobStatusSignal <<typedef>>
-  {
-    {field} boost::signals2::signal<void(JobPtr)>
-  }
-
-  class JobIdMap <<typedef>>
-  {
-    std::map<std::string, std::shared_ptr<Job>>
-  }
-
-  class RequestHandler <<typedef>>
-  {
-    boost::variant<*Request>
-  }
-
-  OnError -[hidden] OnJobStatusUpdate
-  OnJobStatusUpdate -[hidden] OnTimer
-  OnTimer -[hidden] OnJobDeleted
-  OnJobDeleted -[hidden] OnJobPrune
-  OnError -down[hidden]- OnGetJobStatuses
-  OnGetJobStatuses -[hidden]- OnBootstrap
-
-  OnGetJobStatuses -down[hidden] JobList
-  JobList -[hidden] JobStatusSubscriptionHandle
-  JobStatusSubscriptionHandle -[hidden] JobStatusSignal
-  JobStatusSignal -[hidden] JobIdMap
-}
-
 ' The default layout is not very nice. This section helps to mitigate some of the layout issues.
+AbstractFrameworkCommunicator -[hidden] Request
 Request -[hidden] Response
-Response -[hidden] AbstractFrameworkCommunicator
+HeartbeatTimer -[hidden] MessageHandler
+NfsMount -[hidden] JobRepository
+JobRepository -[hidden] JobPruner
 
-JobApiPackage -[hidden]- System
+Job -[hidden] ExposedPort
+ExposedPort -[hidden] HostMount
+HostMount -[hidden] NfsMount
+Job -[hidden]- Mount
+Mount -[hidden] JobConfig
+JobConfig -[hidden] Container
+Container -[hidden] PlacementConstraint
+
 LPApiPackage -[hidden]- JMPackage
-LPApiPackage -[hidden]- JobApiPackage
-Logging -[hidden]- JMPackage
+JMPackage -[hidden]- JobApiPackage
+
 @enduml
