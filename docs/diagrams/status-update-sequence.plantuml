@@ -1,20 +1,49 @@
 @startuml
+participant JobStatusWatcher
+participant JobStatusNotifier
+participant JobPruner
+participant JobSource
+participant PluginApi
+participant MessageHandler
+participant StdIOFrameworkCommunicator
+...
+JobPruner -> JobStatusNotifier : subscribe to all jobs
+...
 
-"Jobs System" -> JobStatusWatcher ++: job(s) update notification
+StdIOFrameworkCommunicator <-] : Get status stream for all jobs request
+activate StdIOFrameworkCommunicator
+loop while bytes and message not complete
+StdIOFrameworkCommunicator -> MessageHandler ++ : handleBytes
+alt success
+StdIOFrameworkCommunicator <-- MessageHandler : StatusStreamRequest
+else error
+StdIOFrameworkCommunicator <-- MessageHandler --: error
+StdIOFrameworkCommunicator -->x]: Invalid Request Error
+StdIOFrameworkCommunicator -> PluginApi ++: handleStatusStreamRequest
+PluginApi -> JobStatusNotifier ++: subscribe to all jobs
+PluginApi <-- JobStatusNotifier --
+StdIOFrameworkCommunicator <-- PluginApi --
+StdIOFrameworkCommunicator -->] : OK
+deactivate StdIOFrameworkCommunicator
+end
+...
+[-> JobStatusWatcher: job(s) update notification
+activate JobStatusWatcher
 loop foreach job
   JobStatusWatcher -> JobStatusNotifier : updateJob(job)
   JobStatusNotifier -> JobStatusNotifier : notifyAll
   JobStatusNotifier -> JobPruner : notify
-  alt job status is terminal
+  opt job status is terminal
     JobPruner -> JobPruner ++ : invoke OnJobPrune(job)
-    JobPruner -> IJobSource -- : remove job via OnJobPrune
+    JobPruner -> JobSource -- : remove job via OnJobPrune
   end
-  JobStatusNotifier -> AbstractPluginApi ++ : notify
-  AbstractPluginApi -> StdIOFrameworkCommunicator : send status update response
-  deactivate AbstractPluginApi
+  JobStatusNotifier -> PluginApi ++ : notify
+  PluginApi -> StdIOFrameworkCommunicator ++: send status update response
+  deactivate PluginApi
+  StdIOFrameworkCommunicator -> MessageHandler ++ : format response
+  StdIOFrameworkCommunicator <-- MessageHandler -- : formatted response
+  StdIOFrameworkCommunicator -->] : write status update
 end
 deactivate JobStatusWatcher
-
-
 
 @enduml
