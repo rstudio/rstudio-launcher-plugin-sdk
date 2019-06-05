@@ -11,7 +11,11 @@ Main -> Logger : add stderr destination
 create Options
 Main -> Options : new
 Main -> Options ++ : read options
+alt success
 Main <-- Options -- : success
+else error
+Main X-- Options -- : error
+end
 
 Main -> Logger : remove stderr destination
 Main -> Logger : set log level from options
@@ -47,14 +51,30 @@ Main -> Main : register signal handlers
 Main -> PluginApi  ++ : initialize
 activate Main
 StdIOFrameworkCommunicator <- PluginApi ++ : register request handlers
-StdIOFrameworkCommunicator --> PluginApi -- : success
+alt success
+StdIOFrameworkCommunicator --> PluginApi : success
+else error
+StdIOFrameworkCommunicator --> PluginApi -- :error
+Main X<-- PluginApi : error
+end
 
 PluginApi -> JobSource ++ : initialize
 create UserProfiles
 JobSource -> UserProfiles : new
 JobSource -> UserProfiles ++ : read options
-JobSource <-- UserProfiles -- : success
-PluginApi <-- JobSource -- : success
+alt success
+JobSource <-- UserProfiles : success
+alt success
+PluginApi <-- JobSource : success
+else error
+PluginApi <-- JobSource : error
+Main X<-- PluginApi : error
+end
+else error
+JobSource <-- UserProfiles --: error
+PluginApi <-- JobSource --: error
+Main X<-- PluginApi : error
+end
 
 PluginApi -> JobSource ++ : get all jobs
 PluginApi <-- JobSource -- : job list
