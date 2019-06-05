@@ -1,0 +1,55 @@
+@startuml
+
+[-> StdIOFrameworkCommunicator : get job output stream
+activate StdIOFrameworkCommunicator
+loop while bytes and message not complete
+StdIOFrameworkCommunicator -> MessageHandler ++ : handleBytes
+alt success
+StdIOFrameworkCommunicator <-- MessageHandler : OutputStreamRequest
+else error
+StdIOFrameworkCommunicator <-- MessageHandler --: error
+[x<- StdIOFrameworkCommunicator : Invalid Request Error
+end
+end
+StdIOFrameworkCommunicator -> PluginApi ++: handleGetJobOutput(OutputStreamRequest)
+
+PluginApi -> OutputStreamManager ++ : create output stream
+OutputStreamManager -> JobSource ++ : create output stream
+create OutputStream
+JobSource -> OutputStream : new
+OutputStreamManager <-- JobSource --
+OutputStreamManager -> JobStatusNotifier : subscribe to job
+PluginApi <-- OutputStreamManager --
+StdIOFrameworkCommunicator <-- PluginApi --
+deactivate StdIOFrameworkCommunicator
+...
+loop while output data and not cancelled
+OutputStream -> PluginApi : return output
+PluginApi -> StdIOFrameworkCommunicator : send output data response
+StdIOFrameworkCommunicator -> MessageHandler : format response
+StdIOFrameworkCommunicator <-- MessageHandler : formatted response
+[<- StdIOFrameworkCommunicator : write message
+end
+...
+[-> StdIOFrameworkCommunicator : close output stream
+activate StdIOFrameworkCommunicator
+loop while bytes and message not complete
+StdIOFrameworkCommunicator -> MessageHandler ++ : handleBytes
+alt success
+StdIOFrameworkCommunicator <-- MessageHandler : OutputStreamRequest
+else error
+StdIOFrameworkCommunicator <-- MessageHandler --: error
+[x<- StdIOFrameworkCommunicator : error
+end
+StdIOFrameworkCommunicator -> PluginApi ++ : handleGetJobOutput(cancel = true)
+PluginApi -> OutputStreamManager ++ : remove output stream
+OutputStreamManager -> OutputStream : destroy
+destroy OutputStream
+PluginApi <-- OutputStreamManager --
+StdIOFrameworkCommunicator <-- PluginApi --
+StdIOFrameworkCommunicator -> MessageHandler ++: format OK response
+StdIOFrameworkCommunicator <-- MessageHandler --
+[<-- StdIOFrameworkCommunicator : OK
+deactivate StdIOFrameworkCommunicator
+
+@enduml
