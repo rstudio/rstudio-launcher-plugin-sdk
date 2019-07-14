@@ -13,6 +13,9 @@
 namespace rstudio {
 namespace launcher_plugins {
 
+/**
+ * @brief Base class for the Launcher Plugin API.
+ */
 class AbstractPluginApi
 {
 

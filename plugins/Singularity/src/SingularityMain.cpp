@@ -21,6 +21,11 @@ namespace singularity {
 class SingularityMain : public AbstractMain
 {
 private:
+   /**
+    * @brief Creates the Launcher Plugin API.
+    *
+    * @return The Plugin specific Launcher Plugin API.
+    */
    std::shared_ptr<AbstractPluginApi> createLauncherPluginApi() const override
    {
       return std::shared_ptr<AbstractPluginApi>(new SingularityPluginApi());
@@ -31,6 +36,14 @@ private:
 } // namespace launcher_plugin
 } // namesapce rstudio
 
+/**
+ * @brief The main function.
+ *
+ * @param argc      The number of arguments supplied to the program.
+ * @param argv      The list of arguments supplied to the program.
+ *
+ * @return 0 on success; non-zero exit code otherwise.
+ */
 int main(int argc, char** argv)
 {
    rstudio::launcher_plugins::singularity::SingularityMain mainObject;

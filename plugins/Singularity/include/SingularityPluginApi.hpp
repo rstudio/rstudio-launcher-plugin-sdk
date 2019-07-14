@@ -16,6 +16,9 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace singularity {
 
+/**
+ * @brief Launcher Plugin API for the Singularity Plugin.
+ */
 class SingularityPluginApi : public AbstractPluginApi
 {
 };

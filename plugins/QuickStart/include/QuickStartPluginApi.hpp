@@ -16,6 +16,9 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace quickstart {
 
+/**
+ * @brief Launcher Plugin API for the QuickStart Plugin.
+ */
 class QuickStartPluginApi : public AbstractPluginApi
 {
 };
