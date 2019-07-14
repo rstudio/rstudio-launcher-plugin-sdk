@@ -14,12 +14,16 @@ project(rstudio_launcher_plugin_sdk)
 set(CMAKE_CXX_STANDARD 11)
 
 # include files
-file (GLOB_RECURSE RLPS_HEADER_FILES "*.h*")
+file(GLOB_RECURSE RLPS_HEADER_FILES "*.h*")
 
 # souce files
 set(RLPS_SOURCE_FILES
  src/AbstractMain.cpp)
 
+# include directory
+include_directories(
+   include
+)
 
 # define library
 add_library(rstudio-launcher-plugin-sdk-lib STATIC

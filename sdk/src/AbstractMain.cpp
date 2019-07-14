@@ -7,7 +7,7 @@
  *
  */
 
-#include "../include/AbstractMain.hpp"
+#include "AbstractMain.hpp"
 
 #include <iostream>
 
@@ -15,7 +15,7 @@ namespace rstudio{
 namespace launcher_plugins
 {
 
-int AbstractMain::run(int argc, char** argv)
+int AbstractMain::run(int, char**)
 {
    std::cout << "Success" << std::endl;
 }
