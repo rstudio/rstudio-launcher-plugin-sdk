@@ -34,7 +34,7 @@ private:
 
 } // namespace singularity
 } // namespace launcher_plugin
-} // namesapce rstudio
+} // namespace rstudio
 
 /**
  * @brief The main function.
@@ -49,4 +49,3 @@ int main(int argc, char** argv)
    rstudio::launcher_plugins::singularity::SingularityMain mainObject;
    return mainObject.run(argc, argv);
 }
-

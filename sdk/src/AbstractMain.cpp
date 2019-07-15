@@ -21,4 +21,4 @@ int AbstractMain::run(int, char**)
 }
 
 } // namespace launcher_plugins
-} // namesapce rstudio
+} // namespace rstudio

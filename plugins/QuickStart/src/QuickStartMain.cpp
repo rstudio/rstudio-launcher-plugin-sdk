@@ -36,7 +36,7 @@ class QuickStartMain : public AbstractMain
 
 } // namespace quickstart
 } // namespace launcher_plugins
-} // namesapce rstudio
+} // namespace rstudio
 
 /**
  * @brief The main function.
@@ -51,4 +51,3 @@ int main(int argc, char** argv)
    rstudio::launcher_plugins::quickstart::QuickStartMain mainObject;
    return mainObject.run(argc, argv);
 }
-

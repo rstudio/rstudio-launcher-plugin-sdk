@@ -25,6 +25,6 @@ class SingularityPluginApi : public AbstractPluginApi
 
 } // namespace singularity
 } // namespace launcher_plugins
-} // namesapce rstudio
+} // namespace rstudio
 
 #endif

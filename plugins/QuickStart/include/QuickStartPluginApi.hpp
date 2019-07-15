@@ -25,6 +25,6 @@ class QuickStartPluginApi : public AbstractPluginApi
 
 } // namespace quickstart
 } // namespace launcher_plugins
-} // namesapce rstudio
+} // namespace rstudio
 
 #endif

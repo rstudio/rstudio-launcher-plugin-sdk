@@ -24,6 +24,6 @@ class AbstractPluginApi : public boost::noncopyable
 };
 
 } // namespace launcher_plugins
-} // namesapce rstudio
+} // namespace rstudio
 
 #endif
