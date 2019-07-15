@@ -38,18 +38,8 @@ then
    sudo tar --bzip2 -xf ../$BOOST_TAR
    cd $BOOST_VERSION
 
-   # Bootstrap, build bcp, and copy to root.
+   # Bootstrap
    sudo ./bootstrap.sh
-#   sudo ./b2 tools/bcp
-#   sudo cp dist/bin/bcp bcp
-
-   # Restrict the boost modules with bcp
-#   sudo mkdir -p rlps
-#   sudo ./bcp $BOOST_MODULES boost_install headers config build rlps/
-
-   # Move into the restricted boost library folder and re-bootstrap.
-#   cd rlps
-#   sudo ./bootstrap.sh
 
    # Build boost with bjam
    sudo ./bjam                     \
