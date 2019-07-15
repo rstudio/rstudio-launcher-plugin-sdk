@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+
+#
+# install-boost
+#
+# Copyright (C) 2019 by RStudio, Inc.
+#
+# TODO: License
+#
+
+set -e 
+
+INSTALL_DIR=`pwd`
+
+# Variables
+BOOST_VERSION_NUMBER="1.70.0"
+BOOST_VERSION="boost_$(echo "$BOOST_VERSION_NUMBER" | tr "." "_")"
+BOOST_TAR=$BOOST_VERSION.tar.bz2
+BOOST_BUILD_DIR=boost-build
+BOOST_URL="https://dl.bintray.com/boostorg/release/$BOOST_VERSION_NUMBER/source/$BOOST_TAR"
+
+# Install if not already installed.
+if ! test -e $BOOST_DIR 
+then
+   # Download
+   if [ ! -f $BOOST_TAR ]; then
+      wget -c $BOOST_URL -O $BOOST_TAR
+   fi
+
+   # Untar
+   sudo rm -rf $BOOST_BUILD_DIR
+   sudo mkdir -p $BOOST_BUILD_DIR
+   cd $BOOST_BUILD_DIR
+
+   sudo tar --bzip2 -xf ../$BOOST_TAR
+   cd $BOOST_VERSION
+
+   # Bootstrap
+   sudo ./bootstrap.sh
+
+   # Build boost with bjam
+   sudo ./bjam                     \
+       "${BOOST_BJAM_FLAGS}"       \
+       variant=release             \
+       cxxflags="-fPIC -std=c++11" \
+       install
+
+   # Cleaup
+   cd $INSTALL_DIR
+   sudo rm -rf $BOOST_BUILD_DIR
+
+else
+   echo "$BOOST_VERSION_NUMBER already installed in $BOOST_DIR"
+fi
+

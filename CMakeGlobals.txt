@@ -1,0 +1,42 @@
+# vi: set ft=cmake:
+
+#
+# CMakeGlobals.txt
+#
+# Copyright (C) 2019 by RStudio, Inc.
+#
+# TODO: License
+#
+
+# include guard
+if (RLPS_CMAKE_GLOBALS_INCLUDED)
+   return()
+endif()
+set(RLPS_CMAKE_GLOBALS_INCLUDED YES)
+
+# version info
+if ("$ENV{RLPS_VERSION_MAJOR}" STREQUAL "")
+   set(CPACK_PACKAGE_VERSION_MAJOR "99")
+   set(RLPS_UNVERSIONED_BUILD TRUE)
+else()
+   set(CPACK_PACKAGE_VERSION_MAJOR $ENV{RSTUDIO_VERSION_MAJOR})
+endif()
+if ("$ENV{RLPS_VERSION_MINOR}" STREQUAL "")
+   set(CPACK_PACKAGE_VERSION_MINOR "9")
+else()
+   set(CPACK_PACKAGE_VERSION_MINOR $ENV{RSTUDIO_VERSION_MINOR})
+endif()
+if ("$ENV{RLPS_VERSION_PATCH}" STREQUAL "")
+   set(CPACK_PACKAGE_VERSION_PATCH "9")
+else()
+   set(CPACK_PACKAGE_VERSION_PATCH $ENV{RSTUDIO_VERSION_PATCH})
+endif()
+
+# default to debug builds
+if(NOT CMAKE_BUILD_TYPE)
+   message(STATUS "CMake build type not set; defaulting to debug build")
+   set(CMAKE_BUILD_TYPE "Debug")
+endif()
+
+# SDK include folder
+set(RLPS_INCLUDE_DIR "${CMAKE_CURRENT_LIST_DIR}/sdk/include")
