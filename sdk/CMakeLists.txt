@@ -18,7 +18,9 @@ file(GLOB_RECURSE RLPS_HEADER_FILES "*.h*")
 
 # souce files
 set(RLPS_SOURCE_FILES
- src/AbstractMain.cpp)
+   src/AbstractMain.cpp
+   src/Error.cpp
+)
 
 # include directory
 include_directories(
