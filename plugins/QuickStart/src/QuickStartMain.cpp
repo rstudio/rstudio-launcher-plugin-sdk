@@ -1,5 +1,5 @@
 /*
- * QuickstartMain.cpp
+ * QuickStartMain.cpp
  * 
  * Copyright (C) 2019 by RStudio, Inc.
  *
