@@ -10,7 +10,7 @@
 #ifndef LAUNCHER_PLUGINS_ABSTRACT_MAIN_HPP
 #define LAUNCHER_PLUGINS_ABSTRACT_MAIN_HPP
 
-#include "NonCopyable.hpp"
+#include <boost/noncopyable.hpp>
 
 #include <memory>
 
@@ -22,7 +22,7 @@ namespace launcher_plugins {
 /**
  * @brief Base class for the Plugin Main class, which runs the plugin.
  */
-class AbstractMain : public NonCopyable
+class AbstractMain : public boost::noncopyable
 {
 public:
    /**
