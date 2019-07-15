@@ -15,12 +15,9 @@ INSTALL_DIR=`pwd`
 # Variables
 BOOST_VERSION_NUMBER="1.70.0"
 BOOST_VERSION="boost_$(echo "$BOOST_VERSION_NUMBER" | tr "." "_")"
-BOOST_DIR=/opt/rstudio-launcher-plugin-sdk-tools/$BOOST_VERSION
 BOOST_TAR=$BOOST_VERSION.tar.bz2
 BOOST_BUILD_DIR=boost-build
 BOOST_URL="https://dl.bintray.com/boostorg/release/$BOOST_VERSION_NUMBER/source/$BOOST_TAR"
-#BOOST_MODULES="algorithm any array asio circular_buffer config core context date_time filesystem function optional
-#   program_options property_tree regex singals2 string_algo test thread utility variant"
 
 # Install if not already installed.
 if ! test -e $BOOST_DIR 
@@ -44,7 +41,6 @@ then
    # Build boost with bjam
    sudo ./bjam                     \
        "${BOOST_BJAM_FLAGS}"       \
-       --prefix="$BOOST_DIR"       \
        variant=release             \
        cxxflags="-fPIC -std=c++11" \
        install
