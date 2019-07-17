@@ -31,8 +31,8 @@ enum class LogLevel
    OFF = 0,       // No messages will be logged.
    ERROR = 1,     // Error messages will be logged.
    WARNING = 2,   // Warning and error messages will be logged.
-   DEBUG = 3,     // Debug, warning, and error messages will be logged.
-   INFO = 4       // All messages will be logged.
+   INFO = 3,      // Info, warning, and error messages will be logged.
+   DEBUG = 4      // All messages will be logged.
 };
 
 // TODO: move this to config. That should be the only place we read this from string and will have the right errors.
@@ -103,6 +103,16 @@ public:
    void logErrorAsWarning(const Error& in_error);
 
    /**
+    * @brief Logs an error as an info message to all registered destinations.
+    *
+    * If no destinations are registered, no log will be written.
+    * If the log level is below LogLevel::INFO, no log will be written.
+    *
+    * @param in_error      The error to log as an info message.
+    */
+   void logErrorAsInfo(const Error& in_error);
+
+   /**
     * @brief Logs an error as a debug message to all registered destinations.
     *
     * If no destinations are registered, no log will be written.
@@ -112,15 +122,6 @@ public:
     */
    void logErrorAsDebug(const Error& in_error);
 
-   /**
-    * @brief Logs an error as an info message to all registered destinations.
-    *
-    * If no destinations are registered, no log will be written.
-    * If the log level is below LogLevel::INFO, no log will be written.
-    *
-    * @param in_error      The error to log as an info message.
-    */
-   void logErrorAsInfo(const Error& in_error);
    /**
     * @brief Logs an error message to all registered destinations.
     *
@@ -142,16 +143,6 @@ public:
    void logWarningMessage(const std::string& in_message);
 
    /**
-    * @brief Logs a debug message to all registered destinations.
-    *
-    * If no destinations are registered, no log will be written.
-    * If the log level is below LogLevel::DEBUG, no log will be written.
-    *
-    * @param in_message      The message to log as a debug message.
-    */
-   void logDebugMessage(const std::string& in_message);
-
-   /**
     * @brief Logs an info message to all registered destinations.
     *
     * If no destinations are registered, no log will be written.
@@ -160,6 +151,16 @@ public:
     * @param in_error      The message to log as an info message.
     */
    void logInfoMessage(const std::string& in_message);
+
+   /**
+    * @brief Logs a debug message to all registered destinations.
+    *
+    * If no destinations are registered, no log will be written.
+    * If the log level is below LogLevel::DEBUG, no log will be written.
+    *
+    * @param in_message      The message to log as a debug message.
+    */
+   void logDebugMessage(const std::string& in_message);
 
 private:
    /**

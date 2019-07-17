@@ -174,19 +174,19 @@ void Logger::logErrorAsWarning(const Error& in_error)
    }
 }
 
-void Logger::logErrorAsDebug(const Error& in_error)
-{
-   if (m_logLevel >= LogLevel::DEBUG)
-   {
-      writeMessageToAllDestinations(LogLevel::DEBUG, in_error.asString());
-   }
-}
-
 void Logger::logErrorAsInfo(const Error& in_error)
 {
    if (m_logLevel >= LogLevel::INFO)
    {
       writeMessageToAllDestinations(LogLevel::INFO, in_error.asString());
+   }
+}
+
+void Logger::logErrorAsDebug(const Error& in_error)
+{
+   if (m_logLevel >= LogLevel::DEBUG)
+   {
+      writeMessageToAllDestinations(LogLevel::DEBUG, in_error.asString());
    }
 }
 
@@ -202,16 +202,16 @@ void Logger::logWarningMessage(const std::string& in_message)
       writeMessageToAllDestinations(LogLevel::WARNING, in_message);
 }
 
-void Logger::logDebugMessage(const std::string& in_message)
-{
-   if (m_logLevel >= LogLevel::DEBUG)
-      writeMessageToAllDestinations(LogLevel::DEBUG, in_message);
-}
-
 void Logger::logInfoMessage(const std::string& in_message)
 {
    if (m_logLevel >= LogLevel::INFO)
       writeMessageToAllDestinations(LogLevel::INFO, in_message);
+}
+
+void Logger::logDebugMessage(const std::string& in_message)
+{
+   if (m_logLevel >= LogLevel::DEBUG)
+      writeMessageToAllDestinations(LogLevel::DEBUG, in_message);
 }
 
 // Private =============================================================================================================
