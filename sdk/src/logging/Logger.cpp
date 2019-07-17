@@ -15,9 +15,10 @@
 #include <sstream>
 
 #include <logging/ILogDestination.hpp>
-// We do a little special handling for syslog because it does its own formatting.
-#include <logging/SyslogDestination.hpp>
 #include <system/DateTime.hpp>
+
+// We do a little special handling for syslog because it does its own formatting.
+#include "SyslogDestination.hpp"
 
 namespace rstudio {
 namespace launcher_plugins {

@@ -7,11 +7,12 @@
  *
  */
 
-#include "AbstractMain.hpp"
+#include <AbstractMain.hpp>
 
 #include <iostream>
 
-#include "logging/Logger.hpp"
+#include <logging/Logger.hpp>
+
 #include "logging/StderrLogDestination.hpp"
 #include "logging/SyslogDestination.hpp"
 

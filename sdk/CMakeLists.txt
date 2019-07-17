@@ -28,6 +28,7 @@ set(RLPS_SOURCE_FILES
 # include directory
 include_directories(
    include
+   src
 )
 
 # define library

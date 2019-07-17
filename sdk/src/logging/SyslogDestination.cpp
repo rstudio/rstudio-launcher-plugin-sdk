@@ -7,7 +7,7 @@
  *
  */
 
-#include <logging/SyslogDestination.hpp>
+#include "SyslogDestination.hpp"
 
 #include <cassert>
 #include <syslog.h>

@@ -7,7 +7,7 @@
  *
  */
 
-#include <logging/StderrLogDestination.hpp>
+#include "StderrLogDestination.hpp"
 
 #include <iostream>
 #include <unistd.h>
