@@ -239,6 +239,7 @@ void Logger::writeMessageToAllDestinations(LogLevel in_logLevel, const std::stri
       }
    }
 }
+
 } // namespace logging
 } // namespace launcher_plugins
 } // namespace rstudio
