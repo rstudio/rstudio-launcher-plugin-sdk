@@ -29,7 +29,6 @@ int AbstractMain::run(int, char**)
    if (StderrDestination::isStderrTty())
       logger.addLogDestination(std::move(std::unique_ptr<ILogDestination>(new StderrDestination())));
 
-
    logger.logInfoMessage("Starting " + getProgramId() + "...");
    return 0;
 }
