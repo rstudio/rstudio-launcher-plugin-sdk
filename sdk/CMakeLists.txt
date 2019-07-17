@@ -21,6 +21,7 @@ set(RLPS_SOURCE_FILES
    src/AbstractMain.cpp
    src/Error.cpp
    src/logging/Logger.cpp
+   src/logging/StderrDestination.cpp
    src/logging/SyslogDestination.cpp
 )
 
