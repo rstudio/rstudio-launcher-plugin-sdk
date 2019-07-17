@@ -104,7 +104,8 @@ public:
 private:
    // The private implementation of ErrorLocation.
    struct Impl;
-   std::unique_ptr<Impl> m_impl;
+   struct ImplDeleter { void operator()(Impl*); };
+   std::unique_ptr<Impl, ImplDeleter> m_impl;
 };
 
 /**
@@ -115,7 +116,7 @@ private:
  *
  * Errors are not copyable. To return by value, use std::move.
  */
-class Error : virtual Error_Lock, public boost::noncopyable
+class Error : virtual Error_Lock, boost::noncopyable
 {
 public:
    /**
@@ -278,7 +279,8 @@ public:
 private:
    // The private implementation of Error.
    struct Impl;
-   std::unique_ptr<Impl> m_impl;
+   struct ImplDeleter { void operator()(Impl*); };
+   std::unique_ptr<Impl, ImplDeleter> m_impl;
 };
 
 /**
@@ -286,12 +288,12 @@ private:
  */
 class Success: public Error
 {
+public:
    /**
     * @brief Constructor.
     */
    Success() : Error() { };
 };
-
 
 /**
  * @brief Function which creates a system error.

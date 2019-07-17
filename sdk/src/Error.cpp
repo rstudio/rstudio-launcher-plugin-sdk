@@ -31,6 +31,11 @@ struct ErrorLocation::Impl
    long Line;
 };
 
+void ErrorLocation::ImplDeleter::operator()(ErrorLocation::Impl* io_toDelete)
+{
+   delete io_toDelete;
+}
+
 std::ostream& operator<<(std::ostream& in_os, const ErrorLocation& in_location)
 {
    in_os << in_location.getFunction() << " "
@@ -122,6 +127,11 @@ struct Error::Impl
    Error Cause;
    ErrorLocation Location;
 };
+
+void Error::ImplDeleter::operator()(Error::Impl* io_toDelete)
+{
+   delete io_toDelete;
+}
 
 std::ostream& operator<<(std::ostream& in_os, const Error& in_error)
 {
