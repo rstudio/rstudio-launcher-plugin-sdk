@@ -216,7 +216,7 @@ void Logger::logDebugMessage(const std::string& in_message)
 
 // Private =============================================================================================================
 Logger::Logger(std::string in_programId) :
-   m_logLevel(LogLevel::ERROR),
+   m_logLevel(LogLevel::INFO),
    m_programId(std::move(in_programId))
 {
 }
