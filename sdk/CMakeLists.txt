@@ -20,6 +20,7 @@ file(GLOB_RECURSE RLPS_HEADER_FILES "*.h*")
 set(RLPS_SOURCE_FILES
    src/AbstractMain.cpp
    src/Error.cpp
+   src/logging/Logger.cpp
 )
 
 # include directory
