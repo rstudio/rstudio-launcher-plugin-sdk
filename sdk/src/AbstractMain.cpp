@@ -11,13 +11,27 @@
 
 #include <iostream>
 
-namespace rstudio{
-namespace launcher_plugins
-{
+#include "logging/Logger.hpp"
+#include "logging/StderrLogDestination.hpp"
+#include "logging/SyslogDestination.hpp"
+
+namespace rstudio {
+namespace launcher_plugins {
 
 int AbstractMain::run(int, char**)
 {
-   std::cout << "Success" << std::endl;
+   // Set up the logger.
+   using namespace logging;
+   Logger& logger = Logger::getInstance(getProgramId());
+   logger.setLogLevel(LogLevel::INFO);
+
+   logger.addLogDestination(std::move(std::unique_ptr<ILogDestination>(new SyslogDestination(getProgramId()))));
+   if (StderrDestination::isStderrTty())
+      logger.addLogDestination(std::move(std::unique_ptr<ILogDestination>(new StderrDestination())));
+
+
+   logger.logInfoMessage("Starting " + getProgramId() + "...");
+   return 0;
 }
 
 } // namespace launcher_plugins
