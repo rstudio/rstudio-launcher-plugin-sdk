@@ -30,6 +30,16 @@ private:
    {
       return std::shared_ptr<AbstractPluginApi>(new SingularityPluginApi());
    }
+
+   /**
+    * @brief Returns the unique program ID for this plugin.
+    *
+    * @return The unique program ID for this plugin.
+    */
+    std::string getProgramId() const override
+    {
+       return "rstudio-singularity-launcher";
+    }
 };
 
 } // namespace singularity

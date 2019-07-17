@@ -52,6 +52,13 @@ private:
     * @return The Plugin specific Launcher Plugin API.
     */
    virtual std::shared_ptr<AbstractPluginApi> createLauncherPluginApi() const = 0;
+
+   /**
+    * @brief Returns the unique program ID for this plugin.
+    *
+    * @return The unique program ID for this plugin.
+    */
+    virtual std::string getProgramId() const = 0;
 };
 
 } // namespace launcher_plugins

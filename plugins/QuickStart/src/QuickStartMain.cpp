@@ -32,6 +32,17 @@ class QuickStartMain : public AbstractMain
    {
       return std::shared_ptr<AbstractPluginApi>(new QuickStartPluginApi());
    }
+
+   /**
+    * @brief Returns the unique program ID for this plugin.
+    *
+    * @return The unique program ID for this plugin.
+    */
+   std::string getProgramId() const override
+   {
+      // TODO #3: Change this from rstudio-quickstart-launcher to myorg-myplugin-launcher, or something similar.
+      return "rstudio-quickstart-launcher";
+   }
 };
 
 } // namespace quickstart
