@@ -32,6 +32,38 @@ std::string formatLogMessage(
    const std::string& in_programId,
    bool in_formatForSyslog = false)
 {
+   std::string levelPrefix;
+   switch (in_logLevel)
+   {
+      case LogLevel::ERROR:
+      {
+         levelPrefix = "ERROR: ";
+         break;
+      }
+      case LogLevel::WARNING:
+      {
+         levelPrefix = "WARNING: ";
+         break;
+      }
+      case LogLevel::DEBUG:
+      {
+         levelPrefix = "DEBUG: " ;
+         break;
+      }
+      case LogLevel::INFO:
+      {
+         levelPrefix = "INFO: ";
+         break;
+      }
+      case LogLevel::OFF:
+      default:
+      {
+         // This shouldn't be possible. If it happens don't add a log level.
+         assert(false);
+         break;
+      }
+   }
+
    if (!in_formatForSyslog)
    {
       // Add the time.
@@ -39,47 +71,17 @@ std::string formatLogMessage(
       ptime time = microsec_clock::universal_time();
 
       std::ostringstream oss;
-      oss << system::date_time::format(time, "%d %b %Y %H:%M:%S");
-      oss << " [" << in_programId << "] ";
-
-
-      switch (in_logLevel)
-      {
-         case LogLevel::ERROR:
-         {
-            oss << "ERROR: ";
-            break;
-         }
-         case LogLevel::WARNING:
-         {
-            oss << "WARNING: ";
-            break;
-         }
-         case LogLevel::DEBUG:
-         {
-            oss << "DEBUG: " ;
-            break;
-         }
-         case LogLevel::INFO:
-         {
-            oss << "INFO: ";
-            break;
-         }
-         case LogLevel::OFF:
-         default:
-         {
-            // This shouldn't be possible. If it happens don't add a log level.
-            assert(false);
-            break;
-         }
-      }
-
-      oss << in_message << std::endl;
+      oss << system::date_time::format(time, "%d %b %Y %H:%M:%S")
+          << " [" << in_programId << "] "
+          << levelPrefix
+          << in_message << std::endl;
       return oss.str();
    }
 
    // Formatting for syslog.
-   return boost::algorithm::replace_all_copy(in_message, "\n", "|||");
+   std::string formattedMessage = levelPrefix + in_message;
+   boost::algorithm::replace_all(formattedMessage, "\n", "|||");
+   return formattedMessage;
 }
 
 } // anonymous namespace
