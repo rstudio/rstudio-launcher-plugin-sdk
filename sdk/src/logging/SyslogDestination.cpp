@@ -9,8 +9,6 @@
 
 #include <logging/SyslogDestination.hpp>
 
-#include <boost/algorithm/string.hpp>
-
 #include <cassert>
 #include <syslog.h>
 
@@ -76,9 +74,7 @@ unsigned int SyslogDestination::getId() const
 
 void SyslogDestination::writeLog(LogLevel in_logLevel, const std::string& in_message)
 {
-   // Remove newlines for syslog because entries are delimited by newlines.
-   std::string cleanMessage = boost::algorithm::replace_all_copy(in_message, "\n", "|||");
-   ::syslog(logLevelToLogPriority(in_logLevel), "%s", cleanMessage.c_str());
+   ::syslog(logLevelToLogPriority(in_logLevel), "%s", in_message.c_str());
 }
 
 } // namespace logging
