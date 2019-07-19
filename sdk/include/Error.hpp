@@ -17,6 +17,8 @@
 #include <string>
 #include <memory>
 
+#include <PImpl.hpp>
+
 namespace rstudio {
 namespace launcher_plugins {
 
@@ -103,9 +105,7 @@ public:
 
 private:
    // The private implementation of ErrorLocation.
-   struct Impl;
-   struct ImplDeleter { void operator()(Impl*); };
-   std::unique_ptr<Impl, ImplDeleter> m_impl;
+   PRIVATE_IMPL(m_impl);
 };
 
 /**
@@ -278,9 +278,7 @@ public:
 
 private:
    // The private implementation of Error.
-   struct Impl;
-   struct ImplDeleter { void operator()(Impl*); };
-   std::unique_ptr<Impl, ImplDeleter> m_impl;
+   PRIVATE_IMPL(m_impl);
 };
 
 /**

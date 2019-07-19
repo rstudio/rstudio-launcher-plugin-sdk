@@ -31,10 +31,7 @@ struct ErrorLocation::Impl
    long Line;
 };
 
-void ErrorLocation::ImplDeleter::operator()(ErrorLocation::Impl* io_toDelete)
-{
-   delete io_toDelete;
-}
+PRIVATE_IMPL_DELETER_IMPL(ErrorLocation)
 
 std::ostream& operator<<(std::ostream& in_os, const ErrorLocation& in_location)
 {
@@ -128,10 +125,7 @@ struct Error::Impl
    ErrorLocation Location;
 };
 
-void Error::ImplDeleter::operator()(Error::Impl* io_toDelete)
-{
-   delete io_toDelete;
-}
+PRIVATE_IMPL_DELETER_IMPL(Error)
 
 std::ostream& operator<<(std::ostream& in_os, const Error& in_error)
 {
