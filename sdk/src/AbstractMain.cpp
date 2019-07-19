@@ -22,14 +22,14 @@ int AbstractMain::run(int, char**)
 {
    // Set up the logger.
    using namespace logging;
-   Logger& logger = Logger::getInstance(getProgramId());
-   logger.setLogLevel(LogLevel::INFO);
+   setProgramId(getProgramId());
+   setLogLevel(LogLevel::INFO);
 
-   logger.addLogDestination(std::move(std::unique_ptr<ILogDestination>(new SyslogDestination(getProgramId()))));
+   addLogDestination(std::move(std::unique_ptr<ILogDestination>(new SyslogDestination(getProgramId()))));
    if (StderrDestination::isStderrTty())
-      logger.addLogDestination(std::move(std::unique_ptr<ILogDestination>(new StderrDestination())));
+      addLogDestination(std::move(std::unique_ptr<ILogDestination>(new StderrDestination())));
 
-   logger.logInfoMessage("Starting " + getProgramId() + "...");
+   logInfoMessage("Starting " + getProgramId() + "...");
    return 0;
 }
 

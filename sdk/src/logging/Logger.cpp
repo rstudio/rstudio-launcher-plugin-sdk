@@ -46,7 +46,7 @@ std::string formatLogMessage(
       }
       case LogLevel::DEBUG:
       {
-         levelPrefix = "DEBUG: " ;
+         levelPrefix = "DEBUG: ";
          break;
       }
       case LogLevel::INFO:
@@ -81,6 +81,64 @@ std::string formatLogMessage(
    std::string formattedMessage = levelPrefix + in_message;
    boost::algorithm::replace_all(formattedMessage, "\n", "|||");
    return formattedMessage;
+}
+
+// Logger Object =======================================================================================================
+/**
+ * @brief Class which logs messages to destinations.
+ *
+ * Multiple destinations may be added to this logger in order to write the same message to each destination.
+ * The default log level is ERROR.
+ */
+struct Logger : boost::noncopyable
+{
+public:
+   /**
+    * @brief Writes a pre-formatted message to all registered destinations.
+    *
+    * @param in_logLevel    The log level of the message, which is passed to the destination for informational purposes.
+    * @param in_message     The pre-formatted message.
+    */
+   void writeMessageToAllDestinations(LogLevel in_logLevel, const std::string& in_message);
+
+   /**
+    * @brief Constructor to prevent multiple instances of Logger.
+    */
+   Logger() = default;
+
+   // The maximum level of message to write.
+   LogLevel MaxLogLevel;
+
+   // The ID of the program fr which to write logs.
+   std::string ProgramId;
+
+   // The registered log destinations.
+   std::map<unsigned int, std::unique_ptr<ILogDestination> > LogDestinations;
+};
+
+Logger& logger()
+{
+   static Logger logger;
+   return logger;
+}
+
+void Logger::writeMessageToAllDestinations(LogLevel in_logLevel, const std::string& in_message)
+{
+   // Preformat the message for non-syslog loggers.
+   std::string formattedMessage = formatLogMessage(in_logLevel, in_message, ProgramId);
+
+   const auto destEnd = LogDestinations.end();
+   for (auto iter = LogDestinations.begin(); iter != destEnd; ++iter)
+   {
+      if (iter->first == SyslogDestination::getSyslogId())
+      {
+         iter->second->writeLog(in_logLevel, formatLogMessage(in_logLevel, in_message, ProgramId, true));
+      }
+      else
+      {
+         iter->second->writeLog(in_logLevel, formattedMessage);
+      }
+   }
 }
 
 } // anonymous namespace
@@ -118,24 +176,27 @@ Error logLevelFromString(const std::string& in_logLevelStr, LogLevel& out_logLev
    return Error();
 }
 
-// Public ==============================================================================================================
-Logger& Logger::getInstance(const std::string& in_programId)
+
+// Logging functions
+void setProgramId(const std::string& in_programId)
 {
-   // This is thread-safe as of C++11. See section 6.7 paragraph 4 of the C++ standard.
-   static Logger logger(in_programId);
-   return logger;
+   if (!logger().ProgramId.empty())
+      logWarningMessage("Changing the program id from " + logger().ProgramId + " to " + in_programId);
+
+   logger().ProgramId = in_programId;
 }
 
-void Logger::setLogLevel(LogLevel in_logLevel)
+void setLogLevel(LogLevel in_logLevel)
 {
-   m_logLevel = in_logLevel;
+   logger().MaxLogLevel = in_logLevel;
 }
 
-void Logger::addLogDestination(std::unique_ptr<ILogDestination> in_destination)
+void addLogDestination(std::unique_ptr<ILogDestination> in_destination)
 {
-   if (m_logDestinations.find(in_destination->getId()) == m_logDestinations.end())
+   Logger& log = logger();
+   if (log.LogDestinations.find(in_destination->getId()) == log.LogDestinations.end())
    {
-      m_logDestinations.insert(std::make_pair(in_destination->getId(), std::move(in_destination)));
+      log.LogDestinations.insert(std::make_pair(in_destination->getId(), std::move(in_destination)));
    }
    else
    {
@@ -145,12 +206,13 @@ void Logger::addLogDestination(std::unique_ptr<ILogDestination> in_destination)
    }
 }
 
-void Logger::removeLogDestination(unsigned int in_destinationId)
+void removeLogDestination(unsigned int in_destinationId)
 {
-   auto iter = m_logDestinations.find(in_destinationId);
-   if (iter != m_logDestinations.end())
+   Logger& log = logger();
+   auto iter = log.LogDestinations.find(in_destinationId);
+   if (iter != log.LogDestinations.end())
    {
-      m_logDestinations.erase(iter);
+      log.LogDestinations.erase(iter);
    }
    else
    {
@@ -160,87 +222,70 @@ void Logger::removeLogDestination(unsigned int in_destinationId)
    }
 }
 
-void Logger::logError(const Error& in_error)
+void logError(const Error& in_error)
 {
-   if (m_logLevel >= LogLevel::ERROR)
+   Logger& log = logger();
+   if (log.MaxLogLevel >= LogLevel::ERROR)
    {
-      writeMessageToAllDestinations(LogLevel::ERROR, in_error.asString());
+      log.writeMessageToAllDestinations(LogLevel::ERROR, in_error.asString());
    }
 }
 
-void Logger::logErrorAsWarning(const Error& in_error)
+void logErrorAsWarning(const Error& in_error)
 {
-   if (m_logLevel >= LogLevel::WARNING)
+   Logger& log = logger();
+   if (log.MaxLogLevel >= LogLevel::WARNING)
    {
-      writeMessageToAllDestinations(LogLevel::WARNING, in_error.asString());
+      log.writeMessageToAllDestinations(LogLevel::WARNING, in_error.asString());
    }
 }
 
-void Logger::logErrorAsInfo(const Error& in_error)
+void logErrorAsInfo(const Error& in_error)
 {
-   if (m_logLevel >= LogLevel::INFO)
+   Logger& log = logger();
+   if (log.MaxLogLevel >= LogLevel::INFO)
    {
-      writeMessageToAllDestinations(LogLevel::INFO, in_error.asString());
+      log.writeMessageToAllDestinations(LogLevel::INFO, in_error.asString());
    }
 }
 
-void Logger::logErrorAsDebug(const Error& in_error)
+void logErrorAsDebug(const Error& in_error)
 {
-   if (m_logLevel >= LogLevel::DEBUG)
+   Logger& log = logger();
+   if (log.MaxLogLevel >= LogLevel::DEBUG)
    {
-      writeMessageToAllDestinations(LogLevel::DEBUG, in_error.asString());
+      log.writeMessageToAllDestinations(LogLevel::DEBUG, in_error.asString());
    }
 }
 
-void Logger::logErrorMessage(const std::string& in_message)
+void logErrorMessage(const std::string& in_message)
 {
-   if (m_logLevel >= LogLevel::ERROR)
-      writeMessageToAllDestinations(LogLevel::ERROR, in_message);
+   Logger& log = logger();
+   if (log.MaxLogLevel >= LogLevel::ERROR)
+      log.writeMessageToAllDestinations(LogLevel::ERROR, in_message);
 }
 
-void Logger::logWarningMessage(const std::string& in_message)
+void logWarningMessage(const std::string& in_message)
 {
-   if (m_logLevel >= LogLevel::WARNING)
-      writeMessageToAllDestinations(LogLevel::WARNING, in_message);
+   Logger& log = logger();
+   if (log.MaxLogLevel >= LogLevel::WARNING)
+      log.writeMessageToAllDestinations(LogLevel::WARNING, in_message);
 }
 
-void Logger::logInfoMessage(const std::string& in_message)
+void logInfoMessage(const std::string& in_message)
 {
-   if (m_logLevel >= LogLevel::INFO)
-      writeMessageToAllDestinations(LogLevel::INFO, in_message);
+   Logger& log = logger();
+   if (log.MaxLogLevel >= LogLevel::INFO)
+      log.writeMessageToAllDestinations(LogLevel::INFO, in_message);
 }
 
-void Logger::logDebugMessage(const std::string& in_message)
+void logDebugMessage(const std::string& in_message)
 {
-   if (m_logLevel >= LogLevel::DEBUG)
-      writeMessageToAllDestinations(LogLevel::DEBUG, in_message);
+   Logger& log = logger();
+   if (log.MaxLogLevel >= LogLevel::DEBUG)
+      log.writeMessageToAllDestinations(LogLevel::DEBUG, in_message);
 }
 
-// Private =============================================================================================================
-Logger::Logger(std::string in_programId) :
-   m_logLevel(LogLevel::INFO),
-   m_programId(std::move(in_programId))
-{
-}
-
-void Logger::writeMessageToAllDestinations(LogLevel in_logLevel, const std::string& in_message)
-{
-   // Preformat the message for non-syslog loggers.
-   std::string formattedMessage = formatLogMessage(in_logLevel, in_message, m_programId);
-
-   const auto destEnd = m_logDestinations.end();
-   for (auto iter = m_logDestinations.begin(); iter != destEnd; ++iter)
-   {
-      if (iter->first == SyslogDestination::getSyslogId())
-      {
-         iter->second->writeLog(in_logLevel, formatLogMessage(in_logLevel, in_message, m_programId, true));
-      }
-      else
-      {
-         iter->second->writeLog(in_logLevel, formattedMessage);
-      }
-   }
-}
 
 } // namespace logging
 } // namespace launcher_plugins
