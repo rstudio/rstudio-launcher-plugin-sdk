@@ -12,7 +12,7 @@
 #include <cassert>
 #include <syslog.h>
 
-#include <logging/Logger.hpp>
+#include "logging/Logger.hpp"
 
 namespace rstudio {
 namespace launcher_plugins {

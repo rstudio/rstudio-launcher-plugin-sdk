@@ -16,7 +16,7 @@
 
 #include <string>
 
-#include <PImpl.hpp>
+#include "PImpl.hpp"
 
 namespace rstudio {
 namespace launcher_plugins {

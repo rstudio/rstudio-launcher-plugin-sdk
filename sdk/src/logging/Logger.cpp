@@ -7,18 +7,17 @@
  *
  */
 
-#include <logging/Logger.hpp>
+#include "logging/Logger.hpp"
 
 #include <boost/algorithm/string.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
 #include <sstream>
 
-#include <logging/ILogDestination.hpp>
-#include <system/DateTime.hpp>
-
 // We do a little special handling for syslog because it does its own formatting.
 #include "SyslogDestination.hpp"
+#include "logging/ILogDestination.hpp"
+#include "system/DateTime.hpp"
 
 namespace rstudio {
 namespace launcher_plugins {

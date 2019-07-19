@@ -15,7 +15,7 @@
 #include <map>
 #include <string>
 
-#include <Error.hpp>
+#include "Error.hpp"
 
 namespace rstudio {
 namespace launcher_plugins {

@@ -10,7 +10,7 @@
 #ifndef LAUNCHER_PLUGINS_STD_ERR_LOG_DESTINATION_HPP
 #define LAUNCHER_PLUGINS_STD_ERR_LOG_DESTINATION_HPP
 
-#include <logging/ILogDestination.hpp>
+#include "logging/ILogDestination.hpp"
 
 namespace rstudio {
 namespace launcher_plugins {

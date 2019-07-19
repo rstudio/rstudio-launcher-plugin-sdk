@@ -7,7 +7,7 @@
  *
  */
 
-#include <system/User.hpp>
+#include "system/User.hpp"
 
 namespace rstudio {
 namespace launcher_plugins {
