@@ -23,6 +23,7 @@ set(RLPS_SOURCE_FILES
    src/logging/Logger.cpp
    src/logging/StderrDestination.cpp
    src/logging/SyslogDestination.cpp
+   src/system/User.cpp
 )
 
 # include directory
