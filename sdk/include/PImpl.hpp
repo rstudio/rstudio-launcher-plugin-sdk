@@ -10,6 +10,8 @@
 #ifndef LAUNCHER_PLUGINS_P_IMPL_HPP
 #define LAUNCHER_PLUGINS_P_IMPL_HPP
 
+#include <memory>
+
 /**
  * @brief Shared start of the macro to define a private implementation for a class.
  */

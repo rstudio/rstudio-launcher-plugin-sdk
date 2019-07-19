@@ -15,7 +15,6 @@
 #include <boost/system/error_code.hpp>
 
 #include <string>
-#include <memory>
 
 #include <PImpl.hpp>
 
