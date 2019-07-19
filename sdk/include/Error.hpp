@@ -12,6 +12,7 @@
 
 #include <boost/core/noncopyable.hpp>
 
+#include <boost/current_function.hpp>
 #include <boost/system/error_code.hpp>
 
 #include <string>
