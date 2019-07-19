@@ -43,13 +43,20 @@ public:
 
    /**
     * @brief Returns whether this object represents all users or not. See the default constructor for more details.
-    * @return
+    *
+    * @return True if this object represents all users; false otherwise.
     */
    bool isAllUsers() const;
 
+   /**
+    * @brief Returns the name of this user.
+    *
+    * @return The name of this user ("*" for all users).
+    */
    const std::string& getUsername() const;
 
 private:
+   // The private implementation of User.
    PRIVATE_IMPL(m_impl);
 };
 
