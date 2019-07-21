@@ -82,6 +82,13 @@ public:
    bool exists() const;
 
    /**
+    * @brief Gets the size of the file path.
+    *
+    * @return 0 if this is not a regular file; the size of the file path otherwise.
+    */
+   uintmax_t getSize() const;
+
+   /**
     * @brief Returns whether this path points to a directory or not.
     *
     * @return True if this path points to a directory; false otherwise.

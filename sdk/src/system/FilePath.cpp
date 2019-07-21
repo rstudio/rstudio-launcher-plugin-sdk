@@ -138,6 +138,23 @@ bool FilePath::exists() const
    return false;
 }
 
+uintmax_t FilePath::getSize() const
+{
+   if (exists() && isRegularFile())
+   {
+      try
+      {
+         return boost::filesystem::file_size(m_impl->Path);
+      }
+      catch (boost::filesystem::filesystem_error& e)
+      {
+         logError(convertFilesystemError(e, ERROR_LOCATION));
+      }
+   }
+
+   return 0;
+}
+
 bool FilePath::isEmpty() const
 {
    return m_impl->Path.empty();
