@@ -125,8 +125,6 @@ struct Error::Impl
    ErrorLocation Location;
 };
 
-PRIVATE_IMPL_DELETER_IMPL(Error)
-
 std::ostream& operator<<(std::ostream& in_os, const Error& in_error)
 {
    in_os << in_error.getSummary() << " at " << in_error.getLocation();
@@ -140,11 +138,6 @@ std::ostream& operator<<(std::ostream& in_os, const Error& in_error)
 
 Error::Error() :
    m_impl(new Impl())
-{
-}
-
-Error::Error(Error&& in_other) noexcept :
-   m_impl(std::move(in_other.m_impl))
 {
 }
 

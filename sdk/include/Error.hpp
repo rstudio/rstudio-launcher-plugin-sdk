@@ -116,18 +116,13 @@ private:
  *
  * Errors are not copyable. To return by value, use std::move.
  */
-class Error : virtual Error_Lock, boost::noncopyable
+class Error : virtual Error_Lock
 {
 public:
    /**
     * @brief Default constructor.
     */
    Error();
-
-   /**
-    * @brief Move constructor.
-    */
-   Error(Error&& in_other) noexcept;
 
    /**
     * @brief Constructor.
@@ -277,8 +272,8 @@ public:
 
 
 private:
-   // The private implementation of Error.
-   PRIVATE_IMPL(m_impl);
+   // The private implementation of Error. This is safe because the public interface of Error is all const.
+   PRIVATE_IMPL_SHARED(m_impl);
 };
 
 /**
