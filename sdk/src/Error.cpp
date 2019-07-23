@@ -15,6 +15,16 @@
 namespace rstudio {
 namespace launcher_plugins {
 
+namespace
+{
+
+// Static empty values so we can avoid creating an Impl for the default Error constructor.
+static std::string kEmptyString = "";
+static Error kNoError = Error();
+static ErrorLocation kNoErrorLocation = ErrorLocation();
+
+} // anonymous namespace
+
 // Error Location ======================================================================================================
 struct ErrorLocation::Impl
 {
@@ -88,7 +98,8 @@ std::string ErrorLocation::asString() const
 // Error ==============================================================================================================
 struct Error::Impl
 {
-   Impl() = default;
+   Impl() : Impl(0, "", ErrorLocation())
+   { };
 
    Impl(int in_errorCode, std::string in_name, ErrorLocation in_location) :
       ErrorCode(in_errorCode),
@@ -137,7 +148,7 @@ std::ostream& operator<<(std::ostream& in_os, const Error& in_error)
 }
 
 Error::Error() :
-   m_impl(new Impl())
+   m_impl(nullptr)
 {
 }
 
@@ -226,46 +237,86 @@ Error::Error(
 
 Error::operator bool() const
 {
-   return m_impl->ErrorCode == 0;
+   if (m_impl)
+   {
+      return m_impl->ErrorCode != 0;
+   }
+
+   return false;
 }
 
 std::string Error::asString() const
 {
-   std::ostringstream oss;
-   oss << *this;
-   return oss.str();
+   if (m_impl)
+   {
+      std::ostringstream oss;
+      oss << *this;
+      return oss.str();
+   }
+
+   return "";
 }
 
 std::string Error::getSummary() const
 {
-   std::ostringstream oss;
-   oss << m_impl->Name << " error " << m_impl->ErrorCode << " (" << m_impl->Message << ")";
-   return oss.str();
+   if (m_impl)
+   {
+      std::ostringstream oss;
+      oss << m_impl->Name << " error " << m_impl->ErrorCode << " (" << m_impl->Message << ")";
+      return oss.str();
+   }
+
+   return "";
 }
 
 int Error::getErrorCode() const
 {
-   return m_impl->ErrorCode;
+   if (m_impl)
+   {
+      return m_impl->ErrorCode;
+   }
+
+   return 0;
 }
 
 const std::string& Error::getName() const
 {
-   return m_impl->Name;
+   if (m_impl)
+   {
+      return m_impl->Name;
+   }
+
+   return kEmptyString;
 }
 
 const std::string& Error::getMessage() const
 {
-   return m_impl->Message;
+   if (m_impl)
+   {
+      return m_impl->Message;
+   }
+
+   return kEmptyString;
 }
 
 const Error& Error::getCause() const
 {
-   return m_impl->Cause;
+   if (m_impl)
+   {
+      return m_impl->Cause;
+   }
+
+   return kNoError;
 }
 
 const ErrorLocation& Error::getLocation() const
 {
-   return m_impl->Location;
+   if (m_impl)
+   {
+      return m_impl->Location;
+   }
+
+   return kNoErrorLocation;
 }
 
 // System Error ========================================================================================================
