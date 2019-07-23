@@ -102,6 +102,14 @@ Error FilePath::ensureDirectoryExists() const
          return convertFilesystemError(e, ERROR_LOCATION);
       }
    }
+   else if (!isDirectory())
+   {
+      // It's possible this error should be EPERM instead (operation not permitted)
+      return systemError(
+         boost::system::errc::file_exists,
+         "File already exists but is not a directory: " + absolutePath(),
+         ERROR_LOCATION);
+   }
 
    return Success();
 }
@@ -118,6 +126,14 @@ Error FilePath::ensureFileExists() const
       // Close the file handle.
       stream->flush();
       stream.reset();
+   }
+   else if (!isRegularFile())
+   {
+      // It's possible this error should be EPERM instead (operation not permitted)
+      return systemError(
+         boost::system::errc::file_exists,
+         "File already exists but is not a regular file: " + absolutePath(),
+         ERROR_LOCATION);
    }
 
    return Success();
