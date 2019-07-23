@@ -38,3 +38,6 @@ include_directories(
 add_library(rstudio-launcher-plugin-sdk-lib STATIC
         ${RLPS_SOURCE_FILES}
         ${RLPS_HEADER_FILES})
+
+target_link_libraries(rstudio-launcher-plugin-sdk-lib
+   Boost::filesystem)
