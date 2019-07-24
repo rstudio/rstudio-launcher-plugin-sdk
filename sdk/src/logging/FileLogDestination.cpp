@@ -69,23 +69,75 @@ struct FileLogDestination::Impl
    {
    };
 
-   void openLogFile()
+   ~Impl()
+   {
+      closeLogFile();
+   }
+
+   void closeLogFile()
+   {
+      if (LogOutputStream)
+      {
+         LogOutputStream->flush();
+         LogOutputStream.reset();
+      }
+   }
+
+   // Returns true if the log file was opened, false otherwise.
+   bool openLogFile()
    {
       LogFile = LogOptions.getDirectory().childPath(LogName);
       Error error = LogFile.ensureFileExists();
 
       // This will log to any other registered log destinations, or nowhere if there are none.
       if (error)
+      {
          logError(error);
+         return false;
+      }
 
       error = LogFile.openForWrite(LogOutputStream, false);
       if (error)
+      {
          logError(error);
+         return false;
+      }
+
+      return true;
    }
 
-   void rotateLogFile()
+   // Returns true if it is safe to log; false otherwise.
+   bool rotateLogFile()
    {
+      // Calculate the maximum size in bytes.
+      const uintmax_t maxSize = 1048576.0 * LogOptions.getMaxSizeMb();
 
+      // Only rotate if we're configured to rotate.
+      if (LogOptions.doRotation())
+      {
+         // Convert MB to B for comparison.
+         if (LogFile.getSize() >= maxSize)
+         {
+            FilePath rotatedLogFile = FilePath(LogOptions.getDirectory()).childPath(RotatedLogName);
+
+            // We can't safely log errors in this function because we'll end up in an infinitely recursive
+            // rotateLogFile() call.
+            Error error = rotatedLogFile.remove();
+            if (error)
+               return false;
+
+            // Close the existing log file and then move it.
+            closeLogFile();
+            error = LogFile.move(rotatedLogFile);
+            if (error)
+               return false;
+
+            // Now re-open the log file.
+            openLogFile();
+         }
+      }
+
+      return LogFile.getSize() < maxSize;
    }
 
 
@@ -116,10 +168,17 @@ unsigned int FileLogDestination::getId() const
 
 void FileLogDestination::writeLog(LogLevel, const std::string& in_message)
 {
-   if (*m_impl->LogOutputStream)
-   {
-      (*m_impl->LogOutputStream) << in_message;
-   }
+   // Lock the mutex before attempting to write.
+   boost::unique_lock<boost::mutex> lock(m_impl->Mutex);
+
+   // Open the log file if it's not open. If it fails to open, log nothing.
+   if (!m_impl->LogOutputStream && !m_impl->openLogFile())
+      return;
+
+
+   // Rotate the log file if necessary.
+   m_impl->rotateLogFile();
+   (*m_impl->LogOutputStream) << in_message;
 }
 
 
