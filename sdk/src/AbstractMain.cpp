@@ -12,6 +12,7 @@
 #include <iostream>
 
 #include "logging/Logger.hpp"
+#include "logging/FileLogDestination.hpp"
 #include "logging/StderrLogDestination.hpp"
 #include "logging/SyslogDestination.hpp"
 
@@ -25,11 +26,15 @@ int AbstractMain::run(int, char**)
    setProgramId(getProgramId());
    setLogLevel(LogLevel::INFO);
 
-   addLogDestination(std::move(std::unique_ptr<ILogDestination>(new SyslogDestination(getProgramId()))));
+   addLogDestination(std::unique_ptr<ILogDestination>(new SyslogDestination(getProgramId())));
    if (StderrDestination::isStderrTty())
-      addLogDestination(std::move(std::unique_ptr<ILogDestination>(new StderrDestination())));
+      addLogDestination(std::unique_ptr<ILogDestination>(new StderrDestination()));
+
+   addLogDestination(std::unique_ptr<ILogDestination>(new FileLogDestination(101,  getProgramId(), system::FilePath("/home/maria/temp/"))));
 
    logInfoMessage("Starting " + getProgramId() + "...");
+
+
    return 0;
 }
 
