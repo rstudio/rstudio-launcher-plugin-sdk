@@ -100,6 +100,7 @@ private:
  */
 class FileLogDestination : public ILogDestination
 {
+public:
    /**
     * @brief Constructor.
     *
