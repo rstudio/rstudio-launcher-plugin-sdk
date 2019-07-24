@@ -35,21 +35,45 @@ inline Error convertFilesystemError(const boost::filesystem::filesystem_error& i
    return Error(in_e.code(), message, std::move(in_location));
 }
 
+bool copySingleItem(const FilePath& in_sourceRoot, const FilePath& in_destination, const FilePath& in_sourceItem)
+{
+   // The source item should always be a child of the source root because this should only be called while we're
+   // iterating the contents of a directory.
+   std::string relativeItemPath = in_sourceItem.getRelativePath(in_sourceRoot);
+   assert(!relativeItemPath.empty());
+   if (relativeItemPath.empty())
+   {
+      logErrorMessage("Error while copying single item. Specified item (" +
+         in_sourceItem.absolutePath() +
+         ") is not a child of the root path (" + in_sourceRoot.absolutePath() + ")." );
+      return false;
+   }
+
+   Error error = in_sourceItem.copy(in_destination.childPath(relativeItemPath));
+   if (error)
+   {
+      logError(error);
+      return false;
+   }
+
+   return true;
+}
+
 } // anonymous namespace
 
 typedef boost::filesystem::path PathType;
 
 struct FilePath::Impl
 {
-   Impl() {};
+   Impl() = default;
 
-   Impl(PathType in_path) : Path(std::move(in_path)) { };
+   explicit Impl(PathType in_path) : Path(std::move(in_path)) { };
 
    PathType Path;
 };
 
 FilePath::FilePath(std::string in_path) :
-   m_impl(new Impl(std::move(in_path)))
+   m_impl(new Impl(in_path))
 {
 }
 
@@ -77,7 +101,7 @@ FilePath FilePath::childPath(const std::string& in_path) const
                   boost::system::system_category()));
 
          FilePath childFilePath;
-         childFilePath.m_impl->Path = boost::filesystem::absolute(childPath, m_impl->Path);
+         childFilePath.m_impl.reset(new FilePath::Impl(boost::filesystem::absolute(childPath, m_impl->Path)));
          return childFilePath;
       }
       catch (boost::filesystem::filesystem_error& e)
@@ -87,6 +111,34 @@ FilePath FilePath::childPath(const std::string& in_path) const
    }
 
    return *this;
+}
+
+Error FilePath::copy(const FilePath& in_destination) const
+{
+   if (isDirectory())
+      return in_destination.ensureDirectoryExists();
+
+   try
+   {
+      boost::filesystem::copy_file(m_impl->Path, in_destination.m_impl->Path);
+   }
+   catch (boost::filesystem::filesystem_error& e)
+   {
+      return convertFilesystemError(e, ERROR_LOCATION);
+   }
+
+   return Success();
+}
+
+Error FilePath::copyDirectoryRecursive(const FilePath& in_destination) const
+{
+   // Make sure the root destination folder exists.
+   Error error = in_destination.ensureDirectoryExists();
+   if (error)
+      return error;
+
+   // Copy all the children.
+   return getChildrenRecursive(std::bind(copySingleItem, *this, in_destination, std::placeholders::_2));
 }
 
 Error FilePath::ensureDirectoryExists() const
@@ -154,6 +206,47 @@ bool FilePath::exists() const
    return false;
 }
 
+Error FilePath::getChildrenRecursive(const RecursiveIterationFunction& in_iterationFunction) const
+{
+   if (!exists())
+      return systemError(
+         boost::system::errc::no_such_file_or_directory,
+         "No such file or directory: " + absolutePath(),
+         ERROR_LOCATION);
+
+   try
+   {
+      boost::filesystem::recursive_directory_iterator end;
+      for (boost::filesystem::recursive_directory_iterator itr(m_impl->Path); itr != end; ++itr)
+      {
+         // I don't want to expose a FilePath constructor that depends on boost::filesystem::path.
+         FilePath item;
+         item.m_impl.reset(new Impl(itr->path()));
+         if (!in_iterationFunction(itr.level(), item))
+            break;
+      }
+   }
+   catch (boost::filesystem::filesystem_error& e)
+   {
+      return convertFilesystemError(e, ERROR_LOCATION);
+   }
+
+   return Success();
+}
+
+std::string FilePath::getFileName() const
+{
+   return m_impl->Path.filename().generic_string();
+}
+
+std::string FilePath::getRelativePath(const FilePath& in_parent) const
+{
+  PathType relativePath = m_impl->Path.lexically_normal().lexically_relative(
+     in_parent.m_impl->Path.lexically_normal());
+
+  return relativePath.generic_string();
+}
+
 uintmax_t FilePath::getSize() const
 {
    if (exists() && isRegularFile())
@@ -204,6 +297,33 @@ bool FilePath::isDirectory() const
    }
 
    return false;
+}
+
+Error FilePath::move(const FilePath& in_destination, bool in_moveCrossDevice) const
+{
+   try
+   {
+      boost::filesystem::rename(m_impl->Path, in_destination.m_impl->Path);
+      return Success();
+   }
+   catch (boost::filesystem::filesystem_error& e)
+   {
+      // If we're not attempting to move cross device or the error isn't a cross device link error,
+      // return the error.
+      if (!in_moveCrossDevice || (e.code() != boost::system::errc::cross_device_link))
+      {
+         return convertFilesystemError(e, ERROR_LOCATION);
+      }
+   }
+
+   // If we got this far we need to attempt a cross device move.
+
+   // Moving to a directory should move the current file/directory into the destination rather than over it.
+   FilePath target = in_destination.isDirectory() ? in_destination.childPath(getFileName()) : in_destination;
+   Error error = copyDirectoryRecursive(target);
+   if (error)
+      return error;
+
 }
 
 Error FilePath::openForRead(std::shared_ptr<std::istream>& out_stream) const
@@ -259,6 +379,26 @@ Error FilePath::openForWrite(std::shared_ptr<std::ostream>& out_stream, bool in_
       return systemError(boost::system::errc::io_error, message, ERROR_LOCATION);
    }
 
+
+   return Success();
+}
+
+Error FilePath::remove() const
+{
+   if (exists())
+   {
+      try
+      {
+         if (isDirectory())
+            boost::filesystem::remove_all(m_impl->Path);
+         else
+            boost::filesystem::remove(m_impl->Path);
+      }
+      catch (const boost::filesystem::filesystem_error& e)
+      {
+         return convertFilesystemError(e, ERROR_LOCATION);
+      }
+   }
 
    return Success();
 }
