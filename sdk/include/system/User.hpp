@@ -10,8 +10,6 @@
 #ifndef LAUNCHER_PLUGINS_USER_HPP
 #define LAUNCHER_PLUGINS_USER_HPP
 
-#include <boost/noncopyable.hpp>
-
 #include <string>
 
 #include "PImpl.hpp"
@@ -23,7 +21,7 @@ namespace system {
 /**
  * @brief Class which represents a system user.
  */
-class User : boost::noncopyable
+class User
 {
 public:
    /**
@@ -33,6 +31,13 @@ public:
     * (e.g. get jobs for all users). Username == "*".
     */
    User();
+
+   /**
+    * @brief Copy constructor.
+    *
+    * @param in_other   The user to copy.
+    */
+    User(const User& in_other);
 
    /**
     * @brief Creates a user by username.
@@ -54,6 +59,15 @@ public:
     * @return The name of this user ("*" for all users).
     */
    const std::string& getUsername() const;
+
+   /**
+    * @brief Overloaded assignment operator.
+    *
+    * @param in_other   The user to copy to this one.
+    *
+    * @return This user.
+    */
+   User& operator=(const User& in_other);
 
 private:
    // The private implementation of User.
