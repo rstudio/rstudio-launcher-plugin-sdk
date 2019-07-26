@@ -311,29 +311,34 @@ unsigned int Options::getThreadPoolSize() const
 
 void Options::initialize()
 {
-   m_impl->Options.add_options()
-      ("job-expiry-hours",
-         value<unsigned int>(&m_impl->JobExpiryHours)->default_value(24),
-         "amount of hours before completed jobs are removed from the system")
-      ("heartbeat-interval-seconds",
-         value<unsigned int>(&m_impl->HeartbeatIntervalSeconds)->default_value(5),
-         "the amount of seconds between heartbeats - 0 to disable")
-      ("enable-debug-logging",
-         value<bool>(&m_impl->EnableDebugLogging)->default_value(false),
-         "whether to enable debug logging or not - if true, enforces a log-level of at least DEBUG")
-      ("log-level",
-         value<logging::LogLevel>(&m_impl->MaxLogLevel)->default_value(logging::LogLevel::WARNING),
-         "the maximum level of log messages to write")
-      ("scratch-path",
-         value<std::string>(&m_impl->ScratchPath)->default_value("/var/lib/rstudio-launcher/"),
-         "scratch path where logs and job state data are stored")
-      ("server-user",
-         value<system::User>(&m_impl->ServerUser)->default_value(system::User("rstudio-server")),
-         "user to run the plugin as")
-      ("thread-pool-size",
-         value<unsigned int>(&m_impl->ThreadPoolSize)->default_value(
-            std::max<unsigned int>(4, boost::thread::hardware_concurrency())),
-         "the number of threads to start the thread pool with");
+   if (!m_impl->IsInitialized)
+   {
+      m_impl->Options.add_options()
+         ("job-expiry-hours",
+            value<unsigned int>(&m_impl->JobExpiryHours)->default_value(24),
+            "amount of hours before completed jobs are removed from the system")
+         ("heartbeat-interval-seconds",
+            value<unsigned int>(&m_impl->HeartbeatIntervalSeconds)->default_value(5),
+            "the amount of seconds between heartbeats - 0 to disable")
+         ("enable-debug-logging",
+            value<bool>(&m_impl->EnableDebugLogging)->default_value(false),
+            "whether to enable debug logging or not - if true, enforces a log-level of at least DEBUG")
+         ("log-level",
+            value<logging::LogLevel>(&m_impl->MaxLogLevel)->default_value(logging::LogLevel::WARNING),
+            "the maximum level of log messages to write")
+         ("scratch-path",
+            value<std::string>(&m_impl->ScratchPath)->default_value("/var/lib/rstudio-launcher/"),
+            "scratch path where logs and job state data are stored")
+         ("server-user",
+            value<system::User>(&m_impl->ServerUser)->default_value(system::User("rstudio-server")),
+            "user to run the plugin as")
+         ("thread-pool-size",
+            value<unsigned int>(&m_impl->ThreadPoolSize)->default_value(
+               std::max<unsigned int>(4, boost::thread::hardware_concurrency())),
+            "the number of threads to start the thread pool with");
+
+      m_impl->IsInitialized = true;
+   }
 }
 
 } // namespace options
