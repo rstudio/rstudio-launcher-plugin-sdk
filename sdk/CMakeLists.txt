@@ -24,7 +24,7 @@ set(RLPS_SOURCE_FILES
    src/logging/Logger.cpp
    src/logging/StderrDestination.cpp
    src/logging/SyslogDestination.cpp
-   src/options/BasicOptions.cpp
+   src/options/Options.cpp
    src/system/FilePath.cpp
    src/system/User.cpp
 )

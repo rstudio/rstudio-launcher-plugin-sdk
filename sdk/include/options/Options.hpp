@@ -1,5 +1,5 @@
 /*
- * BasicOptions.hpp
+ * Options.hpp
  * 
  * Copyright (C) 2019 by RStudio, Inc.
  *
@@ -38,24 +38,30 @@ typedef boost::program_options::value_semantic ValueType;
 
 class IOptionsHolder;
 
-class BasicOptions : boost::noncopyable
+class Options : boost::noncopyable
 {
 public:
+   /**
+    * @brief Class for initializing Options.
+    */
    class Init
    {
    public:
-      explicit Init(BasicOptions& in_owner, std::shared_ptr<IOptionsHolder> in_optionsHolder);
+      /**
+       *
+       * @param in_owner
+       */
+      explicit Init(Options& in_owner);
 
       Init& operator()(const char* in_name, const ValueType* in_value, const char* in_description);
 
    private:
-      BasicOptions& m_owner;
-      std::shared_ptr<IOptionsHolder> m_optionsHolder;
+      Options& m_owner;
    };
 
-   static BasicOptions& getInstance();
+   static Options& getInstance();
 
-   Init registerOptions(const std::shared_ptr<IOptionsHolder>& in_optionsHolder);
+   Init registerOptions();
 
    Error readOptions(int in_argc, const char* const in_argv[], const system::FilePath& in_location);
 
@@ -72,17 +78,6 @@ private:
    void initialize();
 
    friend Init;
-};
-
-class IOptionsHolder
-{
-   virtual ~IOptionsHolder() = default;
-
-   virtual const std::string& getName() const = 0;
-private:
-   virtual Error setOptionValue(const std::string& in_name, const ValueType& in_value) = 0;
-
-   friend class BasicOptions;
 };
 
 } // namespace options

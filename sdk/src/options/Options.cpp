@@ -1,5 +1,5 @@
 /*
- * BasicOptions.cpp
+ * Options.cpp
  * 
  * Copyright (C) 2019 by RStudio, Inc.
  *
@@ -7,7 +7,7 @@
  *
  */
 
-#include "options/BasicOptions.hpp"
+#include "options/Options.hpp"
 
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem/operations.hpp>
@@ -158,7 +158,7 @@ Error optionsError(OptionsError in_errorCode, const std::string& in_message, Err
 typedef std::map<std::string, std::shared_ptr<IOptionsHolder> > OptionsHolderMap;
 typedef std::map<std::string, std::string> RegisteredOptionsMap;
 
-struct BasicOptions::Impl
+struct Options::Impl
 {
    Impl() :
       Options("program"),
@@ -175,11 +175,6 @@ struct BasicOptions::Impl
    // Boost program options.
    options_description Options;
 
-   // Keep track of options holders.
-   boost::mutex Mutex;
-   OptionsHolderMap OptionsHolders;
-   RegisteredOptionsMap RegisteredOptions;
-
    // Whether the initialize method has been called yet.
    bool IsInitialized;
 
@@ -194,39 +189,31 @@ struct BasicOptions::Impl
 
 };
 
-PRIVATE_IMPL_DELETER_IMPL(BasicOptions)
+PRIVATE_IMPL_DELETER_IMPL(Options)
 
-BasicOptions::Init::Init(BasicOptions& in_owner, std::shared_ptr<IOptionsHolder> in_optionsHolder) :
-   m_owner(in_owner),
-   m_optionsHolder(std::move(in_optionsHolder))
+Options::Init::Init(Options& in_owner) :
+   m_owner(in_owner)
 {
 }
 
-BasicOptions::Init& BasicOptions::Init::operator()(const char* in_name, const ValueType* in_value, const char* in_description)
+Options::Init& Options::Init::operator()(const char* in_name, const ValueType* in_value, const char* in_description)
 {
    m_owner.m_impl->Options.add_options()(in_name, in_value, in_description);
-   if (m_optionsHolder)
-   {
-      m_owner.m_impl->RegisteredOptions.insert(std::make_pair(in_name, m_optionsHolder->getName()));
-   }
 }
 
-BasicOptions& BasicOptions::getInstance()
+Options& Options::getInstance()
 {
-   static BasicOptions options;
+   static Options options;
    options.initialize(); // This function is thread-safe and idempotent.
    return options;
 }
 
-BasicOptions::Init BasicOptions::registerOptions(const std::shared_ptr<IOptionsHolder>& in_optionsHolder)
+Options::Init Options::registerOptions()
 {
-   boost::unique_lock<boost::mutex> lock(m_impl->Mutex);
-   m_impl->OptionsHolders.insert(std::make_pair(in_optionsHolder->getName(), in_optionsHolder));
-
-   return BasicOptions::Init(*this, in_optionsHolder);
+   return Options::Init(*this);
 }
 
-Error BasicOptions::readOptions(int in_argc, const char* const in_argv[], const system::FilePath& in_location)
+Error Options::readOptions(int in_argc, const char* const in_argv[], const system::FilePath& in_location)
 {
    // This should be initialized in getInstance.
    assert(m_impl->IsInitialized);
@@ -290,39 +277,39 @@ Error BasicOptions::readOptions(int in_argc, const char* const in_argv[], const 
    return Success();
 }
 
-unsigned int BasicOptions::getJobExpiryHours() const
+unsigned int Options::getJobExpiryHours() const
 {
    return m_impl->JobExpiryHours;
 }
 
-unsigned int BasicOptions::getHeartbeatIntervalSeconds() const
+unsigned int Options::getHeartbeatIntervalSeconds() const
 {
    return m_impl->HeartbeatIntervalSeconds;
 }
 
-logging::LogLevel BasicOptions::getLogLevel() const
+logging::LogLevel Options::getLogLevel() const
 {
    return (!m_impl->EnableDebugLogging || (m_impl->MaxLogLevel >= logging::LogLevel::DEBUG) ?
       m_impl->MaxLogLevel :
       logging::LogLevel::DEBUG);
 }
 
-system::FilePath BasicOptions::getScratchPath() const
+system::FilePath Options::getScratchPath() const
 {
    return system::FilePath(m_impl->ScratchPath);
 }
 
-const system::User& BasicOptions::getServerUser() const
+const system::User& Options::getServerUser() const
 {
    return m_impl->ServerUser;
 }
 
-unsigned int BasicOptions::getThreadPoolSize() const
+unsigned int Options::getThreadPoolSize() const
 {
    return m_impl->ThreadPoolSize;
 }
 
-void BasicOptions::initialize()
+void Options::initialize()
 {
    m_impl->Options.add_options()
       ("job-expiry-hours",
