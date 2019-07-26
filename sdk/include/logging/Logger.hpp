@@ -35,11 +35,6 @@ enum class LogLevel
    DEBUG = 4      // All messages will be logged.
 };
 
-// TODO: move this to config. That should be the only place we read this from string and will have the right errors.
-Error logLevelFromString(const std::string& in_logLevelStr, LogLevel& out_logLevel);
-
-
-
 /**
  * @brief Sets the program ID for the logger.
  *

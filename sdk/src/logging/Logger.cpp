@@ -104,7 +104,11 @@ public:
    /**
     * @brief Constructor to prevent multiple instances of Logger.
     */
-   Logger() = default;
+   Logger() :
+      MaxLogLevel(LogLevel::OFF),
+      ProgramId(""),
+      LogDestinations()
+   { };
 
    // The maximum level of message to write.
    LogLevel MaxLogLevel;
@@ -142,40 +146,6 @@ void Logger::writeMessageToAllDestinations(LogLevel in_logLevel, const std::stri
 }
 
 } // anonymous namespace
-
-Error logLevelFromString(const std::string& in_logLevelStr, LogLevel& out_logLevel)
-{
-   std::string trimmedStr = boost::trim_copy(in_logLevelStr);
-   if (boost::iequals(trimmedStr, "OFF") || (trimmedStr == "0"))
-   {
-      out_logLevel = LogLevel::OFF;
-      return Success();
-   }
-   if (boost::iequals(trimmedStr, "ERROR") || (trimmedStr == "1"))
-   {
-      out_logLevel = LogLevel::ERROR;
-      return Success();
-   }
-   if (boost::iequals(trimmedStr, "WARNING") || (trimmedStr == "2"))
-   {
-      out_logLevel = LogLevel::WARNING;
-      return Success();
-   }
-   if (boost::iequals(trimmedStr, "DEBUG") || (trimmedStr == "3"))
-   {
-      out_logLevel = LogLevel::DEBUG;
-      return Success();
-   }
-   if (boost::iequals(trimmedStr, "INFO") || (trimmedStr == "4"))
-   {
-      out_logLevel = LogLevel::INFO;
-      return Success();
-   }
-
-   // TODO: we need a category of errors for this.
-   return Error();
-}
-
 
 // Logging functions
 void setProgramId(const std::string& in_programId)
@@ -285,7 +255,6 @@ void logDebugMessage(const std::string& in_message)
    if (log.MaxLogLevel >= LogLevel::DEBUG)
       log.writeMessageToAllDestinations(LogLevel::DEBUG, in_message);
 }
-
 
 } // namespace logging
 } // namespace launcher_plugins
