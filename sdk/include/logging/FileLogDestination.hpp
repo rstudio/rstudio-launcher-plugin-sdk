@@ -134,7 +134,6 @@ public:
     */
    void writeLog(LogLevel in_logLevel, const std::string& in_message) override;
 
-
 private:
    PRIVATE_IMPL_SHARED(m_impl);
 };
