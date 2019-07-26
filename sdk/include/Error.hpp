@@ -139,7 +139,7 @@ public:
     * @param in_cause           The error which caused this error.
     * @param in_errorLocation   The location of the error.
     */
-   Error(const boost::system::error_code& in_ec, Error in_cause, ErrorLocation in_errorLocation);
+   Error(const boost::system::error_code& in_ec, const Error& in_cause, ErrorLocation in_errorLocation);
 
    /**
     * @brief Constructor.
@@ -158,7 +158,7 @@ public:
     * @param in_cause           The error which caused this error.
     * @param in_errorLocation   The location of the error.
     */
-   Error(const boost::system::error_code& in_ec, std::string in_errorMessage, Error in_cause, ErrorLocation in_errorLocation);
+   Error(const boost::system::error_code& in_ec, std::string in_errorMessage, const Error& in_cause, ErrorLocation in_errorLocation);
 
    /**
     * @brief Constructor.
@@ -177,7 +177,7 @@ public:
     * @param in_cause            The error which caused this error.
     * @param in_errorLocation    The location of the error.
     */
-   Error(int in_errorCode, std::string in_name, Error in_cause, ErrorLocation in_errorLocation);
+   Error(int in_errorCode, std::string in_name, const Error& in_cause, ErrorLocation in_errorLocation);
 
    /**
     * @brief Constructor.
@@ -206,7 +206,7 @@ public:
       int in_errorCode,
       std::string in_errorName,
       std::string in_errorMessage,
-      Error in_cause,
+      const Error& in_cause,
       ErrorLocation in_errorLocation);
 
    /**
@@ -219,7 +219,7 @@ public:
     *
     * @return True if there is an error; false otherwise.
     */
-   operator bool() const;
+   explicit operator bool() const;
 
    /**
     * @brief Formats the error as a string.
@@ -299,7 +299,7 @@ public:
 Error systemError(int in_errorCode, ErrorLocation in_location);
 
 /**
- * @brief Function which creates a system error..
+ * @brief Function which creates a system error.
  *
  * @param in_errorCode            The error code. (e.g. 1)
  * @param in_cause                The error which caused this error.
@@ -307,10 +307,10 @@ Error systemError(int in_errorCode, ErrorLocation in_location);
  *
  * @return A system error.
  */
-Error systemError(int in_errorCode, Error in_cause, ErrorLocation in_location);
+Error systemError(int in_errorCode, const Error& in_cause, ErrorLocation in_location);
 
 /**
- * @brief Function which creates a system error..
+ * @brief Function which creates a system error.
  *
  * @param in_errorCode            The error code. (e.g. 1)
  * @param in_errorMessage         The detailed error message. (e.g. "Failed to open socket while attempting to connect to Kubernetes.")
@@ -321,7 +321,7 @@ Error systemError(int in_errorCode, Error in_cause, ErrorLocation in_location);
 Error systemError(int in_errorCode, std::string in_errorMessage, ErrorLocation in_location);
 
 /**
- * @brief Function which creates a system error..
+ * @brief Function which creates a system error.
  *
  * @param in_errorCode            The error code. (e.g. 1)
  * @param in_errorMessage         The detailed error message. (e.g. "Failed to open socket while attempting to connect to Kubernetes.")
@@ -330,7 +330,30 @@ Error systemError(int in_errorCode, std::string in_errorMessage, ErrorLocation i
  *
  * @return A system error.
  */
-Error systemError(int in_errorCode, std::string in_errorMessage, Error in_cause, ErrorLocation in_location);
+Error systemError(int in_errorCode, std::string in_errorMessage, const Error& in_cause, ErrorLocation in_location);
+
+/**
+ * @brief Function which creates an unknown error. This should be used only when a specific error code cannot be
+ *        determined.
+ *
+ * @param in_errorMessage         The detailed error message. (e.g. "Failed to open socket while attempting to connect to Kubernetes.")
+ * @param in_errorLocation        The location of the error.
+ *
+ * @return An unknown error.
+ */
+Error unknownError(std::string in_errorMessage, ErrorLocation in_location);
+
+/**
+ * @brief Function which creates an unknown error. This should be used only when a specific error code cannot be
+ *        determined.
+ *
+ * @param in_errorMessage         The detailed error message. (e.g. "Failed to open socket while attempting to connect to Kubernetes.")
+ * @param in_cause                The error which caused this error.
+ * @param in_errorLocation        The location of the error.
+ *
+ * @return An unknown error.
+ */
+Error unknownError(std::string in_errorMessage, const Error& in_cause, ErrorLocation in_location);
 
 #define ERROR_LOCATION rstudio::launcher_plugins::ErrorLocation( \
    BOOST_CURRENT_FUNCTION,__FILE__,__LINE__)

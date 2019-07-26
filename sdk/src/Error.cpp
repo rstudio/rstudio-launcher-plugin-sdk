@@ -107,10 +107,10 @@ struct Error::Impl
       Location(std::move(in_location))
    { };
 
-   Impl(int in_errorCode, std::string in_name, Error in_cause, ErrorLocation in_location) :
+   Impl(int in_errorCode, std::string in_name, const Error& in_cause, ErrorLocation in_location) :
       ErrorCode(in_errorCode),
       Name(std::move(in_name)),
-      Cause(std::move(in_cause)),
+      Cause(in_cause),
       Location(std::move(in_location))
    { };
 
@@ -121,11 +121,11 @@ struct Error::Impl
       Location(std::move(in_location))
    { };
 
-   Impl(int in_errorCode, std::string in_name, std::string in_errorMessage, Error in_cause, ErrorLocation in_location) :
+   Impl(int in_errorCode, std::string in_name, std::string in_errorMessage, const Error& in_cause, ErrorLocation in_location) :
       ErrorCode(in_errorCode),
       Name(std::move(in_name)),
       Message(std::move(in_errorMessage)),
-      Cause(std::move(in_cause)),
+      Cause(in_cause),
       Location(std::move(in_location))
    { };
 
@@ -157,8 +157,8 @@ Error::Error(const boost::system::error_code& in_ec, ErrorLocation in_errorLocat
 {
 }
 
-Error::Error(const boost::system::error_code& in_ec, Error in_cause, ErrorLocation in_errorLocation) :
-   m_impl(new Impl(in_ec.value(), in_ec.category().name(), std::move(in_cause), std::move(in_errorLocation)))
+Error::Error(const boost::system::error_code& in_ec, const Error& in_cause, ErrorLocation in_errorLocation) :
+   m_impl(new Impl(in_ec.value(), in_ec.category().name(), in_cause, std::move(in_errorLocation)))
 {
 }
 
@@ -170,14 +170,14 @@ Error::Error(const boost::system::error_code& in_ec, std::string in_errorMessage
 Error::Error(
    const boost::system::error_code& in_ec,
    std::string in_errorMessage,
-   Error in_cause,
+   const Error& in_cause,
    ErrorLocation in_errorLocation) :
       m_impl(
          new Impl(
             in_ec.value(),
             in_ec.category().name(),
             std::move(in_errorMessage),
-            std::move(in_cause),
+            in_cause,
             std::move(in_errorLocation)))
 {
 
@@ -194,13 +194,13 @@ Error::Error(
 Error::Error(
    int in_errorCode,
    std::string in_name,
-   Error in_cause,
+   const Error& in_cause,
    ErrorLocation in_errorLocation) :
       m_impl(
          new Impl(
             in_errorCode,
             std::move(in_name),
-            std::move(in_cause),
+            in_cause,
             std::move(in_errorLocation)))
 {
 }
@@ -223,14 +223,14 @@ Error::Error(
    int in_errorCode,
    std::string in_name,
    std::string in_errorMessage,
-   Error in_cause,
+   const Error& in_cause,
    ErrorLocation in_errorLocation) :
       m_impl(
          new Impl(
             in_errorCode,
             std::move(in_name),
             std::move(in_errorMessage),
-            std::move(in_cause),
+            in_cause,
             std::move(in_errorLocation)))
 {
 }
@@ -322,48 +322,62 @@ const ErrorLocation& Error::getLocation() const
 // System Error ========================================================================================================
 Error systemError(int in_errorCode, ErrorLocation in_location)
 {
-   return std::move(
-      Error(
-         boost::system::error_code(
-            in_errorCode,
-            boost::system::system_category()),
-         std::move(in_location)));
+   return Error(
+      boost::system::error_code(
+         in_errorCode,
+         boost::system::system_category()),
+      std::move(in_location));
 }
 
-Error systemError(int in_errorCode, Error in_cause, ErrorLocation in_location)
+Error systemError(int in_errorCode, const Error& in_cause, ErrorLocation in_location)
 {
-   return std::move(
-      Error(
-         boost::system::error_code(
-            in_errorCode,
-            boost::system::system_category()),
-         std::move(in_cause),
-         std::move(in_location)));
+   return Error(
+      boost::system::error_code(
+         in_errorCode,
+         boost::system::system_category()),
+      in_cause,
+      std::move(in_location));
 }
 
 Error systemError(int in_errorCode, std::string in_errorMessage, ErrorLocation in_location)
 {
-   return std::move(
-      Error(
-         boost::system::error_code(
-            in_errorCode,
-            boost::system::system_category()),
-         std::move(in_errorMessage),
-         std::move(in_location)));
+   return Error(
+      boost::system::error_code(
+         in_errorCode,
+         boost::system::system_category()),
+      std::move(in_errorMessage),
+      std::move(in_location));
 }
 
-Error systemError(int in_errorCode, std::string in_errorMessage, Error in_cause, ErrorLocation in_location)
+Error systemError(int in_errorCode, std::string in_errorMessage, const Error& in_cause, ErrorLocation in_location)
 {
-   return std::move(
-      Error(
-         boost::system::error_code(
-            in_errorCode,
-            boost::system::system_category()),
-         std::move(in_errorMessage),
-         std::move(in_cause),
-         std::move(in_location)));
+   return Error(
+      boost::system::error_code(
+         in_errorCode,
+         boost::system::system_category()),
+      std::move(in_errorMessage),
+      in_cause,
+      std::move(in_location));
 }
 
+Error unknownError(std::string in_errorMessage, ErrorLocation in_location)
+{
+   return Error(
+      1,
+      "UnknownError",
+      std::move(in_errorMessage),
+      std::move(in_location));
+}
+
+Error unknownError(std::string in_errorMessage, const Error& in_cause, ErrorLocation in_location)
+{
+   return Error(
+      1,
+      "UnknownError",
+      std::move(in_errorMessage),
+      in_cause,
+      std::move(in_location));
+}
 
 } // namespace launcher_plugins
 } // namespace rstudio
