@@ -123,13 +123,15 @@ public:
        * @tparam T                  The type of the option.
        *
        * @param in_name             The name of the option.
-       * @param io_value            The value object, which holds the default and the storage object.
+       * @param in_value            The value object, which holds the default and the storage object. The Value object
+       *                            itself will not be modified, but the storage object may be modified when options are
+       *                            read.
        * @param in_description      The description of the option.
        *
        * @return A reference to this Init object.
        */
       template <class T>
-      Init& operator()(const char* in_name, Value<T>& io_value, const char* in_description);
+      Init& operator()(const char* in_name, const Value<T>& in_value, const char* in_description);
 
    private:
       // The owner of this init object.

@@ -41,4 +41,6 @@ add_library(rstudio-launcher-plugin-sdk-lib STATIC
         ${RLPS_HEADER_FILES})
 
 target_link_libraries(rstudio-launcher-plugin-sdk-lib
-   Boost::filesystem)
+   Boost::filesystem
+   Boost::program_options
+   Boost::thread)

@@ -173,13 +173,14 @@ Error optionsError(OptionsError in_errorCode, const std::string& in_message, Err
 template <class T>
 struct Value<T>::Impl
 {
+
    Impl() : ValueSemantic(boost::program_options::value<T>()) { };
 
-   explicit Impl(boost::program_options::value_semantic* in_value) : ValueSemantic(in_value) { };
+   explicit Impl(boost::program_options::typed_value<T>* in_value) : ValueSemantic(in_value) { };
 
    // Using a boost shared ptr here so that reference counting will be done properly with the boost functions this will
    // be passed to.
-   boost::shared_ptr<boost::program_options::value_semantic> ValueSemantic;
+   boost::shared_ptr<boost::program_options::typed_value<T> > ValueSemantic;
 };
 
 template <class T>
@@ -274,9 +275,9 @@ Options::Init::Init(Options& in_owner) :
 }
 
 template <class T>
-Options::Init& Options::Init::operator()(const char* in_name, Value<T>& io_value, const char* in_description)
+Options::Init& Options::Init::operator()(const char* in_name, const Value<T>& in_value, const char* in_description)
 {
-   m_owner.m_impl->OptionsDescription.add_options()(in_name, io_value->m_impl->ValueSematic.get(), in_description);
+   m_owner.m_impl->OptionsDescription.add_options()(in_name, in_value.m_impl->ValueSemantic.get(), in_description);
 }
 
 Options& Options::getInstance()
@@ -390,49 +391,30 @@ unsigned int Options::getThreadPoolSize() const
 // Template Instantiations =============================================================================================
 // We pre-define which classes can be used as the template parameter Value because it's implementation is private and
 // they need to be compiled here to be used elsewhere.
-
-//template <> class Value<bool>;
-//template <> class Value<char>;
-//template <> class Value<unsigned char>;
-//template <> class Value<short>;
-//template <> class Value<unsigned short>;
-//template <> class Value<int>;
-//template <> class Value<unsigned int>;
-//template <> class Value<long>;
-//template <> class Value<unsigned long>;
-//template <> class Value<long long>;
-//template <> class Value<unsigned long long>;
-//template <> class Value<float>;
-//template <> class Value<double>;
-//template <> class Value<long double>;
-//template <> class Value<std::string>;
-//template <> class Value<logging::LogLevel>;
-//template <> class Value<system::FilePath>;
-//template <> class Value<system::User>;
-
-#define DECLARE_INIT_OPERATOR_TEMPLATE(in_type)                                                                      \
-template<>                                                                                                           \
-Options::Init& Options::Init::operator()(const char* in_name, Value<in_type>& io_value, const char* in_description); \
+#define INSTANTIATE_VALUE_TEMPLATES(in_type)                                                        \
+template                                                                                            \
+Options::Init& Options::Init::operator()<in_type>(const char*, const Value<in_type>&, const char*); \
+template class Value<in_type>;                                                                      \
 
 // These should instantiate both Init::operator() and the Value class with these types.
-DECLARE_INIT_OPERATOR_TEMPLATE(bool)
-DECLARE_INIT_OPERATOR_TEMPLATE(char)
-DECLARE_INIT_OPERATOR_TEMPLATE(unsigned char)
-DECLARE_INIT_OPERATOR_TEMPLATE(short)
-DECLARE_INIT_OPERATOR_TEMPLATE(unsigned short)
-DECLARE_INIT_OPERATOR_TEMPLATE(int)
-DECLARE_INIT_OPERATOR_TEMPLATE(unsigned int)
-DECLARE_INIT_OPERATOR_TEMPLATE(long)
-DECLARE_INIT_OPERATOR_TEMPLATE(unsigned long)
-DECLARE_INIT_OPERATOR_TEMPLATE(long long)
-DECLARE_INIT_OPERATOR_TEMPLATE(unsigned long long)
-DECLARE_INIT_OPERATOR_TEMPLATE(float)
-DECLARE_INIT_OPERATOR_TEMPLATE(double)
-DECLARE_INIT_OPERATOR_TEMPLATE(long double)
-DECLARE_INIT_OPERATOR_TEMPLATE(std::string)
-DECLARE_INIT_OPERATOR_TEMPLATE(logging::LogLevel)
-DECLARE_INIT_OPERATOR_TEMPLATE(system::FilePath)
-DECLARE_INIT_OPERATOR_TEMPLATE(system::User)
+INSTANTIATE_VALUE_TEMPLATES(bool)
+INSTANTIATE_VALUE_TEMPLATES(char)
+INSTANTIATE_VALUE_TEMPLATES(unsigned char)
+INSTANTIATE_VALUE_TEMPLATES(short)
+INSTANTIATE_VALUE_TEMPLATES(unsigned short)
+INSTANTIATE_VALUE_TEMPLATES(int)
+INSTANTIATE_VALUE_TEMPLATES(unsigned int)
+INSTANTIATE_VALUE_TEMPLATES(long)
+INSTANTIATE_VALUE_TEMPLATES(unsigned long)
+INSTANTIATE_VALUE_TEMPLATES(long long)
+INSTANTIATE_VALUE_TEMPLATES(unsigned long long)
+INSTANTIATE_VALUE_TEMPLATES(float)
+INSTANTIATE_VALUE_TEMPLATES(double)
+INSTANTIATE_VALUE_TEMPLATES(long double)
+INSTANTIATE_VALUE_TEMPLATES(std::string)
+INSTANTIATE_VALUE_TEMPLATES(logging::LogLevel)
+INSTANTIATE_VALUE_TEMPLATES(system::FilePath)
+INSTANTIATE_VALUE_TEMPLATES(system::User)
 
 } // namespace options
 } // namespace launcher_plugins

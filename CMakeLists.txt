@@ -24,7 +24,11 @@ if (NOT RLPS_BOOST_REQUESTED_VERSION)
 endif()
 set(Boost_NO_BOOST_CMAKE      OFF)
 set(Boost_USE_STATIC_LIBS     ON)
-find_package(Boost ${RLPS_BOOST_REQUESTED_VERSION} REQUIRED COMPONENTS filesystem)
+set(RLPS_BOOST_LIBS
+   filesystem
+   program_options
+   thread)
+find_package(Boost ${RLPS_BOOST_REQUESTED_VERSION} REQUIRED COMPONENTS ${RLPS_BOOST_LIBS})
 
 add_subdirectory("sdk")
 add_subdirectory("plugins/Singularity")
