@@ -67,6 +67,7 @@ struct FileLogDestination::Impl
       RotatedLogName(in_name + ".old.log"),
       Id(in_id)
    {
+      LogOptions.getDirectory().ensureDirectoryExists();
    };
 
    ~Impl()
