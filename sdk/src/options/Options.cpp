@@ -286,6 +286,7 @@ Options::Init& Options::Init::operator()(const char* in_name, Value<T>&& in_valu
 {
    // Boost takes ownership of the semantic value here.
    m_owner.m_impl->OptionsDescription.add_options()(in_name, in_value.m_impl->ValueSemantic.release(), in_description);
+   return *this;
 }
 
 Options& Options::getInstance()
