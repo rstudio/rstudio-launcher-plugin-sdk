@@ -131,7 +131,7 @@ public:
        * @return A reference to this Init object.
        */
       template <class T>
-      Init& operator()(const char* in_name, const Value<T>& in_value, const char* in_description);
+      Init& operator()(const char* in_name, Value<T>&& in_value, const char* in_description);
 
    private:
       // The owner of this init object.

@@ -182,11 +182,12 @@ struct Value<T>::Impl
 
    Impl() : ValueSemantic(boost::program_options::value<T>()) { };
 
-   explicit Impl(boost::program_options::typed_value<T>* in_value) : ValueSemantic(in_value) { };
+   explicit Impl(boost::program_options::typed_value<T>* in_value) :
+      ValueSemantic(in_value)
+   { };
 
-   // Using a boost shared ptr here so that reference counting will be done properly with the boost functions this will
-   // be passed to.
-   boost::shared_ptr<boost::program_options::typed_value<T> > ValueSemantic;
+   // Ownership of this ptr should be dropped if we're passing it to boost::program_options::options_description::easy+io
+   std::unique_ptr<boost::program_options::typed_value<T> > ValueSemantic;
 };
 
 template <class T>
@@ -281,9 +282,10 @@ Options::Init::Init(Options& in_owner) :
 }
 
 template <class T>
-Options::Init& Options::Init::operator()(const char* in_name, const Value<T>& in_value, const char* in_description)
+Options::Init& Options::Init::operator()(const char* in_name, Value<T>&& in_value, const char* in_description)
 {
-   m_owner.m_impl->OptionsDescription.add_options()(in_name, in_value.m_impl->ValueSemantic.get(), in_description);
+   // Boost takes ownership of the semantic value here.
+   m_owner.m_impl->OptionsDescription.add_options()(in_name, in_value.m_impl->ValueSemantic.release(), in_description);
 }
 
 Options& Options::getInstance()
@@ -404,7 +406,7 @@ Options::Options() :
 // they need to be compiled here to be used elsewhere.
 #define INSTANTIATE_VALUE_TEMPLATES(in_type)                                                        \
 template                                                                                            \
-Options::Init& Options::Init::operator()<in_type>(const char*, const Value<in_type>&, const char*); \
+Options::Init& Options::Init::operator()<in_type>(const char*, Value<in_type>&&, const char*); \
 template class Value<in_type>;                                                                      \
 
 // These should instantiate both Init::operator() and the Value class with these types.
