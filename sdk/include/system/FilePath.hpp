@@ -39,7 +39,7 @@ public:
    /**
     * @brief Default constructor.
     */
-   FilePath() = default;
+   FilePath();
 
    /**
     * @brief Constructor.
