@@ -32,13 +32,13 @@ private:
    }
 
    /**
-    * @brief Returns the unique program ID for this plugin.
+    * @brief Returns the name of this plugin.
     *
-    * @return The unique program ID for this plugin.
+    * @return The name of this pluign.
     */
-    std::string getProgramId() const override
+    std::string getPluginName() const override
     {
-       return "rstudio-singularity-launcher";
+       return "singularity";
     }
 };
 

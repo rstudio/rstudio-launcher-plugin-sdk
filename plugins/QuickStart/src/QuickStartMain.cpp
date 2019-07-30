@@ -38,11 +38,14 @@ class QuickStartMain : public AbstractMain
     *
     * @return The unique program ID for this plugin.
     */
-   std::string getProgramId() const override
+   std::string getPluginName() const override
    {
-      // TODO #3: Change this from rstudio-quickstart-launcher to myorg-myplugin-launcher, or something similar.
-      return "rstudio-quickstart-launcher";
+      // TODO #3: Change this from quickstart to myplugin.
+      return "quickstart";
    }
+
+   // TODO #4: Optionally override getProgramId() to change the programID from rstudio-<pluginName>-launcher to
+   //          myorg-<pluginName>-launcher or something similar.
 };
 
 } // namespace quickstart

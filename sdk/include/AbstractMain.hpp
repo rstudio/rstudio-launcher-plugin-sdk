@@ -13,6 +13,7 @@
 #include <boost/noncopyable.hpp>
 
 #include <memory>
+#include <system/FilePath.hpp>
 
 #include "AbstractPluginApi.hpp"
 
@@ -54,11 +55,25 @@ private:
    virtual std::shared_ptr<AbstractPluginApi> createLauncherPluginApi() const = 0;
 
    /**
-    * @brief Returns the unique program ID for this plugin.
+    * @brief Gets the configuration file for this program. The default is /etc/rstudio/launcher.<pluginName>.conf.
+    *
+    * @return The configuration file for this program.
+    */
+   virtual system::FilePath getConfigFile() const;
+
+   /**
+    * @brief Gets the name of this pluign.
+    *
+    * @return The name of this pluign.
+    */
+   virtual std::string getPluginName() const = 0;
+
+   /**
+    * @brief Gets the unique program ID for this plugin. The default ID is rstudio-<pluginName>-launcher.
     *
     * @return The unique program ID for this plugin.
     */
-    virtual std::string getProgramId() const = 0;
+    virtual std::string getProgramId() const;
 };
 
 } // namespace launcher_plugins
