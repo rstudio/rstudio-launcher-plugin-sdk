@@ -124,7 +124,7 @@ std::istream& operator>>(std::istream& in_stream, FilePath& out_filePath)
 {
    std::string filePath;
    in_stream >> filePath;
-   out_filePath = FilePath(out_filePath);
+   out_filePath = FilePath(filePath);
    return in_stream;
 }
 
