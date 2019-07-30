@@ -67,27 +67,33 @@ std::ostream& operator<<(std::ostream& in_stream, const LogLevel& in_logLevel)
       case LogLevel::OFF:
       {
          in_stream << "OFF";
+         break;
       }
       case LogLevel::ERROR:
       {
          in_stream << "ERROR";
+         break;
       }
       case LogLevel::WARNING:
       {
          in_stream << "WARNING";
+         break;
       }
       case LogLevel::INFO:
       {
          in_stream << "INFO";
+         break;
       }
       case LogLevel::DEBUG:
       {
          in_stream << "DEBUG";
+         break;
       }
       default:
       {
          assert(false);
          in_stream.setstate(std::ostream::failbit);
+         break;
       }
    }
 
