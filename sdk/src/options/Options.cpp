@@ -388,6 +388,11 @@ unsigned int Options::getThreadPoolSize() const
    return m_impl->ThreadPoolSize;
 }
 
+Options::Options() :
+   m_impl(new Options::Impl())
+{
+}
+
 // Template Instantiations =============================================================================================
 // We pre-define which classes can be used as the template parameter Value because it's implementation is private and
 // they need to be compiled here to be used elsewhere.

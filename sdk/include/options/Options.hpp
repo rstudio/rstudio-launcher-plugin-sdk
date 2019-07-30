@@ -211,6 +211,11 @@ public:
    unsigned int getThreadPoolSize() const;
 
 private:
+   /**
+    * @brief Private constructor.
+    */
+   Options();
+
    // The private implementation of Options.
    PRIVATE_IMPL(m_impl);
 
