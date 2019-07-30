@@ -28,13 +28,10 @@ public:
    const system::FilePath& getRContainer() const;
    const system::FilePath& getRSessionContainer() const;
 
-private:
-   SingularityOptions() = default;
-
    void initialize();
 
-   boost::mutex m_mutex;
-   bool m_isInitilazied;
+private:
+   SingularityOptions() = default;
 
    system::FilePath m_rContainer;
    system::FilePath m_rSessionContainer;

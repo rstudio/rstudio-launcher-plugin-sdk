@@ -20,7 +20,6 @@ namespace singularity {
 SingularityOptions& SingularityOptions::getInstance()
 {
    static SingularityOptions options;
-   options.initialize();
    return options;
 }
 
@@ -36,19 +35,13 @@ const FilePath& SingularityOptions::getRSessionContainer() const
 
 void SingularityOptions::initialize()
 {
-   boost::unique_lock<boost::mutex> lock(m_mutex);
-   if (!m_isInitilazied)
-   {
-      // These are probably temporary and will be replaced with a list of available containers, probably using
-      // UserProfiles later on.
-      using namespace rstudio::launcher_plugins::options;
-      Options& options = Options::getInstance();
-      options.registerOptions()
-          ("r-container", Value<FilePath>(m_rContainer), "the container to use for R jobs")
-          ("r-session-container", Value<FilePath>(m_rSessionContainer), "the container to use for R sessions");
-
-      m_isInitilazied = true;
-   }
+   // These are temporary and will be replaced with a list of available containers, probably using
+   // UserProfiles later on.
+   using namespace rstudio::launcher_plugins::options;
+   Options& options = Options::getInstance();
+   options.registerOptions()
+       ("r-container", Value<FilePath>(m_rContainer), "the container to use for R jobs")
+       ("r-session-container", Value<FilePath>(m_rSessionContainer), "the container to use for R sessions");
 }
 
 }
