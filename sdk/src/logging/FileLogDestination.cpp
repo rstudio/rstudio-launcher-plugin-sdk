@@ -157,7 +157,7 @@ FileLogDestination::FileLogDestination(unsigned int in_id, std::string in_progra
 
 FileLogDestination::~FileLogDestination()
 {
-   if (*m_impl->LogOutputStream)
+   if (m_impl->LogOutputStream.get())
       m_impl->LogOutputStream->flush();
 }
 
