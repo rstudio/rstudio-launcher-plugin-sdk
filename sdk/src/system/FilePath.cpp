@@ -72,6 +72,11 @@ struct FilePath::Impl
    PathType Path;
 };
 
+FilePath::FilePath() :
+   m_impl(new Impl())
+{
+}
+
 FilePath::FilePath(std::string in_path) :
    m_impl(new Impl(in_path))
 {
