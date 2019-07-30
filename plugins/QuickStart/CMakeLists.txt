@@ -18,7 +18,7 @@ file (GLOB_RECURSE QUICKSTART_HEADER_FILES "*.h*")
 
 # source files
 set(QUICKSTART_SOURCE_FILES
-)
+   src/QuickStartPluginApi.cpp)
 
 # include directories
 include_directories(

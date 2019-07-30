@@ -21,6 +21,8 @@ namespace quickstart {
  */
 class QuickStartPluginApi : public AbstractPluginApi
 {
+public:
+   Error initialize() override;
 };
 
 } // namespace quickstart

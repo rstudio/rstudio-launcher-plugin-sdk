@@ -19,6 +19,7 @@ file(GLOB_RECURSE SINGULARITY_HEADER_FILES "*.h*")
 # source files
 set(SINGULARITY_SOURCE_FILES
    src/SingularityOptions.cpp
+   src/SingularityPluginApi.cpp)
 
 # include directories
 include_directories(

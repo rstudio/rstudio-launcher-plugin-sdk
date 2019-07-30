@@ -21,6 +21,8 @@ namespace singularity {
  */
 class SingularityPluginApi : public AbstractPluginApi
 {
+public:
+   Error initialize() override;
 };
 
 } // namespace singularity

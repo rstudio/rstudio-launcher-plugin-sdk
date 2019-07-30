@@ -12,6 +12,8 @@
 
 #include <boost/noncopyable.hpp>
 
+#include "Error.hpp"
+
 namespace rstudio {
 namespace launcher_plugins {
 
@@ -20,7 +22,10 @@ namespace launcher_plugins {
  */
 class AbstractPluginApi : public boost::noncopyable
 {
+public:
+   virtual ~AbstractPluginApi() = default;
 
+   virtual Error initialize() = 0;
 };
 
 } // namespace launcher_plugins
