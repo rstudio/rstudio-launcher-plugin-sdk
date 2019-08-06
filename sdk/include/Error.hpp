@@ -156,7 +156,8 @@ public:
     * @brief Constructor.
     *
     * @param in_ec              The boost error code.
-    * @param in_errorMessage    The detailed error message. (e.g. "The JobNetworkRequest is not supported by this plugin.")
+    * @param in_errorMessage    The detailed error message. (e.g. "The JobNetworkRequest is not supported by this
+    *                           plugin.")
     * @param in_errorLocation   The location of the error.
     */
    Error(const boost::system::error_code& in_ec, std::string in_errorMessage, ErrorLocation in_errorLocation);
@@ -165,7 +166,8 @@ public:
     * @brief Constructor.
     *
     * @param in_ec              The boost error code.
-    * @param in_errorMessage    The detailed error message. (e.g. "The JobNetworkRequest is not supported by this plugin.")
+    * @param in_errorMessage    The detailed error message. (e.g. "The JobNetworkRequest is not supported by this
+    *                           plugin.")
     * @param in_cause           The error which caused this error.
     * @param in_errorLocation   The location of the error.
     */
@@ -327,7 +329,7 @@ Error systemError(int in_errorCode, const Error& in_cause, ErrorLocation in_loca
  *
  * @param in_errorCode            The error code. (e.g. 1)
  * @param in_errorMessage         The detailed error message. (e.g. "Failed to open socket while attempting to connect
- *                                to Kubernetes.")
+ *                                to MyJobScheduler.")
  * @param in_errorLocation        The location of the error.
  *
  * @return A system error.
@@ -338,7 +340,8 @@ Error systemError(int in_errorCode, std::string in_errorMessage, ErrorLocation i
  * @brief Function which creates a system error.
  *
  * @param in_errorCode            The error code. (e.g. 1)
- * @param in_errorMessage         The detailed error message. (e.g. "Failed to open socket while attempting to connect to Kubernetes.")
+ * @param in_errorMessage         The detailed error message. (e.g. "Failed to open socket while attempting to connect
+ *                                to MyJobScheduler.")
  * @param in_cause                The error which caused this error.
  * @param in_errorLocation        The location of the error.
  *
@@ -350,7 +353,8 @@ Error systemError(int in_errorCode, std::string in_errorMessage, const Error& in
  * @brief Function which creates an unknown error. This should be used only when a specific error code cannot be
  *        determined.
  *
- * @param in_errorMessage         The detailed error message. (e.g. "Failed to open socket while attempting to connect to Kubernetes.")
+ * @param in_errorMessage         The detailed error message. (e.g. "Failed to open socket while attempting to connect
+ *                                to MyJobScheduler.")
  * @param in_errorLocation        The location of the error.
  *
  * @return An unknown error.
@@ -361,7 +365,8 @@ Error unknownError(std::string in_errorMessage, ErrorLocation in_location);
  * @brief Function which creates an unknown error. This should be used only when a specific error code cannot be
  *        determined.
  *
- * @param in_errorMessage         The detailed error message. (e.g. "Failed to open socket while attempting to connect to Kubernetes.")
+ * @param in_errorMessage         The detailed error message. (e.g. "Failed to open socket while attempting to connect
+ *                                to MyJobScheduler.")
  * @param in_cause                The error which caused this error.
  * @param in_errorLocation        The location of the error.
  *
