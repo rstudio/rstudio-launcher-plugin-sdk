@@ -514,8 +514,8 @@ public:
     *
     * @return True if a member with the specified name exists; false otherwise.
     */
-   bool hasMember(const char* in_name);
-   bool hasMember(const std::string& in_name);
+   bool hasMember(const char* in_name) const;
+   bool hasMember(const std::string& in_name) const;
 
    /**
     * @brief Inserts the specified member into this JSON object. If an object with the same name already exists, it will be

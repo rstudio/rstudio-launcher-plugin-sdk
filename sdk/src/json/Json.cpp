@@ -514,12 +514,12 @@ size_t Object::getSize() const
    return m_impl->Document.MemberCount();
 }
 
-bool Object::hasMember(const char* in_name)
+bool Object::hasMember(const char* in_name) const
 {
    return m_impl->Document.HasMember(in_name);
 }
 
-bool Object::hasMember(const std::string& in_name)
+bool Object::hasMember(const std::string& in_name) const
 {
    return hasMember(in_name.c_str());
 }
