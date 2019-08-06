@@ -52,7 +52,7 @@
  * This macro should be included in the private or protected section of a classes declaration.
  * struct OwningClass::Impl should be defined in the definition file before defining OwningClass.
  *
- * @param in_memeberName    The name of the private implementation member variable (e.g. m_impl).
+ * @param in_memberName    The name of the private implementation member variable (e.g. m_impl).
  */
 #define PRIVATE_IMPL_SHARED(in_memberName) \
    PRIVATE_IMPL_START                        \
@@ -60,7 +60,7 @@
 
 /**
  * @brief Macro which implements the deleter for the class's private implementation. This macro must be used after the
- *        implentation of the Impl struct in the definition file.
+ *        implementation of the Impl struct in the definition file.
  *
  * @param in_owningClass    The name of the class which owns the private implementation (e.g. Error).
  */

@@ -73,9 +73,9 @@ private:
    virtual system::FilePath getConfigFile() const;
 
    /**
-    * @brief Gets the name of this pluign.
+    * @brief Gets the name of this plugin.
     *
-    * @return The name of this pluign.
+    * @return The name of this plugin.
     */
    virtual std::string getPluginName() const = 0;
 

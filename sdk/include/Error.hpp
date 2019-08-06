@@ -53,7 +53,7 @@ private:
 };
 
 /**
- * @brief Class which represents the location of an error
+ * @brief Class which represents the location of an error.
  */
 class ErrorLocation : boost::noncopyable
 {
@@ -195,7 +195,8 @@ public:
     *
     * @param in_errorCode            The error code. (e.g. 1)
     * @param in_errorName            A contextual name of the error code. (e.g. "RequestNotSupported")
-    * @param in_errorMessage         The detailed error message. (e.g. "The JobNetworkRequest is not supported by this plugin.")
+    * @param in_errorMessage         The detailed error message. (e.g. "The JobNetworkRequest is not supported by this
+    *                                plugin.")
     * @param in_errorLocation        The location of the error.
     */
    Error(
@@ -209,7 +210,8 @@ public:
     *
     * @param in_errorCode            The error code. (e.g. 1)
     * @param in_errorName            A contextual name of the error code. (e.g. "RequestNotSupported")
-    * @param in_errorMessage         The detailed error message. (e.g. "The JobNetworkRequest is not supported by this plugin.")
+    * @param in_errorMessage         The detailed error message. (e.g. "The JobNetworkRequest is not supported by this
+    *                                plugin.")
     * @param in_cause                The error which caused this error.
     * @param in_errorLocation        The location of the error.
     */
@@ -324,7 +326,8 @@ Error systemError(int in_errorCode, const Error& in_cause, ErrorLocation in_loca
  * @brief Function which creates a system error.
  *
  * @param in_errorCode            The error code. (e.g. 1)
- * @param in_errorMessage         The detailed error message. (e.g. "Failed to open socket while attempting to connect to Kubernetes.")
+ * @param in_errorMessage         The detailed error message. (e.g. "Failed to open socket while attempting to connect
+ *                                to Kubernetes.")
  * @param in_errorLocation        The location of the error.
  *
  * @return A system error.

@@ -31,19 +31,53 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace singularity {
 
+/**
+ * @brief Class which stores options specific to the Singularity Container system.
+ */
 class SingularityOptions : public boost::noncopyable
 {
 public:
+   /**
+    * @brief Gets the single instance of SingularityOptions for the plugin.
+    *
+    * @return The single instance of SingularityOptions for the plugin.
+    */
    static SingularityOptions& getInstance();
 
+   /**
+    * @brief Gets the Singularity container to use for R.
+    *
+    * NOTE: This option is a placeholder until I know what options I need. It will not end up in the release version of
+    *       this plugin.
+    *
+    * @reurn The Singularity container to use for R.
+    */
    const system::FilePath& getRContainer() const;
+   /**
+    * @brief Gets the Singularity container to use for R Sessions.
+    *
+    * NOTE: This option is a placeholder until I know what options I need. It will not end up in the release version of
+    *       this plugin.
+    *
+    * @reurn The Singularity container to use for R Sessions.
+    */
    const system::FilePath& getRSessionContainer() const;
 
+   /**
+    * @brief Method which initializes SingularityOptions. This method should be called exactly once, before the options
+    *        file is read.
+    *
+    * This is where SingularityOptions are registered with the Options object.
+    */
    void initialize();
 
 private:
+   /**
+    * @brief Private constructor to prevent multiple instantiations of this singleton.
+    */
    SingularityOptions() = default;
 
+   // TODO: These options are placeholders.
    system::FilePath m_rContainer;
    system::FilePath m_rSessionContainer;
 };

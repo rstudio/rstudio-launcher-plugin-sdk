@@ -45,7 +45,7 @@ private:
    /**
     * @brief Returns the name of this plugin.
     *
-    * @return The name of this pluign.
+    * @return The name of this plugin.
     */
     std::string getPluginName() const override
     {

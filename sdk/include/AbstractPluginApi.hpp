@@ -34,8 +34,17 @@ namespace launcher_plugins {
 class AbstractPluginApi : public boost::noncopyable
 {
 public:
+   /**
+    * @brief Virtual destructor.
+    */
    virtual ~AbstractPluginApi() = default;
 
+   /**
+    * @brief This method should initialize any components needed to communicate with the job scheduling tool, including
+    *        custom options (TODO: other examples).
+    *
+    * @return Success if all components needed by this Plugin were successful in initialized; Error otherwise.
+    */
    virtual Error initialize() = 0;
 };
 

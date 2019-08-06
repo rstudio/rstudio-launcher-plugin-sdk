@@ -150,9 +150,9 @@ public:
    };
 
    /**
-    * @brief Gets the single instance of Object for the plugin.
+    * @brief Gets the single instance of Options for the plugin.
     *
-    * @return The single instance of Object for the plugin.
+    * @return The single instance of Options for the plugin.
     */
    static Options& getInstance();
 

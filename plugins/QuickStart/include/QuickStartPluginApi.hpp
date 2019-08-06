@@ -33,6 +33,12 @@ namespace quickstart {
 class QuickStartPluginApi : public AbstractPluginApi
 {
 public:
+   /**
+    * @brief This method should initialize any components needed to communicate with the job scheduling tool, including
+    *        custom options (TODO: other examples).
+    *
+    * @return Success if all components needed by this Plugin were successfull in initialzied; Error otherwise.
+    */
    Error initialize() override;
 };
 
