@@ -256,6 +256,11 @@ Error::operator bool() const
    return false;
 }
 
+bool Error::operator!() const
+{
+   return !operator bool();
+}
+
 std::string Error::asString() const
 {
    if (m_impl)

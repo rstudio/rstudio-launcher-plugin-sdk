@@ -237,6 +237,13 @@ public:
    explicit operator bool() const;
 
    /**
+    * @brief Overloaded operator! to allow Errors to be treated as boolean values.
+    *
+    * @return True if there is no error; false otherwise.
+    */
+    bool operator!() const;
+
+   /**
     * @brief Formats the error as a string.
     *
     * @return The error formatted as a string.
