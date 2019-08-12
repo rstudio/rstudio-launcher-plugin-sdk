@@ -58,7 +58,7 @@ TEST_CASE("command line options")
       REQUIRE(opts.getLogLevel() == logging::LogLevel::OFF);
       REQUIRE(opts.getScratchPath().absolutePath() == "/home/someUser/logs");
       REQUIRE(opts.getServerUser().getUsername() == "someUser");
-      REQUIRE(opts.getThreadPoolSize() == 6);
+      REQUIRE(opts.getThreadPoolSize() == 1);
    }
 }
 
