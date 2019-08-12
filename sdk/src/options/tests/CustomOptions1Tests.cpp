@@ -49,12 +49,12 @@ TEST_CASE("custom options")
    SECTION("check values")
    {
       Options& opts = Options::getInstance();
-      REQUIRE(opts.getJobExpiryHours() == 24);
-      REQUIRE(opts.getHeartbeatIntervalSeconds() == 5);
-      REQUIRE(opts.getLogLevel() == logging::LogLevel::WARNING);
-      REQUIRE(opts.getScratchPath().absolutePath() == "/var/lib/rstudio-launcher/");
-      REQUIRE(opts.getServerUser().getUsername() == "rstudio-server");
-      REQUIRE(opts.getThreadPoolSize() == std::max<unsigned int>(4, boost::thread::hardware_concurrency()));
+      REQUIRE(opts.getJobExpiryHours() == 11);
+      REQUIRE(opts.getHeartbeatIntervalSeconds() == 4);
+      REQUIRE(opts.getLogLevel() == logging::LogLevel::DEBUG);
+      REQUIRE(opts.getScratchPath().absolutePath() == "/home/aUser/temp/");
+      REQUIRE(opts.getServerUser().getUsername() == "aUser");
+      REQUIRE(opts.getThreadPoolSize() == 6);
       REQUIRE(optValue == 2.3f);
    }
 }

@@ -56,7 +56,7 @@ TEST_CASE("command line options")
       REQUIRE(opts.getJobExpiryHours() == 33);
       REQUIRE(opts.getHeartbeatIntervalSeconds() == 27);
       REQUIRE(opts.getLogLevel() == logging::LogLevel::OFF);
-      REQUIRE(opts.getScratchPath().absolutePath() == "/home/someUser/logs/");
+      REQUIRE(opts.getScratchPath().absolutePath() == "/home/someUser/logs");
       REQUIRE(opts.getServerUser().getUsername() == "someUser");
       REQUIRE(opts.getThreadPoolSize() == 6);
    }
