@@ -385,13 +385,17 @@ Error Options::readOptions(int in_argc, const char* const in_argv[], const syste
       }
 
       // Now read the command line arguments.
-      parsed_options parsed = parse_command_line(in_argc, const_cast<char**>(in_argv), m_impl->OptionsDescription);
-      store(parsed, vm);
-      notify(vm);
+      std::vector<std::string> unrecognizedCmdOpts;
+      if (in_argc > 0)
+      {
+         parsed_options parsed = parse_command_line(in_argc, const_cast<char**>(in_argv), m_impl->OptionsDescription);
+         store(parsed, vm);
+         notify(vm);
+         unrecognizedCmdOpts = collect_unrecognized(parsed.options, include_positional);
+      }
 
       // Handle unrecognized options
-      std::vector<std::string> unrecognizedCmdOpts = collect_unrecognized(parsed.options, include_positional);
-      if (!unrecognizedFileOpts.empty() || unrecognizedCmdOpts.empty())
+      if (!unrecognizedFileOpts.empty() || !unrecognizedCmdOpts.empty())
       {
          std::string message = "The following options were unrecognized: ";
          if (!unrecognizedFileOpts.empty())
