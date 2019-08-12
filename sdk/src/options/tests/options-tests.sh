@@ -26,5 +26,6 @@
 
 for test in ./*-tests;
 do
+  echo "Running ${test}..."
   ${test}
 done
