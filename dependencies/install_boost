@@ -26,7 +26,7 @@
 
 set -e 
 
-INSTALL_DIR=`pwd`
+INSTALL_DIR=$(pwd)
 
 # Variables
 BOOST_VERSION_NUMBER="1.70.0"
@@ -34,13 +34,15 @@ BOOST_VERSION="boost_$(echo "$BOOST_VERSION_NUMBER" | tr "." "_")"
 BOOST_TAR=$BOOST_VERSION.tar.bz2
 BOOST_BUILD_DIR=boost-build
 BOOST_URL="https://dl.bintray.com/boostorg/release/$BOOST_VERSION_NUMBER/source/$BOOST_TAR"
+BOOST_DEFAULT_DIR=/usr/local/lib/boost/$BOOST_VERSION
 
 # Install if not already installed.
-if ! test -e $BOOST_DIR 
+PREFIX="$BOOST_DIR/boost/$BOOST_VERSION"
+if [[ ( -n $BOOST_DIR  && ! -e $PREFIX ) || ( -z $BOOST_DIR && ! -d $BOOST_DEFAULT_DIR ) ]];
 then
    # Download
-   if [ ! -f $BOOST_TAR ]; then
-      wget -c $BOOST_URL -O $BOOST_TAR
+   if [ ! -f "$BOOST_TAR" ]; then
+      wget -c "$BOOST_URL" -O "$BOOST_TAR"
    fi
 
    # Untar
@@ -48,24 +50,35 @@ then
    sudo mkdir -p $BOOST_BUILD_DIR
    cd $BOOST_BUILD_DIR
 
-   sudo tar --bzip2 -xf ../$BOOST_TAR
-   cd $BOOST_VERSION
+   sudo tar --bzip2 -xf "../$BOOST_TAR"
+   cd "$BOOST_VERSION"
+
+   if [[ -n $BOOST_DIR ]];
+   then
+      mkdir -p "$PREFIX"
+      BOOST_BJAM_FLAGS="$BOOST_BJAM_FLAGS --prefix=$BOOST_DIR"
+   fi
+
+   echo "$BOOST_BJAM_FLAGS"
 
    # Bootstrap
    sudo ./bootstrap.sh
 
    # Build boost with bjam
    sudo ./bjam                     \
-       "${BOOST_BJAM_FLAGS}"       \
+       "$BOOST_BJAM_FLAGS"         \
        variant=release             \
        cxxflags="-fPIC -std=c++11" \
        install
 
    # Cleaup
-   cd $INSTALL_DIR
-   sudo rm -rf $BOOST_BUILD_DIR
+   cd "$INSTALL_DIR"
+   sudo rm -rf "$BOOST_BUILD_DIR"
 
-else
+elif [[ -n $BOOST_DIR ]];
+then
    echo "$BOOST_VERSION_NUMBER already installed in $BOOST_DIR"
+else 
+   echo "$BOOST_VERSION_NUMBER already installed in $BOOST_DEFAULT_DIR"
 fi
 
