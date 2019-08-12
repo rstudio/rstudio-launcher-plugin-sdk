@@ -23,6 +23,22 @@ set(RLPS_OPTIONS_TEST_MAIN ../../tests/TestMain.cpp)
 
 # One executable per suite of Options test because it's a singleton
 
+# Copy configuration files used by the tests.
+set(CONF_INPUT_FILES
+    conf-files/Basic.conf
+    conf-files/Empty.conf
+    conf-files/Extra.conf
+    conf-files/InvalidValue.conf
+    conf-files/LogLevelConflict1.conf
+    conf-files/LogLevelConflict2.conf
+    conf-files/LogLevelConflict3.conf
+    conf-files/MissingOptional.conf
+)
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/conf-files/)
+foreach(INP_FILE ${CONF_INPUT_FILES})
+    configure_file(${INP_FILE} conf-files/ COPYONLY)
+endforeach()
+
 # Basic options all set
 add_executable(rlps-basic-options-tests
    ${RLPS_OPTIONS_TEST_MAIN}
