@@ -219,6 +219,12 @@ struct Value<T>::Impl
 };
 
 template <class T>
+Value<T>::Value() :
+   m_impl(new Impl())
+{
+}
+
+template <class T>
 Value<T>::Value(T& io_storeTo) :
    m_impl(new Impl(boost::program_options::value<T>(&io_storeTo)))
 {

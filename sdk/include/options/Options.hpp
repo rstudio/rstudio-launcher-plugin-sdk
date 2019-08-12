@@ -83,7 +83,7 @@ public:
    /**
     * @brief Default Constructor.
     */
-   Value() = default;
+   Value();
 
    /**
     * @brief Constructor which takes an object to store the value to.
