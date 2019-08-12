@@ -153,27 +153,24 @@ namespace {
 enum class OptionsError
 {
    SUCCESS = 0,
-   NO_CONFIG_FILE = 1,
-   PARSE_ERROR = 2,
-   UNREGISTERED_OPTION = 3,
-   INVALID_OPTION_VALUE = 4,
-   READ_FAILURE = 5
+   PARSE_ERROR = 1,
+   UNREGISTERED_OPTION = 2,
+   READ_FAILURE = 3,
+   MISSING_REQUIRED_OPTION=4,
 };
 
 Error optionsError(OptionsError in_errorCode, const std::string& in_message, ErrorLocation in_errorLocation)
 {
    switch(in_errorCode)
    {
-      case OptionsError::NO_CONFIG_FILE:
-         return Error(static_cast<int>(in_errorCode), "NoConfigFile", in_message, std::move(in_errorLocation));
       case OptionsError::PARSE_ERROR:
          return Error(static_cast<int>(in_errorCode), "ParseError", in_message, std::move(in_errorLocation));
       case OptionsError::UNREGISTERED_OPTION:
          return Error(static_cast<int>(in_errorCode), "UnregisteredOption", in_message, std::move(in_errorLocation));
-      case OptionsError::INVALID_OPTION_VALUE:
-         return Error(static_cast<int>(in_errorCode), "InvalidOptionValue", in_message, std::move(in_errorLocation));
       case OptionsError::READ_FAILURE:
          return Error(static_cast<int>(in_errorCode), "OptionReadError", in_message, std::move(in_errorLocation));
+      case OptionsError::MISSING_REQUIRED_OPTION:
+         return Error(static_cast<int>(in_errorCode),  "MissingRequiredOption", in_message, std::move(in_errorLocation));
       case OptionsError::SUCCESS:
          return Success();
       default:
@@ -182,6 +179,26 @@ Error optionsError(OptionsError in_errorCode, const std::string& in_message, Err
          return Error(static_cast<int>(in_errorCode), "UnrecognizedError", in_message, std::move(in_errorLocation));
       }
    }
+}
+
+Error validateOptions(
+   const variables_map& in_vm,
+   const options_description& in_optionsDescription,
+   const std::string& in_configFile)
+{
+   for (const auto& optionDesc: in_optionsDescription.options())
+   {
+      const std::string& optionName = optionDesc->long_name();
+      if (in_vm.count(optionName) < 1)
+      {
+         std::string message = "Required option (";
+         message += optionName + ") not specified in config file ";
+         message += in_configFile;
+         return optionsError(OptionsError::MISSING_REQUIRED_OPTION, message, ERROR_LOCATION);
+      }
+   }
+
+   return Success();
 }
 
 } // anonymous namespace
@@ -293,6 +310,14 @@ Options::Init::Init(Options& in_owner) :
 }
 
 template <class T>
+Options::Init& Options::Init::operator()(const char* in_name, Value<T>& in_value, const char* in_description)
+{
+   // Boost takes ownership of the semantic value here.
+   m_owner.m_impl->OptionsDescription.add_options()(in_name, in_value.m_impl->ValueSemantic.release(), in_description);
+   return *this;
+}
+
+template <class T>
 Options::Init& Options::Init::operator()(const char* in_name, Value<T>&& in_value, const char* in_description)
 {
    // Boost takes ownership of the semantic value here.
@@ -342,10 +367,14 @@ Error Options::readOptions(int in_argc, const char* const in_argv[], const syste
       if (error)
          return error;
 
+      std::vector<std::string> unrecognizedFileOpts;
       try
       {
-         store(parse_config_file(*inputStream, m_impl->OptionsDescription), vm);
+         parsed_options parsed = parse_config_file(*inputStream, m_impl->OptionsDescription);
+         store(parsed, vm);
          notify(vm);
+
+         unrecognizedFileOpts = collect_unrecognized(parsed.options, exclude_positional);
       }
       catch (const std::exception& e)
       {
@@ -356,10 +385,30 @@ Error Options::readOptions(int in_argc, const char* const in_argv[], const syste
       }
 
       // Now read the command line arguments.
-      store(parse_command_line(in_argc, const_cast<char**>(in_argv), m_impl->OptionsDescription), vm);
+      parsed_options parsed = parse_command_line(in_argc, const_cast<char**>(in_argv), m_impl->OptionsDescription);
+      store(parsed, vm);
       notify(vm);
 
-      std::vector<std::string> unregisteredOptions;
+      // Handle unrecognized options
+      std::vector<std::string> unrecognizedCmdOpts = collect_unrecognized(parsed.options, include_positional);
+      if (!unrecognizedFileOpts.empty() || unrecognizedCmdOpts.empty())
+      {
+         std::string message = "The following options were unrecognized: ";
+         if (!unrecognizedFileOpts.empty())
+            message += "\n    in config file " + in_location.absolutePath() + ":";
+         for (const std::string& opt: unrecognizedFileOpts)
+            message += "\n        " + opt;
+
+         if (!unrecognizedCmdOpts.empty())
+            message += "\n    on the command line:";
+         for (const std::string& opt: unrecognizedCmdOpts)
+            message += "\n        " + opt;
+
+         return optionsError(OptionsError::UNREGISTERED_OPTION, message, ERROR_LOCATION);
+      }
+
+      // Now validate the provided options.
+      return validateOptions(vm, m_impl->OptionsDescription, in_location.absolutePath());
    }
    catch (boost::program_options::error& e)
    {
@@ -372,8 +421,6 @@ Error Options::readOptions(int in_argc, const char* const in_argv[], const syste
    {
       return unknownError("Unexpected exception: " + std::string(e.what()), ERROR_LOCATION);
    }
-
-   return Success();
 }
 
 unsigned int Options::getJobExpiryHours() const
@@ -418,7 +465,9 @@ Options::Options() :
 // they need to be compiled here to be used elsewhere.
 #define INSTANTIATE_VALUE_TEMPLATES(in_type)                                                        \
 template                                                                                            \
-Options::Init& Options::Init::operator()<in_type>(const char*, Value<in_type>&&, const char*); \
+Options::Init& Options::Init::operator()<in_type>(const char*, Value<in_type>&, const char*);       \
+template                                                                                            \
+Options::Init& Options::Init::operator()<in_type>(const char*, Value<in_type>&&, const char*);      \
 template class Value<in_type>;                                                                      \
 
 // These should instantiate both Init::operator() and the Value class with these types.

@@ -135,12 +135,13 @@ public:
        *
        * @param in_name             The name of the option.
        * @param in_value            The value object, which holds the default and the storage object. The Value object
-       *                            itself will not be modified, but the storage object may be modified when options are
-       *                            read.
+       *                            is not usable after this call.
        * @param in_description      The description of the option.
        *
        * @return A reference to this Init object.
        */
+      template <class T>
+      Init& operator()(const char* in_name, Value<T>& in_value, const char* in_description);
       template <class T>
       Init& operator()(const char* in_name, Value<T>&& in_value, const char* in_description);
 
@@ -205,7 +206,7 @@ public:
    *
    * @return The scratch path to which log files and other plugin data may be written.
    */
-   const system::FilePath& getScratchPath() const;
+  const system::FilePath& getScratchPath() const;
 
    /**
     * @brief Gets the user to run as when root privileges are dropped.
