@@ -30,7 +30,7 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace options {
 
-TEST_CASE("log level conflict (less detail) options")
+TEST_CASE("log level conflict (OFF -> DEBUG) options")
 {
    SECTION("read options")
    {

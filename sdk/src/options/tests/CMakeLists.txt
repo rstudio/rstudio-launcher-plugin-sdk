@@ -138,7 +138,7 @@ target_link_libraries(rlps-invalid-value-options-tests
    ${RLPS_BOOST_LIBS}
 )
 
-# Log level conflict #1 (log-level < DEBUG)
+# Log level conflict #1 (log-level == OFF)
 add_executable(rlps-ll-conflict-1-options-tests
    ${RLPS_OPTIONS_TEST_MAIN}
    LogLevelConflict1Tests.cpp
@@ -150,7 +150,7 @@ target_link_libraries(rlps-ll-conflict-1-options-tests
    ${RLPS_BOOST_LIBS}
 )
 
-# Log level conflict #2 (log-level > INFO)
+# Log level conflict #2 (log-level == INFO)
 add_executable(rlps-ll-conflict-2-options-tests
    ${RLPS_OPTIONS_TEST_MAIN}
    LogLevelConflict2Tests.cpp

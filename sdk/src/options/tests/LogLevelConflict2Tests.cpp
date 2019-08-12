@@ -30,7 +30,7 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace options {
 
-TEST_CASE("log level conflict (more detail) options")
+TEST_CASE("log level conflict (INFO -> DEBUG) options")
 {
    SECTION("read options")
    {
@@ -47,7 +47,7 @@ TEST_CASE("log level conflict (more detail) options")
       Options& opts = Options::getInstance();
       REQUIRE(opts.getJobExpiryHours() == 24);
       REQUIRE(opts.getHeartbeatIntervalSeconds() == 5);
-      REQUIRE(opts.getLogLevel() == logging::LogLevel::INFO);
+      REQUIRE(opts.getLogLevel() == logging::LogLevel::DEBUG);
       REQUIRE(opts.getScratchPath().absolutePath() == "/var/lib/rstudio-launcher/");
       REQUIRE(opts.getServerUser().getUsername() == "rstudio-server");
       REQUIRE(opts.getThreadPoolSize() == std::max<unsigned int>(4, boost::thread::hardware_concurrency()));
