@@ -36,7 +36,7 @@ TEST_CASE("log level conflict (less detail, command line) options")
    {
       constexpr const char* argv[] = {
             "options-test",               // The first element should be the process name. Make it up.
-            "--enable-debug-logging=1 "
+            "--enable-debug-logging=1"
       };
       constexpr int argc = 2;
 
