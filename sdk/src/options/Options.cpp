@@ -181,6 +181,25 @@ Error optionsError(OptionsError in_errorCode, const std::string& in_message, Err
    }
 }
 
+void collectUnrecognizedOptions(
+      const variables_map& in_vm,
+      const parsed_options& in_parsedOptions,
+      std::vector<std::string>& out_unrecognized)
+{
+   for (const auto& opt: in_parsedOptions.options)
+   {
+      if (in_vm.find(opt.string_key) == in_vm.end())
+      {
+         std::string value;
+         for (std::string v: opt.value)
+            value += v + ", ";
+
+         // Cut the last ", " from the value list string.
+         out_unrecognized.push_back(opt.string_key + "=" + value.substr(0, value.size() - 2));
+      }
+   }
+}
+
 Error validateOptions(
    const variables_map& in_vm,
    const options_description& in_optionsDescription,
@@ -222,6 +241,7 @@ template <class T>
 Value<T>::Value() :
    m_impl(new Impl())
 {
+
 }
 
 template <class T>
@@ -376,11 +396,11 @@ Error Options::readOptions(int in_argc, const char* const in_argv[], const syste
       std::vector<std::string> unrecognizedFileOpts;
       try
       {
-         parsed_options parsed = parse_config_file(*inputStream, m_impl->OptionsDescription);
+         parsed_options parsed = parse_config_file(*inputStream, m_impl->OptionsDescription, true);
          store(parsed, vm);
          notify(vm);
 
-         unrecognizedFileOpts = collect_unrecognized(parsed.options, exclude_positional);
+         collectUnrecognizedOptions(vm, parsed, unrecognizedFileOpts);
       }
       catch (const std::exception& e)
       {
@@ -394,16 +414,22 @@ Error Options::readOptions(int in_argc, const char* const in_argv[], const syste
       std::vector<std::string> unrecognizedCmdOpts;
       if (in_argc > 0)
       {
-         parsed_options parsed = parse_command_line(in_argc, const_cast<char**>(in_argv), m_impl->OptionsDescription);
+         // Set up the parser so that command line options will override code-defaults.
+         command_line_parser parser = command_line_parser(in_argc, const_cast<char**>(in_argv));
+         parser.options(m_impl->OptionsDescription);
+         parser.allow_unregistered();
+
+         // Run the parser.
+         parsed_options parsed = parser.run();
          store(parsed, vm);
          notify(vm);
-         unrecognizedCmdOpts = collect_unrecognized(parsed.options, include_positional);
+         collectUnrecognizedOptions(vm, parsed, unrecognizedCmdOpts);
       }
 
       // Handle unrecognized options
       if (!unrecognizedFileOpts.empty() || !unrecognizedCmdOpts.empty())
       {
-         std::string message = "The following options were unrecognized: ";
+         std::string message = "The following options were unrecognized:";
          if (!unrecognizedFileOpts.empty())
             message += "\n    in config file " + in_location.absolutePath() + ":";
          for (const std::string& opt: unrecognizedFileOpts)
