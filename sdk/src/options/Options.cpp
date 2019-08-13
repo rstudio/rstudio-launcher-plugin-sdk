@@ -241,7 +241,7 @@ Value<T>& Value<T>::setDefaultValue(const T& in_defaultValue)
 struct Options::Impl
 {
    // The values for the option members (e.g. JobExpiryHours, ScratchPath, etc.) are just placeholders and don't matter.
-   // The values for OptionsDescription and IsInitialzied are not placeholders.
+   // The values for OptionsDescription and IsInitialized are not placeholders.
    Impl() :
       OptionsDescription("program"),
       IsInitialized(false),
