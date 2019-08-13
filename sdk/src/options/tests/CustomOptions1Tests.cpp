@@ -20,8 +20,6 @@
 
 #include "../../tests/TestMain.hpp"
 
-#include <boost/thread.hpp>
-
 #include "options/Options.hpp"
 #include "system/FilePath.hpp"
 #include "system/User.hpp"
@@ -32,7 +30,7 @@ namespace options {
 
 TEST_CASE("custom options")
 {
-   float optValue = 0.0;
+   static float optValue = 0.0;
    SECTION("read options")
    {
       Options& opts = Options::getInstance();

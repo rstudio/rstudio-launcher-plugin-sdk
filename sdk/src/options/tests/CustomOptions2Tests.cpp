@@ -32,7 +32,7 @@ namespace options {
 
 TEST_CASE("custom options using default value")
 {
-   float optValue = 0.0;
+   static float optValue = 0.0;
    SECTION("read options")
    {
       Options& opts = Options::getInstance();
