@@ -34,8 +34,8 @@ TEST_CASE("unrecognized options")
    {
       const system::FilePath configFile("./conf-files/Extra.conf");
       const std::string expectedMessage = "The following options were unrecognized:\n"
-                                          "    in config file " + configFile.absolutePath() + "\n"
-                                          "        new-option";
+                                          "    in config file " + configFile.absolutePath() + ":\n"
+                                          "        new-option=2.3";
       constexpr const char* argv[] = {};
       constexpr int argc = 0;
 
