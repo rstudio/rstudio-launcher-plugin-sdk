@@ -33,16 +33,17 @@ TEST_CASE("command line options")
    SECTION("read options")
    {
       constexpr const char * argv[] = {
+         "options-test",               // The first element is the name of the process, so make it up.
          "--enable-debug-logging=0",
-         "--heartbeat-interval-seconds=27",
-         "--scratch-path=/home/someUser/logs",
-         "--log-level=off",
-         "--job-expiry-hours=33",
-         "--thread-pool-size=1",
          "--server-user=someUser",
+         "--thread-pool-size=1",
+         "--job-expiry-hours=33",
+         "--log-level=off",
+         "--scratch-path=/home/someUser/logs",
+         "--heartbeat-interval-seconds=27",
       };
 
-      constexpr int argc = 7;
+      constexpr int argc = 8;
 
       Options& opts = Options::getInstance();
       Error error = opts.readOptions(argc, argv, system::FilePath("./conf-files/Empty.conf"));

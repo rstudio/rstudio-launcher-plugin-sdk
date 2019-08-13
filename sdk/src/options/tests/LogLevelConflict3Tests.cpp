@@ -34,8 +34,11 @@ TEST_CASE("log level conflict (less detail, command line) options")
 {
    SECTION("read options")
    {
-      constexpr const char* argv[] = { "--enable-debug-logging=1 "};
-      constexpr int argc = 0;
+      constexpr const char* argv[] = {
+            "options-test",               // The first element should be the process name. Make it up.
+            "--enable-debug-logging=1 "
+      };
+      constexpr int argc = 2;
 
       Options& opts = Options::getInstance();
       Error error = opts.readOptions(argc, argv, system::FilePath("./conf-files/LogLevelConflict3.conf"));

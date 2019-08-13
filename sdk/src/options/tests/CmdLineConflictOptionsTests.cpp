@@ -33,12 +33,13 @@ TEST_CASE("command line options with conflicts")
    SECTION("read options")
    {
       constexpr const char* argv[] = {
-         "--heartbeat-interval-seconds=8",
+         "options-test",               // The first element should be the process name. Make it up.
          "--log-level=WARNING",
-         "--thread-pool-size=2"
+         "--heartbeat-interval-seconds=8",
+         "--thread-pool-size=2",
       };
 
-      constexpr int argc = 3;
+      constexpr int argc = 4;
 
       Options& opts = Options::getInstance();
       Error error = opts.readOptions(argc, argv, system::FilePath("./conf-files/MissingOptional.conf"));
