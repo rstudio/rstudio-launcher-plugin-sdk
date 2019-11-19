@@ -33,7 +33,6 @@ printHelp()
     echo "Options:"
     printf "$HELP_FORMAT" "-a" "--all" "Install all dependencies."
     printf "$HELP_FORMAT" "-c" "--core" "Install dependencies required for compiling the RStudio Launcher Plugin SDK."
-#    printf "$HELP_FORMAT" "-t" "--tools" "Install dependencies required to use the tools provided in the tools folder."
     printf "$HELP_FORMAT" "-s" "--singularity" "Install dependencies required to compile and use the RStudio Singluarity Launcher Plugin. Includes core dependencies."
     printf "$HELP_FORMAT" "-h" "--help" "Display this help menu."
 }
@@ -42,7 +41,6 @@ for ARG in "$@"; do
     case $ARG in
         "(-a|--all)" )          INSTALL_ALL=1 ;;
         "(-c|--core)" )         INSTALL_CORE=1 ;;
-#        "(-t|--tools)" )        INSTALL_TOOLS=1 ;;
         "(-s|--singularity)" )  INSTALL_SINGULARITY=1 ;;
         "(-h|--help)" )         DO_HELP=1 ;;
         * )                     DO_HELP=1 ;;
@@ -78,7 +76,3 @@ fi
 if [ ! -z INSTALL_SINGULARITY ]; then
     ./install-singularity.sh
 fi
-
-# if [ ! -z INSTALL_TOOLS ]; then
-#     ./install-python.sh
-# fi
