@@ -1,5 +1,5 @@
 /*
- * StdErrLogDestination.hpp
+ * StderrDestination.cpp
  * 
  * Copyright (C) 2019 by RStudio, Inc.
  *
@@ -21,48 +21,32 @@
  *
  */
 
-#ifndef LAUNCHER_PLUGINS_STD_ERR_LOG_DESTINATION_HPP
-#define LAUNCHER_PLUGINS_STD_ERR_LOG_DESTINATION_HPP
+#include <logging/StderrLogDestination.hpp>
 
-#include <logging/ILogDestination.hpp>
+#include <iostream>
 
 namespace rstudio {
 namespace launcher_plugins {
 namespace logging {
 
-/**
- * @brief A class which logs messages to stderr.
- */
-class StderrLogDestination : public ILogDestination
+StderrLogDestination::StderrLogDestination(LogLevel in_logLevel) :
+   ILogDestination(in_logLevel)
 {
-public:
+}
 
-   /**
-    * @brief Constructor.
-    *
-    * @param in_logLevel    The most detailed level of logs to be written to stderr.
-    */
-   explicit StderrLogDestination(LogLevel in_logLevel);
+unsigned int StderrLogDestination::getId() const
+{
+   return 0;
+}
 
-   /**
-    * @brief Gets the unique ID of the stderr destination.
-    *
-    * @return The unique ID of the stderr destination.
-    */
-   unsigned int getId() const override;
-
-   /**
-    * @brief Writes a message to stderr.
-    *
-    * @param in_logLevel    The log level of the message to write. Filtering is done prior to this call. This is for
-    *                       informational purposes only.
-    * @param in_message     The message to write to stderr.
-    */
-   void writeLog(LogLevel in_logLevel, const std::string& in_message) override;
-};
+void StderrLogDestination::writeLog(LogLevel in_logLevel, const std::string& in_message)
+{
+   // Don't write logs that are more detailed than the configured maximum
+   if (in_logLevel <= m_logLevel)
+      std::cerr << in_message;
+}
 
 } // namespace logging
 } // namespace launcher_plugins
 } // namespace rstudio
 
-#endif

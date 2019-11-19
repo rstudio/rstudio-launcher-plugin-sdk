@@ -48,11 +48,11 @@ std::istream& operator>>(std::istream& in_stream, LogLevel& out_logLevel)
    }
    else if (boost::iequals(logLevelStr, "ERROR") || (logLevelStr == "1"))
    {
-      out_logLevel = LogLevel::ERROR;
+      out_logLevel = LogLevel::ERR;
    }
    else if (boost::iequals(logLevelStr, "WARNING") || (logLevelStr == "2"))
    {
-      out_logLevel = LogLevel::WARNING;
+      out_logLevel = LogLevel::WARN;
    }
    else if (boost::iequals(logLevelStr, "INFO") || (logLevelStr == "3"))
    {
@@ -80,12 +80,12 @@ std::ostream& operator<<(std::ostream& in_stream, const LogLevel& in_logLevel)
          in_stream << "OFF";
          break;
       }
-      case LogLevel::ERROR:
+      case LogLevel::ERR:
       {
          in_stream << "ERROR";
          break;
       }
-      case LogLevel::WARNING:
+      case LogLevel::WARN:
       {
          in_stream << "WARNING";
          break;
@@ -120,7 +120,11 @@ std::istream& operator>>(std::istream& in_stream, User& out_user)
 {
    std::string username;
    in_stream >> username;
-   out_user = User(username);
+
+   Error error = User::getUserFromIdentifier(username, out_user);
+   if (error)
+      logging::logError(error, ERROR_LOCATION);
+
    return in_stream;
 }
 
@@ -130,18 +134,13 @@ std::ostream& operator<<(std::ostream& in_stream, const User& in_user)
    return in_stream << in_user.getUsername();
 }
 
-// Overload operator>> and operator<< for FilePath for parsing the config file.
+// Overload operator>> for FilePath for parsing the config file.
 std::istream& operator>>(std::istream& in_stream, FilePath& out_filePath)
 {
    std::string filePath;
    in_stream >> filePath;
    out_filePath = FilePath(filePath);
    return in_stream;
-}
-
-std::ostream& operator<<(std::ostream& in_stream, const FilePath& in_filePath)
-{
-   return in_stream << in_filePath.absolutePath();
 }
 
 } // namespace system
@@ -248,13 +247,13 @@ struct Options::Impl
              value<bool>(&EnableDebugLogging)->default_value(false),
              "whether to enable debug logging or not - if true, enforces a log-level of at least DEBUG")
             ("log-level",
-             value<logging::LogLevel>(&MaxLogLevel)->default_value(logging::LogLevel::WARNING),
+             value<logging::LogLevel>(&MaxLogLevel)->default_value(logging::LogLevel::WARN),
              "the maximum level of log messages to write")
             ("scratch-path",
              value<system::FilePath>(&ScratchPath)->default_value(system::FilePath("/var/lib/rstudio-launcher/")),
              "scratch path where logs and job state data are stored")
             ("server-user",
-             value<system::User>(&ServerUser)->default_value(system::User("rstudio-server")),
+             value<std::string>(&ServerUser)->default_value("rstudio-server"),
              "user to run the plugin as")
             ("thread-pool-size",
              value<unsigned int>(&ThreadPoolSize)->default_value(
@@ -280,7 +279,7 @@ struct Options::Impl
    unsigned int HeartbeatIntervalSeconds;
    logging::LogLevel MaxLogLevel;
    system::FilePath ScratchPath;
-   system::User ServerUser;
+   std::string ServerUser;
    unsigned int ThreadPoolSize;
 
 };
@@ -329,7 +328,7 @@ Error Options::readOptions(int in_argc, const char* const in_argv[], const syste
    {
       return systemError(
          boost::system::errc::no_such_file_or_directory,
-         "Configuration file does not exist: " + in_location.absolutePath(),
+         "Configuration file does not exist: " + in_location.getAbsolutePath(),
          ERROR_LOCATION);
    }
 
@@ -351,7 +350,7 @@ Error Options::readOptions(int in_argc, const char* const in_argv[], const syste
       {
          return optionsError(
             OptionsError::READ_FAILURE,
-            "Error reading " + in_location.absolutePath() + ": " + std::string(e.what()),
+            "Error reading " + in_location.getAbsolutePath() + ": " + std::string(e.what()),
             ERROR_LOCATION);
       }
 
@@ -365,7 +364,7 @@ Error Options::readOptions(int in_argc, const char* const in_argv[], const syste
    {
       return optionsError(
          OptionsError::PARSE_ERROR,
-         std::string(e.what()) + " in config file " + in_location.absolutePath(),
+         std::string(e.what()) + " in config file " + in_location.getAbsolutePath(),
          ERROR_LOCATION);
    }
    catch (const std::exception& e)
@@ -398,9 +397,9 @@ const system::FilePath& Options::getScratchPath() const
    return m_impl->ScratchPath;
 }
 
-const system::User& Options::getServerUser() const
+Error Options::getServerUser(system::User& out_serverUser) const
 {
-   return m_impl->ServerUser;
+   return system::User::getUserFromIdentifier(m_impl->ServerUser, out_serverUser);
 }
 
 unsigned int Options::getThreadPoolSize() const

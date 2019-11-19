@@ -34,10 +34,11 @@ set(RLPS_SOURCE_FILES
    src/json/Json.cpp
    src/logging/FileLogDestination.cpp
    src/logging/Logger.cpp
-   src/logging/StderrDestination.cpp
+   src/logging/StderrLogDestination.cpp
    src/logging/SyslogDestination.cpp
    src/options/Options.cpp
    src/system/FilePath.cpp
+   src/system/ReaderWriterMutex.cpp
    src/system/User.cpp
 )
 
@@ -55,4 +56,5 @@ add_library(rstudio-launcher-plugin-sdk-lib STATIC
 target_link_libraries(rstudio-launcher-plugin-sdk-lib
    Boost::filesystem
    Boost::program_options
+   Boost::regex
    Boost::thread)

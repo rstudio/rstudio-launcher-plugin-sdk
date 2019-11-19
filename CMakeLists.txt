@@ -38,6 +38,7 @@ set(Boost_USE_STATIC_LIBS     ON)
 set(RLPS_BOOST_LIBS
    filesystem
    program_options
+   regex
    thread)
 find_package(Boost ${RLPS_BOOST_REQUESTED_VERSION} REQUIRED COMPONENTS ${RLPS_BOOST_LIBS})
 

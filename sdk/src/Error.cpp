@@ -1,7 +1,10 @@
 /*
  * Error.cpp
- * 
- * Copyright (C) 2019 by RStudio, Inc.
+ *
+ * Copyright (C) 2009-19 by RStudio, Inc.
+ *
+ * Unless you have received this program directly from RStudio pursuant to the terms of a commercial license agreement
+ * with RStudio, then this program is licensed to you under the following terms:
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
  * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
@@ -18,34 +21,53 @@
  *
  */
 
-#include "Error.hpp"
-
 #include <ostream>
-#include <sstream>
+
+#include <Error.hpp>
+#include <system/FilePath.hpp>
+#include <logging/Logger.hpp>
+#include <SafeConvert.hpp>
+
+#ifdef _WIN32
+#include <boost/system/windows_error.hpp>
+#endif
+
+using namespace rstudio::launcher_plugins::system;
 
 namespace rstudio {
 namespace launcher_plugins {
 
-namespace
-{
+namespace {
 
-// Static empty values so we can avoid creating an Impl for the default Error constructor.
-static std::string kEmptyString = "";
-static Error kNoError = Error();
-static ErrorLocation kNoErrorLocation = ErrorLocation();
+const std::string s_errorExpected = "expected";
+const std::string s_errorExpectedValue = "yes";
+
+constexpr const char* s_occurredAt = "OCCURRED AT";
+constexpr const char* s_causedBy = "CAUSED BY";
 
 } // anonymous namespace
 
+
 // Error Location ======================================================================================================
+std::ostream& operator<<(std::ostream& in_os, const ErrorLocation& in_location)
+{
+   in_os << in_location.getFunction() << " "
+         << in_location.getFile() << ":"
+         << in_location.getLine();
+
+   return in_os;
+}
+
 struct ErrorLocation::Impl
 {
-   Impl() : Line(0) { };
+   Impl() : Line(0)
+   {
+   }
 
    Impl(const char* in_function, const char* in_file, long in_line) :
-      Function(in_function),
-      File(in_file),
-      Line(in_line)
-   { }
+      Function(in_function), File(in_file), Line(in_line)
+   {
+   }
 
    std::string Function;
    std::string File;
@@ -54,33 +76,49 @@ struct ErrorLocation::Impl
 
 PRIVATE_IMPL_DELETER_IMPL(ErrorLocation)
 
-std::ostream& operator<<(std::ostream& in_os, const ErrorLocation& in_location)
-{
-   in_os << in_location.getFunction() << " "
-         << in_location.getFile() << ":"
-         << in_location.getLine() ;
-
-   return in_os;
-}
-
 ErrorLocation::ErrorLocation() :
-   m_impl(new ErrorLocation::Impl())
+   m_impl(new Impl())
 {
 }
 
-ErrorLocation::ErrorLocation(ErrorLocation&& in_other) noexcept :
+ErrorLocation::ErrorLocation(const ErrorLocation& in_other) :
+   m_impl(new Impl(*in_other.m_impl))
+{
+}
+
+ErrorLocation::ErrorLocation(rstudio::launcher_plugins::ErrorLocation&& in_other) noexcept :
    m_impl(std::move(in_other.m_impl))
 {
+   // Don't leave an error location with a nullptr impl.
+   in_other.m_impl.reset(new Impl());
 }
 
 ErrorLocation::ErrorLocation(const char* in_function, const char* in_file, long in_line) :
-   m_impl(new ErrorLocation::Impl(in_function, in_file, in_line))
+   m_impl(new Impl(in_function, in_file, in_line))
 {
 }
 
-bool ErrorLocation::hasLocation() const
+ErrorLocation& ErrorLocation::operator=(const ErrorLocation& in_other)
 {
-   return m_impl->Line != 0;
+   m_impl->File = in_other.m_impl->File;
+   m_impl->Function = in_other.m_impl->Function;
+   m_impl->Line = in_other.m_impl->Line;
+
+   return *this;
+}
+
+bool ErrorLocation::operator==(const ErrorLocation& in_location) const
+{
+   return getFunction() == in_location.getFunction() &&
+          getFile() == in_location.getFile() &&
+          getLine() == in_location.getLine();
+}
+
+std::string ErrorLocation::asString() const
+{
+   std::ostringstream ostr;
+   ostr << *this;
+   return ostr.str();
 }
 
 const std::string& ErrorLocation::getFunction() const
@@ -98,298 +136,348 @@ long ErrorLocation::getLine() const
    return m_impl->Line;
 }
 
-std::string ErrorLocation::asString() const
+bool ErrorLocation::hasLocation() const
 {
-   std::ostringstream oss;
-   oss << *this;
-   return oss.str();
+   return getLine() > 0;
 }
 
-
-// Error ==============================================================================================================
+// Error ===============================================================================================================
+// COPYING: via shared_ptr, mutating functions must call copyOnWrite prior to executing
 struct Error::Impl
 {
-   Impl() : Impl(0, "", ErrorLocation())
-   { };
+   Impl() : Code(0)
+   { }
 
-   Impl(int in_errorCode, std::string in_name, ErrorLocation in_location) :
-      ErrorCode(in_errorCode),
+   Impl(const Impl& in_other) = default;
+
+   Impl(int in_code, std::string in_name, ErrorLocation in_location) :
+      Code(in_code),
       Name(std::move(in_name)),
       Location(std::move(in_location))
-   { };
+   { }
 
-   Impl(int in_errorCode, std::string in_name, const Error& in_cause, ErrorLocation in_location) :
-      ErrorCode(in_errorCode),
+   Impl(int in_code, std::string in_name, const Error& in_cause, ErrorLocation in_location) :
+      Code(in_code),
       Name(std::move(in_name)),
       Cause(in_cause),
       Location(std::move(in_location))
-   { };
+   { }
 
-   Impl(int in_errorCode, std::string in_name, std::string in_errorMessage, ErrorLocation in_location) :
-      ErrorCode(in_errorCode),
+   Impl(int in_code, std::string in_name, std::string in_message, ErrorLocation in_location) :
+      Code(in_code),
       Name(std::move(in_name)),
-      Message(std::move(in_errorMessage)),
+      Message(std::move(in_message)),
       Location(std::move(in_location))
-   { };
+   { }
 
-   Impl(int in_errorCode, std::string in_name, std::string in_errorMessage, const Error& in_cause, ErrorLocation in_location) :
-      ErrorCode(in_errorCode),
+   Impl(int in_code, std::string in_name, std::string in_message, const Error& in_cause, ErrorLocation in_location) :
+      Code(in_code),
       Name(std::move(in_name)),
-      Message(std::move(in_errorMessage)),
+      Message(std::move(in_message)),
       Cause(in_cause),
       Location(std::move(in_location))
-   { };
+   { }
 
-   int ErrorCode;
+   int Code;
    std::string Name;
    std::string Message;
+   ErrorProperties Properties;
    Error Cause;
    ErrorLocation Location;
 };
 
-std::ostream& operator<<(std::ostream& in_os, const Error& in_error)
-{
-   in_os << in_error.getSummary() << " at " << in_error.getLocation();
-   if (in_error.getCause())
-   {
-      in_os << std::endl << "   caused by: " << in_error.getCause();
-   }
-
-   return in_os;
-}
-
-Error::Error() :
-   m_impl(nullptr)
+// This is a shallow copy because deep copy will only be performed on a write.
+Error::Error(const Error& in_other) :
+   m_impl(in_other.m_impl)
 {
 }
 
-Error::Error(const boost::system::error_code& in_ec, ErrorLocation in_errorLocation) :
-   m_impl(new Impl(in_ec.value(), in_ec.category().name(), std::move(in_errorLocation)))
+Error::Error(const boost::system::error_code& in_ec, const ErrorLocation& in_location) :
+   m_impl(new Impl(in_ec.value(), in_ec.category().name(), in_ec.message(), in_location))
 {
 }
 
-Error::Error(const boost::system::error_code& in_ec, const Error& in_cause, ErrorLocation in_errorLocation) :
-   m_impl(new Impl(in_ec.value(), in_ec.category().name(), in_cause, std::move(in_errorLocation)))
+Error::Error(const boost::system::error_code& in_ec, const Error& in_cause, const ErrorLocation& in_location) :
+   m_impl(new Impl(in_ec.value(), in_ec.category().name(), in_ec.message(), in_cause, in_location))
 {
 }
 
-Error::Error(const boost::system::error_code& in_ec, std::string in_errorMessage, ErrorLocation in_errorLocation) :
-   m_impl(new Impl(in_ec.value(), in_ec.category().name(), std::move(in_errorMessage), std::move(in_errorLocation)))
+Error::Error(const boost::system::error_code& in_ec, std::string in_message, const ErrorLocation& in_location) :
+   m_impl(new Impl(in_ec.value(), in_ec.category().name(), std::move(in_message), in_location))
 {
 }
 
 Error::Error(
    const boost::system::error_code& in_ec,
-   std::string in_errorMessage,
+   std::string in_message,
    const Error& in_cause,
-   ErrorLocation in_errorLocation) :
-      m_impl(
-         new Impl(
-            in_ec.value(),
-            in_ec.category().name(),
-            std::move(in_errorMessage),
-            in_cause,
-            std::move(in_errorLocation)))
-{
-
-}
-
-Error::Error(
-   int in_errorCode,
-   std::string in_name,
-   ErrorLocation in_errorLocation) :
-      m_impl(new Impl(in_errorCode, std::move(in_name), std::move(in_errorLocation)))
+   const ErrorLocation& in_location) :
+      m_impl(new Impl(in_ec.value(), in_ec.category().name(), std::move(in_message), in_cause, in_location))
 {
 }
 
+Error::Error(int in_code, std::string in_name, const ErrorLocation& in_location) :
+   m_impl(new Impl(in_code, std::move(in_name), in_location))
+{
+}
+
+Error::Error(int in_code, std::string in_name, const Error& in_cause, const ErrorLocation& in_location) :
+   m_impl(new Impl(in_code, std::move(in_name), in_cause, in_location))
+{
+}
+
+Error::Error(int in_code, std::string in_name, std::string in_message, const ErrorLocation& in_location) :
+   m_impl(new Impl(in_code, std::move(in_name), std::move(in_message), in_location))
+{
+}
+
 Error::Error(
-   int in_errorCode,
+   int in_code,
    std::string in_name,
+   std::string in_message,
    const Error& in_cause,
-   ErrorLocation in_errorLocation) :
-      m_impl(
-         new Impl(
-            in_errorCode,
-            std::move(in_name),
-            in_cause,
-            std::move(in_errorLocation)))
-{
-}
-
-Error::Error(
-   int in_errorCode,
-   std::string in_name,
-   std::string in_errorMessage,
-   ErrorLocation in_errorLocation) :
-      m_impl(
-         new Impl(
-            in_errorCode,
-            std::move(in_name),
-            std::move(in_errorMessage),
-            std::move(in_errorLocation)))
-{
-}
-
-Error::Error(
-   int in_errorCode,
-   std::string in_name,
-   std::string in_errorMessage,
-   const Error& in_cause,
-   ErrorLocation in_errorLocation) :
-      m_impl(
-         new Impl(
-            in_errorCode,
-            std::move(in_name),
-            std::move(in_errorMessage),
-            in_cause,
-            std::move(in_errorLocation)))
+   const ErrorLocation& in_location) :
+      m_impl(new Impl(in_code, std::move(in_name), std::move(in_message), in_cause, in_location))
 {
 }
 
 Error::operator bool() const
 {
-   if (m_impl)
+   return isError();
+}
+
+bool Error::operator!() const
+{
+   return !isError();
+}
+
+bool Error::operator==(const Error& in_other) const
+{
+   if ((m_impl == nullptr) || (m_impl->Code == 0))
+      return (in_other.m_impl == nullptr) || (in_other.m_impl->Code == 0);
+   if ((in_other.m_impl == nullptr) || (in_other.m_impl->Code == 0))
+      return false; // This error is neither empty nor 0.
+   return (m_impl->Code == in_other.m_impl->Code) && (m_impl->Name == in_other.m_impl->Name);
+}
+
+bool Error::operator==(const boost::system::error_code& in_ec) const
+{
+   if ((m_impl == nullptr) || (m_impl->Code == 0))
+      return in_ec.value() == 0;
+   return (m_impl->Code == in_ec.value()) && (m_impl->Name == in_ec.category().name());
+}
+
+bool Error::operator!=(const rstudio::launcher_plugins::Error& in_other) const
+{
+   return !(*this == in_other);
+}
+
+bool Error::operator!=(const boost::system::error_code& in_ec) const
+{
+   return !(*this == in_ec);
+}
+
+void Error::addOrUpdateProperty(const std::string& in_name, const std::string& in_value)
+{
+   copyOnWrite();
+
+   for (auto & property : impl().Properties)
    {
-      return m_impl->ErrorCode != 0;
+      if (property.first == in_name)
+      {
+         property.second = in_value;
+         return;
+      }
    }
 
-   return false;
+   addProperty(in_name, in_value);
+}
+
+void Error::addOrUpdateProperty(const std::string& in_name, const FilePath& in_value)
+{
+   addOrUpdateProperty(in_name, in_value.getAbsolutePath());
+}
+
+void Error::addOrUpdateProperty(const std::string& in_name, int in_value)
+{
+   addOrUpdateProperty(in_name, safe_convert::numberToString(in_value));
+}
+
+void Error::addProperty(const std::string& in_name, const std::string& in_value)
+{
+   copyOnWrite();
+   impl().Properties.push_back(std::make_pair(in_name, in_value));
+}
+
+void Error::addProperty(const std::string& in_name, const FilePath& in_value)
+{
+   addProperty(in_name, in_value.getAbsolutePath());
+}
+
+void Error::addProperty(const std::string& in_name, int in_value)
+{
+   addProperty(in_name, safe_convert::numberToString(in_value));
 }
 
 std::string Error::asString() const
 {
-   if (m_impl)
+   std::ostringstream ostr;
+   std::ostringstream errorStream;
+   errorStream << getSummary();
+   auto& props = getProperties();
+   if (!props.empty())
    {
-      std::ostringstream oss;
-      oss << *this;
-      return oss.str();
+      errorStream << " [";
+      for (size_t i = 0; i < props.size(); i++)
+      {
+         errorStream << props[i].first << ": " << props[i].second;
+         if (i < props.size() - 1)
+            errorStream << ", ";
+      }
+      errorStream << "]";
    }
 
-   return "";
-}
+   ostr << logging::cleanDelimiters(errorStream.str());
 
-std::string Error::getSummary() const
-{
-   if (m_impl)
+   ostr << logging::s_delim << " " << s_occurredAt << " "
+        << logging::cleanDelimiters(getLocation().asString());
+
+   if (getCause())
    {
-      std::ostringstream oss;
-      oss << m_impl->Name << " error " << m_impl->ErrorCode << " (" << m_impl->Message << ")";
-      return oss.str();
+      ostr << logging::s_delim << " " << s_causedBy << ": " << getCause().asString();
    }
 
-   return "";
-}
-
-int Error::getErrorCode() const
-{
-   if (m_impl)
-   {
-      return m_impl->ErrorCode;
-   }
-
-   return 0;
-}
-
-const std::string& Error::getName() const
-{
-   if (m_impl)
-   {
-      return m_impl->Name;
-   }
-
-   return kEmptyString;
-}
-
-const std::string& Error::getMessage() const
-{
-   if (m_impl)
-   {
-      return m_impl->Message;
-   }
-
-   return kEmptyString;
+   return ostr.str();
 }
 
 const Error& Error::getCause() const
 {
-   if (m_impl)
-   {
-      return m_impl->Cause;
-   }
+   return impl().Cause;
+}
 
-   return kNoError;
+int Error::getCode() const
+{
+   return impl().Code;
 }
 
 const ErrorLocation& Error::getLocation() const
 {
-   if (m_impl)
+   return impl().Location;
+}
+
+const std::string& Error::getMessage() const
+{
+   return impl().Message;
+}
+
+const std::string& Error::getName() const
+{
+   return impl().Name;
+}
+   
+const ErrorProperties& Error::getProperties() const
+{
+   return impl().Properties;
+}
+   
+std::string Error::getProperty(const std::string& in_name) const
+{
+   for (const auto & it : getProperties())
    {
-      return m_impl->Location;
+      if (it.first == in_name)
+         return it.second;
    }
-
-   return kNoErrorLocation;
+   
+   return std::string();
 }
 
-// System Error ========================================================================================================
-Error systemError(int in_errorCode, ErrorLocation in_location)
+std::string Error::getSummary() const
 {
-   return Error(
-      boost::system::error_code(
-         in_errorCode,
-         boost::system::system_category()),
-      std::move(in_location));
+   std::ostringstream ostr;
+   ostr << impl().Name << " error "
+        << impl().Code << " (" << impl().Message << ")";
+   return ostr.str();
 }
 
-Error systemError(int in_errorCode, const Error& in_cause, ErrorLocation in_location)
+bool Error::isExpected() const
 {
-   return Error(
-      boost::system::error_code(
-         in_errorCode,
-         boost::system::system_category()),
-      in_cause,
-      std::move(in_location));
+   return getProperty(s_errorExpected) == s_errorExpectedValue;
 }
 
-Error systemError(int in_errorCode, std::string in_errorMessage, ErrorLocation in_location)
+void Error::setExpected()
 {
-   return Error(
-      boost::system::error_code(
-         in_errorCode,
-         boost::system::system_category()),
-      std::move(in_errorMessage),
-      std::move(in_location));
+   addProperty(s_errorExpected, s_errorExpectedValue);
 }
 
-Error systemError(int in_errorCode, std::string in_errorMessage, const Error& in_cause, ErrorLocation in_location)
+void Error::copyOnWrite()
 {
-   return Error(
-      boost::system::error_code(
-         in_errorCode,
-         boost::system::system_category()),
-      std::move(in_errorMessage),
-      in_cause,
-      std::move(in_location));
+   if ((m_impl != nullptr) && !m_impl.unique())
+      m_impl.reset(new Impl(impl()));
 }
 
-Error unknownError(std::string in_errorMessage, ErrorLocation in_location)
+bool Error::isError() const
+{
+   if (m_impl != nullptr)
+      return impl().Code != 0;
+   else
+      return false;
+}
+
+Error::Impl& Error::impl() const
+{
+   // This doesn't really change the internal meaning of the object, so it's safe to const_cast here.
+   if (m_impl == nullptr)
+      const_cast<std::shared_ptr<Impl>*>(&m_impl)->reset(new Impl());
+   return *m_impl;
+}
+
+std::ostream& operator<<(std::ostream& io_ostream, const Error& in_error)
+{
+   return io_ostream << in_error.asString();
+}
+
+// Common error creation functions =====================================================================================
+Error systemError(int in_value, const ErrorLocation& in_location)
+{
+   using namespace boost::system ;
+   return Error(error_code(in_value, system_category()), in_location);
+}
+
+Error systemError(int in_value,
+                  const Error& in_cause,
+                  const ErrorLocation& in_location)
+{
+   using namespace boost::system ;
+   return Error(error_code(in_value, system_category()), in_cause, in_location);
+}
+
+Error systemError(int in_value,
+                  const std::string& in_description,
+                  const ErrorLocation& in_location)
+{
+   Error error = systemError(in_value, in_location);
+   error.addProperty("description", in_description);
+   return error;
+}
+
+Error unknownError(const std::string& in_message, const ErrorLocation&  in_location)
 {
    return Error(
       1,
       "UnknownError",
-      std::move(in_errorMessage),
-      std::move(in_location));
+      in_message,
+      in_location);
 }
 
-Error unknownError(std::string in_errorMessage, const Error& in_cause, ErrorLocation in_location)
+Error unknownError(const std::string& in_message, const Error& in_cause, const ErrorLocation& in_location)
 {
    return Error(
       1,
       "UnknownError",
-      std::move(in_errorMessage),
+      in_message,
       in_cause,
-      std::move(in_location));
+      in_location);
 }
 
-} // namespace launcher_plugins
+} // namespace launcher_plugins 
 } // namespace rstudio
-

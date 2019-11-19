@@ -3,6 +3,9 @@
  * 
  * Copyright (C) 2019 by RStudio, Inc.
  *
+ * Unless you have received this program directly from RStudio pursuant to the terms of a commercial license agreement
+ * with RStudio, then this program is licensed to you under the following terms:
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
  * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
@@ -21,12 +24,12 @@
 #ifndef LAUNCHER_PLUGINS_FILE_LOG_DESTINATION_HPP
 #define LAUNCHER_PLUGINS_FILE_LOG_DESTINATION_HPP
 
-#include "ILogDestination.hpp"
+#include <logging/ILogDestination.hpp>
 
 #include <string>
 
-#include "PImpl.hpp"
-#include "system/FilePath.hpp"
+#include <PImpl.hpp>
+#include <system/FilePath.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -39,31 +42,35 @@ class FileLogOptions
 {
 public:
    /**
-   * @brief Constructor.
-   *
-   * @param in_directory      The directory in which to create log files.
-   */
+    * @brief Constructor.
+    *
+    * This constructor is intentionally not explicit to allow for conversion from system::FilePath to FileLogOptions.
+    *
+    * @param in_directory      The directory in which to create log files.
+    */
    FileLogOptions(system::FilePath in_directory);
 
    /**
-   * @brief Constructor.
-   *
-   * @param in_directory      The directory in which to create log files.
-   * @param in_fileMode       The permissions to set on log files.
-   * @param in_maxSizeMb      The maximum size of log files, in MB, before they are rotated and/or overwritten.
-   * @param in_doRotation     Whether to rotate log files or not.
-   */
+    * @brief Constructor.
+    *
+    * @param in_directory      The directory in which to create log files.
+    * @param in_fileMode       The permissions to set on log files.
+    * @param in_maxSizeMb      The maximum size of log files, in MB, before they are rotated and/or overwritten.
+    * @param in_doRotation     Whether to rotate log files or not.
+    * @param in_includePid     Whether to include the PID of the process in the logs.
+    */
    FileLogOptions(
       system::FilePath in_directory,
       std::string in_fileMode,
       double in_maxSizeMb,
-      bool in_doRotation);
+      bool in_doRotation,
+      bool in_includePid);
 
    /**
-   * @brief Gets the directory where log files should be written.
-   *
-   * @return The directory where log files should be written.
-   */
+    * @brief Gets the directory where log files should be written.
+    *
+    * @return The directory where log files should be written.
+    */
    const system::FilePath& getDirectory() const;
 
    /**
@@ -87,11 +94,19 @@ public:
     */
    bool doRotation() const;
 
+   /**
+    * @brief Returns whether or not to include the PID in the logs.
+    *
+    * @return True if the PID should be included in the logs; false otherwise.
+    */
+   bool includePid() const;
+
 private:
    // Default values.
-   static constexpr const char* kDefaultFileMode = "666";
-   static constexpr int kDefaultMaxSizeMb = 2;
-   static constexpr bool kDefaultDoRotation = true;
+   static constexpr const char* s_defaultFileMode = "666";
+   static constexpr int s_defaultMaxSizeMb = 2;
+   static constexpr bool s_defaultDoRotation = true;
+   static constexpr bool s_defaultIncludePid = false;
 
    // The directory where log files should be written.
    system::FilePath m_directory;
@@ -104,6 +119,9 @@ private:
 
    // Whether to rotate log files or not.
    bool m_doRotation;
+
+   // Whether to include the PID in logs.
+   bool m_includePid;
 };
 
 /**
@@ -116,18 +134,23 @@ public:
     * @brief Constructor.
     *
     * @param in_id              The ID of this log destination. Must be unique for each file log destination and > 100.
+    * @param in_logLevel        The most detailed level of log to be written to this log file.
     * @param in_programId       The ID of this program.
     * @param in_logOptions      The options for log file creation and management.
     *
     * If the log file cannot be opened, no logs will be written to the file. If there are other log destinations
     * registered an error will be logged regarding the failure.
     */
-   FileLogDestination(unsigned int in_id, std::string in_programId, FileLogOptions in_logOptions);
+   FileLogDestination(
+      unsigned int in_id,
+      LogLevel in_logLevel,
+      const std::string& in_programId,
+      FileLogOptions in_logOptions);
 
    /**
     * @brief Destructor.
     */
-    ~FileLogDestination() override;
+   ~FileLogDestination() override;
 
    /**
     * @brief Gets the unique ID of this file log destination.

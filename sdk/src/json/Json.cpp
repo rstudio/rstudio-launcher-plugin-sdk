@@ -1,7 +1,10 @@
 /*
  * Json.cpp
- * 
+ *
  * Copyright (C) 2019 by RStudio, Inc.
+ *
+ * Unless you have received this program directly from RStudio pursuant to the terms of a commercial license agreement
+ * with RStudio, then this program is licensed to you under the following terms:
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
  * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
@@ -18,50 +21,182 @@
  *
  */
 
-#include "json/Json.hpp"
+#include <json/Json.hpp>
 
-#include "rapidjson/document.h"
+#include <sstream>
+
+#include <boost/algorithm/string.hpp>
+#include <boost/regex.hpp>
+#include <boost/system/error_code.hpp>
+
+#include <Error.hpp>
+
+#include "json/rapidjson/document.h"
+#include "json/rapidjson/stringbuffer.h"
+#include "json/rapidjson/prettywriter.h"
+#include "json/rapidjson/writer.h"
+#include "json/rapidjson/error/en.h"
+#include "json/rapidjson/schema.h"
+
+// JSON Boost Error ====================================================================================================
+// Declare rapidjson errors as boost errors.
+namespace boost {
+namespace system {
+
+template <>
+struct is_error_code_enum<rapidjson::ParseErrorCode>
+{
+   static const bool value = true;
+};
+
+} // namespace system
+} // namespace boost
+
+namespace rstudio {
+namespace launcher_plugins {
+namespace json {
+   const boost::system::error_category& jsonParseCategory();
+}
+}
+}
+
+namespace rapidjson {
+inline boost::system::error_code make_error_code(ParseErrorCode e) {
+   return { e, rstudio::launcher_plugins::json::jsonParseCategory() };
+}
+
+inline boost::system::error_condition make_error_condition(ParseErrorCode e) {
+   return { e, rstudio::launcher_plugins::json::jsonParseCategory() };
+}
+}
 
 namespace rstudio {
 namespace launcher_plugins {
 namespace json {
 
+class JsonParseErrorCategory : public boost::system::error_category
+{
+public:
+   const char* name() const BOOST_NOEXCEPT override;
+
+   std::string message(int ev) const override;
+};
+
+const boost::system::error_category& jsonParseCategory()
+{
+   static JsonParseErrorCategory jsonParseErrorCategoryConst;
+   return jsonParseErrorCategoryConst;
+}
+
+const char* JsonParseErrorCategory::name() const BOOST_NOEXCEPT
+{
+   return "json-parse";
+}
+
+std::string JsonParseErrorCategory::message(int ev) const
+{
+   return rapidjson::GetParseError_En(static_cast<rapidjson::ParseErrorCode>(ev));
+}
+
 typedef rapidjson::GenericDocument<rapidjson::UTF8<>, rapidjson::CrtAllocator> JsonDocument;
 typedef rapidjson::GenericValue<rapidjson::UTF8<>, rapidjson::CrtAllocator> JsonValue;
+typedef rapidjson::GenericPointer<rapidjson::GenericValue<rapidjson::UTF8<>, rapidjson::CrtAllocator>,
+                                  rapidjson::CrtAllocator> JsonPointer;
 
+// Globals and Helpers =================================================================================================
 namespace {
 
-static rapidjson::CrtAllocator s_allocator;
+rapidjson::CrtAllocator s_allocator;
+
+Object getSchemaDefaults(const Object& schema)
+{
+   Object result;
+   Object::Iterator objType = schema.find("type");
+   if (objType == schema.end() ||
+       (*objType).getValue().getType() != Type::STRING ||
+       (*objType).getValue().getString() != "object")
+   {
+      // Nothing to do for non-object types
+      return result;
+   }
+
+   Object::Iterator objProperties = schema.find("properties");
+   if (objProperties == schema.end() ||
+       (*objProperties).getValue().getType() != Type::OBJECT)
+   {
+      // Nothing to do for types with no properties
+      return result;
+   }
+
+   // Iterate over all the properties specified in the schema
+   const json::Object& properties = (*objProperties).getValue().getObject();
+   for (auto prop: properties)
+   {
+      // JSON schema specifies that properties are defined with objects
+      if (prop.getValue().getType() != Type::OBJECT)
+         continue;
+
+      const json::Object& definition = prop.getValue().getObject();
+      Object::Iterator def = definition.find("default");
+      if (def == definition.end())
+      {
+         // We didn't find a default value for this property, so recurse and see if it is an
+         // object with its own defaults.
+         json::Object child = getSchemaDefaults(definition);
+         if (!child.isEmpty())
+         {
+            // We found defaults inside the object; use them
+            result[prop.getName()] = child;
+         }
+      }
+      else
+      {
+         // Use the default
+         result[prop.getName()] = (*def).getValue();
+      }
+   }
+   return result;
+}
 
 } // anonymous namespace
 
 // Value ===============================================================================================================
 struct Value::Impl
 {
-   Impl() : Document(&s_allocator) { };
+   Impl() :
+      Document(new JsonDocument(&s_allocator)),
+      m_needDelete(true)
+   { };
 
-   Impl(const Impl& in_other) :
-      Document(&s_allocator)
+   explicit Impl(JsonDocument* in_jsonDocument) :
+      Document(in_jsonDocument),
+      m_needDelete(false)
    {
-      Document.CopyFrom(in_other.Document, s_allocator);
    }
 
-   explicit Impl(const JsonDocument& in_jsonDocument) :
-      Impl()
+   ~Impl()
    {
-      Document.CopyFrom(in_jsonDocument, s_allocator);
+      free();
    }
 
-   explicit Impl(const JsonValue& in_jsonValue) :
-      Impl()
+   void copy(const Impl& in_other)
    {
-      Document.CopyFrom(in_jsonValue, s_allocator);
+      Document->CopyFrom(*in_other.Document, s_allocator);
    }
 
-   JsonDocument Document;
+   JsonDocument* Document;
+
+private:
+   void free()
+   {
+      if (m_needDelete)
+         delete Document;
+
+      m_needDelete = false;
+   }
+
+   bool m_needDelete;
 };
-
-PRIVATE_IMPL_DELETER_IMPL(Value)
 
 Value::Value() :
    m_impl(new Impl())
@@ -74,16 +209,15 @@ Value::Value(ValueImplPtr in_valueImpl) :
 }
 
 Value::Value(const Value& in_other) :
-   m_impl(new Impl(*in_other.m_impl))
+   Value()
 {
+   m_impl->copy(*in_other.m_impl);
 }
 
 Value::Value(Value&& in_other) noexcept :
-   m_impl(std::move(in_other.m_impl))
+   Value()
 {
-   // Make sure we're never in a situation where m_impl is null. Most of the time this shouldn't be a problem since you
-   // you shouldn't be moving something you intend to continue using later, but it's better to be on the safe side.
-   in_other.m_impl.reset(new Impl());
+   move(std::move(in_other));
 }
 
 Value::Value(bool in_value) :
@@ -144,73 +278,70 @@ Value& Value::operator=(const Value& in_other)
 {
    // Don't bother copying if these objects are the same object.
    if (this != &in_other)
-      m_impl.reset(new Impl(*in_other.m_impl));
+      m_impl->copy(*in_other.m_impl);
    return *this;
 }
 
 Value& Value::operator=(Value&& in_other) noexcept
 {
-   // Don't try to move this object into itself.
+   // Don't bother moving if these objects are the same.
    if (this != &in_other)
-   {
-      m_impl = std::move(in_other.m_impl);
-      // Make sure we're never in a situation where m_impl is null.
-      in_other.m_impl.reset(new Impl());
-   }
+      move(std::move(in_other));
 
    return *this;
 }
 
 Value& Value::operator=(bool in_value)
 {
-   m_impl->Document.SetBool(in_value);
+   m_impl->Document->SetBool(in_value);
    return *this;
 }
 
 Value& Value::operator=(double in_value)
 {
-   m_impl->Document.SetDouble(in_value);
+   m_impl->Document->SetDouble(in_value);
    return *this;
 }
 
 Value& Value::operator=(float in_value)
 {
-   m_impl->Document.SetFloat(in_value);
+   m_impl->Document->SetFloat(in_value);
    return *this;
 }
 
 Value& Value::operator=(int in_value)
 {
-   m_impl->Document.SetInt(in_value);
+   m_impl->Document->SetInt(in_value);
+   return *this;
 }
 
 Value& Value::operator=(int64_t in_value)
 {
-   m_impl->Document.SetInt64(in_value);
+   m_impl->Document->SetInt64(in_value);
    return *this;
 }
 
 Value& Value::operator=(const char* in_value)
 {
-   m_impl->Document.SetString(in_value, s_allocator);
+   m_impl->Document->SetString(in_value, s_allocator);
    return *this;
 }
 
 Value& Value::operator=(const std::string& in_value)
 {
-   m_impl->Document.SetString(in_value.c_str(), s_allocator);
+   m_impl->Document->SetString(in_value.c_str(), s_allocator);
    return *this;
 }
 
 Value& Value::operator=(unsigned int in_value)
 {
-   m_impl->Document.SetUint(in_value);
+   m_impl->Document->SetUint(in_value);
    return *this;
 }
 
 Value& Value::operator=(uint64_t in_value)
 {
-   m_impl->Document.SetUint64(in_value);
+   m_impl->Document->SetUint64(in_value);
    return *this;
 }
 
@@ -223,57 +354,119 @@ bool Value::operator==(const Value& in_other) const
    return m_impl->Document == in_other.m_impl->Document;
 }
 
+Value Value::clone() const
+{
+   return Value(*this);
+}
+
+Error Value::coerce(const std::string& in_schema,
+                    std::vector<std::string>& out_propViolations)
+{
+   Error error;
+
+   // Parse the schema first.
+   rapidjson::Document sd;
+   rapidjson::ParseResult result = sd.Parse(in_schema.c_str());
+   if (result.IsError())
+   {
+      error = Error(result.Code(), ERROR_LOCATION);
+      error.addProperty("offset", result.Offset());
+      return error;
+   }
+
+   // Validate the input according to the schema.
+   rapidjson::SchemaDocument schemaDoc(sd);
+   rapidjson::SchemaValidator validator(schemaDoc);
+   rapidjson::Pointer lastInvalid;
+   while (!m_impl->Document->Accept(validator))
+   {
+      rapidjson::StringBuffer sb;
+
+      // Find the invalid part of the document
+      rapidjson::Pointer invalid = validator.GetInvalidDocumentPointer();
+
+      if (invalid == lastInvalid)
+      {
+         // If this is the same as the last invalid piece we tried to remove, then removing
+         // it didn't actually fix the problem.
+         error = Error(rapidjson::kParseErrorUnspecificSyntaxError, ERROR_LOCATION);
+         error.addProperty("keyword", validator.GetInvalidSchemaKeyword());
+         invalid.StringifyUriFragment(sb);
+         error.addProperty("document", sb.GetString());
+         return error;
+      }
+
+      // Remember this as the last error we hit, so we can bail if mutating the document
+      // doesn't resolve it
+      lastInvalid = invalid;
+
+      // Accumulate the error for the caller
+      invalid.Stringify(sb);
+      out_propViolations.push_back(sb.GetString());
+
+      // Remove the invalid part of the document
+      JsonPointer pointer(sb.GetString(), &s_allocator);
+      pointer.Erase(*(m_impl->Document));
+
+      // Reset state for re-validation
+      validator.Reset();
+   }
+
+   // The value was successfully coerced, or didn't need to be.
+   return Success();
+}
+
 Array Value::getArray() const
 {
    assert(getType() == Type::ARRAY);
-   return Array(*this);
+   return Array(m_impl);
 }
 
 bool Value::getBool() const
 {
-   assert(getType() == Type::BOOL);
-   return m_impl->Document.GetBool();
+   assert(isBool());
+   return m_impl->Document->GetBool();
 }
 
 double Value::getDouble() const
 {
-   assert(getType() == Type::DOUBLE);
-   return m_impl->Document.GetDouble();
+   assert(isDouble() || isFloat() || (getType() == Type::INTEGER));
+   return m_impl->Document->GetDouble();
 }
 
 float Value::getFloat() const
 {
-   assert(getType() == Type::FLOAT);
-   return m_impl->Document.GetFloat();
+   assert(isFloat() || (getType() == Type::INTEGER));
+   return m_impl->Document->GetFloat();
 }
 
 int Value::getInt() const
 {
-   assert(getType() == Type::INT);
-   return m_impl->Document.GetInt();
+   assert(isInt());
+   return m_impl->Document->GetInt();
 }
 
 int64_t Value::getInt64() const
 {
-   assert(getType() == Type::INT64);
-   return m_impl->Document.GetInt64();
+   assert(isInt64() || isInt());
+   return m_impl->Document->GetInt64();
 }
 
 Object Value::getObject() const
 {
-   assert(getType() == Type::OBJECT);
-   return Object(*this);
+   assert(isObject());
+   return Object(m_impl);
 }
 
 std::string Value::getString() const
 {
-   assert(getType() == Type::STRING);
-   return std::string(m_impl->Document.GetString(), m_impl->Document.GetStringLength());
+   assert(isString());
+   return std::string(m_impl->Document->GetString(), m_impl->Document->GetStringLength());
 }
 
 Type Value::getType() const
 {
-   switch(m_impl->Document.GetType())
+   switch (m_impl->Document->GetType())
    {
       case rapidjson::kArrayType:
          return Type::ARRAY;
@@ -282,20 +475,10 @@ Type Value::getType() const
          return Type::BOOL;
       case rapidjson::kNumberType:
       {
-         if (m_impl->Document.IsDouble())
-            return Type::DOUBLE;
-         if (m_impl->Document.IsFloat())
-            return Type::FLOAT;
-         if (m_impl->Document.IsInt())
-            return Type::INT;
-         if (m_impl->Document.IsInt64())
-            return Type::INT64;
-         if (m_impl->Document.IsUint())
-            return Type::UINT;
-         if (m_impl->Document.IsUint64())
-            return Type::UINT64;
+         if (m_impl->Document->IsDouble() || m_impl->Document->IsFloat())
+            return Type::REAL;
 
-         return Type::UNKNOWN;
+         return Type::INTEGER;
       }
       case rapidjson::kObjectType:
          return Type::OBJECT;
@@ -310,24 +493,146 @@ Type Value::getType() const
 
 unsigned int Value::getUInt() const
 {
-   assert(getType() == Type::UINT);
-   return m_impl->Document.GetUint();
+   assert(isUInt());
+   return m_impl->Document->GetUint();
 }
 
 uint64_t Value::getUInt64() const
 {
-   assert(getType() == Type::UINT64);
-   return m_impl->Document.GetUint64();
+   assert(isUInt64() || isUInt());
+   return m_impl->Document->GetUint64();
+}
+
+template<>
+Array Value::getValue<Array>() const
+{
+   // Perform a full copy.
+   const Array self = getArray();
+   Array copy(self);
+   return copy;
+}
+
+template<>
+bool Value::getValue<bool>() const
+{
+   return getBool();
+}
+
+template<>
+double Value::getValue<double>() const
+{
+   return getDouble();
+}
+
+template<>
+float Value::getValue<float>() const
+{
+   return getFloat();
+}
+
+template<>
+int Value::getValue<int>() const
+{
+   return getInt();
+}
+
+template<>
+int64_t Value::getValue<int64_t>() const
+{
+   return getInt64();
+}
+
+template<>
+Object Value::getValue<Object>() const
+{
+   // Perform a full copy.
+   const Object self = getObject();
+   Object copy(self);
+   return copy;
+}
+
+template<>
+const char* Value::getValue<const char*>() const
+{
+   return getString().c_str();
+}
+
+template<>
+std::string Value::getValue<std::string>() const
+{
+   return getString();
+}
+
+template<>
+unsigned int Value::getValue<unsigned int>() const
+{
+   return getUInt();
+}
+
+template<>
+uint64_t Value::getValue<uint64_t>() const
+{
+   return getUInt64();
+}
+
+bool Value::isArray() const
+{
+   return getType() == Type::ARRAY;
+}
+
+bool Value::isBool() const
+{
+   return getType() == Type::BOOL;
+}
+
+bool Value::isDouble() const
+{
+   return m_impl->Document->IsDouble();
+}
+
+bool Value::isFloat() const
+{
+   return m_impl->Document->IsFloat();
+}
+
+bool Value::isInt() const
+{
+   return m_impl->Document->IsInt();
+}
+
+bool Value::isInt64() const
+{
+   return m_impl->Document->IsInt64();
+}
+
+bool Value::isObject() const
+{
+   return getType() == Type::OBJECT;
+}
+
+bool Value::isString() const
+{
+   return getType() == Type::STRING;
 }
 
 bool Value::isNull() const
 {
-   return m_impl->Document.IsNull();
+   return m_impl->Document->IsNull();
+}
+
+bool Value::isUInt() const
+{
+   return m_impl->Document->IsUint();
+}
+
+bool Value::isUInt64() const
+{
+   return m_impl->Document->IsUint64();
 }
 
 Error Value::parse(const char* in_jsonStr)
 {
-   rapidjson::ParseResult result = m_impl->Document.Parse(in_jsonStr);
+   rapidjson::ParseResult result = m_impl->Document->Parse(in_jsonStr);
 
    if (result.IsError())
    {
@@ -343,21 +648,112 @@ Error Value::parse(const std::string& in_jsonStr)
    return parse(in_jsonStr.c_str());
 }
 
+Error Value::parseAndValidate(const std::string& in_jsonStr, const std::string& in_schema)
+{
+   Error error;
+
+   error = parse(in_jsonStr);
+   if (error)
+      return error;
+
+   return validate(in_schema);
+}
+
+Error Value::validate(const std::string& in_schema) const
+{
+   Error error;
+
+   // Parse the schema first.
+   rapidjson::Document sd;
+   rapidjson::ParseResult result = sd.Parse(in_schema.c_str());
+   if (result.IsError())
+   {
+      error = Error(result.Code(), ERROR_LOCATION);
+      error.addProperty("offset", result.Offset());
+      return error;
+   }
+
+   // Validate the input according to the schema.
+   rapidjson::SchemaDocument schemaDoc(sd);
+   rapidjson::SchemaValidator validator(schemaDoc);
+   if (!m_impl->Document->Accept(validator))
+   {
+      rapidjson::StringBuffer sb;
+      error = Error(rapidjson::kParseErrorUnspecificSyntaxError, ERROR_LOCATION);
+      validator.GetInvalidSchemaPointer().StringifyUriFragment(sb);
+      error.addProperty("schema", sb.GetString());
+      error.addProperty("keyword", validator.GetInvalidSchemaKeyword());
+      validator.GetInvalidDocumentPointer().StringifyUriFragment(sb);
+      error.addProperty("document", sb.GetString());
+      return error;
+   }
+
+   return Success();
+}
+
+std::string Value::write() const
+{
+   rapidjson::StringBuffer buffer;
+   rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+
+   m_impl->Document->Accept(writer);
+   return std::string(buffer.GetString(), buffer.GetLength());
+}
+
+void Value::write(std::ostream& os) const
+{
+   os << write();
+}
+
+std::string Value::writeFormatted() const
+{
+   rapidjson::StringBuffer buffer;
+   rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buffer);
+
+   m_impl->Document->Accept(writer);
+   return std::string(buffer.GetString(), buffer.GetLength());
+}
+
+void Value::writeFormatted(std::ostream& os) const
+{
+   os << writeFormatted();
+}
+
+void Value::move(Value&& in_other)
+{
+   // rapidjson copy is a move operation
+   // only move the underlying value (and none of the document members)
+   // because we do not want to move the allocators (as they are the same and rapidjson cannot
+   // handle this)
+   static_cast<JsonValue&>(*m_impl->Document) = static_cast<JsonValue&>(*in_other.m_impl->Document);
+}
+
 // Object Member =======================================================================================================
-Object::Member::Member(std::string in_name, Value in_value) :
-   m_name(std::move(in_name)),
-   m_value(std::move(in_value))
+struct Object::Member::Impl
+{
+   Impl(const std::string& in_name, JsonDocument* in_document) :
+      Document(in_document),
+      Name(in_name)
+   {
+   }
+
+   JsonDocument* Document;
+   std::string Name;
+};
+
+Object::Member::Member(const std::shared_ptr<Object::Member::Impl>& in_impl) :
+   m_impl(std::move(in_impl))
 {
 }
 
 const std::string& Object::Member::getName() const
 {
-   return m_name;
+   return m_impl->Name;
 }
 
-const Value& Object::Member::getValue() const
+Value Object::Member::getValue() const
 {
-   return m_value;
+   return Value(ValueImplPtr(new Value::Impl(m_impl->Document)));
 }
 
 // Object Iterator =====================================================================================================
@@ -371,11 +767,12 @@ Object::Iterator& Object::Iterator::operator=(const Object::Iterator& in_other)
 {
    m_parent = in_other.m_parent;
    m_pos = in_other.m_pos;
+   return *this;
 }
 
 Object::Iterator& Object::Iterator::operator++()
 {
-   if (static_cast<rapidjson::SizeType>(m_pos) < m_parent->m_impl->Document.MemberCount())
+   if (static_cast<rapidjson::SizeType>(m_pos) < m_parent->m_impl->Document->MemberCount())
       ++m_pos;
    return *this;
 }
@@ -406,46 +803,128 @@ bool Object::Iterator::operator==(const Object::Iterator& in_other) const
    return (m_parent == in_other.m_parent) && (m_pos == in_other.m_pos);
 }
 
+bool Object::Iterator::operator!=(const Object::Iterator& in_other) const
+{
+   return !(*this == in_other);
+}
+
 Object::Iterator::reference Object::Iterator::operator*() const
 {
-   if (m_pos > m_parent->m_impl->Document.MemberCount())
+   if (m_pos > m_parent->m_impl->Document->MemberCount())
       return Object::Member();
 
-   auto itr = m_parent->m_impl->Document.MemberBegin() + m_pos;
-   return Member(
+   auto itr = m_parent->m_impl->Document->MemberBegin() + m_pos;
+   return Object::Member(
+      std::make_shared<Member::Impl>(
       std::string(itr->name.GetString(), itr->name.GetStringLength()),
-      Value(ValueImplPtr(new Value::Impl(itr->value))));
+      &static_cast<JsonDocument&>(itr->value)));
 }
 
 // Object ==============================================================================================================
 Object::Object() :
    Value()
 {
-   m_impl->Document.SetObject();
+   m_impl->Document->SetObject();
+}
+
+Object::Object(const StringPairList& in_strPairs) :
+   Object()
+{
+   for (const auto& pair : in_strPairs)
+   {
+      (*this)[pair.first] = pair.second;
+   }
+}
+
+Object::Object(const Object& in_other) :
+   Value(in_other)
+{
+}
+
+Object::Object(Object&& in_other) :
+   Value(in_other)
+{
+}
+
+Error Object::getSchemaDefaults(const std::string& in_schema, Object& out_schemaDefaults)
+{
+   json::Value schema;
+   Error error = schema.parse(in_schema);
+   if (error)
+      return error;
+
+   if (!schema.isObject())
+      return Error(rapidjson::kParseErrorValueInvalid, ERROR_LOCATION);
+
+   out_schemaDefaults = ::rstudio::launcher_plugins::json::getSchemaDefaults(schema.getObject());
+   return Success();
+}
+
+Object Object::mergeObjects(const Object& in_base, const Object& in_overlay)
+{
+   Object merged;
+
+   // Begin by enumerating all the properties in the base object and replacing them with any
+   // properties also present in the overlay object.
+   for (Object::Member prop: in_base)
+   {
+      auto it = in_overlay.find(prop.getName());
+      if (it == in_overlay.end())
+      {
+         // The property does not exist in the overlay object, so use the base copy.
+         merged[prop.getName()] = prop.getValue().clone();
+      }
+      else
+      {
+         // The property exists in the overlay object.
+         if (prop.getValue().isObject() && (*it).getValue().isObject())
+         {
+            // If the properties exist in both objects and both are object types, then we
+            // recursively merge the objects (instead of just taking the overlay).
+            merged[prop.getName()] = mergeObjects(prop.getValue().getObject(), (*it).getValue().getObject());
+         }
+         else
+         {
+            // Not objects, so just take the overlay value
+            merged[prop.getName()] = (*it).getValue().clone();
+         }
+      }
+   }
+
+   // Next, we need to fill in any properties in the overlay object that are not present in the
+   // base.
+   for (auto prop: in_overlay)
+   {
+      auto it = in_base.find(prop.getName());
+      if (it == in_base.end())
+      {
+         merged[prop.getName()] = prop.getValue().clone();
+      }
+   }
+   return merged;
 }
 
 Object& Object::operator=(const Object& in_other)
 {
-   m_impl.reset(new Impl(*in_other.m_impl));
+   Value::operator=(in_other);
    return *this;
 }
 
 Object& Object::operator=(Object&& in_other) noexcept
 {
-   m_impl = std::move(in_other.m_impl);
-   in_other.m_impl.reset(new Impl());
+   Value::operator=(std::move(in_other));
    return *this;
 }
 
 Value Object::operator[](const char* in_name)
 {
-   JsonDocument& doc = m_impl->Document;
+   JsonDocument& doc = *m_impl->Document;
    if (!doc.HasMember(in_name))
    {
       doc.AddMember(JsonValue(in_name, s_allocator), JsonDocument(), s_allocator);
    }
 
-   return Value(ValueImplPtr(new Impl(doc[in_name])));
+   return Value(ValueImplPtr(new Impl(&static_cast<JsonDocument&>(doc.FindMember(in_name)->value))));
 }
 
 Value Object::operator[](const std::string& in_name)
@@ -455,11 +934,11 @@ Value Object::operator[](const std::string& in_name)
 
 Object::Iterator Object::find(const char* in_name) const
 {
-   auto itr = m_impl->Document.FindMember(in_name);
-   if (itr == m_impl->Document.MemberEnd())
+   auto itr = m_impl->Document->FindMember(in_name);
+   if (itr == m_impl->Document->MemberEnd())
       return end();
 
-   return Object::Iterator(this, itr - m_impl->Document.MemberBegin());
+   return Object::Iterator(this, itr - m_impl->Document->MemberBegin());
 }
 
 Object::Iterator Object::find(const std::string& in_name) const
@@ -489,12 +968,12 @@ Object::ReverseIterator Object::rend() const
 
 void Object::clear()
 {
-   m_impl->Document.SetObject();
+   m_impl->Document->SetObject();
 }
 
 bool Object::erase(const char* in_name)
 {
-   return m_impl->Document.EraseMember(in_name);
+   return m_impl->Document->EraseMember(in_name);
 }
 
 bool Object::erase(const std::string& in_name)
@@ -504,19 +983,19 @@ bool Object::erase(const std::string& in_name)
 
 Object::Iterator Object::erase(const Object::Iterator& in_itr)
 {
-   auto internalItr = m_impl->Document.MemberBegin() + in_itr.m_pos;
-   std::ptrdiff_t newPos = m_impl->Document.EraseMember(internalItr) - m_impl->Document.MemberBegin();
+   auto internalItr = m_impl->Document->MemberBegin() + in_itr.m_pos;
+   std::ptrdiff_t newPos = m_impl->Document->EraseMember(internalItr) - m_impl->Document->MemberBegin();
    return Object::Iterator(this, newPos);
 }
 
 size_t Object::getSize() const
 {
-   return m_impl->Document.MemberCount();
+   return m_impl->Document->MemberCount();
 }
 
 bool Object::hasMember(const char* in_name) const
 {
-   return m_impl->Document.HasMember(in_name);
+   return m_impl->Document->HasMember(in_name);
 }
 
 bool Object::hasMember(const std::string& in_name) const
@@ -524,20 +1003,59 @@ bool Object::hasMember(const std::string& in_name) const
    return hasMember(in_name.c_str());
 }
 
+void Object::insert(const std::string& in_name, const Value& in_value)
+{
+   (*this)[in_name] = in_value;
+}
+
 void Object::insert(const Member& in_member)
 {
-   (*this)[in_member.getName()] = in_member.getValue();
+   insert(in_member.getName(), in_member.getValue());
 }
+
 
 bool Object::isEmpty() const
 {
-   return m_impl->Document.ObjectEmpty();
+   return m_impl->Document->ObjectEmpty();
 }
 
-Object::Object(const Value& in_value) :
-   Value(in_value)
+bool Object::toStringMap(StringListMap& out_map) const
 {
-   assert(m_impl->Document.IsObject());
+   for (const Member member: *this)
+   {
+      std::vector<std::string> strs;
+      const Array& array = member.getValue().getArray();
+      if (!array.toVectorString(strs))
+         return false;
+
+      out_map[member.getName()] = strs;
+   }
+
+   return true;
+}
+
+StringPairList Object::toStringPairList() const
+{
+   StringPairList stringPairs;
+   for (Member member : *this)
+   {
+      if (member.getValue().getType() == Type::STRING)
+         stringPairs.emplace_back(member.getName(), member.getValue().getString());
+      else
+         logging::logDebugMessage(
+            "Skipping member " +
+            member.getName() +
+            " when converting object to a list of string pairs because its value does not have a string type.",
+            ERROR_LOCATION);
+   }
+
+   return stringPairs;
+}
+
+Object::Object(ValueImplPtr in_value)
+{
+   m_impl = in_value;
+   assert(m_impl->Document->IsObject());
 }
 
 // Array Iterator ======================================================================================================
@@ -551,11 +1069,12 @@ Array::Iterator& Array::Iterator::operator=(const Array::Iterator& in_other)
 {
    m_parent = in_other.m_parent;
    m_pos = in_other.m_pos;
+   return *this;
 }
 
 Array::Iterator& Array::Iterator::operator++()
 {
-   if (m_pos < m_parent->m_impl->Document.Size())
+   if (m_pos < m_parent->m_impl->Document->Size())
       ++m_pos;
 
    return *this;
@@ -588,39 +1107,73 @@ bool Array::Iterator::operator==(const Array::Iterator& in_other) const
    return (m_parent == in_other.m_parent) && (m_pos == in_other.m_pos);
 }
 
+bool Array::Iterator::operator!=(const Array::Iterator& in_other) const
+{
+   return !(*this == in_other);
+}
+
 Array::Iterator::reference Array::Iterator::operator*() const
 {
-   if (m_pos >= m_parent->m_impl->Document.Size())
+   if (m_pos >= m_parent->m_impl->Document->Size())
       return Value();
 
-   auto internalItr = m_parent->m_impl->Document.Begin() + m_pos;
-   return Value(ValueImplPtr(new Impl(*internalItr)));
+   auto internalItr = m_parent->m_impl->Document->Begin() + m_pos;
+   return Value(ValueImplPtr(new Impl(&static_cast<JsonDocument&>(*internalItr))));
 }
 
 // Array ===============================================================================================================
 Array::Array() :
    Value()
 {
-   m_impl->Document.SetArray();
+   m_impl->Document->SetArray();
+}
+
+Array::Array(const StringPairList& in_strPairs) :
+   Array()
+{
+   for (const auto& pair : in_strPairs)
+   {
+      // escape the equals in the keys and values
+      // this is necessary because we will jam the key value pairs together
+      // into an array to ensure that options stay ordered, and we want to make sure
+      // to properly deliniate between the real equals delimiter and an equals value
+      // in the key value pairs
+      std::string escapedKey = boost::replace_all_copy(pair.first, "=", "\\=");
+      std::string escapedValue = boost::replace_all_copy(pair.second, "=", "\\=");
+
+      std::string argVal = escapedKey;
+      if (!escapedValue.empty())
+         argVal += "=" + escapedValue;
+
+      push_back(Value(argVal));
+   }
+}
+
+Array::Array(const Array& in_other) :
+   Value(in_other)
+{
+}
+
+Array::Array(Array&& in_other) :
+   Value(in_other)
+{
 }
 
 Array& Array::operator=(const Array& in_other)
 {
-   m_impl.reset(new Impl(*in_other.m_impl));
+   Value::operator=(in_other);
    return *this;
 }
 
 Array& Array::operator=(Array&& in_other) noexcept
 {
-   m_impl = std::move(in_other.m_impl);
-   in_other.m_impl.reset(new Impl());
+   Value::operator=(std::move(in_other));
    return *this;
 }
 
 Value Array::operator[](size_t in_index) const
 {
-   JsonValue& internalValue = m_impl->Document[in_index];
-   return Value(ValueImplPtr(new Impl(internalValue)));
+   return Value(ValueImplPtr(new Impl(&static_cast<JsonDocument&>((*m_impl->Document)[in_index]))));
 }
 
 Array::Iterator Array::begin() const
@@ -630,7 +1183,7 @@ Array::Iterator Array::begin() const
 
 Array::Iterator Array::end() const
 {
-   return Array::Iterator(this, m_impl->Document.Size());
+   return Array::Iterator(this, m_impl->Document->Size());
 }
 
 Array::ReverseIterator Array::rbegin() const
@@ -645,7 +1198,7 @@ Array::ReverseIterator Array::rend() const
 
 void Array::clear()
 {
-   m_impl->Document.Clear();
+   m_impl->Document->Clear();
 }
 
 Array::Iterator Array::erase(const Array::Iterator& in_itr)
@@ -653,8 +1206,8 @@ Array::Iterator Array::erase(const Array::Iterator& in_itr)
    if (getSize() == 0)
       return Array::Iterator(this);
 
-   auto internalItr = m_impl->Document.Begin() + in_itr.m_pos;
-   std::ptrdiff_t newPos = m_impl->Document.Erase(internalItr) - m_impl->Document.Begin();
+   auto internalItr = m_impl->Document->Begin() + in_itr.m_pos;
+   std::ptrdiff_t newPos = m_impl->Document->Erase(internalItr) - m_impl->Document->Begin();
    return Array::Iterator(this, newPos);
 }
 
@@ -663,10 +1216,10 @@ Array::Iterator Array::erase(const Array::Iterator& in_first, const Array::Itera
    if (getSize() == 0)
       return Array::Iterator(this);
 
-   auto internalFirst = m_impl->Document.Begin() + in_first.m_pos;
-   auto internalLast = m_impl->Document.End() + in_last.m_pos;
+   auto internalFirst = m_impl->Document->Begin() + in_first.m_pos;
+   auto internalLast = m_impl->Document->Begin() + in_last.m_pos;
 
-   std::ptrdiff_t newPos = m_impl->Document.Erase(internalFirst, internalLast) - m_impl->Document.Begin();
+   std::ptrdiff_t newPos = m_impl->Document->Erase(internalFirst, internalLast) - m_impl->Document->Begin();
    return Array::Iterator(this, newPos);
 }
 
@@ -687,22 +1240,230 @@ Value Array::getValueAt(size_t in_index) const
 
 size_t Array::getSize() const
 {
-   return m_impl->Document.Size();
+   return m_impl->Document->Size();
 }
 
 bool Array::isEmpty() const
 {
-   return m_impl->Document.Empty();
+   return m_impl->Document->Empty();
 }
 
-void Array::pushBack(Value in_value)
+void Array::push_back(const Value& in_value)
 {
-   m_impl->Document.PushBack(in_value.m_impl->Document, s_allocator);
+   JsonDocument doc;
+   doc.CopyFrom(*in_value.m_impl->Document, s_allocator);
+   m_impl->Document->PushBack(doc, s_allocator);
 }
 
-Array::Array(const Value& in_value) :
-   Value(in_value)
+bool Array::toSetString(std::set<std::string>& out_set) const
 {
+   for (const Value value: *this)
+   {
+      if (!isType<std::string>(value))
+         return false;
+      out_set.insert(value.getString());
+   }
+
+   return true;
+}
+
+StringPairList Array::toStringPairList() const
+{
+   StringPairList strPairs;
+   auto iter = begin();
+   const auto endIter = end();
+   for (; iter != endIter; ++iter)
+   {
+      if (!(*iter).isString())
+      {
+         logging::logDebugMessage(
+            "Skipping value " +
+            (*iter).write() +
+            " when converting array to a list of string pairs because its value does not have a string type.",
+            ERROR_LOCATION);
+         continue;
+      }
+
+      const std::string& pairStr = (*iter).getString();
+
+      // find the first equals that is not preceded by an escape character
+      // this is the actual position in the string we will split on to get
+      // the key and value separated
+      boost::smatch results;
+      boost::regex rx("[^\\\\]=");
+      if (boost::regex_search(pairStr, results, rx))
+      {
+         std::string key = pairStr.substr(0, results.position() + 1);
+         std::string valueStr = pairStr.substr(results.position() + 2);
+         boost::replace_all(key, "\\=", "=");
+         boost::replace_all(valueStr, "\\=", "=");
+         strPairs.emplace_back(key, valueStr);
+      }
+      else
+      {
+         // no value, just a key
+         std::string unescapedKey = boost::replace_all_copy(pairStr, "\\=", "=");
+         strPairs.emplace_back(unescapedKey, std::string());
+      }
+   }
+
+   return strPairs;
+}
+
+bool Array::toVectorInt(std::vector<int>& out_vector) const
+{
+   for (const Value value: *this)
+   {
+      if (!isType<int>(value))
+         return false;
+      out_vector.push_back(value.getInt());
+   }
+
+   return true;
+}
+
+bool Array::toVectorString(std::vector<std::string>& out_vector) const
+{
+   for (const Value value: *this)
+   {
+      if (!isType<std::string>(value))
+         return false;
+      out_vector.push_back(value.getString());
+   }
+
+   return true;
+}
+
+Array::Array(ValueImplPtr in_value)
+{
+   m_impl = in_value;
+   assert(m_impl->Document->IsArray());
+}
+
+// Free functions ======================================================================================================
+std::string typeAsString(Type in_type)
+{
+   std::ostringstream os;
+   os << in_type;
+   return os.str();
+}
+
+std::ostream& operator<<(std::ostream& io_ostream, Type in_type)
+{
+   switch (in_type)
+   {
+      case Type::ARRAY:
+      {
+         io_ostream << "<Array>";
+         break;
+      }
+      case Type::BOOL:
+      {
+         io_ostream << "<Boolean>";
+         break;
+      }
+      case Type::INTEGER:
+      {
+         io_ostream << "<Integer>";
+         break;
+      }
+      case Type::OBJECT:
+      {
+         io_ostream << "<Object>";
+         break;
+      }
+      case Type::STRING:
+      {
+         io_ostream << "<String>";
+         break;
+      }
+      case Type::REAL:
+      {
+         io_ostream << "<Real>";
+         break;
+      }
+      case Type::NULL_TYPE:
+      {
+         io_ostream << "<Null>";
+         break;
+      }
+      case Type::UNKNOWN:
+      default:
+      {
+         io_ostream << "<Unknown>";
+         break;
+      }
+   }
+
+   return io_ostream;
+}
+
+
+
+template<>
+Array toJsonArray<Value>(const std::vector<Value>& vector)
+{
+   Array results;
+   for (const Value& val : vector)
+   {
+      results.push_back(val);
+   }
+   return results;
+}
+
+template<>
+Array toJsonArray<Object>(const std::vector<Object>& vector)
+{
+   Array results;
+   for (const Object& val : vector)
+   {
+      results.push_back(val);
+   }
+   return results;
+}
+
+template<>
+Array toJsonArray<Array>(const std::vector<Array>& vector)
+{
+   Array results;
+   for (const Array& val : vector)
+   {
+      results.push_back(val);
+   }
+   return results;
+}
+
+template<>
+Array toJsonArray<Value>(const std::set<Value>& set)
+{
+   Array results;
+   for (const Value& val : set)
+   {
+      results.push_back(val);
+   }
+   return results;
+}
+
+template<>
+Array toJsonArray<Object>(const std::set<Object>& set)
+{
+   Array results;
+   for (const Object& val : set)
+   {
+      results.push_back(val);
+   }
+   return results;
+}
+
+template<>
+Array toJsonArray<Array>(const std::set<Array>& set)
+{
+   Array results;
+   for (const Array& val : set)
+   {
+      results.push_back(val);
+   }
+   return results;
 }
 
 } // namespace json

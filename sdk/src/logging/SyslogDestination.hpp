@@ -3,6 +3,9 @@
  * 
  * Copyright (C) 2019 by RStudio, Inc.
  *
+ * Unless you have received this program directly from RStudio pursuant to the terms of a commercial license agreement
+ * with RStudio, then this program is licensed to you under the following terms:
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
  * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
@@ -21,7 +24,7 @@
 #ifndef LAUNCHER_PLUGINS_SYS_LOG_DESTINATION_HPP
 #define LAUNCHER_PLUGINS_SYS_LOG_DESTINATION_HPP
 
-#include "logging/ILogDestination.hpp"
+#include <logging/ILogDestination.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -32,15 +35,16 @@ namespace logging {
  *
  * Only one of these should be created per program.
  */
-class SyslogDestination : public ILogDestination
+class SyslogDestination : public logging::ILogDestination
 {
 public:
    /**
     * @brief Constructor.
     *
+    * @param in_logLevel        The most detailed level of log to be written to syslog.
     * @param in_programId       The ID of this program.
     */
-   explicit SyslogDestination(const std::string& in_programId);
+   SyslogDestination(logging::LogLevel in_logLevel, const std::string& in_programId);
 
    /**
     * @brief Destructor.
@@ -69,10 +73,10 @@ public:
     *                       informational purposes only.
     * @param in_message     The message to write to syslog.
     */
-   void writeLog(LogLevel in_logLevel, const std::string& in_message) override;
+   void writeLog(logging::LogLevel in_logLevel, const std::string& in_message) override;
 };
 
-} // namespace logger
+} // namespace logging
 } // namespace launcher_plugins
 } // namespace rstudio
 
