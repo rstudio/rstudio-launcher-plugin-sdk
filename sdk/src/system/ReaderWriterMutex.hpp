@@ -159,18 +159,19 @@ private:
    {                                                                                         \
       if (tryLog)                                                                            \
          logging::logErrorMessage("Failed to acquire lock: thread resource error",           \
-                              ERROR_LOCATION);                                               \
+                                  ERROR_LOCATION);                                           \
    }                                                                                         \
    catch (const std::exception& e)                                                           \
    {                                                                                         \
       if (tryLog)                                                                            \
          logging::logErrorMessage(std::string("Unexpected exception: ") + e.what(),          \
-                              ERROR_LOCATION);                                               \
+                                  ERROR_LOCATION);                                           \
    }                                                                                         \
    catch (...)                                                                               \
    {                                                                                         \
       if (tryLog)                                                                            \
-         logging::logErrorMessage("Unknown exception while trying to acquire lock.");        \
+         logging::logErrorMessage("Unknown exception while trying to acquire lock.",         \
+                                  ERROR_LOCATION);                                           \
    }                                                                                         \
 
 

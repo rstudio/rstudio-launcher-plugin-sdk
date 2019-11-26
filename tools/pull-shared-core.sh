@@ -151,6 +151,7 @@ for I in ${!SRC_SOURCES[@]}; do
         replace "$DEST_PATH" "<system/ReaderWriterMutex.hpp>" "\"ReaderWriterMutex.hpp\""
         replace "$DEST_PATH" "(\(mutex\)\s*)(\\\\\n   try\s*)(\\\\\n   \{\s*)(\\\\)" "\1            \2            \3            \4"
         replace "$DEST_PATH" "(logging::logErrorMessage[^,;]*[;,])\s\s\s\s(\s*\\\\)" "\1\2"
+        replace "$DEST_PATH" "(ERROR_LOCATION\s*\)\s*;)(    )" "\2\1"
     fi
 
     if [[ "$SRC_FILE" == "Error.cpp" ]] || [[ "$SRC_FILE" == "FileLogDestination.cpp" ]]; then
