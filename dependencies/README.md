@@ -26,7 +26,7 @@ accompanying RStudio Launcher Plugins, such as cmake, gcc, and g++.
 ## install-doxygen.sh
 
 This script installs Doxygen, TexLive, Python and other necessary dependencies of Doxygen. It is
-not needed unless you wish to regenerate Doxygen documentation.
+not needed unless you wish to regenerate the Doxygen documentation.
 
 ## install-singularity.sh
 
