@@ -24,8 +24,16 @@
 # SOFTWARE.
 #
 
+HAVE_FAILURE=0
+
 for test in ./*-tests;
 do
   echo "Running ${test}..."
   ${test}
+  RES=$?
+  if [[ $RES -ne 0 ]]; then
+    HAVE_FAILURE=$RES
+  fi
 done
+
+exit $HAVE_FAILURE
