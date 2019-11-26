@@ -43,11 +43,19 @@ TEST_CASE("basic options")
    SECTION("check values")
    {
       Options& opts = Options::getInstance();
+      system::User serverUser;
+      Error error = opts.getServerUser(serverUser);
+
+      REQUIRE(error);
+      REQUIRE(error.getProperty("description") == "Failed to get user details.");
+      REQUIRE(error.getProperty("user-value") == "aUser");
+      REQUIRE(error.getCode() == 13);
+      REQUIRE(error.getName() == systemError(1, ErrorLocation()).getName());
+
       REQUIRE(opts.getJobExpiryHours() == 11);
       REQUIRE(opts.getHeartbeatIntervalSeconds() == 4);
-      REQUIRE(opts.getLogLevel() == logging::LogLevel::ERROR);
-      REQUIRE(opts.getScratchPath().absolutePath() == "/home/aUser/temp/");
-      REQUIRE(opts.getServerUser().getUsername() == "aUser");
+      REQUIRE(opts.getLogLevel() == logging::LogLevel::ERR);
+      REQUIRE(opts.getScratchPath().getAbsolutePath() == "/home/aUser/temp/");
       REQUIRE(opts.getThreadPoolSize() == 6);
    }
 }

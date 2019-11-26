@@ -33,14 +33,14 @@ TEST_CASE("option with invalid value")
    SECTION("read options")
    {
       const system::FilePath configFile("./conf-files/InvalidValue.conf");
-      const std::string expectedMessage = "Error reading " + configFile.absolutePath() + ": the argument ('7') for"
+      const std::string expectedMessage = "Error reading " + configFile.getAbsolutePath() + ": the argument ('7') for"
                                           " option 'log-level' is invalid";
       constexpr const char* argv[] = {};
       constexpr int argc = 0;
 
       Options& opts = Options::getInstance();
       Error error = opts.readOptions(argc, argv, configFile);
-      REQUIRE(!!error);
+      REQUIRE(error);
       REQUIRE(error.getName() == "OptionReadError");
       REQUIRE(error.getMessage() == expectedMessage);
    }

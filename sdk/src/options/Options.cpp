@@ -430,7 +430,7 @@ Error Options::readOptions(int in_argc, const char* const in_argv[], const syste
       {
          std::string message = "The following options were unrecognized:";
          if (!unrecognizedFileOpts.empty())
-            message += "\n    in config file " + in_location.absolutePath() + ":";
+            message += "\n    in config file " + in_location.getAbsolutePath() + ":";
          for (const std::string& opt: unrecognizedFileOpts)
             message += "\n        " + opt;
 
@@ -443,7 +443,7 @@ Error Options::readOptions(int in_argc, const char* const in_argv[], const syste
       }
 
       // Now validate the provided options.
-      return validateOptions(vm, m_impl->OptionsDescription, in_location.absolutePath());
+      return validateOptions(vm, m_impl->OptionsDescription, in_location.getAbsolutePath());
    }
    catch (boost::program_options::error& e)
    {

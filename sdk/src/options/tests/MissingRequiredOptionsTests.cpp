@@ -33,7 +33,7 @@ TEST_CASE("missing required option")
    SECTION("read options")
    {
       const system::FilePath configFile("./conf-files/Empty.conf");
-      const std::string expectedMessage = "Required option (new-option) not specified in config file " + configFile.absolutePath();
+      const std::string expectedMessage = "Required option (new-option) not specified in config file " + configFile.getAbsolutePath();
 
       Options& opts = Options::getInstance();
       opts.registerOptions()

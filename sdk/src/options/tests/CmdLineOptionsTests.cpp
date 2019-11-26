@@ -54,11 +54,19 @@ TEST_CASE("command line options")
    SECTION("check values")
    {
       Options& opts = Options::getInstance();
+      system::User serverUser;
+      Error error = opts.getServerUser(serverUser);
+
+      REQUIRE(error);
+      REQUIRE(error.getProperty("description") == "Failed to get user details.");
+      REQUIRE(error.getProperty("user-value") == "someUser");
+      REQUIRE(error.getCode() == 13);
+      REQUIRE(error.getName() == systemError(1, ErrorLocation()).getName());
+
       REQUIRE(opts.getJobExpiryHours() == 33);
       REQUIRE(opts.getHeartbeatIntervalSeconds() == 27);
       REQUIRE(opts.getLogLevel() == logging::LogLevel::OFF);
-      REQUIRE(opts.getScratchPath().absolutePath() == "/home/someUser/logs");
-      REQUIRE(opts.getServerUser().getUsername() == "someUser");
+      REQUIRE(opts.getScratchPath().getAbsolutePath() == "/home/someUser/logs");
       REQUIRE(opts.getThreadPoolSize() == 1);
    }
 }

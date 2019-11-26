@@ -46,11 +46,15 @@ TEST_CASE("empty options")
    SECTION("check values")
    {
       Options& opts = Options::getInstance();
+      system::User serverUser;
+      Error error = opts.getServerUser(serverUser);
+      REQUIRE(!error);
+
       REQUIRE(opts.getJobExpiryHours() == 24);
       REQUIRE(opts.getHeartbeatIntervalSeconds() == 5);
-      REQUIRE(opts.getLogLevel() == logging::LogLevel::WARNING);
-      REQUIRE(opts.getScratchPath().absolutePath() == "/var/lib/rstudio-launcher/");
-      REQUIRE(opts.getServerUser().getUsername() == "rstudio-server");
+      REQUIRE(opts.getLogLevel() == logging::LogLevel::WARN);
+      REQUIRE(opts.getScratchPath().getAbsolutePath() == "/var/lib/rstudio-launcher/");
+      REQUIRE(serverUser.getUsername() == "rstudio-server");
       REQUIRE(opts.getThreadPoolSize() == std::max<unsigned int>(4, boost::thread::hardware_concurrency()));
    }
 }
