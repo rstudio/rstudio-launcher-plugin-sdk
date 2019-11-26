@@ -152,27 +152,24 @@ namespace {
 enum class OptionsError
 {
    SUCCESS = 0,
-   NO_CONFIG_FILE = 1,
-   PARSE_ERROR = 2,
-   UNREGISTERED_OPTION = 3,
-   INVALID_OPTION_VALUE = 4,
-   READ_FAILURE = 5
+   PARSE_ERROR = 1,
+   UNREGISTERED_OPTION = 2,
+   READ_FAILURE = 3,
+   MISSING_REQUIRED_OPTION=4,
 };
 
 Error optionsError(OptionsError in_errorCode, const std::string& in_message, ErrorLocation in_errorLocation)
 {
    switch(in_errorCode)
    {
-      case OptionsError::NO_CONFIG_FILE:
-         return Error(static_cast<int>(in_errorCode), "NoConfigFile", in_message, std::move(in_errorLocation));
       case OptionsError::PARSE_ERROR:
          return Error(static_cast<int>(in_errorCode), "ParseError", in_message, std::move(in_errorLocation));
       case OptionsError::UNREGISTERED_OPTION:
          return Error(static_cast<int>(in_errorCode), "UnregisteredOption", in_message, std::move(in_errorLocation));
-      case OptionsError::INVALID_OPTION_VALUE:
-         return Error(static_cast<int>(in_errorCode), "InvalidOptionValue", in_message, std::move(in_errorLocation));
       case OptionsError::READ_FAILURE:
          return Error(static_cast<int>(in_errorCode), "OptionReadError", in_message, std::move(in_errorLocation));
+      case OptionsError::MISSING_REQUIRED_OPTION:
+         return Error(static_cast<int>(in_errorCode),  "MissingRequiredOption", in_message, std::move(in_errorLocation));
       case OptionsError::SUCCESS:
          return Success();
       default:
@@ -181,6 +178,45 @@ Error optionsError(OptionsError in_errorCode, const std::string& in_message, Err
          return Error(static_cast<int>(in_errorCode), "UnrecognizedError", in_message, std::move(in_errorLocation));
       }
    }
+}
+
+void collectUnrecognizedOptions(
+      const variables_map& in_vm,
+      const parsed_options& in_parsedOptions,
+      std::vector<std::string>& out_unrecognized)
+{
+   for (const auto& opt: in_parsedOptions.options)
+   {
+      if (in_vm.find(opt.string_key) == in_vm.end())
+      {
+         std::string value;
+         for (std::string v: opt.value)
+            value += v + ", ";
+
+         // Cut the last ", " from the value list string.
+         out_unrecognized.push_back(opt.string_key + "=" + value.substr(0, value.size() - 2));
+      }
+   }
+}
+
+Error validateOptions(
+   const variables_map& in_vm,
+   const options_description& in_optionsDescription,
+   const std::string& in_configFile)
+{
+   for (const auto& optionDesc: in_optionsDescription.options())
+   {
+      const std::string& optionName = optionDesc->long_name();
+      if (in_vm.count(optionName) < 1)
+      {
+         std::string message = "Required option (";
+         message += optionName + ") not specified in config file ";
+         message += in_configFile;
+         return optionsError(OptionsError::MISSING_REQUIRED_OPTION, message, ERROR_LOCATION);
+      }
+   }
+
+   return Success();
 }
 
 } // anonymous namespace
@@ -201,6 +237,13 @@ struct Value<T>::Impl
 };
 
 template <class T>
+Value<T>::Value() :
+   m_impl(new Impl())
+{
+
+}
+
+template <class T>
 Value<T>::Value(T& io_storeTo) :
    m_impl(new Impl(boost::program_options::value<T>(&io_storeTo)))
 {
@@ -217,7 +260,7 @@ Value<T>& Value<T>::setDefaultValue(const T& in_defaultValue)
 struct Options::Impl
 {
    // The values for the option members (e.g. JobExpiryHours, ScratchPath, etc.) are just placeholders and don't matter.
-   // The values for OptionsDescription and IsInitialzied are not placeholders.
+   // The values for OptionsDescription and IsInitialized are not placeholders.
    Impl() :
       OptionsDescription("program"),
       IsInitialized(false),
@@ -292,6 +335,14 @@ Options::Init::Init(Options& in_owner) :
 }
 
 template <class T>
+Options::Init& Options::Init::operator()(const char* in_name, Value<T>& in_value, const char* in_description)
+{
+   // Boost takes ownership of the semantic value here.
+   m_owner.m_impl->OptionsDescription.add_options()(in_name, in_value.m_impl->ValueSemantic.release(), in_description);
+   return *this;
+}
+
+template <class T>
 Options::Init& Options::Init::operator()(const char* in_name, Value<T>&& in_value, const char* in_description)
 {
    // Boost takes ownership of the semantic value here.
@@ -341,10 +392,14 @@ Error Options::readOptions(int in_argc, const char* const in_argv[], const syste
       if (error)
          return error;
 
+      std::vector<std::string> unrecognizedFileOpts;
       try
       {
-         store(parse_config_file(*inputStream, m_impl->OptionsDescription), vm);
+         parsed_options parsed = parse_config_file(*inputStream, m_impl->OptionsDescription, true);
+         store(parsed, vm);
          notify(vm);
+
+         collectUnrecognizedOptions(vm, parsed, unrecognizedFileOpts);
       }
       catch (const std::exception& e)
       {
@@ -355,10 +410,40 @@ Error Options::readOptions(int in_argc, const char* const in_argv[], const syste
       }
 
       // Now read the command line arguments.
-      store(parse_command_line(in_argc, const_cast<char**>(in_argv), m_impl->OptionsDescription), vm);
-      notify(vm);
+      std::vector<std::string> unrecognizedCmdOpts;
+      if (in_argc > 0)
+      {
+         // Set up the parser so that command line options will override code-defaults.
+         command_line_parser parser = command_line_parser(in_argc, const_cast<char**>(in_argv));
+         parser.options(m_impl->OptionsDescription);
+         parser.allow_unregistered();
 
-      std::vector<std::string> unregisteredOptions;
+         // Run the parser.
+         parsed_options parsed = parser.run();
+         store(parsed, vm);
+         notify(vm);
+         collectUnrecognizedOptions(vm, parsed, unrecognizedCmdOpts);
+      }
+
+      // Handle unrecognized options
+      if (!unrecognizedFileOpts.empty() || !unrecognizedCmdOpts.empty())
+      {
+         std::string message = "The following options were unrecognized:";
+         if (!unrecognizedFileOpts.empty())
+            message += "\n    in config file " + in_location.getAbsolutePath() + ":";
+         for (const std::string& opt: unrecognizedFileOpts)
+            message += "\n        " + opt;
+
+         if (!unrecognizedCmdOpts.empty())
+            message += "\n    on the command line:";
+         for (const std::string& opt: unrecognizedCmdOpts)
+            message += "\n        " + opt;
+
+         return optionsError(OptionsError::UNREGISTERED_OPTION, message, ERROR_LOCATION);
+      }
+
+      // Now validate the provided options.
+      return validateOptions(vm, m_impl->OptionsDescription, in_location.getAbsolutePath());
    }
    catch (boost::program_options::error& e)
    {
@@ -371,8 +456,6 @@ Error Options::readOptions(int in_argc, const char* const in_argv[], const syste
    {
       return unknownError("Unexpected exception: " + std::string(e.what()), ERROR_LOCATION);
    }
-
-   return Success();
 }
 
 unsigned int Options::getJobExpiryHours() const
@@ -417,7 +500,9 @@ Options::Options() :
 // they need to be compiled here to be used elsewhere.
 #define INSTANTIATE_VALUE_TEMPLATES(in_type)                                                        \
 template                                                                                            \
-Options::Init& Options::Init::operator()<in_type>(const char*, Value<in_type>&&, const char*); \
+Options::Init& Options::Init::operator()<in_type>(const char*, Value<in_type>&, const char*);       \
+template                                                                                            \
+Options::Init& Options::Init::operator()<in_type>(const char*, Value<in_type>&&, const char*);      \
 template class Value<in_type>;                                                                      \
 
 // These should instantiate both Init::operator() and the Value class with these types.
