@@ -14,6 +14,6 @@ This script installs boost, which is required to compile the RStudio Launcher Pl
 
 This script installs tools required for building the RStudio Launcher Plugin SDK and the accompanying RStudio Launcher Plugins, such as cmake, gcc, and g++.
 
-## install-singularity
+## install-singularity.sh
 
 This script installs [Singularity](https://sylabs.io/singularity/), [Go](https://golang.org/), and all other dependencies of Singularity. The ~/.bashrc file will be updated so that both Singularity and Go will be on the path each time you login, and to enable tab-based auto-completion for Singularity commands. Singularity is required to use the Singularity Launcher Plugin, which is provided with this SDK as a sample of a complete and working Launcher Plugin.
