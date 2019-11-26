@@ -50,11 +50,23 @@ include_directories(
 
 # define library
 add_library(rstudio-launcher-plugin-sdk-lib STATIC
-        ${RLPS_SOURCE_FILES}
-        ${RLPS_HEADER_FILES})
+   ${RLPS_SOURCE_FILES}
+   ${RLPS_HEADER_FILES}
+)
 
-target_link_libraries(rstudio-launcher-plugin-sdk-lib
+set(RLPS_BOOST_LIBS
    Boost::filesystem
    Boost::program_options
    Boost::regex
-   Boost::thread)
+   Boost::thread
+)
+
+target_link_libraries(rstudio-launcher-plugin-sdk-lib
+   ${RLPS_BOOST_LIBS}
+)
+
+# define executables for unit tests
+if (NOT RLPS_UNIT_TESTS_DISABLED)
+   # options tests are complex, so they have their own CMakeLists.txt
+   add_subdirectory(src/options/tests)
+endif()
