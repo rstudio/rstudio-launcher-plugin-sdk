@@ -1,7 +1,10 @@
 /*
  * Json.hpp
- * 
- * Copyright (C) 2019 by RStudio, Inc.
+ *
+ * Copyright (C) 2009-19 by RStudio, Inc.
+ *
+ * Unless you have received this program directly from RStudio pursuant to the terms of a commercial license agreement
+ * with RStudio, then this program is licensed to you under the following terms:
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
  * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
@@ -21,8 +24,24 @@
 #ifndef LAUNCHER_PLUGINS_JSON_HPP
 #define LAUNCHER_PLUGINS_JSON_HPP
 
-#include "Error.hpp"
-#include "PImpl.hpp"
+#include <map>
+#include <ostream>
+#include <set>
+#include <utility>
+#include <vector>
+
+#include <boost/optional.hpp>
+
+#include <PImpl.hpp>
+#include <logging/Logger.hpp>
+
+namespace rstudio {
+namespace launcher_plugins {
+
+class Error;
+
+} // namespace launcher_plugins
+} // namespace rstudio
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -31,6 +50,9 @@ namespace json {
 class Array;
 class Object;
 
+typedef std::vector<std::pair<std::string, std::string> > StringPairList;
+typedef std::map<std::string, std::vector<std::string> > StringListMap;
+
 /**
  * @brief Enum which represents the type of a json value.
  */
@@ -38,14 +60,10 @@ enum class Type
 {
    ARRAY,
    BOOL,
-   DOUBLE,
-   FLOAT,
-   INT,
-   INT64,
+   INTEGER,
    OBJECT,
    STRING,
-   UINT,
-   UINT64,
+   REAL,
    NULL_TYPE,
    UNKNOWN
 };
@@ -57,9 +75,9 @@ class Value
 {
 protected:
    // Private implementation of Value is defined first so it may be referred to.
-   PRIVATE_IMPL(m_impl);
+   PRIVATE_IMPL_SHARED(m_impl);
 
-   typedef std::unique_ptr<Impl, ImplDeleter> ValueImplPtr;
+   typedef std::shared_ptr<Impl> ValueImplPtr;
 
    friend class Array;
 
@@ -91,9 +109,13 @@ public:
    Value(Value&& in_other) noexcept;
 
    /**
+    * \defgroup FunctionGroup Conversion constructor.
+    *
     * @brief Conversion constructors.
     *
     * @param in_value   The literal value to set this JSON Value to.
+    *
+    * @{
     */
    explicit Value(bool in_value);
    explicit Value(double in_value);
@@ -104,6 +126,7 @@ public:
    explicit Value(const std::string& in_value);
    explicit Value(unsigned int in_value);
    explicit Value(uint64_t in_value);
+   /** @} */
 
    /**
     * @brief Virtual destructor.
@@ -129,11 +152,15 @@ public:
    Value& operator=(Value&& in_other) noexcept;
 
    /**
+    * \defgroup FunctionGroup operator=
+    *
     * @brief Assignment operators.
     *
     * @param in_value   The literal value to set this JSON Value to.
     *
     * @return A reference to this value.
+    *
+    * @{
     */
    Value& operator=(bool in_value);
    Value& operator=(double in_value);
@@ -144,6 +171,7 @@ public:
    Value& operator=(const std::string& in_value);
    Value& operator=(unsigned int in_value);
    Value& operator=(uint64_t in_value);
+   /** @} */
 
    /**
     * @brief Equality operator.
@@ -153,6 +181,25 @@ public:
     * @return True if the two values are the same; false otherwise.
     */
    bool operator==(const Value& in_other) const;
+
+   /**
+    * @brief Makes a copy of this JSON value.
+    *
+    * @return A copy of this JSON value.
+    */
+   Value clone() const;
+
+   /**
+    * @brief Attempts to coerce a JSON object to conform to the given schema by discarding non-conforming
+    *    properties.
+    *
+    * @param in_schema           The schema to validate this value against.
+    * @param out_propViolations  The names of the properties that did not conform to the schema.
+    *
+    * @return Success if this JSON value matches the schema after coercion; Error otherwise.
+    */
+   Error coerce(const std::string& in_schema,
+                std::vector<std::string>& out_propViolations);
 
    /**
     * @brief Gets the value as a JSON array. If the call to getType() does not return Type::ARRAY, this method is
@@ -235,6 +282,74 @@ public:
    uint64_t getUInt64() const;
 
    /**
+    * @brief Gets this JSON value as the specified type.
+    *
+    * Before calling this method, the appropriate is<T> method should return true.
+    *
+    * @tparam T     The type to retrieve this value as.
+    *
+    * @return This value as an object of type T.
+    */
+   template <typename T>
+   T getValue() const;
+
+   /**
+    * @brief Checks whether the value is a JSON array or not.
+    *
+    * @return True if the value is a JSON array; false otherwise.
+    */
+   bool isArray() const;
+
+   /**
+    * @brief Checks whether the value is a boolean value or not.
+    *
+    * @return True if the value is a boolean value; false otherwise.
+    */
+   bool isBool() const;
+
+   /**
+    * @brief Checks whether the value is a double value or not.
+    *
+    * @return True if the value is a double value; false otherwise.
+    */
+   bool isDouble() const;
+
+   /**
+    * @brief Checks whether the value is a float value or not.
+    *
+    * @return True if the value is a float value; false otherwise.
+    */
+   bool isFloat() const;
+
+   /**
+    * @brief Checks whether the value is an int 32 value or not.
+    *
+    * @return True if the value is an int 32 value; false otherwise.
+    */
+   bool isInt() const;
+
+   /**
+    * @brief Checks whether the value is an int 64 value or not.
+    *
+    * @return True if the value is an int 64 value; false otherwise.
+    */
+   bool isInt64() const;
+
+   /**
+    * @brief Checks whether the value is a JSON object or not.
+    *
+    * @return True if the value is a JSON object; false otherwise.
+    */
+   bool isObject() const;
+
+   /**
+    * @brief Checks whether the value is a string value or not.
+    *
+    * @return True if the value is a string value; false otherwise.
+    */
+   bool isString() const;
+
+   /**
     * @brief Checks whether the value is null or not.
     *
     * @return True if the value is null; false otherwise.
@@ -242,40 +357,121 @@ public:
    bool isNull() const;
 
    /**
-    * @brief Parses the json string into this value.
+    * @brief Checks whether the value is an unsigned int 32 value or not.
     *
-    * @param in_jsonStr     The json string to parse.
+    * @return True if the value is an unsigned int 32 value; false otherwise.
+    */
+   bool isUInt() const;
+
+   /**
+    * @brief Checks whether the value is an unsigned int 64 value or not.
+    *
+    * @return True if the value is an unsigned int 64 value; false otherwise.
+    */
+   bool isUInt64() const;
+
+   /**
+    * \defgroup FunctionGroup parse
+    *
+    * @brief Parses the JSON string into this value.
+    *
+    * @param in_jsonStr     The JSON string to parse.
     *
     * @return Success on successful parse; error otherwise (e.g. ParseError)
+    *
+    * @{
     */
    Error parse(const char* in_jsonStr);
    Error parse(const std::string& in_jsonStr);
+   /** @} */
+
+   /**
+    * @brief Parses the JSON string and validates it against the schema.
+    *
+    * @param in_jsonStr     The JSON string to parse.
+    * @param in_schema      The schema to validate the JSON value against.
+    *
+    * @return Success if the string could be parsed and the parsed object matches the schema; Error otherwise.
+    */
+   Error parseAndValidate(const std::string& in_jsonStr, const std::string& in_schema);
+
+   /**
+    * @brief Validates this JSON value against a schema.
+    *
+    * @param in_schema      The schema to validate this value against.
+    *
+    * @return Success if this JSON value matches the schema; the Error that occurred during validation otherwise.
+    */
+   Error validate(const std::string& in_schema) const;
+
+   /**
+    * @brief Writes this value to a string.
+    *
+    * @return The string representation of this value.
+    */
+   std::string write() const;
+
+   /**
+    * @brief Writes this value to the specified output stream.
+    *
+    * @param io_ostream     The output stream to which to write this value.
+    */
+   void write(std::ostream& io_ostream) const;
+
+   /**
+    * @brief Writes and formats this value to a string.
+    *
+    * @return The formatted string representation of this value.
+    */
+   std::string writeFormatted() const;
+
+   /**
+    * @brief Writes and formats this value to the specified output stream.
+    *
+    * @param io_ostream     The output stream to which to write this value.
+    */
+   void writeFormatted(std::ostream& io_stream) const;
+
+private:
+   /**
+    * @brief Moves the provided value into this value.
+    *
+    * @param in_other   The value to move.
+    */
+   void move(Value&& in_other);
 };
 
 /**
  * @brief Class which represents a specific type of JSON Value: a JSON object.
  */
-class Object : Value
+class Object : public Value
 {
 public:
+   class Iterator;
+
    /**
     * @brief Class which represents a single member of a JSON object.
     */
    class Member
    {
+   private:
+      // Private implementation of member, declared first so it can be used.
+      PRIVATE_IMPL_SHARED(m_impl);
+
+      // Iterators can construct members.
+      friend class Iterator;
    public:
       /**
-       * @brief Default Constructor.
+       * @brief Default constructor.
        */
-       Member() = default;
+      Member() = default;
 
       /**
-       * @brief Constructor.
+       * @brief Creates a Member object via its private implementation.
        *
-       * @param in_name     The name of the member.
-       * @param in_value    The value of the member.
+       * @param in_impl The private implementation of the member.
        */
-      Member(std::string in_name, Value in_value);
+      Member(const std::shared_ptr<Impl>& in_impl);
 
       /**
        * @brief Gets the name of the member.
@@ -289,24 +485,18 @@ public:
        *
        * @return The value of the member.
        */
-      const Value& getValue() const;
-
-   private:
-      // The name of the member.
-      std::string m_name;
-
-      // The value of the member.
-      Value m_value;
+      Value getValue() const;
    };
 
    /**
     * @brief Class which allows iterating over the members of a JSON object.
     */
-   class Iterator: public std::iterator<std::bidirectional_iterator_tag,   // iterator_category
-                                        Member,                            // value_type
-                                        std::ptrdiff_t,                    // difference_type
-                                        const Member*,                     // pointer
-                                        Member>                            // reference
+   class Iterator: public std::iterator<
+      std::bidirectional_iterator_tag,   // iterator_category
+      Member,                            // value_type
+      std::ptrdiff_t,                    // difference_type
+      const Member*,                     // pointer
+      Member>                            // reference
    {
    public:
       /**
@@ -369,6 +559,13 @@ public:
       bool operator==(const Iterator& in_other) const;
 
       /**
+       * @brief Inequality operator.
+       *
+       * @return True if this iterator is not the same as in_other; false otherwise.
+       */
+      bool operator!=(const Iterator& in_other) const;
+
+      /**
        * @brief Dereference operator.
        *
        * @return A reference to the value this iterator is currently pointing at.
@@ -395,18 +592,56 @@ public:
    Object();
 
    /**
+    * @brief Constructs a JSON object from a list of string pairs.
+    *
+    * @param in_strPairs    The list of string pairs from which to construct this object.
+    */
+   explicit Object(const StringPairList& in_strPairs);
+
+   /**
     * @brief Copy constructor.
     *
     * @param in_other   The JSON object to copy from.
     */
-   Object(const Object& in_other) = default;
+   Object(const Object& in_other);
 
    /**
     * @brief Move constructor.
     *
     * @param in_other   The JSON object to move to this Object.
     */
-   Object(Object&& in_other) = default;
+   Object(Object&& in_other);
+
+   /**
+    * @brief Creates a JSON object from the given name and JSON value.
+    *
+    * @param in_name    The name of the JSON object.
+    * @param in_value   The value of the JSON object.
+    *
+    * @return The newly created member.
+    */
+   static Member createMember(const std::string& in_name, const Value& in_value);
+
+   /**
+    * @brief Creates a JSON object which represents the schema defaults of the provided JSON schema string.
+    *
+    * @param in_schema              The JSON schema string to parse into a JSON object.
+    * @param out_schemaDefaults     The parsed schema defaults. This object is not valid if an error is returned.
+    *
+    * @return Success if in_schema could be parsed; Error otherwise.
+    */
+   static Error getSchemaDefaults(const std::string& in_schema, Object& out_schemaDefaults);
+
+   /**
+    * @brief Merges two JSON objects together. Conflicts between the base and the overlay will be resolved by taking the
+    *        value in the overlay.
+    *
+    * @param in_base        The base object to merge.
+    * @param in_overlay     The overlay object to merge with the base.
+    *
+    * @return The merged object.
+    */
+   static Object mergeObjects(const Object& in_base, const Object& in_overlay);
 
    /**
     * @brief Assignment operator.
@@ -427,25 +662,35 @@ public:
    Object& operator=(Object&& in_other) noexcept;
 
    /**
+    * \defgroup FunctionGroup operator[]
+    *
     * @brief Accessor operator. Gets the value a member of this JSON object by name. If no such object exists, an empty
     *        JSON value will be returned.
     *
     * @param in_name    The name of the member to access.
     *
     * @return The value of the member with the specified name, if it exists; empty JSON value otherwise.
+    *
+    * @{
     */
    Value operator[](const char* in_name);
    Value operator[](const std::string& in_name);
+   /** @} */
 
    /**
+    * \defgroup FunctionGroup find
+    *
     * @brief Finds a JSON member by name.
     *
     * @param in_name    The name of the member to find.
     *
     * @return If such a member exists, an iterator pointing to that member; the end iterator otherwise.
+    *
+    * @{
     */
    Iterator find(const char* in_name) const;
    Iterator find(const std::string& in_name) const;
+   /** @} */
 
    /**
     * @brief Gets an iterator pointing to the first member of this object.
@@ -482,14 +727,19 @@ public:
    void clear();
 
    /**
+    * \defgroup FunctionGroup erase
+    *
     * @brief Erases a member by name.
     *
     * @param in_name    The name of the member to erase.
     *
     * @return True if a member was erased; false otherwise.
+    *
+    * @{
     */
    bool erase(const char* in_name);
    bool erase(const std::string& in_name);
+   /** @} */
 
    /**
     * @brief Erases the member specified by the provided iterator.
@@ -519,9 +769,19 @@ public:
 
    /**
     * @brief Inserts the specified member into this JSON object. If an object with the same name already exists, it will be
-    *        overriden.
+    *        overridden.
     *
-    * @param in_member      The member to insert into this JSON object.
+    * @param in_name        The name of the JSON value to insert.
+    * @param in_value       The value to insert.
+    */
+   void insert(const std::string& in_name, const Value& in_value);
+
+   /**
+    * @brief Inserts the specified member into this JSON object. If an object with the same name already exists, it will be
+    *        overridden.
+    *
+    * @param in_name        The name of the JSON value to insert.
+    * @param in_value       The value to insert.
     */
    void insert(const Member& in_member);
 
@@ -532,13 +792,31 @@ public:
     */
    bool isEmpty() const;
 
+   /**
+    * @brief Converts this JSON object to a map with string keys and a list of string values.
+    *
+    * @param out_map    The converted map, on success.
+    *
+    * @return True if conversion succeeded; false otherwise.
+    */
+   bool toStringMap(StringListMap& out_map) const;
+
+   /**
+    * @brief Converts this JSON object to a list of string pairs.
+    *
+    * NOTE: This method will skip any members whose values are not string type.
+    *
+    * @return The string pairs represented in this object.
+    */
+   StringPairList toStringPairList() const;
+
 private:
    /**
     * @brief Constructs a JSON object from a JSON value. The specified value should return Type::OBJECT from getType().
     *
-    * @param in_value   A JSON value which returns Type::OBJECT from getType();
+    * @param in_value   The private implementation member of a JSON value which returns Type::OBJECT from getType();
     */
-   explicit Object(const Value& in_value);
+   explicit Object(ValueImplPtr in_value);
 
    friend class Value;
    friend class Iterator;
@@ -546,14 +824,16 @@ private:
 
 class Array : public Value
 {
+public:
+   typedef Value value_type;
    /**
     * @brief Class which allows iterating over the members of a JSON object.
     */
    class Iterator: public std::iterator<std::bidirectional_iterator_tag,   // iterator_category
-                                        Value,                             // value_type
-                                        std::ptrdiff_t,                    // difference_type
-                                        const Value*,                      // pointer
-                                        Value>                             // reference
+      Value,                             // value_type
+      std::ptrdiff_t,                    // difference_type
+      const Value*,                      // pointer
+      Value>                             // reference
    {
    public:
       /**
@@ -616,6 +896,13 @@ class Array : public Value
       bool operator==(const Iterator& in_other) const;
 
       /**
+       * @brief Inequality operator.
+       *
+       * @return True if this iterator is not the same as in_other; false otherwise.
+       */
+      bool operator!=(const Iterator& in_other) const;
+
+      /**
        * @brief Dereference operator.
        *
        * @return A reference to the value this iterator is currently pointing at.
@@ -642,18 +929,25 @@ class Array : public Value
    Array();
 
    /**
+    * @brief Constructs a JSON array from a list of string pairs as an array of strings in the format "key=value".
+    *
+    * @param in_strPairs    The list of string pairs from which to construct this array.
+    */
+   explicit Array(const StringPairList& in_strPairs);
+
+   /**
     * @brief Copy constructor.
     *
     * @param in_other   The JSON array to copy from.
     */
-   Array(const Array& in_other) = default;
+   Array(const Array& in_other);
 
    /**
     * @brief Move constructor.
     *
     * @param in_other   The JSON array to move to this Object.
     */
-   Array(Array&& in_other) = default;
+   Array(Array&& in_other);
 
    /**
     * @brief Assignment operator.
@@ -776,9 +1070,48 @@ class Array : public Value
    /**
     * @brief Pushes the value onto the end of the JSON array.
     *
+    * MAINTENANCE NOTE: This method must be named in the STL style to work with STL functions and types such as
+    * std::back_inserter.
+    *
     * @param in_value   The value to push onto the end of the JSON array.
     */
-   void pushBack(Value in_value);
+   void push_back(const Value& in_value);
+
+   /**
+    * @brief Converts this JSON array to a set of strings.
+    *
+    * @param out_set    The set of strings.
+    *
+    * @return True if this array could be converted to a set of strings; false otherwise.
+    */
+   bool toSetString(std::set<std::string>& out_set) const;
+
+   /**
+    * @brief Converts this array into a vector of string pairs. Elements of the form "key=value" will be parsed into the
+    *        pair <"key", "value">. Elements which are not in that format (e.g. "value") will be parsed as <"value", "">.
+    *        Any elements of the array which are not strings will be skipped.
+    *
+    * @return The string elements of this JSON array as key value pairs.
+    */
+   StringPairList toStringPairList() const;
+
+   /**
+    * @brief Converts this JSON array to a vector of integers.
+    *
+    * @param out_set    The vector of integers.
+    *
+    * @return True if this array could be converted to a vector of integers; false otherwise.
+    */
+   bool toVectorInt(std::vector<int>& out_set) const;
+
+   /**
+    * @brief Converts this JSON array to a vector of strings.
+    *
+    * @param out_set    The vector of strings.
+    *
+    * @return True if this array could be converted to a vector of strings; false otherwise.
+    */
+   bool toVectorString(std::vector<std::string>& out_set) const;
 
 private:
    /**
@@ -786,13 +1119,146 @@ private:
     *
     * @param in_value   A JSON value which returns Type::ARRAY from getType();
     */
-   explicit Array(const Value& in_value);
+   explicit Array(ValueImplPtr in_value);
 
    friend class Value;
 };
+
+template <typename T>
+bool isType(const Value& in_value)
+{ 
+   if (in_value.isNull())
+      return false;
+   else if (std::is_same<T, Object>::value)
+      return in_value.getType() == Type::OBJECT;
+   else if (std::is_same<T, Array>::value)
+      return in_value.getType() == Type::ARRAY;
+   else if (std::is_same<T, std::string>::value)
+      return in_value.getType() == Type::STRING;
+   else if (std::is_same<T, bool>::value)
+      return in_value.getType() == Type::BOOL;
+   else if (std::is_same<T, int>::value)
+      return in_value.getType() == Type::INTEGER;
+   else if (std::is_same<T, unsigned int>::value)
+      return in_value.getType() == Type::INTEGER;
+   else if (std::is_same<T, int64_t>::value)
+      return in_value.getType() == Type::INTEGER;
+   else if (std::is_same<T, uint64_t>::value)
+      return in_value.getType() == Type::INTEGER;
+   else if (std::is_same<T, unsigned long>::value)
+      return in_value.getType() == Type::INTEGER;
+   else if (std::is_same<T, double>::value)
+      return (in_value.getType() == Type::INTEGER) || (in_value.getType() == Type::REAL);
+   else
+      return false;
+}
+
+std::string typeAsString(Type in_type);
+std::ostream& operator<<(std::ostream& io_ostream, Type in_type);
+
+namespace detail {
+
+template <typename T>
+Type asJsonType(const T& in_object,
+               std::true_type)
+{
+   return in_object.getType();
+}
+
+template <typename T>
+Type asJsonType(const T& in_object,
+               std::false_type)
+{
+   if (std::is_same<T, bool>::value)
+      return Type::BOOL;
+   else if (std::is_same<T, int>::value)
+      return Type::INTEGER;
+   else if (std::is_same<T, double>::value)
+      return Type::REAL;
+   else if (std::is_same<T, std::string>::value)
+      return Type::STRING;
+   
+   logging::logErrorMessage("Unexpected type");
+   return Type::NULL_TYPE;
+}
+
+template <typename T>
+struct is_json_type : public std::is_base_of<Value, T>
+{
+};
+
+} // namespace detail
+
+template <typename T>
+Type asJsonType(const T& object)
+{
+   return detail::asJsonType(
+            object,
+            detail::is_json_type<T>());
+}
+
+inline std::string typeAsString(const Value& value)
+{
+   return typeAsString(value.getType());
+}
+
+namespace detail {
+
+template <typename T>
+inline Value toJsonValue(const T& val)
+{
+   return Value(val);
+}
+
+template <typename T>
+inline Value toJsonValue(const boost::optional<T>& val)
+{
+   return val ? Value(*val) : Value();
+}
+
+} // namespace detail
+
+template <typename T>
+inline Value toJsonValue(const T& val)
+{
+   return detail::toJsonValue(val);
+}
+
+inline Value toJsonValue(const boost::optional<std::string>& val)
+{
+   return val ? Value(*val) : Value();
+}
+
+inline Value toJsonString(const std::string& val)
+{
+   return Value(val);
+}
+
+template<typename T>
+Array toJsonArray(const std::vector<T>& vector)
+{
+   Array results;
+   for (const T& val : vector)
+   {
+      results.push_back(Value(val));
+   }
+   return results;
+}
+
+template<typename T>
+Array toJsonArray(const std::set<T>& set)
+{
+   Array results;
+   for (const T& val : set)
+   {
+      results.push_back(Value(val));
+   }
+   return results;
+}
 
 } // namespace json
 } // namespace launcher_plugins
 } // namespace rstudio
 
-#endif
+#endif // LAUNCHER_PLUGINS_JSON_HPP
+

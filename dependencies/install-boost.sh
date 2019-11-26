@@ -24,21 +24,21 @@
 # SOFTWARE.
 #
 
-set -e 
+set -e
 
 INSTALL_DIR=$(pwd)
 
 # Variables
 BOOST_VERSION_NUMBER="1.70.0"
 BOOST_VERSION="boost_$(echo "$BOOST_VERSION_NUMBER" | tr "." "_")"
-BOOST_TAR=$BOOST_VERSION.tar.bz2
-BOOST_BUILD_DIR=boost-build
+BOOST_TAR="$BOOST_VERSION.tar.bz2"
+BOOST_BUILD_DIR="boost-build"
 BOOST_URL="https://dl.bintray.com/boostorg/release/$BOOST_VERSION_NUMBER/source/$BOOST_TAR"
-BOOST_DEFAULT_DIR=/usr/local/lib/boost/$BOOST_VERSION
+BOOST_DEFAULT_DIR="/usr/local/lib/boost/$BOOST_VERSION"
 
 # Install if not already installed.
 PREFIX="$BOOST_DIR/boost/$BOOST_VERSION"
-if [[ ( -n $BOOST_DIR  && ! -e $PREFIX ) || ( -z $BOOST_DIR && ! -d $BOOST_DEFAULT_DIR ) ]];
+if [[ ( -n "$BOOST_DIR"  && ! -e "$PREFIX" ) || ( -z "$BOOST_DIR" && ! -d "$BOOST_DEFAULT_DIR" ) ]];
 then
    # Download
    if [ ! -f "$BOOST_TAR" ]; then
@@ -74,11 +74,11 @@ then
    # Cleaup
    cd "$INSTALL_DIR"
    sudo rm -rf "$BOOST_BUILD_DIR"
+   sudo rm "${BOOST_TAR}"
 
-elif [[ -n $BOOST_DIR ]];
-then
+elif [[ -n $BOOST_DIR ]]; then
    echo "$BOOST_VERSION_NUMBER already installed in $BOOST_DIR"
-else 
+else
    echo "$BOOST_VERSION_NUMBER already installed in $BOOST_DEFAULT_DIR"
 fi
 

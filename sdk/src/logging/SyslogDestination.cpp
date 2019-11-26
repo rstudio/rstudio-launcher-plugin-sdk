@@ -3,6 +3,9 @@
  * 
  * Copyright (C) 2019 by RStudio, Inc.
  *
+ * Unless you have received this program directly from RStudio pursuant to the terms of a commercial license agreement
+ * with RStudio, then this program is licensed to you under the following terms:
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
  * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
@@ -21,9 +24,13 @@
 #include "SyslogDestination.hpp"
 
 #include <cassert>
+#include <iostream>
 #include <syslog.h>
 
-#include "logging/Logger.hpp"
+#include <boost/algorithm/string.hpp>
+#include <boost/regex.hpp>
+
+#include <logging/Logger.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -31,17 +38,17 @@ namespace logging {
 
 namespace {
 
-int logLevelToLogPriority(LogLevel in_logLevel)
+int logLevelToLogPriority(logging::LogLevel in_logLevel)
 {
    switch(in_logLevel)
    {
-      case LogLevel::ERROR:
+      case logging::LogLevel::ERR:
          return LOG_ERR;
-      case LogLevel::WARNING:
+      case logging::LogLevel::WARN:
          return LOG_WARNING;
-      case LogLevel::DEBUG:
+      case logging::LogLevel::DEBUG:
          return LOG_DEBUG;
-      case LogLevel::INFO:
+      case logging::LogLevel::INFO:
          return LOG_INFO;
       default:
       {
@@ -54,7 +61,8 @@ int logLevelToLogPriority(LogLevel in_logLevel)
 
 } // anonymous namespace
 
-SyslogDestination::SyslogDestination(const std::string& in_programId)
+SyslogDestination::SyslogDestination(logging::LogLevel in_logLevel, const std::string& in_programId) :
+   ILogDestination(in_logLevel)
 {
    // Open the system log. Don't set a mask because filtering is done at a higher level.
    ::openlog(in_programId.c_str(), LOG_CONS | LOG_PID, LOG_USER);
@@ -83,9 +91,25 @@ unsigned int SyslogDestination::getId() const
    return getSyslogId();
 }
 
-void SyslogDestination::writeLog(LogLevel in_logLevel, const std::string& in_message)
+void SyslogDestination::writeLog(
+   logging::LogLevel in_logLevel,
+   const std::string& in_message)
 {
-   ::syslog(logLevelToLogPriority(in_logLevel), "%s", in_message.c_str());
+   // Don't write logs that are more detailed than the configured maximum.
+   if (in_logLevel > m_logLevel)
+      return;
+
+   // Don't allow newlines in syslog messages since they delimit distinct log entries. Strip trailing whitespace first.
+   std::string forSyslog = boost::algorithm::trim_right_copy(in_message);
+   boost::algorithm::replace_all_copy(forSyslog, "\n", "|||");
+
+   // Also remove the leading date and program ID, since those are set by syslog directly.
+   forSyslog = boost::regex_replace(forSyslog, boost::regex("^[^\\]]*\\]\\s"), "");
+   ::syslog(logLevelToLogPriority(in_logLevel), "%s", forSyslog.c_str());
+
+   // Also log to stderr if there is a tty attached.
+   if (::isatty(STDERR_FILENO) == 1)
+      std::cerr << in_message;
 }
 
 } // namespace logging

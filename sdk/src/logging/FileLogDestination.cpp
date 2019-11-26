@@ -3,6 +3,9 @@
  * 
  * Copyright (C) 2019 by RStudio, Inc.
  *
+ * Unless you have received this program directly from RStudio pursuant to the terms of a commercial license agreement
+ * with RStudio, then this program is licensed to you under the following terms:
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
  * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
@@ -18,13 +21,14 @@
  *
  */
 
-#include "logging/FileLogDestination.hpp"
+#include <logging/FileLogDestination.hpp>
 
 #include <boost/thread.hpp>
 
 #include <vector>
 
-#include "logging/Logger.hpp"
+#include <Error.hpp>
+#include <logging/Logger.hpp>
 
 using namespace rstudio::launcher_plugins::system;
 
@@ -35,17 +39,24 @@ namespace logging {
 // FileLogOptions ======================================================================================================
 FileLogOptions::FileLogOptions(FilePath in_directory) :
    m_directory(std::move(in_directory)),
-   m_fileMode(kDefaultFileMode),
-   m_maxSizeMb(kDefaultMaxSizeMb),
-   m_doRotation(kDefaultDoRotation)
+   m_fileMode(s_defaultFileMode),
+   m_maxSizeMb(s_defaultMaxSizeMb),
+   m_doRotation(s_defaultDoRotation),
+   m_includePid(s_defaultIncludePid)
 {
 }
 
-FileLogOptions::FileLogOptions(FilePath in_directory, std::string in_fileMode, double in_maxSizeMb, bool in_doRotation) :
-   m_directory(std::move(in_directory)),
-   m_fileMode(std::move(in_fileMode)),
-   m_maxSizeMb(in_maxSizeMb),
-   m_doRotation(in_doRotation)
+FileLogOptions::FileLogOptions(
+   FilePath in_directory,
+   std::string in_fileMode,
+   double in_maxSizeMb,
+   bool in_doRotation,
+   bool in_includePid) :
+      m_directory(std::move(in_directory)),
+      m_fileMode(std::move(in_fileMode)),
+      m_maxSizeMb(in_maxSizeMb),
+      m_doRotation(in_doRotation),
+      m_includePid(in_includePid)
 {
 }
 
@@ -69,6 +80,11 @@ bool FileLogOptions::doRotation() const
    return m_doRotation;
 }
 
+bool FileLogOptions::includePid() const
+{
+   return m_includePid;
+}
+
 // FileLogDestination ==================================================================================================
 struct FileLogDestination::Impl
 {
@@ -78,7 +94,7 @@ struct FileLogDestination::Impl
       RotatedLogName(in_name + ".old.log"),
       Id(in_id)
    {
-      LogOptions.getDirectory().ensureDirectoryExists();
+      LogOptions.getDirectory().ensureDirectory();
    };
 
    ~Impl()
@@ -98,22 +114,18 @@ struct FileLogDestination::Impl
    // Returns true if the log file was opened, false otherwise.
    bool openLogFile()
    {
-      LogFile = LogOptions.getDirectory().childPath(LogName);
-      Error error = LogFile.ensureFileExists();
-
-      // This will log to any other registered log destinations, or nowhere if there are none.
+      // We can't safely log in this function.
+      Error error = LogOptions.getDirectory().completeChildPath(LogName, LogFile);
       if (error)
-      {
-         logError(error);
          return false;
-      }
+
+      error = LogFile.ensureFile();
+      if (error)
+         return false;
 
       error = LogFile.openForWrite(LogOutputStream, false);
       if (error)
-      {
-         logError(error);
          return false;
-      }
 
       return true;
    }
@@ -130,7 +142,7 @@ struct FileLogDestination::Impl
          // Convert MB to B for comparison.
          if (LogFile.getSize() >= maxSize)
          {
-            FilePath rotatedLogFile = FilePath(LogOptions.getDirectory()).childPath(RotatedLogName);
+            FilePath rotatedLogFile = FilePath(LogOptions.getDirectory()).completeChildPath(RotatedLogName);
 
             // We can't safely log errors in this function because we'll end up in an infinitely recursive
             // rotateLogFile() call.
@@ -152,7 +164,6 @@ struct FileLogDestination::Impl
       return LogFile.getSize() < maxSize;
    }
 
-
    FileLogOptions LogOptions;
    FilePath LogFile;
    std::string LogName;
@@ -162,8 +173,13 @@ struct FileLogDestination::Impl
    std::shared_ptr<std::ostream> LogOutputStream;
 };
 
-FileLogDestination::FileLogDestination(unsigned int in_id, std::string in_programId, FileLogOptions in_logOptions) :
-   m_impl(new Impl(in_id, in_programId, in_logOptions))
+FileLogDestination::FileLogDestination(
+   unsigned int in_id,
+   LogLevel in_logLevel,
+   const std::string& in_programId,
+   FileLogOptions in_logOptions) :
+      ILogDestination(in_logLevel),
+      m_impl(new Impl(in_id, in_programId, std::move(in_logOptions)))
 {
 }
 
@@ -178,8 +194,12 @@ unsigned int FileLogDestination::getId() const
    return m_impl->Id;
 }
 
-void FileLogDestination::writeLog(LogLevel, const std::string& in_message)
+void FileLogDestination::writeLog(LogLevel in_logLevel, const std::string& in_message)
 {
+   // Don't write logs that are more detailed than the configured maximum.
+   if (in_logLevel > m_logLevel)
+      return;
+
    // Lock the mutex before attempting to write.
    boost::unique_lock<boost::mutex> lock(m_impl->Mutex);
 
@@ -187,13 +207,11 @@ void FileLogDestination::writeLog(LogLevel, const std::string& in_message)
    if (!m_impl->LogOutputStream && !m_impl->openLogFile())
       return;
 
-
    // Rotate the log file if necessary.
    m_impl->rotateLogFile();
    (*m_impl->LogOutputStream) << in_message;
+   m_impl->LogOutputStream->flush();
 }
-
-
 
 } // namespace logging
 } // namespace launcher_plugins

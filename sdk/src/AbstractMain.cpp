@@ -36,11 +36,9 @@ int AbstractMain::run(int in_argc, char** in_argv)
    // Set up the logger.
    using namespace logging;
    setProgramId(getProgramId());
-   setLogLevel(LogLevel::INFO);
 
-   addLogDestination(std::unique_ptr<ILogDestination>(new SyslogDestination(getProgramId())));
-   if (StderrDestination::isStderrTty())
-      addLogDestination(std::unique_ptr<ILogDestination>(new StderrDestination()));
+   addLogDestination(std::unique_ptr<ILogDestination>(new SyslogDestination(LogLevel::INFO, getProgramId())));
+   addLogDestination(std::unique_ptr<ILogDestination>(new StderrLogDestination(LogLevel::INFO)));
 
    logInfoMessage("Starting " + getProgramId() + "...");
 
@@ -50,7 +48,7 @@ int AbstractMain::run(int in_argc, char** in_argv)
    if (error)
    {
       logError(error);
-      return error.getErrorCode();
+      return error.getCode();
    }
 
    // Read the options.
@@ -59,13 +57,17 @@ int AbstractMain::run(int in_argc, char** in_argv)
    if (error)
    {
       logError(error);
-      return error.getErrorCode();
+      return error.getCode();
    }
 
    // Now that we've read the options, add the default file log destination.
    addLogDestination(
       std::unique_ptr<ILogDestination>(
-         new FileLogDestination(3, getProgramId(), options.getScratchPath().childPath(getPluginName()))));
+         new FileLogDestination(
+            3,
+            LogLevel::INFO,
+            getProgramId(),
+            options.getScratchPath().completeChildPath(getPluginName()))));
 
    logInfoMessage("Shutting down " + getProgramId() + "...");
 

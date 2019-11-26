@@ -3,6 +3,9 @@
  * 
  * Copyright (C) 2019 by RStudio, Inc.
  *
+ * Unless you have received this program directly from RStudio pursuant to the terms of a commercial license agreement
+ * with RStudio, then this program is licensed to you under the following terms:
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
  * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
@@ -52,9 +55,9 @@
  * This macro should be included in the private or protected section of a classes declaration.
  * struct OwningClass::Impl should be defined in the definition file before defining OwningClass.
  *
- * @param in_memberName    The name of the private implementation member variable (e.g. m_impl).
+ * @param in_memeberName    The name of the private implementation member variable (e.g. m_impl).
  */
-#define PRIVATE_IMPL_SHARED(in_memberName) \
+#define PRIVATE_IMPL_SHARED(in_memberName)   \
    PRIVATE_IMPL_START                        \
    std::shared_ptr<Impl> in_memberName;
 

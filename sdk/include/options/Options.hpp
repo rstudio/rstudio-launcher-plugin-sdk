@@ -211,9 +211,11 @@ public:
    /**
     * @brief Gets the user to run as when root privileges are dropped.
     *
-    * @return The user to run as when root privileges are dropped.
+    * @param out_user       The server user, if it exists.
+    *
+    * @return Success if the server user exists; error otherwise.
     */
-   const system::User& getServerUser() const;
+   Error getServerUser(system::User& out_serverUser) const;
 
    /**
     * @brief Gets the size of the thread pool.
