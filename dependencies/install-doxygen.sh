@@ -35,10 +35,10 @@ fi
 set -e
 if [[ $HAVE_YUM -eq 1 ]]; then
   sudo yum update -y
-  sudo yum install -y wget flex bison libc6 make binutils python cmake texlive
+  sudo yum install -y wget flex bison libc6 make binutils python cmake texlive-full
 else
   sudo apt update
-  sudo apt install -y wget flex bison libc6 make binutils python cmake texlive
+  sudo apt install -y wget flex bison libc6 make binutils python cmake texlive-full
 fi
 
 # Check python and cmake version
