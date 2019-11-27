@@ -103,7 +103,9 @@ public:
    Value& setDefaultValue(const T& in_defaultValue);
 
 private:
-   // The private implementation of Value.
+   /**
+    * @brief The private implementation of Value.
+    */
    PRIVATE_IMPL_SHARED(m_impl);
 
    friend class Options;
@@ -142,11 +144,26 @@ public:
        */
       template <class T>
       Init& operator()(const char* in_name, Value<T>& in_value, const char* in_description);
+
+      /**
+       * @brief Operator which initializes a specific option value.
+       *
+       * @tparam T                  The type of the option.
+       *
+       * @param in_name             The name of the option.
+       * @param in_value            The value object, which holds the default and the storage object. The Value object
+       *                            is not usable after this call.
+       * @param in_description      The description of the option.
+       *
+       * @return A reference to this Init object.
+       */
       template <class T>
       Init& operator()(const char* in_name, Value<T>&& in_value, const char* in_description);
 
    private:
-      // The owner of this init object.
+      /**
+       * @brief The owner of this init object.
+       */
       Options& m_owner;
    };
 
@@ -211,7 +228,7 @@ public:
    /**
     * @brief Gets the user to run as when root privileges are dropped.
     *
-    * @param out_user       The server user, if it exists.
+    * @param out_serverUser       The server user, if it exists.
     *
     * @return Success if the server user exists; error otherwise.
     */
