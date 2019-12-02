@@ -80,7 +80,7 @@ public:
     * @brief Gets whether jobs will be run in an unprivileged environment or not.
     *
     * Most environments will not require this value to be set to true. It only needs to be set if the job will be run in
-    * an environment where the run-as-user cannot take privileged actions, such as within a docker container.
+    * an environment where the root cannot take privileged actions, such as within a docker container.
     *
     * If this value is set to true the user will not be changed, and the job will be run without root and impersonation.
     *
