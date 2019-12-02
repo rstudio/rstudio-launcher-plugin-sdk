@@ -37,14 +37,12 @@ printHelp()
     echo "Options:"
     formatHelp  "-a" "--all" "Install all dependencies."
     formatHelp "-c" "--core" "Install dependencies required for compiling the RStudio Launcher Plugin SDK."
-    formatHelp "-s" "--singularity" "Install dependencies required to compile and use the RStudio Singluarity Launcher Plugin. Includes core dependencies."
     formatHelp "-t" "--tools" "Install dependencies that are needed for scripts in the tools/ folder, or for other tools."
     formatHelp "-h" "--help" "Display this help menu."
 }
 
 INSTALL_ALL=0
 INSTALL_CORE=0
-INSTALL_SINGULARITY=0
 INSTALL_TOOLS=0
 DO_HELP=0
 ERR=0
@@ -53,7 +51,6 @@ for ARG in "$@"; do
     case $ARG in
         "-a"|"--all" )          INSTALL_ALL=1 ;;
         "-c"|"--core" )         INSTALL_CORE=1 ;;
-        "-s"|"--singularity" )  INSTALL_SINGULARITY=1 ;;
         "-t"|"--tools" )        INSTALL_TOOLS=1 ;;
         "-h"|"--help" )         DO_HELP=1 ;;
         * )                     printf "Invalid argument: \"%s\"\n" $ARG >&2 && DO_HELP=1 && ERR=1;;
@@ -67,30 +64,20 @@ fi
 
 if [[ $INSTALL_ALL -eq 0 ]] &&
    [[ $INSTALL_CORE -eq 0 ]] &&
-   [[ $INSTALL_SINGULARITY -eq 0 ]] &&
    [[ $INSTALL_TOOLS -eq 0 ]]; then
     echo "No installation option specified."
     printHelp
     exit 1
 fi
 
-if [[ $INSTALL_SINGULARITY -eq 1 ]]; then
-    INSTALL_CORE=1
-fi
-
 if [[ $IINSTALL_ALL -eq 1 ]]; then
     INSTALL_CORE=1
-    INSTALL_SINGULARITY=1
     INSTALL_TOOLS=1
 fi
 
 if [[ $INSTALL_CORE -eq 1 ]]; then
     ./install-build-tools.sh
     ./install-boost.sh
-fi
-
-if [[ $INSTALL_SINGULARITY -eq 1 ]]; then
-    ./install-singularity.sh
 fi
 
 if [[ $INSTALL_TOOLS -eq 1 ]]; then
