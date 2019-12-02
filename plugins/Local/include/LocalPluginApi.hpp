@@ -1,5 +1,5 @@
 /*
- * SingularityPluginApi.cpp
+ * LocalPluginApi.hpp
  * 
  * Copyright (C) 2019 by RStudio, Inc.
  *
@@ -18,23 +18,33 @@
  *
  */
 
-#include "SingularityPluginApi.hpp"
+#ifndef LAUNCHER_PLUGINS_LOCAL_PLUGIN_API_HPP
+#define LAUNCHER_PLUGINS_LOCAL_PLUGIN_API_HPP
 
-#include "SingularityOptions.hpp"
+#include <AbstractPluginApi.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
-namespace singularity {
+namespace local {
 
-Error SingularityPluginApi::initialize()
+/**
+ * @brief Launcher Plugin API for the Local Plugin.
+ */
+class LocalPluginApi : public AbstractPluginApi
 {
-   // Make sure SingularityOptions have been initialized.
-   SingularityOptions::getInstance().initialize();
+public:
 
-   return Success();
-}
+   /**
+    * @brief This method should initialize any components needed to communicate with the job scheduling tool, including
+    *        custom options (TODO: other examples).
+    *
+    * @return Success if all components needed by this Plugin were successfully initialized; Error otherwise.
+    */
+   Error initialize() override;
+};
 
-} // namespace singularity
+} // namespace local
 } // namespace launcher_plugins
 } // namespace rstudio
 
+#endif

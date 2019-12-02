@@ -20,17 +20,17 @@
 #
 
 cmake_minimum_required(VERSION 3.14)
-project(rstudio_singularity_plugin)
+project(rstudio_local_plugin)
 
 set(CMAKE_CXX_STANDARD 11)
 
 # include files
-file(GLOB_RECURSE SINGULARITY_HEADER_FILES "*.h*")
+file(GLOB_RECURSE LOCAL_HEADER_FILES "*.h*")
 
 # source files
-set(SINGULARITY_SOURCE_FILES
-   src/SingularityOptions.cpp
-   src/SingularityPluginApi.cpp)
+set(LOCAL_SOURCE_FILES
+   src/LocalOptions.cpp
+   src/LocalPluginApi.cpp)
 
 # include directories
 include_directories(
@@ -39,13 +39,13 @@ include_directories(
 )
 
 # define executable
-add_executable(rstudio-singularity-launcher src/SingularityMain.cpp
-   ${SINGULARITY_SOURCE_FILES}
-   ${SINGULARITY_HEADER_FILES}
+add_executable(rstudio-local-launcher src/LocalMain.cpp
+   ${LOCAL_SOURCE_FILES}
+   ${LOCAL_HEADER_FILES}
 )
 
 #link dependencies
-target_link_libraries(rstudio-singularity-launcher 
+target_link_libraries(rstudio-local-launcher 
    rstudio-launcher-plugin-sdk-lib
 )
 

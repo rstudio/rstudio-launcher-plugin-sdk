@@ -1,5 +1,5 @@
 /*
- * SingularityPluginApi.hpp
+ * LocalMain.cpp
  * 
  * Copyright (C) 2019 by RStudio, Inc.
  *
@@ -18,33 +18,55 @@
  *
  */
 
-#ifndef SINGULARITY_SINGULARITY_PLUGIN_API_HPP
-#define SINGULARITY_SINGULARITY_PLUGIN_API_HPP
+#include <AbstractMain.hpp>
 
-#include <AbstractPluginApi.hpp>
+#include <LocalPluginApi.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
-namespace singularity {
+namespace local {
 
 /**
- * @brief Launcher Plugin API for the Singularity Plugin.
+ * @brief Main class for the Local Plugin.
  */
-class SingularityPluginApi : public AbstractPluginApi
+class LocalMain : public AbstractMain
 {
-public:
+private:
+   /**
+    * @brief Creates the Launcher Plugin API.
+    *
+    * @return The Plugin specific Launcher Plugin API.
+    */
+   std::shared_ptr<AbstractPluginApi> createLauncherPluginApi() const override
+   {
+      return std::shared_ptr<AbstractPluginApi>(new LocalPluginApi());
+   }
 
    /**
-    * @brief This method should initialize any components needed to communicate with the job scheduling tool, including
-    *        custom options (TODO: other examples).
+    * @brief Returns the name of this plugin.
     *
-    * @return Success if all components needed by this Plugin were successfully initialized; Error otherwise.
+    * @return The name of this plugin.
     */
-   Error initialize() override;
+    std::string getPluginName() const override
+    {
+       return "local";
+    }
 };
 
-} // namespace singularity
-} // namespace launcher_plugins
+} // namespace local
+} // namespace launcher_plugin
 } // namespace rstudio
 
-#endif
+/**
+ * @brief The main function.
+ *
+ * @param argc      The number of arguments supplied to the program.
+ * @param argv      The list of arguments supplied to the program.
+ *
+ * @return 0 on success; non-zero exit code otherwise.
+ */
+int main(int argc, char** argv)
+{
+   rstudio::launcher_plugins::local::LocalMain mainObject;
+   return mainObject.run(argc, argv);
+}

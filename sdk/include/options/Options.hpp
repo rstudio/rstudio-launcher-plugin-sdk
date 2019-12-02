@@ -215,6 +215,16 @@ public:
     */
    logging::LogLevel getLogLevel() const;
 
+   /**
+    * @brief Gets the location of the configuration file for the RStudio Job Launcher.
+    *
+    * This is useful if the plugin implementation requires knowledge of the Job Launcher's configuration. Most plugin
+    * implementations will not need this value.
+    *
+    * @return The location of the configuration file for the RStudio Job Launcher.
+    */
+   const system::FilePath& getLauncherConfigFile() const;
+
   /**
    * @brief Gets the scratch path to which log files and other plugin data may be written.
    *

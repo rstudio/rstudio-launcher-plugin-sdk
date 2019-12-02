@@ -1,5 +1,5 @@
 /*
- * SingularityOptions.cpp
+ * LocalPluginApi.cpp
  * 
  * Copyright (C) 2019 by RStudio, Inc.
  *
@@ -18,44 +18,23 @@
  *
  */
 
-#include "SingularityOptions.hpp"
+#include "LocalPluginApi.hpp"
 
-#include <options/Options.hpp>
-
-using rstudio::launcher_plugins::system::FilePath;
+#include "LocalOptions.hpp"
 
 namespace rstudio {
 namespace launcher_plugins {
-namespace singularity {
+namespace local {
 
-SingularityOptions& SingularityOptions::getInstance()
+Error LocalPluginApi::initialize()
 {
-   static SingularityOptions options;
-   return options;
+   // Make sure LocalOptions have been initialized.
+   LocalOptions::getInstance().initialize();
+
+   return Success();
 }
 
-const FilePath& SingularityOptions::getRContainer() const
-{
-   return m_rContainer;
-}
-
-const FilePath& SingularityOptions::getRSessionContainer() const
-{
-   return m_rSessionContainer;
-}
-
-void SingularityOptions::initialize()
-{
-   // These are temporary and will be replaced with a list of available containers, probably using
-   // UserProfiles later on.
-   using namespace rstudio::launcher_plugins::options;
-   Options& options = Options::getInstance();
-   options.registerOptions()
-       ("r-container", Value<FilePath>(m_rContainer), "the container to use for R jobs")
-       ("r-session-container", Value<FilePath>(m_rSessionContainer), "the container to use for R sessions");
-}
-
-}
+} // namespace local
 } // namespace launcher_plugins
 } // namespace rstudio
 

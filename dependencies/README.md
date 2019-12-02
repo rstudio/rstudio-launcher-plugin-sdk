@@ -27,11 +27,3 @@ accompanying RStudio Launcher Plugins, such as cmake, gcc, and g++.
 
 This script installs Doxygen, TexLive, Python and other necessary dependencies of Doxygen. It is
 not needed unless you wish to regenerate the Doxygen documentation.
-
-## install-singularity.sh
-
-This script installs [Singularity](https://sylabs.io/singularity/), [Go](https://golang.org/), and 
-all other dependencies of Singularity. The ~/.bashrc file will be updated so that both Singularity 
-and Go will be on the path each time you login, and to enable tab-based auto-completion for 
-Singularity commands. Singularity is required to use the Singularity Launcher Plugin, which is 
-provided with this SDK as a sample of a complete and working Launcher Plugin.
