@@ -28,20 +28,39 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace local {
 
+namespace {
+constexpr char const* s_defaultSandboxPath = "/usr/lib/rstudio-server/bin/rsandbox";
+}
+
 LocalOptions& LocalOptions::getInstance()
 {
    static LocalOptions options;
    return options;
 }
 
-const FilePath& LocalOptions::getRContainer() const
+boost::posix_time::time_duration LocalOptions::getNodeConnectionTimeoutSeconds() const
 {
-   return m_rContainer;
+   return boost::posix_time::seconds(m_nodeConnectionTimeoutSeconds);
 }
 
-const FilePath& LocalOptions::getRSessionContainer() const
+const system::FilePath& LocalOptions::getRsandboxPath() const
 {
-   return m_rSessionContainer;
+   return m_rsandboxPath;
+}
+
+const system::FilePath& LocalOptions::getSecureCookieKeyFile() const
+{
+   return m_secureCookieKeyFile;
+}
+
+bool LocalOptions::shouldSaveUnspecifiedOutput() const
+{
+   return m_saveUnspecifiedOutput;
+}
+
+bool LocalOptions::useUnprivilegedMode() const
+{
+   return m_useUnprivilegedMode;
 }
 
 void LocalOptions::initialize()
@@ -51,8 +70,23 @@ void LocalOptions::initialize()
    using namespace rstudio::launcher_plugins::options;
    Options& options = Options::getInstance();
    options.registerOptions()
-       ("r-container", Value<FilePath>(m_rContainer), "the container to use for R jobs")
-       ("r-session-container", Value<FilePath>(m_rSessionContainer), "the container to use for R sessions");
+       ("node-connection-timeout-seconds",
+          Value<int>(m_nodeConnectionTimeoutSeconds).setDefaultValue(3),
+          "amount of seconds to allow for outgoing connections to other nodes in a load balanced cluster or 0 to use "
+          "the system default")
+       ("save-unspecified-output",
+          Value<bool>(m_saveUnspecifiedOutput).setDefaultValue(true),
+          "whether or not to save output for jobs that don't specify an output path - saved in scratch path")
+       ("unprivileged-mode",
+          Value<bool>(m_useUnprivilegedMode).setDefaultValue(false),
+          "special unprivileged mode - does not change user, runs without root, no impersonation, single user")
+       ("rsandbox-path",
+          Value<FilePath>(m_rsandboxPath).setDefaultValue(FilePath(s_defaultSandboxPath)),
+          "path to rsandbox executable")
+       ("secure-cookie-key-file",
+          Value<FilePath>(m_secureCookieKeyFile).setDefaultValue(FilePath()),
+          "amount of seconds to allow for outgoing connections to other nodes in a load balanced cluster or 0 to use "
+          "the system default");
 }
 
 }

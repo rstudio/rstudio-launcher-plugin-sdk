@@ -23,7 +23,7 @@
 
 #include <boost/noncopyable.hpp>
 
-#include <boost/thread.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 #include <system/FilePath.hpp>
 
@@ -45,23 +45,48 @@ public:
    static LocalOptions& getInstance();
 
    /**
-    * @brief Gets the Local container to use for R.
+    * @brief Gets the number of seconds that can elapse before an attempted connection to another local node will be
+    *        timed out.
     *
-    * NOTE: This option is a placeholder until I know what options I need. It will not end up in the release version of
-    *       this plugin.
-    *
-    * @return The Local container to use for R.
+    * @return The timeout for connecting to other local nodes, in seconds.
     */
-   const system::FilePath& getRContainer() const;
+   boost::posix_time::time_duration getNodeConnectionTimeoutSeconds() const;
+
    /**
-    * @brief Gets the Local container to use for R Sessions.
+    * @brief Gets the path to the rsandbox executable provided by the RStudio Server Pro installation.
     *
-    * NOTE: This option is a placeholder until I know what options I need. It will not end up in the release version of
-    *       this plugin.
+    * If RStudio Server Pro is installed to the default location, this value does not need to be set.
     *
-    * @return The Local container to use for R Sessions.
+    * @return The path to the rsandbox executable.
     */
-   const system::FilePath& getRSessionContainer() const;
+   const system::FilePath& getRsandboxPath() const;
+
+   /**
+    * @brief Gets the secure cookie key file to use for decrypting PAM passwords.
+    *
+    * @return The secure cookie key file to use for decrypting PAM passwords.
+    */
+   const system::FilePath& getSecureCookieKeyFile() const;
+
+   /**
+    * @brief Gets whether to save output for a job when the output path has not been specified.
+    *
+    * @return True if job output should be saved when no output path was specified; false otherwise.
+    */
+   bool shouldSaveUnspecifiedOutput() const;
+
+
+   /**
+    * @brief Gets whether jobs will be run in an unprivileged environment or not.
+    *
+    * Most environments will not require this value to be set to true. It only needs to be set if the job will be run in
+    * an environment where the run-as-user cannot take privileged actions, such as within a docker container.
+    *
+    * If this value is set to true the user will not be changed, and the job will be run without root and impersonation.
+    *
+    * @return True if jobs will be run in an unprivileged environment; false otherwise.
+    */
+   bool useUnprivilegedMode() const;
 
    /**
     * @brief Method which initializes LocalOptions. This method should be called exactly once, before the options
@@ -77,9 +102,31 @@ private:
     */
    LocalOptions() = default;
 
-   // TODO: These options are placeholders.
-   system::FilePath m_rContainer;
-   system::FilePath m_rSessionContainer;
+   /**
+    * The number of seconds that can elapse before an attempted connection to another local node will be timed out.
+    */
+   int m_nodeConnectionTimeoutSeconds;
+
+   /**
+    * Whether to save output for a job when the output path has not been specified.
+    */
+   bool m_saveUnspecifiedOutput;
+
+   /**
+    * Whether jobs will be run in an unprivileged environment or not.
+    */
+   bool m_useUnprivilegedMode;
+
+   /**
+    * The path to the rsandbox executable provided by the RStudio Server Pro installation.
+    */
+   system::FilePath m_rsandboxPath;
+
+   /**
+    * The secure cookie key file to use for decrypting PAM passwords.
+    */
+   system::FilePath m_secureCookieKeyFile;
+
 };
 
 } // namespace local
