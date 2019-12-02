@@ -1,5 +1,5 @@
 /*
- * SingularityOptions.hpp
+ * LocalOptions.hpp
  * 
  * Copyright (C) 2019 by RStudio, Inc.
  *
@@ -18,8 +18,8 @@
  *
  */
 
-#ifndef LAUNCHER_PLUGINS_SINGULARITY_OPTIONS_HPP
-#define LAUNCHER_PLUGINS_SINGULARITY_OPTIONS_HPP
+#ifndef LAUNCHER_PLUGINS_LOCAL_OPTIONS_HPP
+#define LAUNCHER_PLUGINS_LOCAL_OPTIONS_HPP
 
 #include <boost/noncopyable.hpp>
 
@@ -29,45 +29,45 @@
 
 namespace rstudio {
 namespace launcher_plugins {
-namespace singularity {
+namespace local {
 
 /**
- * @brief Class which stores options specific to the Singularity Container system.
+ * @brief Class which stores options specific to the Local Container system.
  */
-class SingularityOptions : public boost::noncopyable
+class LocalOptions : public boost::noncopyable
 {
 public:
    /**
-    * @brief Gets the single instance of SingularityOptions for the plugin.
+    * @brief Gets the single instance of LocalOptions for the plugin.
     *
-    * @return The single instance of SingularityOptions for the plugin.
+    * @return The single instance of LocalOptions for the plugin.
     */
-   static SingularityOptions& getInstance();
+   static LocalOptions& getInstance();
 
    /**
-    * @brief Gets the Singularity container to use for R.
+    * @brief Gets the Local container to use for R.
     *
     * NOTE: This option is a placeholder until I know what options I need. It will not end up in the release version of
     *       this plugin.
     *
-    * @return The Singularity container to use for R.
+    * @return The Local container to use for R.
     */
    const system::FilePath& getRContainer() const;
    /**
-    * @brief Gets the Singularity container to use for R Sessions.
+    * @brief Gets the Local container to use for R Sessions.
     *
     * NOTE: This option is a placeholder until I know what options I need. It will not end up in the release version of
     *       this plugin.
     *
-    * @return The Singularity container to use for R Sessions.
+    * @return The Local container to use for R Sessions.
     */
    const system::FilePath& getRSessionContainer() const;
 
    /**
-    * @brief Method which initializes SingularityOptions. This method should be called exactly once, before the options
+    * @brief Method which initializes LocalOptions. This method should be called exactly once, before the options
     *        file is read.
     *
-    * This is where SingularityOptions are registered with the Options object.
+    * This is where LocalOptions are registered with the Options object.
     */
    void initialize();
 
@@ -75,14 +75,14 @@ private:
    /**
     * @brief Private constructor to prevent multiple instantiations of this singleton.
     */
-   SingularityOptions() = default;
+   LocalOptions() = default;
 
    // TODO: These options are placeholders.
    system::FilePath m_rContainer;
    system::FilePath m_rSessionContainer;
 };
 
-} // namespace singularity
+} // namespace local
 } // namespace launcher_plugins
 } // namespace rstudio
 

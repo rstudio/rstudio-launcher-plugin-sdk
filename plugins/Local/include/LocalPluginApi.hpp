@@ -1,5 +1,5 @@
 /*
- * SingularityPluginApi.hpp
+ * LocalPluginApi.hpp
  * 
  * Copyright (C) 2019 by RStudio, Inc.
  *
@@ -18,19 +18,19 @@
  *
  */
 
-#ifndef SINGULARITY_SINGULARITY_PLUGIN_API_HPP
-#define SINGULARITY_SINGULARITY_PLUGIN_API_HPP
+#ifndef LAUNCHER_PLUGINS_LOCAL_PLUGIN_API_HPP
+#define LAUNCHER_PLUGINS_LOCAL_PLUGIN_API_HPP
 
 #include <AbstractPluginApi.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
-namespace singularity {
+namespace local {
 
 /**
- * @brief Launcher Plugin API for the Singularity Plugin.
+ * @brief Launcher Plugin API for the Local Plugin.
  */
-class SingularityPluginApi : public AbstractPluginApi
+class LocalPluginApi : public AbstractPluginApi
 {
 public:
 
@@ -43,7 +43,7 @@ public:
    Error initialize() override;
 };
 
-} // namespace singularity
+} // namespace local
 } // namespace launcher_plugins
 } // namespace rstudio
 

@@ -1,5 +1,5 @@
 /*
- * SingularityMain.cpp
+ * LocalMain.cpp
  * 
  * Copyright (C) 2019 by RStudio, Inc.
  *
@@ -20,16 +20,16 @@
 
 #include <AbstractMain.hpp>
 
-#include <SingularityPluginApi.hpp>
+#include <LocalPluginApi.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
-namespace singularity {
+namespace local {
 
 /**
- * @brief Main class for the Singularity Plugin.
+ * @brief Main class for the Local Plugin.
  */
-class SingularityMain : public AbstractMain
+class LocalMain : public AbstractMain
 {
 private:
    /**
@@ -39,7 +39,7 @@ private:
     */
    std::shared_ptr<AbstractPluginApi> createLauncherPluginApi() const override
    {
-      return std::shared_ptr<AbstractPluginApi>(new SingularityPluginApi());
+      return std::shared_ptr<AbstractPluginApi>(new LocalPluginApi());
    }
 
    /**
@@ -49,11 +49,11 @@ private:
     */
     std::string getPluginName() const override
     {
-       return "singularity";
+       return "local";
     }
 };
 
-} // namespace singularity
+} // namespace local
 } // namespace launcher_plugin
 } // namespace rstudio
 
@@ -67,6 +67,6 @@ private:
  */
 int main(int argc, char** argv)
 {
-   rstudio::launcher_plugins::singularity::SingularityMain mainObject;
+   rstudio::launcher_plugins::local::LocalMain mainObject;
    return mainObject.run(argc, argv);
 }

@@ -43,6 +43,6 @@ set(RLPS_BOOST_LIBS
 find_package(Boost ${RLPS_BOOST_REQUESTED_VERSION} REQUIRED COMPONENTS ${RLPS_BOOST_LIBS})
 
 add_subdirectory("sdk")
-add_subdirectory("plugins/Singularity")
+add_subdirectory("plugins/Local")
 add_subdirectory("plugins/QuickStart")
 

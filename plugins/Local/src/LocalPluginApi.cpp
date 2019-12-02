@@ -1,5 +1,5 @@
 /*
- * SingularityPluginApi.cpp
+ * LocalPluginApi.cpp
  * 
  * Copyright (C) 2019 by RStudio, Inc.
  *
@@ -18,23 +18,23 @@
  *
  */
 
-#include "SingularityPluginApi.hpp"
+#include "LocalPluginApi.hpp"
 
-#include "SingularityOptions.hpp"
+#include "LocalOptions.hpp"
 
 namespace rstudio {
 namespace launcher_plugins {
-namespace singularity {
+namespace local {
 
-Error SingularityPluginApi::initialize()
+Error LocalPluginApi::initialize()
 {
-   // Make sure SingularityOptions have been initialized.
-   SingularityOptions::getInstance().initialize();
+   // Make sure LocalOptions have been initialized.
+   LocalOptions::getInstance().initialize();
 
    return Success();
 }
 
-} // namespace singularity
+} // namespace local
 } // namespace launcher_plugins
 } // namespace rstudio
 

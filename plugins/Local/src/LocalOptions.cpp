@@ -1,5 +1,5 @@
 /*
- * SingularityOptions.cpp
+ * LocalOptions.cpp
  * 
  * Copyright (C) 2019 by RStudio, Inc.
  *
@@ -18,7 +18,7 @@
  *
  */
 
-#include "SingularityOptions.hpp"
+#include "LocalOptions.hpp"
 
 #include <options/Options.hpp>
 
@@ -26,25 +26,25 @@ using rstudio::launcher_plugins::system::FilePath;
 
 namespace rstudio {
 namespace launcher_plugins {
-namespace singularity {
+namespace local {
 
-SingularityOptions& SingularityOptions::getInstance()
+LocalOptions& LocalOptions::getInstance()
 {
-   static SingularityOptions options;
+   static LocalOptions options;
    return options;
 }
 
-const FilePath& SingularityOptions::getRContainer() const
+const FilePath& LocalOptions::getRContainer() const
 {
    return m_rContainer;
 }
 
-const FilePath& SingularityOptions::getRSessionContainer() const
+const FilePath& LocalOptions::getRSessionContainer() const
 {
    return m_rSessionContainer;
 }
 
-void SingularityOptions::initialize()
+void LocalOptions::initialize()
 {
    // These are temporary and will be replaced with a list of available containers, probably using
    // UserProfiles later on.
