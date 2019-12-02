@@ -267,6 +267,7 @@ struct Options::Impl
       EnableDebugLogging(false),
       JobExpiryHours(0),
       HeartbeatIntervalSeconds(0),
+      LauncherConfigFile(""),
       MaxLogLevel(logging::LogLevel::OFF),
       ScratchPath(""),
       ServerUser(),
@@ -280,28 +281,32 @@ struct Options::Impl
       if (!IsInitialized)
       {
          OptionsDescription.add_options()
-            ("job-expiry-hours",
-             value<unsigned int>(&JobExpiryHours)->default_value(24),
-             "amount of hours before completed jobs are removed from the system")
-            ("heartbeat-interval-seconds",
-             value<unsigned int>(&HeartbeatIntervalSeconds)->default_value(5),
-             "the amount of seconds between heartbeats - 0 to disable")
             ("enable-debug-logging",
-             value<bool>(&EnableDebugLogging)->default_value(false),
-             "whether to enable debug logging or not - if true, enforces a log-level of at least DEBUG")
+               value<bool>(&EnableDebugLogging)->default_value(false),
+               "whether to enable debug logging or not - if true, enforces a log-level of at least DEBUG")
+            ("job-expiry-hours",
+               value<unsigned int>(&JobExpiryHours)->default_value(24),
+               "amount of hours before completed jobs are removed from the system")
+            ("heartbeat-interval-seconds",
+               value<unsigned int>(&HeartbeatIntervalSeconds)->default_value(5),
+               "the amount of seconds between heartbeats - 0 to disable")
+            ("launcher-config-file",
+               value<system::FilePath>(&LauncherConfigFile)->default_value(system::FilePath()),
+               "path to launcher config file")
             ("log-level",
-             value<logging::LogLevel>(&MaxLogLevel)->default_value(logging::LogLevel::WARN),
-             "the maximum level of log messages to write")
+               value<logging::LogLevel>(&MaxLogLevel)->default_value(logging::LogLevel::WARN),
+               "the maximum level of log messages to write")
             ("scratch-path",
-             value<system::FilePath>(&ScratchPath)->default_value(system::FilePath("/var/lib/rstudio-launcher/")),
-             "scratch path where logs and job state data are stored")
+               value<system::FilePath>(&ScratchPath)->default_value(
+                  system::FilePath("/var/lib/rstudio-launcher/")),
+               "scratch path where logs and job state data are stored")
             ("server-user",
-             value<std::string>(&ServerUser)->default_value("rstudio-server"),
-             "user to run the plugin as")
+               value<std::string>(&ServerUser)->default_value("rstudio-server"),
+               "user to run the plugin as")
             ("thread-pool-size",
-             value<unsigned int>(&ThreadPoolSize)->default_value(
-                std::max<unsigned int>(4, boost::thread::hardware_concurrency())),
-             "the number of threads in the thread pool");
+               value<unsigned int>(&ThreadPoolSize)->default_value(
+                  std::max<unsigned int>(4, boost::thread::hardware_concurrency())),
+               "the number of threads in the thread pool");
 
          IsInitialized = true;
       }
@@ -320,6 +325,7 @@ struct Options::Impl
    bool EnableDebugLogging;
    unsigned int JobExpiryHours;
    unsigned int HeartbeatIntervalSeconds;
+   system::FilePath LauncherConfigFile;
    logging::LogLevel MaxLogLevel;
    system::FilePath ScratchPath;
    std::string ServerUser;
@@ -466,6 +472,11 @@ unsigned int Options::getJobExpiryHours() const
 unsigned int Options::getHeartbeatIntervalSeconds() const
 {
    return m_impl->HeartbeatIntervalSeconds;
+}
+
+const system::FilePath& Options::getLauncherConfigFile() const
+{
+   return m_impl->LauncherConfigFile;
 }
 
 logging::LogLevel Options::getLogLevel() const
