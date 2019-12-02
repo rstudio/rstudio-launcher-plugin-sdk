@@ -50,7 +50,7 @@ public:
     * NOTE: This option is a placeholder until I know what options I need. It will not end up in the release version of
     *       this plugin.
     *
-    * @reurn The Singularity container to use for R.
+    * @return The Singularity container to use for R.
     */
    const system::FilePath& getRContainer() const;
    /**
@@ -59,7 +59,7 @@ public:
     * NOTE: This option is a placeholder until I know what options I need. It will not end up in the release version of
     *       this plugin.
     *
-    * @reurn The Singularity container to use for R Sessions.
+    * @return The Singularity container to use for R Sessions.
     */
    const system::FilePath& getRSessionContainer() const;
 

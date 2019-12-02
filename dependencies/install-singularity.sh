@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #
-# install-python
+# install-singularity
 #
 # Copyright (C) 2019 by RStudio, Inc.
 #
@@ -59,9 +59,10 @@ case $(uname -i) in
     "ARMv8" )   ARCH="arm64";;
     "ppc64le" ) ARCH="ppc64le";;
     "s390x" )   ARCH="s390x";;
+    * )         ARCH="";;
 esac
 
-if [[ -z ARCH ]]; then
+if [[ -n "$ARCH" ]]; then
     echo "Architecture not recognized: $(uname -i)"
     exit
 fi
@@ -69,7 +70,6 @@ fi
 shopt -u nocasematch
 
 GO_TAR="go${GO_VER}.${OS}-${ARCH}.tar.gz"
-
 if [ -e ${GO_TAR} ]; then
     rm ${GO_TAR}
 fi

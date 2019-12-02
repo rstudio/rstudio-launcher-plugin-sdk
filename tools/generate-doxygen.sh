@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #
-# install-build-tools
+# generate-doxygen
 #
 # Copyright (C) 2019 by RStudio, Inc.
 #
@@ -24,49 +24,24 @@
 # SOFTWARE.
 #
 
-HAVE_YUM=1
-yum 2>/dev/null
-if [[ $? -eq 127 ]]; then
-    HAVE_YUM=0
-fi
 
-CMAKE_VER=($(cmake --version | cut -d ' ' -f 3))
-CMAKE_VER=${CMAKE_VER[0]}
-CMAKE_MAJOR_VER=${CMAKE_VER%%.*}
-CMAKE_MINOR_VER=${CMAKE_VER%.*}
-CMAKE_MINOR_VER=${CMAKE_MINOR_VER#*.}
-
-set -e
-
-CPU_COUNT=0
-CPU_CORES_ARR=($(cat /proc/cpuinfo | grep "cores" | cut -d ':' -f 2 | tr -d ' '))
-for I in $CPU_CORES_ARR; do
-    CPU_COUNT=$(expr $CPU_COUNT + $I)
+ls docs
+while [[ $? == 2 ]] && [[ $(pwd) != "/" ]]; do
+  cd ..
+  ls docs
 done
 
-if [[ ( -z $CMAKE_VER ) || ( $CMAKE_MAJOR_VER -lt 3 ) || ( ( $CMAKE_MAJOR_VER -eq 3 ) && ( $CMAKE_MINOR_VER -lt 14 ) ) ]]; then
-
-    if [[ $HAVE_YUM -eq 1 ]]; then
-        sudo yum update -y
-        sudo yum install -y wget gcc g++ make
-    else
-        sudo apt update
-        sudo apt install -y wget gcc g++ make
-    fi
-
-    CMAKE_VER="3.15.5"
-    CMAKE_TAR="cmake-${CMAKE_VER}.tar.gz"
-
-    mkdir temp
-    cd temp
-    wget "https://cmake.org/files/v${CMAKE_VER}}/${CMAKE_TAR}"
-    tar -xzf "${CMAKE_TAR}"
-    cd "${CMAKE_TAR%.tar.gz}"
-
-    ./bootstrap
-    make -j $(expr $CPU_COUNT / 2)
-    sudo make install
-
-else
-    echo "CMake version ${CMAKE_VER} is already installed."
+if [[ $(pwd) == "/" ]]; then
+  echo "Unable to find docs/doxygen directory. Please ensure you are within the rstudio-launcher-plugin-sdk directory."
+  exit 1
 fi
+
+set -e # exit on failed commands.
+
+cd docs/doxygen
+doxygen Doxyfile
+cd latex
+make
+cp refman.pdf "../RStudio Launcher Plugin SDK API Reference.pdf"
+cd ..
+rm -r latex
