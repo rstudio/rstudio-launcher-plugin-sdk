@@ -42,6 +42,6 @@ cd docs/doxygen
 doxygen Doxyfile
 cd latex
 make
-cp refman.pdf "../RStudio Launcher Plugin SDK API Reference.pdf"
+cp refman.pdf "../../RStudio Launcher Plugin SDK API Reference.pdf"
 cd ..
 rm -r latex
