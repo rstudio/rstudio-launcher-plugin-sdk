@@ -1,0 +1,11 @@
+Jenkinsfile
+.idea
+cmake-build*
+docker
+docs/diagrams
+tools/pull-shared-core.sh
+.git
+.gitignore
+
+--no-recursive
+./README.md
