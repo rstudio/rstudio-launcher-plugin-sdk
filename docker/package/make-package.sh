@@ -25,7 +25,7 @@
 #
 
 # ensure we're in the right directory
-cd $(dirname ${BASH_SOURCE[0]}/../..)
+cd $(dirname ${BASH_SOURCE[0]})/../..
 
 # Clean up any old version of this package
 PKG_NAME="RStudioLauncherPluginSDK-${RLP_SDK_VERSION_MAJOR}.${RLP_SDK_VERSION_MINOR}.${RLP_SDK_VERSION_PATCH}.tar.gz"
