@@ -1,7 +1,7 @@
 FROM ubuntu:bionic
 
 COPY dependencies/install-dependencies.sh /tmp/
-RUN /tmp/install-dependencies.sh -a
+RUN /tmp/install-dependencies.sh --core
 
 ARG JENKINS_GID=999
 ARG JENKINS_UID=999
