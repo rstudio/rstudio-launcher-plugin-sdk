@@ -117,85 +117,85 @@ rlpSdkVersionPatch  = 0
 messagePrefix = "Jenkins ${env.JOB_NAME} build: <${env.BUILD_URL}display/redirect|${env.BUILD_DISPLAY_NAME}>"
 
 try {
-    timestamps {
-        def containers = [
-          [os: 'bionic',     arch: 'amd64']
-          [os: 'centos8',   arch: 'x86_64']
-        ]
-        containers = limit_builds(containers)
+  timestamps {
+    def containers = [
+      [os: 'bionic',     arch: 'amd64']
+      [os: 'centos8',   arch: 'x86_64']
+    ]
+    containers = limit_builds(containers)
 
-        // create the version we're about to build
-        node('docker') {
-            stage('set up versioning') {
-                prepareWorkspace()
-                container = pullBuildPush(image_name: 'jenkins/rlpSdk', dockerfile: "docker/jenkins/Dockerfile.versioning", image_tag: "rlp-sdk-versioning", build_args: jenkins_user_build_args())
-                container.inside() {
-                    stage('bump version') {
-                        def rlpSdkVersion = sh (
-                          script: "docker/jenkins/rlps-version.sh bump ${params.RLP_SDK_VERSION_MAJOR}.${params.RLP_SDK_VERSION_MINOR}",
-                          returnStdout: true
-                        ).trim()
-                        echo "RStudio Launcher Plugin SDK build version: ${rlpSdkVersion}"
-                        def components = rlpSdkVersion.split('\\.')
+    // create the version we're about to build
+    node('docker') {
+      stage('set up versioning') {
+        prepareWorkspace()
+        container = pullBuildPush(image_name: 'jenkins/rlpSdk', dockerfile: "docker/jenkins/Dockerfile.versioning", image_tag: "rlp-sdk-versioning", build_args: jenkins_user_build_args())
+        container.inside() {
+          stage('bump version') {
+            def rlpSdkVersion = sh (
+              script: "docker/jenkins/rlps-version.sh bump ${params.RLP_SDK_VERSION_MAJOR}.${params.RLP_SDK_VERSION_MINOR}",
+              returnStdout: true
+            ).trim()
+            echo "RStudio Launcher Plugin SDK build version: ${rlpSdkVersion}"
+            def components = rlpSdkVersion.split('\\.')
 
-                        // extract version
-                        rlpSdkVersionMajor = components[0]
-                        rlpSdkVersionMinor = components[1]
-                        rlpSdkVersionPatch = components[2]
+            // extract version
+            rlpSdkVersionMajor = components[0]
+            rlpSdkVersionMinor = components[1]
+            rlpSdkVersionPatch = components[2]
 
-                        // update slack message to include build version
-                        messagePrefix = "Jenkins ${env.JOB_NAME} build: <${env.BUILD_URL}display/redirect|${env.BUILD_DISPLAY_NAME}>, version: ${rlpSdkVersion}"
-                    }
-                }
-            }
+            // update slack message to include build version
+            messagePrefix = "Jenkins ${env.JOB_NAME} build: <${env.BUILD_URL}display/redirect|${env.BUILD_DISPLAY_NAME}>, version: ${rlpSdkVersion}"
+          }
         }
+      }
+    }
 
-        // build each variant in parallel
-        def parallel_containers = [:]
-        for (int i = 0; i < containers.size(); i++) {
-            def index = i
-            parallel_containers["${containers[i].os}-${containers[i].arch}-${containers[i].flavor}-${containers[i].variant}"] = {
-                def current_container = containers[index]def container
+    // build each variant in parallel
+    def parallel_containers = [:]
+    for (int i = 0; i < containers.size(); i++) {
+      def index = i
+      parallel_containers["${containers[i].os}-${containers[i].arch}-${containers[i].flavor}-${containers[i].variant}"] = {
+        def current_container = containers[index]def container
 
-                node('sdk build') {
-                    stage('prepare ws/container') {
-                        prepareWorkspace()
-                        def image_tag = "${current_container.os}-${current_container.arch}-${params.RLP_SDK_VERSION_MAJOR}.${params.RLP_SDK_VERSION_MINOR}"
-                        withCredentials([usernameColonPassword(credentialsId: 'github-rstudio-jenkins', variable: "github_login")]) {
-                        def github_args = "--build-arg GITHUB_LOGIN=${github_login}"
-                        container = pullBuildPush(image_name: 'jenkins/rlpSdk', dockerfile: "docker/jenkins/Dockerfile.${current_container.os}-${current_container.arch}", image_tag: image_tag, build_args: github_args + " " + jenkins_user_build_args())
-                    }
-                    parallel
-                    {
-                        stage('Release') {
-                            container.inside() {
-                                stage('compile source') {
-                                    build('Release')
-                                }
-                                stage('run tests') {
-                                    run_tests('Release')
-                                }
-                            }
-                        }
-                        stage('Debug') {
-                            container.inside() {
-                                stage('compile source') {
-                                    build('Debug')
-                                }
-                                stage('run tests') {
-                                    run_tests('Debug')
-                                }
-                            }
-                        }
-                    }
+        node('sdk build') {
+          stage('prepare ws/container') {
+            prepareWorkspace()
+            def image_tag = "${current_container.os}-${current_container.arch}-${params.RLP_SDK_VERSION_MAJOR}.${params.RLP_SDK_VERSION_MINOR}"
+            withCredentials([usernameColonPassword(credentialsId: 'github-rstudio-jenkins', variable: "github_login")]) {
+            def github_args = "--build-arg GITHUB_LOGIN=${github_login}"
+            container = pullBuildPush(image_name: 'jenkins/rlpSdk', dockerfile: "docker/jenkins/Dockerfile.${current_container.os}-${current_container.arch}", image_tag: image_tag, build_args: github_args + " " + jenkins_user_build_args())
+          }
+          parallel
+          {
+            stage('Release') {
+              container.inside() {
+                stage('compile source') {
+                  build('Release')
                 }
+                stage('run tests') {
+                  run_tests('Release')
+                }
+              }
             }
+            stage('Debug') {
+              container.inside() {
+                stage('compile source') {
+                  build('Debug')
+                }
+                stage('run tests') {
+                  run_tests('Debug')
+                }
+              }
+            }
+          }
         }
+      }
+    }
 
-        stage ('packge and upload SDK') {
-            when {
-                expression { return params.CREATE_PACKAGE }
-            }
+    stage ('packge and upload SDK') {
+      when {
+        expression { return params.CREATE_PACKAGE }
+      }
       node ('docker') {
         stage('set up packaging') {
           prepareWorkspace()
@@ -212,9 +212,8 @@ try {
       }
     }
 
-        slackSend channel: params.get('SLACK_CHANNEL', '#rlp-sdk-builds'), color: 'good', message: "${messagePrefix} passed (${currentBuild.result})"
-    }
-
+    slackSend channel: params.get('SLACK_CHANNEL', '#rlp-sdk-builds'), color: 'good', message: "${messagePrefix} passed (${currentBuild.result})"
+  }
 } catch(err) {
    slackSend channel: params.get('SLACK_CHANNEL', '#rlp-sdk-builds'), color: 'bad', message: "${messagePrefix} failed: ${err}"
    error("failed: ${err}")
