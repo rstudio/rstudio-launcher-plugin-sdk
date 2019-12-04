@@ -179,7 +179,7 @@ try {
 
     parallel parallel_containers
 
-    stage ('packge and upload SDK') {
+    stage ('package and upload SDK') {
       when {
         expression { return params.CREATE_PACKAGE }
       }
