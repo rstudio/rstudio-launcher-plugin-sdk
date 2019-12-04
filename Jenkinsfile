@@ -56,7 +56,7 @@ def build_source(type) {
   // a little (currently using up all 4 cores causes problems)
   env = "${env} MAKEFLAGS=-j3 CMAKE_BUILD_TYPE=${type}"
 
-  sh "${env} jenkins/compile.sh"
+  sh "${env} docker/jenkins/compile.sh"
 }
 
 def run_tests(type) {
@@ -71,7 +71,7 @@ def run_tests(type) {
 }
 
 def s3_upload() {
-  def buildFolder = "package"
+  def buildFolder = "docker/package"
   def packageFile = sh (
       script: "basename `ls ${buildFolder}/*-${rlpSdkVersionMajor}.${rlpSdkVersionMinor}.${rlpSdkVersionPatch}.tar.gz`",
       returnStdout: true
@@ -104,9 +104,6 @@ def prepareWorkspace() { // accessory to clean workspace and checkout
   step([$class: 'WsCleanup'])
   checkout scm
   sh 'git reset --hard && git clean -ffdx' // lifted from rstudio/connect
-
-  sh 'mkdir -p docker/dependencies'
-  sh 'cp -f dependencies/*.sh docker/dependencies'
 }
 // forward declare version vars
 rlpSdkVersionMajor  = 0
