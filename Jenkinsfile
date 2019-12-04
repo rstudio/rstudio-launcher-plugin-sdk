@@ -116,8 +116,9 @@ messagePrefix = "Jenkins ${env.JOB_NAME} build: <${env.BUILD_URL}display/redirec
 try {
   timestamps {
     def containers = [
-      [os: 'bionic',     arch: 'amd64']
-      [os: 'centos8',   arch: 'x86_64']
+      [os: 'bionic',    arch: 'amd64',    flavor: 'Release'],
+      [os: 'bionic',    arch: 'amd64',    flavor: 'Debug'],
+      [os: 'centos8',   arch: 'x86_64',   flavor: 'Release']
     ]
     containers = limit_builds(containers)
 
@@ -151,7 +152,7 @@ try {
     def parallel_containers = [:]
     for (int i = 0; i < containers.size(); i++) {
       def index = i
-      parallel_containers["${containers[i].os}-${containers[i].arch}-${containers[i].flavor}-${containers[i].variant}"] = {
+      parallel_containers["${containers[i].os}-${containers[i].arch}-${containers[i].flavor}"] = {
         def current_container = containers[index]def container
 
         node('sdk build') {
@@ -162,32 +163,21 @@ try {
             def github_args = "--build-arg GITHUB_LOGIN=${github_login}"
             container = pullBuildPush(image_name: 'jenkins/rlpSdk', dockerfile: "docker/jenkins/Dockerfile.${current_container.os}-${current_container.arch}", image_tag: image_tag, build_args: github_args + " " + jenkins_user_build_args())
           }
-          parallel
-          {
-            stage('Release') {
-              container.inside() {
-                stage('compile source') {
-                  build('Release')
-                }
-                stage('run tests') {
-                  run_tests('Release')
-                }
+          stage('Build and Test') {
+            container.inside() {
+              stage('compile source') {
+                build(current_container.flavor)
               }
-            }
-            stage('Debug') {
-              container.inside() {
-                stage('compile source') {
-                  build('Debug')
-                }
-                stage('run tests') {
-                  run_tests('Debug')
-                }
+              stage('run tests') {
+                run_tests(current_container.flavor)
               }
             }
           }
         }
       }
     }
+
+    parallel parallel_containers
 
     stage ('packge and upload SDK') {
       when {
