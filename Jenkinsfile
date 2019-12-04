@@ -103,7 +103,10 @@ def limit_builds(containers) {
 def prepareWorkspace() { // accessory to clean workspace and checkout
   step([$class: 'WsCleanup'])
   checkout scm
-  sh 'git reset --hard && git clean -ffdx' // lifted from rlpSdk/connect
+  sh 'git reset --hard && git clean -ffdx' // lifted from rstudio/connect
+
+  sh 'mkdir -p docker/dependencies'
+  sh 'cp -f dependencies/*.sh docker/dependencies'
 }
 // forward declare version vars
 rlpSdkVersionMajor  = 0
