@@ -25,7 +25,7 @@
 #
 
 HAVE_YUM=1
-yum 2>/dev/null
+yum 1>/dev/null 2>/dev/null
 if [[ $? -eq 127 ]]; then
     HAVE_YUM=0
 fi
@@ -55,7 +55,7 @@ if [[ ( -z $CMAKE_VER ) || ( $CMAKE_MAJOR_VER -lt 3 ) || ( ( $CMAKE_MAJOR_VER -e
 
     if [[ $HAVE_YUM -eq 1 ]]; then
         yum update -y
-        yum install -y wget gcc g++ make
+        yum install -y wget gcc gcc-c++ make
     else
         apt update
         apt install -y wget gcc g++ make
