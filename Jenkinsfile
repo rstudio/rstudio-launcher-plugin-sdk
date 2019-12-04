@@ -196,11 +196,21 @@ try {
             when {
                 expression { return params.CREATE_PACKAGE }
             }
-            steps {
-                compile_package()
-                s3_upload()
+      node ('docker') {
+        stage('set up packaging') {
+          prepareWorkspace()
+          container = pullBuildPush(image_name: 'jenkins/rlpSdk', dockerfile: "docker/jenkins/Dockerfile.packaging", image_tag: "rlp-sdk-packaging", build_args: jenkins_user_build_args())
+          container.inside() {
+            stage('create package') {
+              compile_package()
             }
+          }
+          stage('upload package') {
+            s3_upload()
+          }
         }
+      }
+    }
 
         slackSend channel: params.get('SLACK_CHANNEL', '#rlp-sdk-builds'), color: 'good', message: "${messagePrefix} passed (${currentBuild.result})"
     }
