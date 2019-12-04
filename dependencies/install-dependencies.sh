@@ -35,7 +35,7 @@ printHelp()
 {
     echo "Usage: ./install-dependencies.sh [options]"
     echo "Options:"
-    formatHelp  "-a" "--all" "Install all dependencies."
+    formatHelp "-a" "--all" "Install all dependencies."
     formatHelp "-c" "--core" "Install dependencies required for compiling the RStudio Launcher Plugin SDK."
     formatHelp "-t" "--tools" "Install dependencies that are needed for scripts in the tools/ folder, or for other tools."
     formatHelp "-h" "--help" "Display this help menu."
