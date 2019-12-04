@@ -78,7 +78,7 @@ def s3_upload() {
   ).trim()
 
   // copy installer to s3
-  sh "aws s3 cp ${buildFolder}/${packageFile} s3://rlp-sdk-package/"
+  sh "aws s3 cp ${buildFolder}/${packageFile} s3://rstudio-launcher-plugin-sdk/"
 }
 
 def jenkins_user_build_args() {
