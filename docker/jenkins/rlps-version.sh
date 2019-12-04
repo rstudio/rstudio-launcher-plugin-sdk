@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+#
 # rlps-version
 #
 # Copyright (C) 2019 by RStudio, Inc.
