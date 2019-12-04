@@ -40,14 +40,14 @@ fi
 set -e
 if [[ $HAVE_YUM -eq 1 ]]; then
   yum update -y
-  yum install -y wget flex bison libc6 make binutils python texlive-full gcc gcc-c++
+  yum install -y wget flex bison libc6 make binutils python texlive-full gcc gcc-c++ git
 
   if [[ HAVE_CMAKE -eq 0 ]]; then
     yum install -y cmake
   fi
 else
   apt update
-  apt install -y wget flex bison libc6 make binutils python texlive-full gcc g++
+  apt install -y wget flex bison libc6 make binutils python texlive-full gcc g++ git
 
   if [[ HAVE_CMAKE -eq 0 ]]; then
     apt install -y cmake
