@@ -55,10 +55,10 @@ if [[ ( -z $CMAKE_VER ) || ( $CMAKE_MAJOR_VER -lt 3 ) || ( ( $CMAKE_MAJOR_VER -e
 
     if [[ $HAVE_YUM -eq 1 ]]; then
         yum update -y
-        yum install -y wget gcc gcc-c++ make
+        yum install -y wget gcc gcc-c++ make bzip2
     else
         apt update
-        apt install -y wget gcc g++ make
+        apt install -y wget gcc g++ make bzip2
     fi
 
     CMAKE_VER="3.15.5"
