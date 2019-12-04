@@ -62,6 +62,8 @@ if [[ $DO_HELP -ne 0 ]]; then
     exit $ERR
 fi
 
+ROOT_DIR=$(readlink -f $(dirname ${BASH_SOURCE[0]}))
+
 if [[ $INSTALL_ALL -eq 0 ]] &&
    [[ $INSTALL_CORE -eq 0 ]] &&
    [[ $INSTALL_TOOLS -eq 0 ]]; then
@@ -76,10 +78,10 @@ if [[ $IINSTALL_ALL -eq 1 ]]; then
 fi
 
 if [[ $INSTALL_CORE -eq 1 ]]; then
-    ./install-build-tools.sh
-    ./install-boost.sh
+    "${ROOT_DIR}/install-build-tools.sh"
+    "${ROOT_DIR}/install-boost.sh"
 fi
 
 if [[ $INSTALL_TOOLS -eq 1 ]]; then
-    ./install-doxygen.sh
+    "${ROOT_DIR}/install-doxygen.sh"
 fi
