@@ -196,7 +196,7 @@ try {
       when {
         expression { return params.CREATE_PACKAGE }
       }
-      node ('docker') {
+      node ('sdk package') {
         stage('set up packaging') {
           prepareWorkspace()
           container = pullBuildPush(image_name: 'jenkins/rlpSdk', dockerfile: "docker/jenkins/Dockerfile.packaging", image_tag: "rlp-sdk-packaging", build_args: jenkins_user_build_args())
