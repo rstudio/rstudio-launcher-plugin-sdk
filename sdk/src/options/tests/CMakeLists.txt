@@ -24,7 +24,7 @@ set(RLPS_OPTIONS_TEST_MAIN ../../tests/TestMain.cpp)
 # One executable per suite of Options test because it's a singleton
 
 # Copy the test runner that runs all options tests.
-configure_file(options-tests.sh options-tests.sh COPYONLY)
+configure_file(run-tests.sh run-tests.sh COPYONLY)
 
 # Copy configuration files used by the tests.
 set(CONF_INPUT_FILES
