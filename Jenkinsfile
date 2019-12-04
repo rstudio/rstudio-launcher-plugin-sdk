@@ -40,7 +40,7 @@ properties([
                 ])
 ])
 
-def compile_package() {
+def create_package() {
   // start with major, minor, and patch versions
   def env = "RLP_SDK_VERSION_MAJOR=${rlpSdkVersionMajor} RLP_SDK_VERSION_MINOR=${rlpSdkVersionMinor} RLP_SDK_VERSION_PATCH=${rlpSdkVersionPatch}"
 
@@ -202,7 +202,7 @@ try {
           container = pullBuildPush(image_name: 'jenkins/rlpSdk', dockerfile: "docker/jenkins/Dockerfile.packaging", image_tag: "rlp-sdk-packaging", build_args: jenkins_user_build_args())
           container.inside() {
             stage('create package') {
-              compile_package()
+              create_package()
             }
           }
           stage('upload package') {
