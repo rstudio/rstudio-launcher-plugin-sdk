@@ -30,17 +30,22 @@ BUILD_DIR=$1
 TEST_RESULTS=0
 runTest()
 {
-    "${BUILD_DIR}/${1}"
+    CURR_DIR=$(pwd)
+    cd "${BUILD_DIR}/${1}"
+    ./run-tests.sh
+
 
     RES=$?
     if [[ $? -ne 0 ]]; then
         TEST_RESULTS=$?
     fi
+
+    cd "${CURR_DIR}"
 }
 
 
 # Unit tests first
-runTest "/src/sdk/options/tests/options-tests.sh"
+runTest "sdk/src/options/tests"
 
 
 # TODO: Integration tests
