@@ -65,7 +65,7 @@ then
    ./bootstrap.sh
 
    # Build boost with bjam
-   ./bjam                     \
+   ./bjam                      \
    "$BOOST_BJAM_FLAGS"         \
    variant=release             \
    cxxflags="-fPIC -std=c++11" \
