@@ -46,11 +46,11 @@ then
    fi
 
    # Untar
-   sudo rm -rf $BOOST_BUILD_DIR
-   sudo mkdir -p $BOOST_BUILD_DIR
+   rm -rf $BOOST_BUILD_DIR
+   mkdir -p $BOOST_BUILD_DIR
    cd $BOOST_BUILD_DIR
 
-   sudo tar --bzip2 -xf "../$BOOST_TAR"
+   tar --bzip2 -xf "../$BOOST_TAR"
    cd "$BOOST_VERSION"
 
    if [[ -n $BOOST_DIR ]];
@@ -62,19 +62,19 @@ then
    echo "$BOOST_BJAM_FLAGS"
 
    # Bootstrap
-   sudo ./bootstrap.sh
+   ./bootstrap.sh
 
    # Build boost with bjam
-   sudo ./bjam                     \
-       "$BOOST_BJAM_FLAGS"         \
-       variant=release             \
-       cxxflags="-fPIC -std=c++11" \
-       install
+   ./bjam                     \
+   "$BOOST_BJAM_FLAGS"         \
+   variant=release             \
+   cxxflags="-fPIC -std=c++11" \
+   install
 
    # Cleaup
    cd "$INSTALL_DIR"
-   sudo rm -rf "$BOOST_BUILD_DIR"
-   sudo rm "${BOOST_TAR}"
+   rm -rf "$BOOST_BUILD_DIR"
+   rm "${BOOST_TAR}"
 
 elif [[ -n $BOOST_DIR ]]; then
    echo "$BOOST_VERSION_NUMBER already installed in $BOOST_DIR"

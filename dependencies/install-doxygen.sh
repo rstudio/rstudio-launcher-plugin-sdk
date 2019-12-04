@@ -34,11 +34,11 @@ fi
 # Install doxygen build dependencies, if not installed
 set -e
 if [[ $HAVE_YUM -eq 1 ]]; then
-  sudo yum update -y
-  sudo yum install -y wget flex bison libc6 make binutils python cmake texlive-full
+  yum update -y
+  yum install -y wget flex bison libc6 make binutils python cmake texlive-full
 else
-  sudo apt update
-  sudo apt install -y wget flex bison libc6 make binutils python cmake texlive-full
+  apt update
+  apt install -y wget flex bison libc6 make binutils python cmake texlive-full
 fi
 
 # Check python and cmake version
@@ -79,7 +79,7 @@ cd build
 cmake -G "Unix Makefiles" ..
 make
 
-sudo make install
+make install
 
 cd ../../../
 rm -rf tmp
