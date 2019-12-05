@@ -81,4 +81,3 @@ elif [[ -n $BOOST_DIR ]]; then
 else
    echo "$BOOST_VERSION_NUMBER already installed in $BOOST_DEFAULT_DIR"
 fi
-
