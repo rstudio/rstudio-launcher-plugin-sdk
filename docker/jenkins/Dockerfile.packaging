@@ -3,6 +3,7 @@ FROM ubuntu:bionic
 ARG AWS_REGION=us-east-1
 
 COPY dependencies/*.sh /tmp/
+RUN ln -fs /usr/share/zoneinfo/UTC /etc/localtime
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt update && apt install -y sudo && /tmp/install-dependencies.sh --tools
 
