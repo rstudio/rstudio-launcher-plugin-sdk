@@ -25,7 +25,7 @@
 #
 
 HAVE_YUM=1
-yum 2>/dev/null
+yum 1>/dev/null 2>/dev/null
 if [[ $? -eq 127 ]]; then
   HAVE_YUM=0
 fi
