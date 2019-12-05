@@ -54,11 +54,11 @@ fi
 if [[ ( -z $CMAKE_VER ) || ( $CMAKE_MAJOR_VER -lt 3 ) || ( ( $CMAKE_MAJOR_VER -eq 3 ) && ( $CMAKE_MINOR_VER -lt 14 ) ) ]]; then
 
     if [[ $HAVE_YUM -eq 1 ]]; then
-        yum update -y
-        yum install -y wget gcc gcc-c++ make bzip2
+        sudo yum update -y
+        sudo yum install -y wget gcc gcc-c++ make bzip2
     else
-        apt update
-        apt install -y wget gcc g++ make bzip2
+        sudo apt update
+        sudo apt install -y wget gcc g++ make bzip2
     fi
 
     CMAKE_VER="3.15.5"
@@ -72,7 +72,7 @@ if [[ ( -z $CMAKE_VER ) || ( $CMAKE_MAJOR_VER -lt 3 ) || ( ( $CMAKE_MAJOR_VER -e
 
     ./bootstrap
     make "-j${CPU_COUNT}"
-    make install
+    sudo make install
 
 else
     echo "CMake version ${CMAKE_VER} is already installed."

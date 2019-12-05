@@ -1,7 +1,7 @@
 FROM centos:8
 
 COPY dependencies/*.sh /tmp/
-RUN /tmp/install-dependencies.sh --core
+RUN yum update -y && yum install -y sudo && /tmp/install-dependencies.sh --core
 
 ARG JENKINS_GID=999
 ARG JENKINS_UID=999

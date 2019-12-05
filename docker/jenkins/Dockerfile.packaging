@@ -4,7 +4,7 @@ ARG AWS_REGION=us-east-1
 
 COPY dependencies/*.sh /tmp/
 ENV DEBIAN_FRONTEND=noninteractive
-RUN /tmp/install-dependencies.sh --tools
+RUN apt update && apt install -y sudo && /tmp/install-dependencies.sh --tools
 
 ARG JENKINS_GID=999
 ARG JENKINS_UID=999
