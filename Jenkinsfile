@@ -34,8 +34,6 @@ properties([
     parameters([string(name: 'RLP_SDK_VERSION_MAJOR', defaultValue: '0', description: 'RStudio Launcher Plugin SDK Major Version'),
                 string(name: 'RLP_SDK_VERSION_MINOR', defaultValue: '1', description: 'RStudio Launcher Plugin SDK Minor Version'),
                 string(name: 'SLACK_CHANNEL', defaultValue: '#ide-builds', description: 'Slack channel to publish build message.'),
-                string(name: 'OS_FILTER', defaultValue: '', description: 'Pattern to limit builds by matching OS'),
-                string(name: 'ARCH_FILTER', defaultValue: '', description: 'Pattern to limit builds by matching ARCH'),
                 booleanParam(name: 'CREATE_PACKAGE', description: 'When checked, creates a release package and pushes it to AWS S3.')
                 ])
 ])
@@ -87,19 +85,6 @@ def jenkins_user_build_args() {
   return " --build-arg JENKINS_UID=${jenkins_uid} --build-arg JENKINS_GID=${jenkins_gid}"
 }
 
-def limit_builds(containers) {
-  // '' (empty string) as regex matches all
-  def limited_containers = []
-  for (int i = 0; i < containers.size(); i++) {
-    def it = containers[i]
-    // negate-fest. String.contains() can't work in the positive with empty strings
-    if (!(!it.os.contains(params.OS_FILTER) || !it.arch.contains(params.ARCH_FILTER) || !it.flavor.contains(params.FLAVOR_FILTER))) {
-      limited_containers << it
-    }
-  }
-  return limited_containers ?: containers // if we limit all, limit none
-}
-
 def prepareWorkspace() { // accessory to clean workspace and checkout
   step([$class: 'WsCleanup'])
   checkout scm
@@ -120,7 +105,6 @@ try {
       [os: 'bionic',    arch: 'amd64',    flavor: 'Debug'],
       [os: 'centos8',   arch: 'x86_64',   flavor: 'Release']
     ]
-    containers = limit_builds(containers)
 
     // create the version we're about to build
     node('docker') {
