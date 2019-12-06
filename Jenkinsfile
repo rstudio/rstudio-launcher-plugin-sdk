@@ -153,7 +153,8 @@ try {
     for (int i = 0; i < containers.size(); i++) {
       def index = i
       parallel_containers["${containers[i].os}-${containers[i].arch}-${containers[i].flavor}"] = {
-        def current_container = containers[index]def container
+        def current_container = containers[index]
+        def container
 
         node('sdk build') {
           stage('prepare ws/container') {
