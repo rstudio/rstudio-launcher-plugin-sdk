@@ -140,7 +140,7 @@ try {
         def current_container = containers[index]
         def container
 
-        node('sdk build') {
+        node('ide') {
           stage('prepare ws/container') {
             prepareWorkspace()
             def image_tag = "${current_container.os}-${current_container.arch}-${params.RLP_SDK_VERSION_MAJOR}.${params.RLP_SDK_VERSION_MINOR}"
