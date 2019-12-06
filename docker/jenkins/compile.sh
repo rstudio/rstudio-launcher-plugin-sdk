@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #
-# generate-doxygen
+# compile
 #
 # Copyright (C) 2019 by RStudio, Inc.
 #
@@ -24,24 +24,30 @@
 # SOFTWARE.
 #
 
-
-ls docs
-while [[ $? == 2 ]] && [[ $(pwd) != "/" ]]; do
-  cd ..
-  ls docs
-done
-
-if [[ $(pwd) == "/" ]]; then
-  echo "Unable to find docs/doxygen directory. Please ensure you are within the rstudio-launcher-plugin-sdk directory."
-  exit 1
+if [ -z "${CMAKE_BUILD_TYPE}" ]; then
+    CMAKE_BUILD_TYPE=Release
 fi
 
-set -e # exit on failed commands.
+cd $(dirname ${BASH_SOURCE[0]})/../..
 
-cd docs/doxygen
-doxygen Doxyfile
-cd latex
-make
-cp refman.pdf "../../RStudio Launcher Plugin SDK API Reference.pdf"
-cd ..
-rm -r latex
+BUILD_DIR=$(readlink -f "cmake-build-${CMAKE_BUILD_TYPE}")
+
+# clean requested
+if [[ "${1}" == "clean" ]]; then
+    rm -rf "${BUILD_DIR}"
+fi
+
+set -e
+
+CMAKE_INSTALL_PREFIX="/usr/lib/rstudio-server"
+
+mkdir -p "${BUILD_DIR}"
+cd "${BUILD_DIR}"
+rm -f CMakeCache.txt
+cmake -DCMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE}"            \
+      -DCMAKE_INSTALL_PREFIX="${CMAKE_INSTALL_PREFIX}"    \
+      ..
+
+make ${MAKEFLAGS}
+
+# TODO: install binaries

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #
-# generate-doxygen
+# run-all-tests
 #
 # Copyright (C) 2019 by RStudio, Inc.
 #
@@ -24,24 +24,32 @@
 # SOFTWARE.
 #
 
+# Get the build dir
+BUILD_DIR=$1
 
-ls docs
-while [[ $? == 2 ]] && [[ $(pwd) != "/" ]]; do
-  cd ..
-  ls docs
-done
+TEST_RESULTS=0
+runTest()
+{
+    CURR_DIR=$(pwd)
+    cd "${BUILD_DIR}/${1}"
+    ./run-tests.sh
 
-if [[ $(pwd) == "/" ]]; then
-  echo "Unable to find docs/doxygen directory. Please ensure you are within the rstudio-launcher-plugin-sdk directory."
-  exit 1
-fi
 
-set -e # exit on failed commands.
+    RES=$?
+    if [[ $? -ne 0 ]]; then
+        TEST_RESULTS=$?
+    fi
 
-cd docs/doxygen
-doxygen Doxyfile
-cd latex
-make
-cp refman.pdf "../../RStudio Launcher Plugin SDK API Reference.pdf"
-cd ..
-rm -r latex
+    cd "${CURR_DIR}"
+}
+
+
+# Unit tests first
+runTest "sdk/src/options/tests"
+
+
+# TODO: Integration tests
+
+
+# Exit
+exit $TEST_RESULTS

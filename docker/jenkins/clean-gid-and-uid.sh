@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #
-# generate-doxygen
+# clean-gid-and-uid
 #
 # Copyright (C) 2019 by RStudio, Inc.
 #
@@ -24,24 +24,49 @@
 # SOFTWARE.
 #
 
+set -f
 
-ls docs
-while [[ $? == 2 ]] && [[ $(pwd) != "/" ]]; do
-  cd ..
-  ls docs
-done
+# Clean up user id
+USERID=$2
+USERINFO=$(getent passwd $USERID)
 
-if [[ $(pwd) == "/" ]]; then
-  echo "Unable to find docs/doxygen directory. Please ensure you are within the rstudio-launcher-plugin-sdk directory."
-  exit 1
+# okay if no user
+if [ $? -ne 0 ]; then
+    echo "No user exists with id $USERID"
+else
+    # turn userinfo into a space-separated array and extract the first element
+    USERINFO=(${USERINFO//:/ })
+    USERNAME="${USERINFO[0]}"
+
+    echo "Removing user $USERNAME with conflicting id $USERID"
+
+    # use appropriate command for user deletion
+    if hash userdel 2>/dev/null; then
+        userdel $USERNAME
+    elif hash deluser 2>/dev/null; then
+        deluser $USERNAME
+    fi
 fi
 
-set -e # exit on failed commands.
+# Clean up group id
+GROUPID=$1
+GROUPINFO=$(getent group $GROUPID)
 
-cd docs/doxygen
-doxygen Doxyfile
-cd latex
-make
-cp refman.pdf "../../RStudio Launcher Plugin SDK API Reference.pdf"
-cd ..
-rm -r latex
+# okay if no user
+if [ $? -ne 0 ]; then
+    echo "No group exists with id $GROUPID"
+    exit 0
+fi
+
+# turn group info into a space-separated array and extract the first element
+GROUPINFO=(${GROUPINFO//:/ })
+GROUPNAME="${GROUPINFO[0]}"
+
+echo "Removing group $GROUPNAME with conflicting id $GROUPID"
+
+# use appropriate command for group deletion
+if hash groupdel 2>/dev/null; then
+    groupdel $GROUPNAME
+elif hash delgroup 2>/dev/null; then
+    delgroup $GROUPNAME
+fi

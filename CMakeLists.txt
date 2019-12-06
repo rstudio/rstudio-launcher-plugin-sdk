@@ -19,8 +19,8 @@
 # OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-cmake_minimum_required(VERSION 3.14)
-project(rlps_all)
+cmake_minimum_required(VERSION 3.15)
+project(rlp_sdk_all)
 
 # include globals
 include(CMakeGlobals.txt)

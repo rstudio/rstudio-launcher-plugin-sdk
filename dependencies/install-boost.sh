@@ -65,11 +65,11 @@ then
    sudo ./bootstrap.sh
 
    # Build boost with bjam
-   sudo ./bjam                     \
-       "$BOOST_BJAM_FLAGS"         \
-       variant=release             \
-       cxxflags="-fPIC -std=c++11" \
-       install
+   sudo ./bjam                      \
+        "$BOOST_BJAM_FLAGS"         \
+        variant=release             \
+        cxxflags="-fPIC -std=c++11" \
+        install
 
    # Cleaup
    cd "$INSTALL_DIR"
@@ -81,4 +81,3 @@ elif [[ -n $BOOST_DIR ]]; then
 else
    echo "$BOOST_VERSION_NUMBER already installed in $BOOST_DEFAULT_DIR"
 fi
-

@@ -1,0 +1,13 @@
+FROM ubuntu:bionic
+
+COPY dependencies/*.sh /tmp/
+RUN apt update && apt install -y sudo && /tmp/install-dependencies.sh --core
+
+ARG JENKINS_GID=999
+ARG JENKINS_UID=999
+COPY docker/jenkins/*.sh /tmp/
+RUN /tmp/clean-gid-and-uid.sh $JENKINS_GID $JENKINS_UID
+
+RUN groupadd -g $JENKINS_GID jenkins && \
+    useradd -m -d /var/lib/jenkins -u $JENKINS_UID -g jenkins jenkins && \
+    echo "jenkins ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers

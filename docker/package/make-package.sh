@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #
-# generate-doxygen
+# make-package
 #
 # Copyright (C) 2019 by RStudio, Inc.
 #
@@ -24,24 +24,18 @@
 # SOFTWARE.
 #
 
+# ensure we're in the right directory
+cd $(dirname ${BASH_SOURCE[0]})/../..
 
-ls docs
-while [[ $? == 2 ]] && [[ $(pwd) != "/" ]]; do
-  cd ..
-  ls docs
-done
-
-if [[ $(pwd) == "/" ]]; then
-  echo "Unable to find docs/doxygen directory. Please ensure you are within the rstudio-launcher-plugin-sdk directory."
-  exit 1
+# Clean up any old version of this package
+PKG_NAME="RStudioLauncherPluginSDK-${RLP_SDK_VERSION_MAJOR}.${RLP_SDK_VERSION_MINOR}.${RLP_SDK_VERSION_PATCH}.tar.gz"
+ls "${PKG_NAME}" 2>/dev/null
+if [[ $? -ne 2 ]]; then
+    rm "${PKG_NAME}"
 fi
 
-set -e # exit on failed commands.
+# exit if archiving fails.
+set -e
 
-cd docs/doxygen
-doxygen Doxyfile
-cd latex
-make
-cp refman.pdf "../../RStudio Launcher Plugin SDK API Reference.pdf"
-cd ..
-rm -r latex
+# Readmes are ignored, so explicitly include dependences/README.md
+tar --exclude-from "docker/package/exclude-from-package.txt" -zcvf "docker/package/${PKG_NAME}" .

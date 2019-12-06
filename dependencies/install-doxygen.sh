@@ -25,20 +25,33 @@
 #
 
 HAVE_YUM=1
-yum 2>/dev/null
+yum 1>/dev/null 2>/dev/null
 if [[ $? -eq 127 ]]; then
-    HAVE_YUM=0
+  HAVE_YUM=0
 fi
 
+HAVE_CMAKE=1
+cmake --version 1>/dev/null 2>/dev/null
+if [[ $? -eq 127 ]]; then
+  HAVE_CMAKE=0
+fi
 
 # Install doxygen build dependencies, if not installed
 set -e
 if [[ $HAVE_YUM -eq 1 ]]; then
   sudo yum update -y
-  sudo yum install -y wget flex bison libc6 make binutils python cmake texlive-full
+  sudo yum install -y wget flex bison libc6 make binutils python texlive-full gcc gcc-c++ git
+
+  if [[ HAVE_CMAKE -eq 0 ]]; then
+    sudo yum install -y cmake
+  fi
 else
   sudo apt update
-  sudo apt install -y wget flex bison libc6 make binutils python cmake texlive-full
+  sudo apt install -y wget flex bison libc6 make binutils python texlive-full gcc g++ git
+
+  if [[ HAVE_CMAKE -eq 0 ]]; then
+    sudo apt install -y cmake
+  fi
 fi
 
 # Check python and cmake version
