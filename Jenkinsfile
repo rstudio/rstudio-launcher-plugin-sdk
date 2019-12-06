@@ -126,7 +126,7 @@ try {
     node('docker') {
       stage('set up versioning') {
         prepareWorkspace()
-        container = pullBuildPush(image_name: 'jenkins/rlpSdk', dockerfile: "docker/jenkins/Dockerfile.versioning", image_tag: "rlp-sdk-versioning", build_args: jenkins_user_build_args())
+        container = pullBuildPush(image_name: 'jenkins/ide', dockerfile: "docker/jenkins/Dockerfile.versioning", image_tag: "rlp-sdk-versioning", build_args: jenkins_user_build_args())
         container.inside() {
           stage('bump version') {
             def rlpSdkVersion = sh (
