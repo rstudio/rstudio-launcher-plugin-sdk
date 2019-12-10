@@ -140,7 +140,7 @@ try {
         def current_container = containers[index]
         def container
 
-        node('ide') {
+        node('docker') {
           stage('prepare ws/container') {
             prepareWorkspace()
             def image_tag = "${current_container.os}-${current_container.arch}-${params.RLP_SDK_VERSION_MAJOR}.${params.RLP_SDK_VERSION_MINOR}"
@@ -169,7 +169,7 @@ try {
       when {
         expression { return params.CREATE_PACKAGE }
       }
-      node ('sdk package') {
+      node ('docker') {
         stage('set up packaging') {
           prepareWorkspace()
           container = pullBuildPush(image_name: 'jenkins/rlp-sdk', dockerfile: "docker/jenkins/Dockerfile.packaging", image_tag: "rlp-sdk-packaging", build_args: jenkins_user_build_args())
