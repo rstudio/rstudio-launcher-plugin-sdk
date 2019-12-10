@@ -75,6 +75,9 @@ fi
 # contains each RLP SDK commit and the patch version associated with it
 aws s3 cp s3://rstudio-launcher-plugin-sdk/version/$VERSION/rlps-patch.csv /tmp/rlps-patch.csv $EXTRA_CP_ARGS
 
+# Get the commits
+COMMITS=($(git log --pretty=format:"%H" -n 100))
+
 # read the CSV listing commits and associated patch releases
 MAX_PATCH=0
 while read HISTORY; do
@@ -138,7 +141,7 @@ case "$ACTION" in
             echo "Push updated patch history to S3 and git"
         else
             # upload to s3
-            aws s3 cp /tmp/rlps-updated.csv s3://rstudio-launcher-plugin-sdk/version/$VERSION/rlps-patch.csv --quiet
+            aws s3 cp /tmp/rlps-updated.csv s3://rstudio-launcher-plugin-sdk/version/$VERSION/rlps-patch.csv $EXTRA_CP_ARGS
 
             # tag the release on git (TODO: need Jenkins creds to do this)
             # git tag "v$RLPS_VERSION"
