@@ -108,11 +108,11 @@ try {
 
     // create the version we're about to build
     node('docker') {
-      stage('set up versioning') {
+      stage('Prepare Versioning Container') {
         prepareWorkspace()
         container = pullBuildPush(image_name: 'jenkins/ide', dockerfile: "docker/jenkins/Dockerfile.versioning", image_tag: "rlp-sdk-versioning", build_args: jenkins_user_build_args())
         container.inside() {
-          stage('bump version') {
+          stage('Bump Version') {
             def rlpSdkVersion = sh (
               script: "docker/jenkins/rlps-version.sh bump ${params.RLP_SDK_VERSION_MAJOR}.${params.RLP_SDK_VERSION_MINOR}",
               returnStdout: true
@@ -141,7 +141,7 @@ try {
         def container
 
         node('docker') {
-          stage('prepare ws/container') {
+          stage('Prepare B&T Container') {
             prepareWorkspace()
             def image_tag = "${current_container.os}-${current_container.arch}-${params.RLP_SDK_VERSION_MAJOR}.${params.RLP_SDK_VERSION_MINOR}"
             withCredentials([usernameColonPassword(credentialsId: 'github-rstudio-jenkins', variable: "github_login")]) {
@@ -165,20 +165,20 @@ try {
 
     parallel parallel_containers
 
-    stage ('package and upload SDK') {
+    stage ('Package and Upload SDK') {
       when {
         expression { return params.CREATE_PACKAGE }
       }
       node ('docker') {
-        stage('set up packaging') {
+        stage('Prepare Packaging Container') {
           prepareWorkspace()
           container = pullBuildPush(image_name: 'jenkins/rlp-sdk', dockerfile: "docker/jenkins/Dockerfile.packaging", image_tag: "rlp-sdk-packaging", build_args: jenkins_user_build_args())
           container.inside() {
-            stage('create package') {
+            stage('Create Package') {
               create_package()
             }
           }
-          stage('upload package') {
+          stage('Upload Package') {
             s3_upload()
           }
         }
