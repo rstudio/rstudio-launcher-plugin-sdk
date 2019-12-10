@@ -151,10 +151,10 @@ try {
           }
           stage('Build and Test') {
             container.inside() {
-              stage('compile source') {
+              stage('Compile Source') {
                 build("${current_container.flavor}")
               }
-              stage('run tests') {
+              stage('Run Tests') {
                 run_tests("${current_container.flavor}")
               }
             }
