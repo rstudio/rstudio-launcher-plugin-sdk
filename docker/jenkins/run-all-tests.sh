@@ -27,17 +27,14 @@
 # Get the build dir
 BUILD_DIR=$1
 
-TEST_RESULTS=0
+FAILURES=0
 runTest()
 {
     CURR_DIR=$(pwd)
     cd "${BUILD_DIR}/${1}"
     ./run-tests.sh
 
-    RES=$?
-    if [[ $RES -ne 0 ]]; then
-        TEST_RESULTS=$RES
-    fi
+    FAILURES=$(expr $FAILURES + $?)
 
     cd "${CURR_DIR}"
 }
@@ -49,6 +46,6 @@ runTest "sdk/src/options/tests"
 
 # TODO: Integration tests
 
-
 # Exit
-exit $TEST_RESULTS
+echo "Test failures: $FAILURES"
+exit $FAILURES

@@ -24,16 +24,13 @@
 # SOFTWARE.
 #
 
-HAVE_FAILURE=0
+FAILURES=0
 
 for test in ./*-tests;
 do
   echo "Running ${test}..."
   ${test}
-  RES=$?
-  if [[ $RES -ne 0 ]]; then
-    HAVE_FAILURE=$RES
-  fi
+  FAILURES=$(expr $FAILURES + $?)
 done
 
-exit $HAVE_FAILURE
+exit $FAILURES
