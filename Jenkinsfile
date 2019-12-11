@@ -177,7 +177,7 @@ try {
               create_package()
             }
           }
-          if (params.get('CREATE_PACKAGE') == true) {
+          if (params.get('UPLOAD_PACKAGE') == true) {
             stage('Upload Package') {
               s3_upload()
             }
