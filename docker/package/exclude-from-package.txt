@@ -3,6 +3,7 @@ Jenkinsfile
 cmake-build*
 docker
 docs/diagrams
+docs/doxygen/latex
 tools/pull-shared-core.sh
 .git
 .gitignore
