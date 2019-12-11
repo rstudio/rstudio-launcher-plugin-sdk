@@ -36,7 +36,7 @@ cd $(dirname ${BASH_SOURCE[0]})/../docs/doxygen
 # update the version number
 sed -e "s/\\\${RLPS_VERSION}/${VERSION}/g" Doxyfile.in > Doxyfile
 
-doxygen Doxyfile
+sudo doxygen Doxyfile
 cd latex
 make
 cp refman.pdf "../../RStudio Launcher Plugin SDK API Reference.pdf"

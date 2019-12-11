@@ -34,7 +34,7 @@ properties([
     parameters([string(name: 'RLP_SDK_VERSION_MAJOR', defaultValue: '0', description: 'RStudio Launcher Plugin SDK Major Version'),
                 string(name: 'RLP_SDK_VERSION_MINOR', defaultValue: '1', description: 'RStudio Launcher Plugin SDK Minor Version'),
                 string(name: 'SLACK_CHANNEL', defaultValue: '#ide-builds', description: 'Slack channel to publish build message.'),
-                booleanParam(name: 'CREATE_PACKAGE', description: 'When checked, creates a release package and pushes it to AWS S3.')
+                booleanParam(name: 'UPLOAD_PACKAGE', description: 'When checked, pushes the generated package to AWS S3.')
                 ])
 ])
 
@@ -43,7 +43,7 @@ def create_package() {
   def env = "RLP_SDK_VERSION_MAJOR=${rlpSdkVersionMajor} RLP_SDK_VERSION_MINOR=${rlpSdkVersionMinor} RLP_SDK_VERSION_PATCH=${rlpSdkVersionPatch}"
 
   // build the package
-  sh "${env} jenkins/package/make-package.sh"
+  sh "${env} docker/package/make-package.sh"
 }
 
 def generate_documentation() {
