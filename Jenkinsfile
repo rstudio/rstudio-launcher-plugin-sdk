@@ -58,9 +58,9 @@ def build_source(type) {
 }
 
 def run_tests(type) {
-    // attempt to run tests
-    sh "cd .."
-    sh "docker/jenkins/run-all-tests.sh cmake-build-${type}"
+  // attempt to run tests
+  sh "cd .."
+  sh "docker/jenkins/run-all-tests.sh cmake-build-${type}"
 }
 
 def s3_upload() {

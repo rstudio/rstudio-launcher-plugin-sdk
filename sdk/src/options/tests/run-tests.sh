@@ -26,11 +26,23 @@
 
 FAILURES=0
 
+# Create the rstudio-server user, if it does not already exist
+cat /etc/passwd | grep rstudio-server >/dev/null
+ADD_USER=$?
+if [[ $ADD_USER -ne 0 ]]; then
+  sudo adduser --system rstudio-server
+fi
+
 for test in ./*-tests;
 do
   echo "Running ${test}..."
   ${test}
   FAILURES=$(expr $FAILURES + $?)
 done
+
+# Remove the user if it was added by this script
+if [[ $ADD_USER -ne 0 ]]; then
+  sudo userdel rstudio-server
+fi
 
 exit $FAILURES
