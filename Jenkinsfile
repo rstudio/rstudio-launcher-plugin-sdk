@@ -165,21 +165,20 @@ try {
 
     parallel parallel_containers
 
-    stage ('Package and Upload SDK') {
-      when {
-        expression { return params.CREATE_PACKAGE }
-      }
-      node ('docker') {
-        stage('Prepare Packaging Container') {
-          prepareWorkspace()
-          container = pullBuildPush(image_name: 'jenkins/rlp-sdk', dockerfile: "docker/jenkins/Dockerfile.packaging", image_tag: "rlp-sdk-packaging", build_args: jenkins_user_build_args())
-          container.inside() {
-            stage('Create Package') {
-              create_package()
+    if (params.get('CREATE_PACKAGE') == true) {
+      stage ('Package and Upload SDK') {
+        node ('docker') {
+          stage('Prepare Packaging Container') {
+            prepareWorkspace()
+            container = pullBuildPush(image_name: 'jenkins/rlp-sdk', dockerfile: "docker/jenkins/Dockerfile.packaging", image_tag: "rlp-sdk-packaging", build_args: jenkins_user_build_args())
+            container.inside() {
+              stage('Create Package') {
+                create_package()
+              }
             }
-          }
-          stage('Upload Package') {
-            s3_upload()
+            stage('Upload Package') {
+              s3_upload()
+            }
           }
         }
       }
