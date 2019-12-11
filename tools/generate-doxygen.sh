@@ -24,21 +24,18 @@
 # SOFTWARE.
 #
 
-
-ls docs
-while [[ $? == 2 ]] && [[ $(pwd) != "/" ]]; do
-  cd ..
-  ls docs
-done
-
-if [[ $(pwd) == "/" ]]; then
-  echo "Unable to find docs/doxygen directory. Please ensure you are within the rstudio-launcher-plugin-sdk directory."
-  exit 1
-fi
-
 set -e # exit on failed commands.
 
-cd docs/doxygen
+$VERSION=99.9.9
+if [[ ! -z $1 ]]; then
+  VERSION=$1
+fi
+
+cd $(dirname ${BASH_SOURCE[0]})/../docs/doxygen
+
+# update the version number
+sed -i -e "s/\\\${RLPS_VERSION}/${VERSION}/g" Doxyfile
+
 doxygen Doxyfile
 cd latex
 make
