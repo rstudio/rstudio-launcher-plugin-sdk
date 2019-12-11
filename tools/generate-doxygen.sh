@@ -41,4 +41,4 @@ cd latex
 sudo make
 cp refman.pdf "../../RStudio Launcher Plugin SDK API Reference.pdf"
 cd ..
-rm -r latex
+sudo rm -r latex
