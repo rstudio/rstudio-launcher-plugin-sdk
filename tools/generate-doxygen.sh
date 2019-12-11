@@ -38,7 +38,7 @@ sed -e "s/\\\${RLPS_VERSION}/${VERSION}/g" Doxyfile.in > Doxyfile
 
 sudo doxygen Doxyfile
 cd latex
-make
+sudo make
 cp refman.pdf "../../RStudio Launcher Plugin SDK API Reference.pdf"
 cd ..
 rm -r latex
