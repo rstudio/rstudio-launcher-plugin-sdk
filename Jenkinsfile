@@ -58,14 +58,9 @@ def build_source(type) {
 }
 
 def run_tests(type) {
-  try {
-    // attempt to run unit tests
+    // attempt to run tests
     sh "cd .."
     sh "docker/jenkins/run-all-tests.sh cmake-build-${type}"
-  } catch(err) {
-    // mark build as unstable if it fails unit tests
-    currentBuild.result = "UNSTABLE"
-  }
 }
 
 def s3_upload() {
