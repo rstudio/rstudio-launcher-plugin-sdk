@@ -43,7 +43,11 @@ def create_package() {
   def env = "RLP_SDK_VERSION_MAJOR=${rlpSdkVersionMajor} RLP_SDK_VERSION_MINOR=${rlpSdkVersionMinor} RLP_SDK_VERSION_PATCH=${rlpSdkVersionPatch}"
 
   // build the package
-  sh "${env} package/make-package.sh"
+  sh "${env} jenkins/package/make-package.sh"
+}
+
+def generate_documentation() {
+  sh "tools/generate-doxygen.sh '${rlpSdkVersionMajor}.${rlpSdkVersionMinor}.${rlpSdkVersionPatch}'"
 }
 
 def build_source(type) {
@@ -160,17 +164,20 @@ try {
 
     parallel parallel_containers
 
-    if (params.get('CREATE_PACKAGE') == true) {
-      stage ('Package and Upload SDK') {
-        node ('docker') {
-          stage('Prepare Packaging Container') {
-            prepareWorkspace()
-            container = pullBuildPush(image_name: 'jenkins/rlp-sdk', dockerfile: "docker/jenkins/Dockerfile.packaging", image_tag: "rlp-sdk-packaging", build_args: jenkins_user_build_args())
-            container.inside() {
-              stage('Create Package') {
-                create_package()
-              }
+    stage ('Package and Upload SDK') {
+      node ('docker') {
+        stage('Prepare Packaging Container') {
+          prepareWorkspace()
+          container = pullBuildPush(image_name: 'jenkins/rlp-sdk', dockerfile: "docker/jenkins/Dockerfile.packaging", image_tag: "rlp-sdk-packaging", build_args: jenkins_user_build_args())
+          container.inside() {
+            stage('Generate Documentation') {
+              generate_documentation()
             }
+            stage('Create Package') {
+              create_package()
+            }
+          }
+          if (params.get('CREATE_PACKAGE') == true) {
             stage('Upload Package') {
               s3_upload()
             }
