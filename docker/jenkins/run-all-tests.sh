@@ -34,10 +34,9 @@ runTest()
     cd "${BUILD_DIR}/${1}"
     ./run-tests.sh
 
-
     RES=$?
-    if [[ $? -ne 0 ]]; then
-        TEST_RESULTS=$?
+    if [[ $RES -ne 0 ]]; then
+        TEST_RESULTS=$RES
     fi
 
     cd "${CURR_DIR}"
