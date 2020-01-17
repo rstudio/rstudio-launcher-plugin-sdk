@@ -19,56 +19,10 @@
 # OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-cmake_minimum_required(VERSION 3.14)
-project(rstudio_launcher_plugin_sdk)
+set(RLPS_OPTIONS_TEST_MAIN ../../tests/TestMain.cpp)
 
-set(CMAKE_CXX_STANDARD 11)
-
-# include files
-file(GLOB_RECURSE RLPS_HEADER_FILES "*.h*")
-
-# souce files
-set(RLPS_SOURCE_FILES
-   src/AbstractMain.cpp
-   src/Error.cpp
-   src/comms/MessageHandler.cpp
-   src/json/Json.cpp
-   src/logging/FileLogDestination.cpp
-   src/logging/Logger.cpp
-   src/logging/StderrLogDestination.cpp
-   src/logging/SyslogDestination.cpp
-   src/options/Options.cpp
-   src/system/FilePath.cpp
-   src/system/ReaderWriterMutex.cpp
-   src/system/User.cpp
-)
-
-# include directory
-include_directories(
-   include
-   src
-)
-
-# define library
-add_library(rstudio-launcher-plugin-sdk-lib STATIC
-   ${RLPS_SOURCE_FILES}
+add_executable(rlps-message-handler-tests
+   ${RLPS_OPTIONS_TEST_MAIN}
+   MessageHandlerTests.cpp
    ${RLPS_HEADER_FILES}
 )
-
-set(RLPS_BOOST_LIBS
-   Boost::filesystem
-   Boost::program_options
-   Boost::regex
-   Boost::thread
-)
-
-target_link_libraries(rstudio-launcher-plugin-sdk-lib
-   ${RLPS_BOOST_LIBS}
-)
-
-# define executables for unit tests
-if (NOT RLPS_UNIT_TESTS_DISABLED)
-   # options tests are complex, so they have their own CMakeLists.txt
-   add_subdirectory(src/comms/tests)
-   add_subdirectory(src/options/tests)
-endif()
