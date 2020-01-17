@@ -23,6 +23,8 @@
 
 #include "MessageHandler.hpp"
 
+#include <boost/asio/detail/socket_ops.hpp>
+
 #include <Error.hpp>
 
 namespace rstudio {
@@ -92,8 +94,15 @@ void processHeader(const char* in_rawData, size_t in_rawDataLength)
 
 std::string MessageHandler::formatMessage(const std::string& message)
 {
-   std::string formatted;
-   return formatted;
+   // Get the size of the message in little-endian, regardless of the OS endianness
+   size_t payloadSize = boost::asio::detail::socket_ops::host_to_network_long(message.size());
+
+   // Reinterpret the message size as an array of 4 chars and put it at the front of the payload, followed by the
+   // message itself.
+   std::string payload;
+   payload.append(reinterpret_cast<char*>(&payloadSize), MessageHandlerImpl::MESSAGE_HEADER_SIZE)
+      .append(message);
+   return payload;
 }
 
 Error MessageHandler::parseMessages(const char* in_rawData, size_t in_dataLen, std::vector<std::string>& out_messages)
