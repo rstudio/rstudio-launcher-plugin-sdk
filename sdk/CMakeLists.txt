@@ -31,6 +31,7 @@ file(GLOB_RECURSE RLPS_HEADER_FILES "*.h*")
 set(RLPS_SOURCE_FILES
    src/AbstractMain.cpp
    src/Error.cpp
+   src/comms/MessageHandler.cpp
    src/json/Json.cpp
    src/logging/FileLogDestination.cpp
    src/logging/Logger.cpp
