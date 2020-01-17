@@ -58,6 +58,36 @@ MessageHandlerImpl& messageHandler()
    return messageHandler;
 }
 
+void processHeader(const char* in_rawData, size_t in_rawDataLength)
+{
+   MessageHandlerImpl& msgHandler = messageHandler();
+
+   // No-op if we've already processed this message's whole header
+   if (msgHandler.BytesRead >= msgHandler.MAX_MESSAGE_SIZE)
+      return;
+
+   // Figure out the number of bytes left in the current message's header, and read at most that many bytes.
+   size_t remainingHeaderBytes = msgHandler.MESSAGE_HEADER_SIZE - msgHandler.BytesRead;
+   size_t bytesToRead = (in_rawDataLength > remainingHeaderBytes) ? remainingHeaderBytes : in_rawDataLength;
+
+   // Calculate the size of the payload from the header (or continue to).
+   for (size_t i = 0; i < bytesToRead; ++i)
+   {
+      // The message header is a 32 bit little-endian unsigned integer, stored as 4 character bytes. To reconstruct the
+      // size left-shift each byte by its position in the array * 8 (the first bit of the first byte is in position 0
+      // of the integer, and the first bit of the second byte is in position 8 of the integer, and so on).
+      // Example: payload size          = 41 987 332
+      //          message header binary = "00000100 10101101 10000000 00000010"
+      //          reconstructed size at each iteration of the loop:
+      //             1. 00000100 << 0 == 4
+      //             2. 00000100 |= (10000000 << 8) == 1010110100000100 = 44 292
+      //             3. 1010110100000100 |= (10000000 << 16) == 100000001010110100000100 = 8 432 900
+      //             4. 100000001010110100000100 |= (00000010 << 24) == 00000010100000001010110100000100 = 41 987 332
+      msgHandler.CurrentPayloadSize |= static_cast<unsigned char>(in_rawData[i]) << (msgHandler.BytesRead * 8);
+      ++msgHandler.BytesRead;
+   }
+}
+
 } // anonymous namespace
 
 std::string MessageHandler::formatMessage(const std::string& message)
