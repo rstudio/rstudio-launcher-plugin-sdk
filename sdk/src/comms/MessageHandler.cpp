@@ -79,20 +79,21 @@ MessageHandler::MessageHandler(size_t in_maxMessageSize) :
 
 std::string MessageHandler::formatMessage(const std::string& message)
 {
-   // Get the size of the message in little-endian, regardless of the OS endianness
-   size_t payloadSize = boost::asio::detail::socket_ops::host_to_network_long(message.size());
-
    // Log a debug message if the given message is larger than the maximum.
-   if (payloadSize > m_impl->MaxMessageSize)
+   size_t messageSize = message.size();
+   if (messageSize > m_impl->MaxMessageSize)
    {
       logging::logDebugMessage(
          "Plugin generated message (" +
-            std::to_string(payloadSize) +
-            " B) is larger than the maximum message size (" +
-            std::to_string(m_impl->MaxMessageSize) +
-            " B).",
+         std::to_string(messageSize) +
+         " B) is larger than the maximum message size (" +
+         std::to_string(m_impl->MaxMessageSize) +
+         " B).",
          ERROR_LOCATION);
    }
+
+   // Get the size of the message in little-endian, regardless of the OS endianness
+   size_t payloadSize = boost::asio::detail::socket_ops::host_to_network_long(messageSize);
 
    // Reinterpret the message size as an array of 4 chars and put it at the front of the payload, followed by the
    // message itself.
