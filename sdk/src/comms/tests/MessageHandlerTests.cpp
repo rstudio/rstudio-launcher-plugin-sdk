@@ -50,7 +50,6 @@ std::string convertHeader(int payloadSize)
 
 } // anonymous namespace
 
-
 TEST_CASE("Empty message is formatted correctly")
 {
    MessageHandler msgHandler;
