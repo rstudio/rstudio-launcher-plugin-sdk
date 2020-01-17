@@ -26,3 +26,8 @@ add_executable(rlps-message-handler-tests
    MessageHandlerTests.cpp
    ${RLPS_HEADER_FILES}
 )
+
+target_link_libraries(rlps-message-handler-tests
+   rstudio-launcher-plugin-sdk-lib
+   ${RLPS_BOOST_LIBS}
+)
