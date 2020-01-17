@@ -26,6 +26,7 @@
 #include <boost/asio/detail/socket_ops.hpp>
 
 #include <Error.hpp>
+#include <logging/Logger.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -80,6 +81,18 @@ std::string MessageHandler::formatMessage(const std::string& message)
 {
    // Get the size of the message in little-endian, regardless of the OS endianness
    size_t payloadSize = boost::asio::detail::socket_ops::host_to_network_long(message.size());
+
+   // Log a debug message if the given message is larger than the maximum.
+   if (payloadSize > m_impl->MaxMessageSize)
+   {
+      logging::logDebugMessage(
+         "Plugin generated message (" +
+            std::to_string(payloadSize) +
+            " B) is larger than the maximum message size (" +
+            std::to_string(m_impl->MaxMessageSize) +
+            " B).",
+         ERROR_LOCATION);
+   }
 
    // Reinterpret the message size as an array of 4 chars and put it at the front of the payload, followed by the
    // message itself.
