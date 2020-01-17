@@ -21,6 +21,10 @@
 
 set(RLPS_OPTIONS_TEST_MAIN ../../tests/TestMain.cpp)
 
+include_directories(
+   ../../tests
+)
+
 add_executable(rlps-message-handler-tests
    ${RLPS_OPTIONS_TEST_MAIN}
    MessageHandlerTests.cpp
