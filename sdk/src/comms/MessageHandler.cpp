@@ -31,18 +31,28 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace comms {
 
-namespace {
-
 /**
  * @brief Struct which stores persistent data for message parsing.
  */
-struct MessageHandlerImpl
+struct MessageHandler::Impl
 {
+   /**
+    * @brief Constructor.
+    * @param in_maxMessageSize
+    */
+   explicit Impl(size_t in_maxMessageSize = DEFAULT_MAX_MESSAGE_SIZE) :
+      MaxMessageSize(in_maxMessageSize)
+   {
+   }
+
    /** The size of a message header. 4 bytes. */
    static const size_t MESSAGE_HEADER_SIZE = 4;
 
-   /** The maximum allowable size of a message. Any greater, and the message should be considered garbage. */
-   static const size_t MAX_MESSAGE_SIZE = 5242880;
+   /** The default maximum allowable size of a message. Any greater, and the message should be considered garbage. */
+   static const size_t DEFAULT_MAX_MESSAGE_SIZE = 5242880;
+
+   /** The maximum allowable size of a message. */
+   const size_t MaxMessageSize;
 
    /** The total size of the current message's payload */
    size_t CurrentPayloadSize;
@@ -54,22 +64,44 @@ struct MessageHandlerImpl
    char* MessageBuffer;
 };
 
-MessageHandlerImpl& messageHandler()
+PRIVATE_IMPL_DELETER_IMPL(MessageHandler)
+
+MessageHandler::MessageHandler() :
+   m_impl(new Impl())
 {
-   static MessageHandlerImpl messageHandler;
-   return messageHandler;
 }
 
-void processHeader(const char* in_rawData, size_t in_rawDataLength)
+MessageHandler::MessageHandler(size_t in_maxMessageSize) :
+   m_impl(new Impl(in_maxMessageSize))
 {
-   MessageHandlerImpl& msgHandler = messageHandler();
+}
 
+std::string MessageHandler::formatMessage(const std::string& message)
+{
+   // Get the size of the message in little-endian, regardless of the OS endianness
+   size_t payloadSize = boost::asio::detail::socket_ops::host_to_network_long(message.size());
+
+   // Reinterpret the message size as an array of 4 chars and put it at the front of the payload, followed by the
+   // message itself.
+   std::string payload;
+   payload.append(reinterpret_cast<char*>(&payloadSize), Impl::MESSAGE_HEADER_SIZE)
+      .append(message);
+   return payload;
+}
+
+Error MessageHandler::parseMessages(const char* in_rawData, size_t in_dataLen, std::vector<std::string>& out_messages)
+{
+   return Success();
+}
+
+void MessageHandler::processHeader(const char* in_rawData, size_t in_rawDataLength)
+{
    // No-op if we've already processed this message's whole header
-   if (msgHandler.BytesRead >= msgHandler.MAX_MESSAGE_SIZE)
+   if (m_impl->BytesRead >= m_impl->MaxMessageSize)
       return;
 
    // Figure out the number of bytes left in the current message's header, and read at most that many bytes.
-   size_t remainingHeaderBytes = msgHandler.MESSAGE_HEADER_SIZE - msgHandler.BytesRead;
+   size_t remainingHeaderBytes = Impl::MESSAGE_HEADER_SIZE - m_impl->BytesRead;
    size_t bytesToRead = (in_rawDataLength > remainingHeaderBytes) ? remainingHeaderBytes : in_rawDataLength;
 
    // Calculate the size of the payload from the header (or continue to).
@@ -85,29 +117,9 @@ void processHeader(const char* in_rawData, size_t in_rawDataLength)
       //             2. 00000100 |= (10000000 << 8) == 1010110100000100 = 44 292
       //             3. 1010110100000100 |= (10000000 << 16) == 100000001010110100000100 = 8 432 900
       //             4. 100000001010110100000100 |= (00000010 << 24) == 00000010100000001010110100000100 = 41 987 332
-      msgHandler.CurrentPayloadSize |= static_cast<unsigned char>(in_rawData[i]) << (msgHandler.BytesRead * 8);
-      ++msgHandler.BytesRead;
+      m_impl->CurrentPayloadSize |= static_cast<unsigned char>(in_rawData[i]) << (m_impl->BytesRead * 8);
+      ++m_impl->BytesRead;
    }
-}
-
-} // anonymous namespace
-
-std::string MessageHandler::formatMessage(const std::string& message)
-{
-   // Get the size of the message in little-endian, regardless of the OS endianness
-   size_t payloadSize = boost::asio::detail::socket_ops::host_to_network_long(message.size());
-
-   // Reinterpret the message size as an array of 4 chars and put it at the front of the payload, followed by the
-   // message itself.
-   std::string payload;
-   payload.append(reinterpret_cast<char*>(&payloadSize), MessageHandlerImpl::MESSAGE_HEADER_SIZE)
-      .append(message);
-   return payload;
-}
-
-Error MessageHandler::parseMessages(const char* in_rawData, size_t in_dataLen, std::vector<std::string>& out_messages)
-{
-   return Success();
 }
 
 } // namespace comms

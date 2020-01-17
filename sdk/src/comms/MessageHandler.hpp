@@ -28,6 +28,8 @@
 #include <string>
 #include <vector>
 
+#include <PImpl.hpp>
+
 namespace rstudio {
 namespace launcher_plugins {
 
@@ -47,13 +49,25 @@ class MessageHandler
 {
 public:
    /**
+    * @brief Default constructor. Maximum message size is 5 GB.
+    */
+   MessageHandler();
+
+   /**
+    * @brief Constructor.
+    *
+    * @param in_maxMessageSize   The maximum allowable size of a message, in bytes.
+    */
+   explicit MessageHandler(size_t in_maxMessageSize);
+
+   /**
     * @brief Formats a message to be sent to the launcher.
     *
     * @param in_message     The body of the message to format.
     *
     * @return The formatted message.
     */
-   static std::string formatMessage(const std::string& in_message);
+   std::string formatMessage(const std::string& in_message);
 
    /**
     * @brief Parses messages from the raw bytes received on the input stream.
@@ -67,7 +81,21 @@ public:
     *
     * @return Success if the raw data is valid and no messages exceed the maximum message size (5 MB); Error otherwise.
     */
-   static Error parseMessages(const char* in_rawData, size_t in_dataLen, std::vector<std::string>& out_messages);
+   Error parseMessages(const char* in_rawData, size_t in_dataLen, std::vector<std::string>& out_messages);
+
+private:
+   // The private implemenation of MessageHandler.
+   PRIVATE_IMPL(m_impl);
+
+   /**
+    * @brief Parses the header of the next message from in_rawData.
+    *
+    * @param in_rawData            The raw data to process.
+    * @param in_rawDataLength      The length of in_rawData.
+    * @param io_messageHandler     The message handler object.
+    */
+   void processHeader(const char* in_rawData, size_t in_rawDataLength);
+
 };
 
 } // namespace comms
