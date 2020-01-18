@@ -112,13 +112,10 @@ std::string MessageHandler::formatMessage(const std::string& message)
 
 Error MessageHandler::parseMessages(const char* in_rawData, size_t in_dataLen, std::vector<std::string>& out_messages)
 {
-   bool moreMessages;
-
    do
    {
-      // Keeps track of the number of bytes of in_rawData that have been processed for this iteration. If there will be
-      // a next iteration, in_rawData will be advanced by bytesProcessed and in_dataLen will be reduced by the same
-      // amount.
+      // Keeps track of the number of bytes of in_rawData that have been processed for this iteration. Before the next
+      // iteration in_rawData will be advanced by bytesProcessed and in_dataLen will be reduced by the same amount.
       size_t bytesProcessed = 0;
 
       if (m_impl->BytesRead < Impl::MESSAGE_HEADER_SIZE)
@@ -177,10 +174,8 @@ Error MessageHandler::parseMessages(const char* in_rawData, size_t in_dataLen, s
          in_dataLen -= bytesProcessed;
       }
 
-      // Check if there are any more messages to read.
-      moreMessages = in_dataLen > 0;
-
-   } while (moreMessages);
+   // Iterate if there are any more messages to read.
+   } while (in_dataLen > 0);
 
    return Success();
 }
