@@ -44,6 +44,15 @@ struct MessageHandler::Impl
    explicit Impl(size_t in_maxMessageSize = DEFAULT_MAX_MESSAGE_SIZE) :
       MaxMessageSize(in_maxMessageSize)
    {
+      MessageBuffer = new char[MaxMessageSize];
+   }
+
+   /**
+    * @brief Destructor.
+    */
+   ~Impl()
+   {
+      delete[] MessageBuffer;
    }
 
    /** The size of a message header. 4 bytes. */
