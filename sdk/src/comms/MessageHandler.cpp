@@ -108,15 +108,14 @@ Error MessageHandler::parseMessages(const char* in_rawData, size_t in_dataLen, s
    return Success();
 }
 
-void MessageHandler::processHeader(const char* in_rawData, size_t in_rawDataLength)
+int MessageHandler::processHeader(const char* in_rawData, size_t in_rawDataLength)
 {
    // No-op if we've already processed this message's whole header
    if (m_impl->BytesRead >= m_impl->MaxMessageSize)
-      return;
+      return 0;
 
-   // Figure out the number of bytes left in the current message's header, and read at most that many bytes.
-   size_t remainingHeaderBytes = Impl::MESSAGE_HEADER_SIZE - m_impl->BytesRead;
-   size_t bytesToRead = (in_rawDataLength > remainingHeaderBytes) ? remainingHeaderBytes : in_rawDataLength;
+   // Figure out the number of bytes left in the current message's header and read at most that many bytes.
+   size_t bytesToRead = std::min(Impl::MESSAGE_HEADER_SIZE - m_impl->BytesRead, in_rawDataLength);
 
    // Calculate the size of the payload from the header (or continue to).
    for (size_t i = 0; i < bytesToRead; ++i)
@@ -134,6 +133,8 @@ void MessageHandler::processHeader(const char* in_rawData, size_t in_rawDataLeng
       m_impl->CurrentPayloadSize |= static_cast<unsigned char>(in_rawData[i]) << (m_impl->BytesRead * 8);
       ++m_impl->BytesRead;
    }
+
+   return bytesToRead;
 }
 
 } // namespace comms

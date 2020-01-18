@@ -92,9 +92,10 @@ private:
     *
     * @param in_rawData            The raw data to process.
     * @param in_rawDataLength      The length of in_rawData.
-    * @param io_messageHandler     The message handler object.
+    *
+    * @return The number of bytes that were processed.
     */
-   void processHeader(const char* in_rawData, size_t in_rawDataLength);
+   int processHeader(const char* in_rawData, size_t in_rawDataLength);
 
 };
 
