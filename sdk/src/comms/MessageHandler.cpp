@@ -112,6 +112,76 @@ std::string MessageHandler::formatMessage(const std::string& message)
 
 Error MessageHandler::parseMessages(const char* in_rawData, size_t in_dataLen, std::vector<std::string>& out_messages)
 {
+   bool moreMessages;
+
+   do
+   {
+      // Keeps track of the number of bytes of in_rawData that have been processed for this iteration. If there will be
+      // a next iteration, in_rawData will be advanced by bytesProcessed and in_dataLen will be reduced by the same
+      // amount.
+      size_t bytesProcessed = 0;
+
+      if (m_impl->BytesRead < Impl::MESSAGE_HEADER_SIZE)
+      {
+         bytesProcessed += processHeader(in_rawData, in_dataLen);
+
+         if (m_impl->BytesRead == Impl::MESSAGE_HEADER_SIZE)
+         {
+            // Convert the message size back from network endianess to OS endianess.
+            m_impl->CurrentPayloadSize =
+               boost::asio::detail::socket_ops::network_to_host_long(m_impl->CurrentPayloadSize);
+
+            if (m_impl->CurrentPayloadSize > m_impl->MaxMessageSize)
+            {
+               Error error = systemError(boost::system::errc::protocol_error,
+                                         "Received message with size " +
+                                         std::to_string(m_impl->CurrentPayloadSize) +
+                                         " which is greater than maximum allowed message size " +
+                                         std::to_string(m_impl->MaxMessageSize),
+                                         ERROR_LOCATION);
+               return error;
+            }
+         }
+      }
+      else
+      {
+         // Part of the message header only - finished for now.
+         return Success();
+      }
+
+      // Calculate how much we still have to read for the message, how many bytes have already been written to the
+      // buffer, and how many bytes can actually be written.
+      size_t writtenMessageBytes = m_impl->BytesRead - Impl::MESSAGE_HEADER_SIZE;
+      size_t remainingMessageBytes = m_impl->CurrentPayloadSize - writtenMessageBytes;
+      size_t bytesToWrite = std::min(remainingMessageBytes, (in_dataLen - bytesProcessed));
+
+      // Write the unwritten bytes to the buffer after the bytes that were already written there.
+      std::memcpy(
+         m_impl->MessageBuffer + writtenMessageBytes,
+         in_rawData + bytesProcessed,
+         bytesToWrite);
+
+      // Update the number of bytes we've read.
+      m_impl->BytesRead += bytesToWrite;
+      bytesProcessed += bytesToWrite;
+
+      // If we've read a full message add the new message to the buffer and clean up all the tracking variables.
+      if (m_impl->BytesRead == (m_impl->CurrentPayloadSize + Impl::MESSAGE_HEADER_SIZE))
+      {
+         out_messages.emplace_back(m_impl->MessageBuffer, m_impl->CurrentPayloadSize);
+         m_impl->BytesRead = 0;
+         m_impl->CurrentPayloadSize = 0;
+
+         // Advance the raw data pointer and reduce the length by the number of bytes we just processed.
+         in_rawData += bytesProcessed;
+         in_dataLen -= bytesProcessed;
+      }
+
+      // Check if there are any more messages to read.
+      moreMessages = in_dataLen > 0;
+
+   } while (moreMessages);
+
    return Success();
 }
 
