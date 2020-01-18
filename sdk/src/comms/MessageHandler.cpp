@@ -106,10 +106,8 @@ std::string MessageHandler::formatMessage(const std::string& message)
 
    // Reinterpret the message size as an array of 4 chars and put it at the front of the payload, followed by the
    // message itself.
-   std::string payload;
-   payload.append(reinterpret_cast<char*>(&payloadSize), Impl::MESSAGE_HEADER_SIZE)
-      .append(message);
-   return payload;
+   std::string payload(reinterpret_cast<char*>(&payloadSize), Impl::MESSAGE_HEADER_SIZE);
+   return payload.append(message);
 }
 
 Error MessageHandler::parseMessages(const char* in_rawData, size_t in_dataLen, std::vector<std::string>& out_messages)
