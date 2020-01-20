@@ -18,7 +18,7 @@
  *
  */
 
-#include "options/Options.hpp"
+#include <options/Options.hpp>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem/operations.hpp>
@@ -27,9 +27,9 @@
 #include <boost/program_options/variables_map.hpp>
 #include <boost/thread.hpp>
 
-#include "logging/Logger.hpp"
-#include "system/FilePath.hpp"
-#include "system/User.hpp"
+#include <logging/Logger.hpp>
+#include <system/FilePath.hpp>
+#include <system/User.hpp>
 
 using namespace boost::program_options;
 

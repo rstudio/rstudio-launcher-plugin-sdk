@@ -18,15 +18,15 @@
  *
  */
 
-#include "AbstractMain.hpp"
+#include <AbstractMain.hpp>
 
 #include <iostream>
 #include <options/Options.hpp>
 
-#include "logging/Logger.hpp"
-#include "logging/FileLogDestination.hpp"
-#include "logging/StderrLogDestination.hpp"
-#include "logging/SyslogDestination.hpp"
+#include <logging/Logger.hpp>
+#include <logging/FileLogDestination.hpp>
+#include <logging/StderrLogDestination.hpp>
+#include <logging/SyslogDestination.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
