@@ -242,6 +242,7 @@ TEST_CASE("Multiple complex messages in one buffer processed in two parts")
 TEST_CASE("Received message is too large")
 {
    std::string message = convertHeader(20).append("This message is 20 B");
+   std::string expectedErrorDesc = "Received message with size 20 which is greater than maximum allowed message size 10";
 
    MessageHandler msgHandler(10);
    std::vector<std::string> messages;
@@ -250,10 +251,10 @@ TEST_CASE("Received message is too large")
    CHECK(error);
    CHECK(error.getCode() == boost::system::errc::protocol_error);
    CHECK(error.getName() == boost::system::system_category().name());
-   CHECK(
-      error.getMessage().find(
-         "Received message with size 20 which is greater than maximum allowed message size 10") != std::string::npos);
+   CHECK(error.getMessage() == "Protocol error");
    CHECK(messages.empty());
+   REQUIRE(error.getProperties().size() == 1);
+   CHECK(error.getProperty("description") == expectedErrorDesc);
 }
 
 } // namespace comms
