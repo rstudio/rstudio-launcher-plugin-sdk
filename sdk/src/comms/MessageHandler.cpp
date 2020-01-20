@@ -170,11 +170,11 @@ Error MessageHandler::parseMessages(const char* in_rawData, size_t in_dataLen, s
          out_messages.emplace_back(m_impl->MessageBuffer, m_impl->CurrentPayloadSize);
          m_impl->BytesRead = 0;
          m_impl->CurrentPayloadSize = 0;
-
-         // Advance the raw data pointer and reduce the length by the number of bytes we just processed.
-         in_rawData += bytesProcessed;
-         in_dataLen -= bytesProcessed;
       }
+
+      // Advance the raw data pointer and reduce the length by the number of bytes we just processed.
+      in_rawData += bytesProcessed;
+      in_dataLen -= bytesProcessed;
 
    // Iterate if there are any more messages to read.
    } while (in_dataLen > 0);
