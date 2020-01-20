@@ -238,7 +238,24 @@ TEST_CASE("Multiple complex messages in one buffer processed in two parts")
    CHECK(messages.at(1) == compoundMessage2);
    CHECK(messages.at(2) == compoundMessage3);
 }
+
+TEST_CASE("Received message is too large")
+{
+   std::string message = convertHeader(20).append("This message is 20 B");
+
+   MessageHandler msgHandler(10);
+   std::vector<std::string> messages;
+   Error error = msgHandler.parseMessages(message.c_str(), message.size(), messages);
+
+   CHECK(error);
+   CHECK(error.getCode() == boost::system::errc::protocol_error);
+   CHECK(error.getName() == boost::system::system_category().name());
+   CHECK(
+      error.getMessage().find(
+         "Received message with size 20 which is greater than maximum allowed message size 10") != std::string::npos);
+   CHECK(messages.empty());
 }
+
 } // namespace comms
 } // namespace launcher_plugins
 } // namespace rstudio
