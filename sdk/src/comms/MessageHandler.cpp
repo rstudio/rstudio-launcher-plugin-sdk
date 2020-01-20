@@ -141,11 +141,11 @@ Error MessageHandler::parseMessages(const char* in_rawData, size_t in_dataLen, s
                return error;
             }
          }
-      }
-      else
-      {
-         // Part of the message header only - finished for now.
-         return Success();
+         else
+         {
+            // Part of the message header only - finished for now.
+            return Success();
+         }
       }
 
       // Calculate how much we still have to read for the message, how many bytes have already been written to the
