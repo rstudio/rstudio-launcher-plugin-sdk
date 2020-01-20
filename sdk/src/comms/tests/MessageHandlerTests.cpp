@@ -82,8 +82,8 @@ TEST_CASE("Message is too large")
 
    REQUIRE(formatted == expectedMessage);
    REQUIRE(logDest->getSize() == 1);
-   REQUIRE(logDest->peek().Level == LogLevel::DEBUG);
-   REQUIRE(logDest->peek().Message.find(expectedLog) != std::string::npos);
+   CHECK(logDest->peek().Level == LogLevel::DEBUG);
+   CHECK(logDest->peek().Message.find(expectedLog) != std::string::npos);
 
    // Clean up the log destination.
    removeLogDestination(logDest->getId());
