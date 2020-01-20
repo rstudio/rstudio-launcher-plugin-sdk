@@ -65,7 +65,7 @@ TEST_CASE("Message is formatted correctly")
    REQUIRE(formatted == expected);
 }
 
-TEST_CASE("Message is too large")
+TEST_CASE("Generated message is too large")
 {
    // Set up a log dest to catch the message.
    using namespace rstudio::launcher_plugins::logging;
