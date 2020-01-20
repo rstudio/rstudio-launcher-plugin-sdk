@@ -31,12 +31,12 @@ FAILURES=0
 runTest()
 {
     CURR_DIR=$(pwd)
-    cd "${BUILD_DIR}/${1}"
+    cd "${BUILD_DIR}/${1}" || return $?
     ./run-tests.sh
 
     FAILURES=$(expr $FAILURES + $?)
 
-    cd "${CURR_DIR}"
+    cd "${CURR_DIR}" || exit $?
 }
 
 
