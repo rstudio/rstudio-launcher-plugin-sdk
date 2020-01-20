@@ -18,11 +18,11 @@
  *
  */
 
-#include "../../tests/TestMain.hpp"
+#include <TestMain.hpp>
 
-#include "options/Options.hpp"
-#include "system/FilePath.hpp"
-#include "system/User.hpp"
+#include <options/Options.hpp>
+#include <system/FilePath.hpp>
+#include <system/User.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
