@@ -101,7 +101,7 @@ std::string MessageHandler::formatMessage(const std::string& message)
          ERROR_LOCATION);
    }
 
-   // Get the size of the message in little-endian, regardless of the OS endianness
+   // Get the size of the message in big endian, regardless of the OS endianness
    size_t payloadSize = boost::asio::detail::socket_ops::host_to_network_long(messageSize);
 
    // Reinterpret the message size as an array of 4 chars and put it at the front of the payload, followed by the
@@ -192,7 +192,7 @@ int MessageHandler::processHeader(const char* in_rawData, size_t in_rawDataLengt
    // Calculate the size of the payload from the header (or continue to).
    for (size_t i = 0; i < bytesToRead; ++i)
    {
-      // The message header is a 32 bit little-endian unsigned integer, stored as 4 character bytes. To reconstruct the
+      // The message header is a 32 bit big-endian unsigned integer, stored as 4 character bytes. To reconstruct the
       // size left-shift each byte by its position in the array * 8 (the first bit of the first byte is in position 0
       // of the integer, and the first bit of the second byte is in position 8 of the integer, and so on).
       // Example: payload size          = 41 987 332

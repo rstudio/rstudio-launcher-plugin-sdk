@@ -39,10 +39,10 @@ static const size_t MESSAGE_HEADER_SIZE = 4;
 
 std::string convertHeader(size_t payloadSize)
 {
-   size_t leSize = boost::asio::detail::socket_ops::host_to_network_long(payloadSize);
+   size_t beSize = boost::asio::detail::socket_ops::host_to_network_long(payloadSize);
    std::string header;
    header.append(
-      reinterpret_cast<char*>(&leSize),
+      reinterpret_cast<char*>(&beSize),
       MESSAGE_HEADER_SIZE);
 
    return header;
