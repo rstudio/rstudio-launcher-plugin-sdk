@@ -23,6 +23,7 @@
 
 #include <TestMain.hpp>
 
+#include <Error.hpp>
 #include <MockLogDestination.hpp>
 
 #include <boost/asio/detail/socket_ops.hpp>
@@ -89,6 +90,155 @@ TEST_CASE("Generated message is too large")
    removeLogDestination(logDest->getId());
 }
 
+TEST_CASE("Simple message is processed")
+{
+   std::string message = "Hello, world!";
+   std::string payload = convertHeader(message.size()) + message;
+
+   MessageHandler msgHandler;
+   std::vector<std::string> messages;
+   Error error = msgHandler.parseMessages(payload.c_str(), payload.size(), messages);
+
+   REQUIRE_FALSE(error);
+   REQUIRE(messages.size() == 1);
+   CHECK(messages.front() == message);
+}
+
+TEST_CASE("Header bytes are correctly processed one-by-one")
+{
+   std::string message = "Hello, world!";
+   std::string payload = convertHeader(message.size()) + message;
+
+   MessageHandler msgHandler;
+   std::vector<std::string> messages;
+
+   // Parse each byte of the header one at a time.
+   Error error = msgHandler.parseMessages(payload.c_str(), 1, messages);
+   REQUIRE_FALSE(error);
+   REQUIRE(messages.empty());
+
+   error = msgHandler.parseMessages(payload.c_str() + 1, 1, messages);
+   REQUIRE_FALSE(error);
+   REQUIRE(messages.empty());
+
+   error = msgHandler.parseMessages(payload.c_str() + 2, 1, messages);
+   REQUIRE_FALSE(error);
+   REQUIRE(messages.empty());
+
+   error = msgHandler.parseMessages(payload.c_str() + 3, 1, messages);
+   REQUIRE_FALSE(error);
+   REQUIRE(messages.empty());
+
+   // Parse the rest of the message
+   error = msgHandler.parseMessages(payload.c_str() + 4, payload.size() - 4, messages);
+   REQUIRE_FALSE(error);
+   REQUIRE(messages.size() == 1);
+   CHECK(messages.front() == message);
+}
+
+TEST_CASE("Complex message processed correctly piecemeal")
+{
+   std::string messagePart1 = "Hello, world! ";
+   std::string messagePart2 = "This is a little paragraph. ";
+   std::string messagePart3 = "I hope you like it. ";
+   std::string messagePart4 = "Also some unicode: ταБЬℓσ";
+
+   std::string header = convertHeader(
+      messagePart1.size() +
+      messagePart2.size() +
+      messagePart3.size() +
+      messagePart4.size());
+
+   MessageHandler msgHandler;
+   std::vector<std::string> messages;
+
+   // Parse the complex message in pieces
+   Error error = msgHandler.parseMessages(header.c_str(), 2,  messages);
+   REQUIRE_FALSE(error);
+   REQUIRE(messages.empty());
+
+   error = msgHandler.parseMessages(header.c_str() + 2, 2, messages);
+   REQUIRE_FALSE(error);
+   REQUIRE(messages.empty());
+
+   error = msgHandler.parseMessages(messagePart1.c_str(), messagePart1.size(), messages);
+   REQUIRE_FALSE(error);
+   REQUIRE(messages.empty());
+
+   error = msgHandler.parseMessages(messagePart2.c_str(), messagePart2.size(), messages);
+   REQUIRE_FALSE(error);
+   REQUIRE(messages.empty());
+
+   error = msgHandler.parseMessages(messagePart3.c_str(), messagePart3.size(), messages);
+   REQUIRE_FALSE(error);
+   REQUIRE(messages.empty());
+
+   error = msgHandler.parseMessages(messagePart4.c_str(), messagePart4.size(), messages);
+   REQUIRE_FALSE(error);
+
+   REQUIRE(messages.size() == 1);
+   CHECK(messages.front() == (messagePart1 + messagePart2 + messagePart3 + messagePart4));
+}
+
+TEST_CASE("Multiple messages in one buffer")
+{
+   std::string compoundBuffer;
+   for (int i = 0; i < 10; ++i)
+   {
+      std::string message = "This is message #" + std::to_string(i);
+      compoundBuffer += (convertHeader(message.size()) + message);
+   }
+
+   MessageHandler msgHandler;
+   std::vector<std::string> messages;
+
+   Error error = msgHandler.parseMessages(compoundBuffer.c_str(), compoundBuffer.size(), messages);
+   REQUIRE_FALSE(error);
+   REQUIRE(messages.size() == 10);
+
+   for (int i = 0; i < 10; ++i)
+   {
+      std::string message = "This is message #" + std::to_string(i);
+      CHECK(messages.at(i) == message);
+   }
+}
+
+TEST_CASE("Multiple complex messages in one buffer processed in two parts")
+{
+   std::string message1Part1 = "Hello, world! ";
+   std::string message1Part2 = "This is a little paragraph. ";
+   std::string message2Part1 = "I hope you like it. ";
+   std::string message2Part2 = "Also some unicode: ταБЬℓσ" ;
+   std::string message3Part1 = "This is the last and final message. ";
+   std::string message3Part2 = "Isn't it great?";
+   std::string compoundMessage1 = message1Part1 + message1Part2;
+   std::string compoundMessage2 = message2Part1 + message2Part2;
+   std::string compoundMessage3 = message3Part1 + message3Part2;
+
+   std::string compoundBuffer =
+      convertHeader(compoundMessage1.size()).append(compoundMessage1).append(
+      convertHeader(compoundMessage2.size())).append(compoundMessage2).append(
+      convertHeader(compoundMessage2.size())).append(compoundMessage3);
+
+   // Header size is 4.
+   size_t firstChunkSize = 4 + compoundMessage1.size() + 4;
+   size_t secondChunkSize = compoundBuffer.size() - firstChunkSize;
+
+   MessageHandler msgHandler;
+   std::vector<std::string> messages;
+   Error error = msgHandler.parseMessages(compoundBuffer.c_str(), firstChunkSize, messages);
+   REQUIRE_FALSE(error);
+   CHECK(messages.size() == 1);
+
+   error = msgHandler.parseMessages(compoundBuffer.c_str() + firstChunkSize, secondChunkSize, messages);
+   REQUIRE_FALSE(error);
+   REQUIRE(messages.size() == 3);
+
+   CHECK(messages.at(0) == compoundMessage1);
+   CHECK(messages.at(1) == compoundMessage2);
+   CHECK(messages.at(2) == compoundMessage3);
+}
+}
 } // namespace comms
 } // namespace launcher_plugins
 } // namespace rstudio
