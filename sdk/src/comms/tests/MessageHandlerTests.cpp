@@ -37,7 +37,7 @@ namespace {
 
 static const size_t MESSAGE_HEADER_SIZE = 4;
 
-std::string convertHeader(int payloadSize)
+std::string convertHeader(size_t payloadSize)
 {
    size_t leSize = boost::asio::detail::socket_ops::host_to_network_long(payloadSize);
    std::string header;
