@@ -154,15 +154,18 @@ Error MessageHandler::parseMessages(const char* in_rawData, size_t in_dataLen, s
       size_t remainingMessageBytes = m_impl->CurrentPayloadSize - writtenMessageBytes;
       size_t bytesToWrite = std::min(remainingMessageBytes, (in_dataLen - bytesProcessed));
 
-      // Write the unwritten bytes to the buffer after the bytes that were already written there.
-      std::memcpy(
-         m_impl->MessageBuffer + writtenMessageBytes,
-         in_rawData + bytesProcessed,
-         bytesToWrite);
+      if (bytesToWrite > 0)
+      {
+         // Write the unwritten bytes to the buffer after the bytes that were already written there.
+         std::memcpy(
+            m_impl->MessageBuffer + writtenMessageBytes,
+            in_rawData + bytesProcessed,
+            bytesToWrite);
 
-      // Update the number of bytes we've read.
-      m_impl->BytesRead += bytesToWrite;
-      bytesProcessed += bytesToWrite;
+         // Update the number of bytes we've read.
+         m_impl->BytesRead += bytesToWrite;
+         bytesProcessed += bytesToWrite;
+      }
 
       // If we've read a full message add the new message to the buffer and clean up all the tracking variables.
       if (m_impl->BytesRead == (m_impl->CurrentPayloadSize + Impl::MESSAGE_HEADER_SIZE))
