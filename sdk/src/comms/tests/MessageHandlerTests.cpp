@@ -218,7 +218,7 @@ TEST_CASE("Multiple complex messages in one buffer processed in two parts")
    std::string compoundBuffer =
       convertHeader(compoundMessage1.size()).append(compoundMessage1).append(
       convertHeader(compoundMessage2.size())).append(compoundMessage2).append(
-      convertHeader(compoundMessage2.size())).append(compoundMessage3);
+      convertHeader(compoundMessage3.size())).append(compoundMessage3);
 
    // Header size is 4.
    size_t firstChunkSize = 4 + compoundMessage1.size() + 4;
