@@ -42,7 +42,9 @@ struct MessageHandler::Impl
     * @param in_maxMessageSize
     */
    explicit Impl(size_t in_maxMessageSize = DEFAULT_MAX_MESSAGE_SIZE) :
-      MaxMessageSize(in_maxMessageSize)
+      MaxMessageSize(in_maxMessageSize),
+      CurrentPayloadSize(0),
+      BytesRead(0)
    {
       MessageBuffer = new char[MaxMessageSize];
    }
