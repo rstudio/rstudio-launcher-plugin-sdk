@@ -50,7 +50,7 @@ namespace launcher_plugins {
 namespace api {
 
 /**
- * @brief Base class for all requests which may be received from the Launcher.
+ * @brief Base class for all requests which may be received from the RStudio Launcher.
  */
 class Request
 {
