@@ -28,37 +28,36 @@ set -e # exit on failed commands.
 
 # Get the optional branch parameter
 BRANCH="master"
-if [[ ! -z $1 ]]; then
+if [[ -n $1 ]]; then
     BRANCH=$1
 fi
 
-ROOT_DIR='..'
-if [[ ${PWD##*/} == "tools" ]]; then
-    ROOT_DIR="${ROOT_DIR}/.."
-fi
-
-SRC_INCLUDE="src/cpp/shared_core/include/shared_core"
-SRC_SRC="src/cpp/shared_core"
-DEST_INCLUDE="${ROOT_DIR}/sdk/include"
-DEST_SRC="${ROOT_DIR}/sdk/src"
+SRC_INCLUDE="rstudio-clone/src/cpp/shared_core/include/shared_core"
+SRC_SRC="rstudio-clone/src/cpp/shared_core"
+DEST_INCLUDE="sdk/include"
+DEST_SRC="sdk/src"
 
 # Clone the RStudio repo.
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
 if [[ -d rstudio-clone ]]; then
     cd rstudio-clone
-    git status
-    if [[ $? -ne 0 ]]; then
-        cd ..
-        git clone --branch $BRANCH --origin origin --progress -v https://github.com/rstudio/rstudio.git rstudio-clone
-        cd rstudio-clone
-    else
-        git checkout $BRANCH
+
+    if git status; then
+        git checkout "$BRANCH"
         git pull
+    else
+        cd ..
+        git clone --branch "$BRANCH" --origin origin --progress -v https://github.com/rstudio/rstudio.git rstudio-clone
+        cd rstudio-clone
     fi
 else
     mkdir rstudio-clone
-    git clone --branch $BRANCH --origin origin --progress -v https://github.com/rstudio/rstudio.git rstudio-clone
+    git clone --branch "$BRANCH" --origin origin --progress -v https://github.com/rstudio/rstudio.git rstudio-clone
     cd rstudio-clone
 fi
+
+# eave rstudio-clone
+cd ..
 
 # Copy the files we want.
 # These arrays need to have the same length and order (e.g. index of source Json.hpp == index of destination Json.hpp). We're not using maps because Bash 3 doesn't support them.
@@ -84,7 +83,7 @@ replace()
 
     if [[ ! -s "$DEST" ]]; then
         echo "No output written for 'replace $DEST $2 $3'"
-        exit $?
+        exit $ERR
     fi
 }
 
@@ -93,9 +92,8 @@ copyFile()
     local SRC=$1
     local DEST=$2
 
-    cp -f "$SRC" "$DEST"
-
     echo "Copying $SRC to $DEST..."
+    cp -f "$SRC" "$DEST"
 
     # Fix namespaces and header guards
     replace "$DEST" 'namespace\s*core' 'namespace launcher_plugins'
@@ -107,19 +105,19 @@ copyFile()
     replace "$DEST" "thread::" "system::"
 
     # Fix includes
-    for I in ${!SRC_INCLUDES[@]}; do
+    for I in "${!SRC_INCLUDES[@]}"; do
         replace "$DEST" "#include <shared_core/${SRC_INCLUDES[$I]}>" "#include <${DEST_INCLUDES[$I]}>"
         replace "$DEST" "#include \"${SRC_INCLUDES[$I]}\"" "#include <${DEST_INCLUDES[$I]}>"
     done
 
     # There are some private headers in SRC_SOURCES.
-    for I in ${!SRC_SOURCES[@]}; do
+    for I in "${!SRC_SOURCES[@]}"; do
         replace "$DEST" "#include <shared_core/${SRC_SOURCES[$I]}>" "#include <${DEST_SOURCES[$I]}>"
         replace "$DEST" "#include \"${SRC_SOURCES[$I]}\"" "#include <${DEST_SOURCES[$I]}>"
     done
 }
 
-for I in ${!SRC_INCLUDES[@]}; do
+for I in "${!SRC_INCLUDES[@]}"; do
     SRC_FILE=${SRC_INCLUDES[$I]}
     DEST_PATH="$DEST_INCLUDE/${DEST_INCLUDES[$I]}"
     copyFile "$SRC_INCLUDE/$SRC_FILE" "$DEST_PATH"
@@ -143,9 +141,11 @@ for I in ${!SRC_INCLUDES[@]}; do
         replace "$DEST_PATH" "class\s*FilePath;\n\n" "\nnamespace system \{\n\nclass FilePath;\n\n\} // namespace system\n"
     fi
 
+    # This will give a compile error so functions using boost::optional can be removed in public files.
+    replace "$DEST_PATH" "#include\s*<boost/optional.hpp>\n" ""
 done
 
-for I in ${!SRC_SOURCES[@]}; do
+for I in "${!SRC_SOURCES[@]}"; do
     SRC_FILE="${SRC_SOURCES[$I]}"
     DEST_PATH="$DEST_SRC/${DEST_SOURCES[$I]}"
 
@@ -183,6 +183,7 @@ for I in ${!SRC_SOURCES[@]}; do
     fi
 
     if [[ "$SRC_FILE" == "Logger.cpp" ]]; then
+        replace "$DEST_PATH" "<system/DateTime.hpp>" "\"../system/DateTime.hpp\""
         replace "$DEST_PATH" "<system/ReaderWriterMutex.hpp>" "\"../system/ReaderWriterMutex.hpp\""
     fi
 
@@ -196,10 +197,9 @@ for I in ${!SRC_SOURCES[@]}; do
 done
 
 echo "Copying rapidjson library..."
-if [[ -e ../sdk/src/json/rapidjson ]]; then
-    sudo rm -r ../sdk/src/json/rapidjson
+if [[ -e sdk/src/json/rapidjson ]]; then
+    sudo rm -r sdk/src/json/rapidjson
 fi
-cp -r src/cpp/shared_core/include/shared_core/json/rapidjson ../sdk/src/json/rapidjson
+cp -r rstudio-clone/src/cpp/shared_core/include/shared_core/json/rapidjson sdk/src/json/rapidjson
 
-cd ..
 sudo rm -r rstudio-clone/
