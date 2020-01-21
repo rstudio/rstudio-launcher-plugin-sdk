@@ -30,7 +30,6 @@
 #include <utility>
 #include <vector>
 
-#include <boost/optional.hpp>
 
 #include <PImpl.hpp>
 #include <logging/Logger.hpp>
@@ -1369,23 +1368,12 @@ inline Value toJsonValue(const T& val)
    return Value(val);
 }
 
-template <typename T>
-inline Value toJsonValue(const boost::optional<T>& val)
-{
-   return val ? Value(*val) : Value();
-}
-
 } // namespace detail
 
 template <typename T>
 inline Value toJsonValue(const T& val)
 {
    return detail::toJsonValue(val);
-}
-
-inline Value toJsonValue(const boost::optional<std::string>& val)
-{
-   return val ? Value(*val) : Value();
 }
 
 inline Value toJsonString(const std::string& val)

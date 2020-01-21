@@ -29,8 +29,9 @@
 #include <sstream>
 
 #include <Error.hpp>
-#include <system/DateTime.hpp>
 #include <logging/ILogDestination.hpp>
+
+#include "../system/DateTime.hpp"
 #include "../system/ReaderWriterMutex.hpp"
 
 namespace rstudio {

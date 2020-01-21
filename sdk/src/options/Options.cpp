@@ -163,19 +163,19 @@ Error optionsError(OptionsError in_errorCode, const std::string& in_message, Err
    switch(in_errorCode)
    {
       case OptionsError::PARSE_ERROR:
-         return Error(static_cast<int>(in_errorCode), "ParseError", in_message, std::move(in_errorLocation));
+         return Error("ParseError", static_cast<int>(in_errorCode), in_message, std::move(in_errorLocation));
       case OptionsError::UNREGISTERED_OPTION:
-         return Error(static_cast<int>(in_errorCode), "UnregisteredOption", in_message, std::move(in_errorLocation));
+         return Error("UnregisteredOption", static_cast<int>(in_errorCode), in_message, std::move(in_errorLocation));
       case OptionsError::READ_FAILURE:
-         return Error(static_cast<int>(in_errorCode), "OptionReadError", in_message, std::move(in_errorLocation));
+         return Error("OptionReadError", static_cast<int>(in_errorCode), in_message, std::move(in_errorLocation));
       case OptionsError::MISSING_REQUIRED_OPTION:
-         return Error(static_cast<int>(in_errorCode),  "MissingRequiredOption", in_message, std::move(in_errorLocation));
+         return Error("MissingRequiredOption", static_cast<int>(in_errorCode), in_message, std::move(in_errorLocation));
       case OptionsError::SUCCESS:
          return Success();
       default:
       {
          assert(false);
-         return Error(static_cast<int>(in_errorCode), "UnrecognizedError", in_message, std::move(in_errorLocation));
+         return Error("UnrecognizedError", static_cast<int>(in_errorCode), in_message, std::move(in_errorLocation));
       }
    }
 }
