@@ -116,10 +116,11 @@ protected:
    /**
     * @brief Constructor.
     */
-   Request();
+   explicit Request(const json::Object& in_requestJson);
 
 private:
    // The private implementation of Request
+   PRIVATE_IMPL(m_baseImpl);
    PRIVATE_IMPL(m_impl);
 
 };

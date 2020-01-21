@@ -55,22 +55,27 @@ Error Request::fromJson(const json::Object& in_requestJson, std::shared_ptr<Requ
 
 uint64_t Request::getId() const
 {
-   return m_impl->Id;
+   return m_baseImpl->Id;
 }
 
 const std::string& Request::getRequestUsername() const
 {
-   return m_impl->RequestUsername;
+   return m_baseImpl->RequestUsername;
 }
 
 Request::Type Request::getType() const
 {
-   return m_impl->RequestType;
+   return m_baseImpl->RequestType;
 }
 
 const system::User& Request::getUser() const
 {
-   return m_impl->User;
+   return m_baseImpl->User;
+}
+
+Request::Request(const json::Object& in_requestJson) :
+   m_baseImpl(new Impl())
+{
 }
 
 Request::Request() :
