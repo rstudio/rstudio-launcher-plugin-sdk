@@ -48,7 +48,7 @@ struct Request::Impl
 
 PRIVATE_IMPL_DELETER_IMPL(Request)
 
-Error Request::fromJson(const json::Object& in_json, std::shared_ptr<Request>& out_request)
+Error Request::fromJson(const json::Object& in_requestJson, std::shared_ptr<Request>& out_request)
 {
    return Success();
 }

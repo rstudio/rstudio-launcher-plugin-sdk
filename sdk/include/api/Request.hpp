@@ -75,12 +75,12 @@ class Request
    /**
     * @brief Converts a Json::Object into the appropriate Request object.
     *
-    * @param in_json        The json object which represents a request from the Launcher.
-    * @param out_request    The converted request object.
+    * @param in_requestJson     The json object which represents a request from the Launcher.
+    * @param out_request        The converted request object.
     *
     * @return Success if the provided json Object was valid; Error otherwise.
     */
-   static Error fromJson(const json::Object& in_json, std::shared_ptr<Request>& out_request);
+   static Error fromJson(const json::Object& in_requestJson, std::shared_ptr<Request>& out_request);
 
    /**
     * @brief Gets the ID of this request.
