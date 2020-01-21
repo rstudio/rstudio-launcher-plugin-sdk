@@ -25,12 +25,17 @@
 #define LAUNCHER_PLUGINS_REQUEST_HPP
 
 #include <PImpl.hpp>
-#include <json/Json.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
 
 class Error;
+
+namespace json {
+
+class Object;
+
+} // namespace json
 
 namespace system {
 
