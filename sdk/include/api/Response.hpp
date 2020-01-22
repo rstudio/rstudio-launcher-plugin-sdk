@@ -50,6 +50,11 @@ class Response
 {
 public:
    /**
+    * @brief Virtual destructor to allow for inheritance.
+    */
+   virtual ~Response() = default;
+
+   /**
     * @brief Converts this response to a JSON object.
     *
     * @return The JSON object which represents this response.
