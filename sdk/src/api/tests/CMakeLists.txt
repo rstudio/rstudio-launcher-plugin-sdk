@@ -19,58 +19,23 @@
 # OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-cmake_minimum_required(VERSION 3.14)
-project(rstudio_launcher_plugin_sdk)
+set(RLPS_API_TEST_MAIN ../../tests/TestMain.cpp)
 
-set(CMAKE_CXX_STANDARD 11)
+# Copy the test runner that runs all options tests.
+configure_file(run-tests.sh run-tests.sh COPYONLY)
 
-# include files
-file(GLOB_RECURSE RLPS_HEADER_FILES "*.h*")
-
-# souce files
-set(RLPS_SOURCE_FILES
-   src/AbstractMain.cpp
-   src/Error.cpp
-   src/api/Request.cpp
-   src/comms/MessageHandler.cpp
-   src/json/Json.cpp
-   src/json/JsonUtils.cpp
-   src/logging/FileLogDestination.cpp
-   src/logging/Logger.cpp
-   src/logging/StderrLogDestination.cpp
-   src/logging/SyslogDestination.cpp
-   src/options/Options.cpp
-   src/system/FilePath.cpp
-   src/system/ReaderWriterMutex.cpp
-   src/system/User.cpp
-)
-
-# include directory
+# Allow files in the tests folder to be included
 include_directories(
-   include
-   src
+   ../../tests
 )
 
-# define library
-add_library(rstudio-launcher-plugin-sdk-lib STATIC
-   ${RLPS_SOURCE_FILES}
+add_executable(rlps-request-tests
+   ${RLPS_API_TEST_MAIN}
+   RequestTests.cpp
    ${RLPS_HEADER_FILES}
 )
 
-set(RLPS_BOOST_LIBS
-   Boost::filesystem
-   Boost::program_options
-   Boost::regex
-   Boost::thread
-)
-
-target_link_libraries(rstudio-launcher-plugin-sdk-lib
+target_link_libraries(rlps-request-tests
+   rstudio-launcher-plugin-sdk-lib
    ${RLPS_BOOST_LIBS}
 )
-
-# define executables for unit tests
-if (NOT RLPS_UNIT_TESTS_DISABLED)
-   add_subdirectory(src/api/tests)
-   add_subdirectory(src/comms/tests)
-   add_subdirectory(src/options/tests)
-endif()
