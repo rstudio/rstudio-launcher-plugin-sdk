@@ -129,6 +129,7 @@ Error Request::fromJson(const json::Object& in_requestJson, std::shared_ptr<Requ
       case Type::BOOTSTRAP:
       {
          out_request.reset(new BootstrapRequest(in_requestJson));
+         break;
       }
       default:
       {
