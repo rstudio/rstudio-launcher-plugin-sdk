@@ -1,7 +1,10 @@
 /*
- * AbstractPluginApi.hpp
- * 
- * Copyright (C) 2019 by RStudio, Inc.
+ * Noncopyable.hpp
+ *
+ * Copyright (C) 2020 by RStudio, Inc.
+ *
+ * Unless you have received this program directly from RStudio pursuant to the terms of a commercial license agreement
+ * with RStudio, then this program is licensed to you under the following terms:
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
  * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
@@ -18,34 +21,28 @@
  *
  */
 
-#ifndef LAUNCHER_PLUGINS_ABSTRACT_PLUGIN_API_HPP
-#define LAUNCHER_PLUGINS_ABSTRACT_PLUGIN_API_HPP
 
-#include <Noncopyable.hpp>
-
-#include "Error.hpp"
+#ifndef LAUNCHER_PLUGINS_NONCOPYABLE
+#define LAUNCHER_PLUGINS_NONCOPYABLE
 
 namespace rstudio {
 namespace launcher_plugins {
 
 /**
- * @brief Base class for the Launcher Plugin API.
+ * @brief Class which can be inherited from to disallow copying of its child classes.
  */
-class AbstractPluginApi : public Noncopyable
+class Noncopyable
 {
 public:
    /**
-    * @brief Virtual destructor.
+    * @brief Deleted copy constructor.
     */
-   virtual ~AbstractPluginApi() = default;
+   Noncopyable(const Noncopyable&) = delete;
 
    /**
-    * @brief This method should initialize any components needed to communicate with the job scheduling tool, including
-    *        custom options (TODO: other examples).
-    *
-    * @return Success if all components needed by this Plugin were successfully initialized; Error otherwise.
+    * @brief Deleted assignment operator.
     */
-   virtual Error initialize() = 0;
+   Noncopyable& operator=(const Noncopyable&) = delete;
 };
 
 } // namespace launcher_plugins

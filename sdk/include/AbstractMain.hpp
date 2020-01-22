@@ -21,7 +21,7 @@
 #ifndef LAUNCHER_PLUGINS_ABSTRACT_MAIN_HPP
 #define LAUNCHER_PLUGINS_ABSTRACT_MAIN_HPP
 
-#include <boost/noncopyable.hpp>
+#include <Noncopyable.hpp>
 
 #include <memory>
 #include <system/FilePath.hpp>
@@ -32,9 +32,9 @@ namespace rstudio {
 namespace launcher_plugins {
 
 /**
- * @brief Base class for the Plugin Main class, which runs the plugin.
+ * @brief Base class for the PluginMain class, which runs the plugin.
  */
-class AbstractMain : public boost::noncopyable
+class AbstractMain : public Noncopyable
 {
 public:
    /**
