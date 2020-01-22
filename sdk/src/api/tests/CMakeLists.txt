@@ -29,6 +29,7 @@ include_directories(
    ../../tests
 )
 
+# Request Tests
 add_executable(rlps-request-tests
    ${RLPS_API_TEST_MAIN}
    RequestTests.cpp
@@ -39,3 +40,15 @@ target_link_libraries(rlps-request-tests
    rstudio-launcher-plugin-sdk-lib
    ${RLPS_BOOST_LIBS}
 )
+
+# Response Tests
+add_executable(rlps-response-tests
+   ${RLPS_API_TEST_MAIN}
+   ResponseTests.cpp
+   ${RLPS_HEADER_FILES}
+   )
+
+target_link_libraries(rlps-response-tests
+   rstudio-launcher-plugin-sdk-lib
+   ${RLPS_BOOST_LIBS}
+   )
