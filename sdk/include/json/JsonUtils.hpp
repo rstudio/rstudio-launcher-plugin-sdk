@@ -58,7 +58,17 @@ enum class JsonReadError
  *
  * @return The newly created JSON read error.
  */
-Error jsonReadError(JsonReadError in_errorCode, const std::string& in_message, ErrorLocation in_errorLocation);
+Error jsonReadError(JsonReadError in_errorCode, const std::string& in_message, const ErrorLocation& in_errorLocation);
+
+/**
+ * @brief Checks whether the supplied error is a "missing memeber" error.
+ *
+ * @param in_error      The error to check.
+ *
+ * @return True if the error is a missing member error; False otherwise.
+ */
+bool isMissingMemberError(const Error& in_error);
+
 
 /**
  * @brief Reads a member from an object.

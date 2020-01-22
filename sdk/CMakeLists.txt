@@ -34,6 +34,7 @@ set(RLPS_SOURCE_FILES
    src/api/Request.cpp
    src/comms/MessageHandler.cpp
    src/json/Json.cpp
+   src/json/JsonUtils.cpp
    src/logging/FileLogDestination.cpp
    src/logging/Logger.cpp
    src/logging/StderrLogDestination.cpp
