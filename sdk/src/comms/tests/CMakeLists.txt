@@ -19,7 +19,7 @@
 # OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-set(RLPS_OPTIONS_TEST_MAIN ../../tests/TestMain.cpp)
+set(RLPS_COMMS_TEST_MAIN ../../tests/TestMain.cpp)
 
 # Copy the test runner that runs all options tests.
 configure_file(run-tests.sh run-tests.sh COPYONLY)
@@ -30,7 +30,7 @@ include_directories(
 )
 
 add_executable(rlps-message-handler-tests
-   ${RLPS_OPTIONS_TEST_MAIN}
+   ${RLPS_COMMS_TEST_MAIN}
    MessageHandlerTests.cpp
    ${RLPS_HEADER_FILES}
 )
