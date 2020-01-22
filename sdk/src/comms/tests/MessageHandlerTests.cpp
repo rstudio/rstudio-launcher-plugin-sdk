@@ -250,7 +250,7 @@ TEST_CASE("Received message is too large")
 
    CHECK(error);
    CHECK(error.getCode() == boost::system::errc::protocol_error);
-   CHECK(error.getName() == boost::system::system_category().name());
+   CHECK(error.getName() == "SystemError");
    CHECK(error.getMessage() == "Protocol error");
    CHECK(messages.empty());
    REQUIRE(error.getProperties().size() == 1);
