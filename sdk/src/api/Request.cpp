@@ -104,12 +104,12 @@ PRIVATE_IMPL_DELETER_IMPL(Request)
 
 Error Request::fromJson(const json::Object& in_requestJson, std::shared_ptr<Request>& out_request)
 {
-   int messageTypeVal = static_cast<int>(Type::INVALID);
+   int messageTypeVal = -1;
    Error error = json::readObject(in_requestJson, FIELD_MESSAGE_TYPE, messageTypeVal);
    if (error)
       return error;
 
-   if (messageTypeVal >= static_cast<int>(Type::INVALID))
+   if ((messageTypeVal >= static_cast<int>(Type::INVALID)) || (messageTypeVal < 0))
       return requestError(
          RequestError::INVALID_REQUEST_TYPE,
          std::to_string(messageTypeVal),
