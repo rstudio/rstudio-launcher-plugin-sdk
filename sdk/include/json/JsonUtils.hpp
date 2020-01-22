@@ -168,7 +168,7 @@ Error readObject(const Object& in_object, const std::string& in_name, std::vecto
  * @return Success if all the members exist and have valid types; Error otherwise.
  */
 template <typename T, typename... Args>
-Error readObject(const Object& in_object, const std::string& in_name, T& out_value, Args... io_args)
+Error readObject(const Object& in_object, const std::string& in_name, T& out_value, Args&... io_args)
 {
    Error error = readObject(in_object, in_name, out_value);
    if (error)
@@ -191,7 +191,7 @@ Error readObject(const Object& in_object, const std::string& in_name, T& out_val
  * @return Success if all the members exist and have valid types; Error otherwise.
  */
 template <typename T, typename... Args>
-Error readObject(const Object& in_object, const std::string& in_name, std::vector<T>& out_values, Args... io_args)
+Error readObject(const Object& in_object, const std::string& in_name, std::vector<T>& out_values, Args&... io_args)
 {
    Error error = readObject(in_object, in_name, out_values);
    if (error)
