@@ -25,6 +25,7 @@
 
 #include <Error.hpp>
 #include <MockLogDestination.hpp>
+#include <api/Constants.hpp>
 #include <api/Request.hpp>
 #include <json/Json.hpp>
 #include <logging/Logger.hpp>
@@ -59,14 +60,14 @@ TEST_CASE("Parse valid bootstrap request")
    LogPtr logDest = getLogDest();
 
    json::Object versionObj;
-   versionObj.insert("major", json::Value(2));
-   versionObj.insert("minor", json::Value(11));
-   versionObj.insert("patch", json::Value(375));
+   versionObj.insert(FIELD_VERSION_MAJOR, json::Value(2));
+   versionObj.insert(FIELD_VERSION_MINOR, json::Value(11));
+   versionObj.insert(FIELD_VERSION_PATCH, json::Value(375));
 
    json::Object requestObj;
-   requestObj.insert("version", versionObj);
-   requestObj.insert("messageType", json::Value(static_cast<int>(Request::Type::BOOTSTRAP)));
-   requestObj.insert("requestId", json::Value(6));
+   requestObj.insert(FIELD_VERSION, versionObj);
+   requestObj.insert(FIELD_MESSAGE_TYPE, json::Value(static_cast<int>(Request::Type::BOOTSTRAP)));
+   requestObj.insert(FIELD_REQUEST_ID, json::Value(6));
 
    std::shared_ptr<Request> request;
    Error error = Request::fromJson(requestObj, request);
@@ -89,13 +90,13 @@ TEST_CASE("Parse invalid bootstrap request")
    LogPtr logDest = getLogDest();
 
    json::Object versionObj;
-   versionObj.insert("major", json::Value(2));
-   versionObj.insert("patch", json::Value(375));
+   versionObj.insert(FIELD_VERSION_MAJOR, json::Value(2));
+   versionObj.insert(FIELD_VERSION_PATCH, json::Value(375));
 
    json::Object requestObj;
-   requestObj.insert("version", versionObj);
-   requestObj.insert("messageType", json::Value(static_cast<int>(Request::Type::BOOTSTRAP)));
-   requestObj.insert("requestId", json::Value(6));
+   requestObj.insert(FIELD_VERSION, versionObj);
+   requestObj.insert(FIELD_MESSAGE_TYPE, json::Value(static_cast<int>(Request::Type::BOOTSTRAP)));
+   requestObj.insert(FIELD_REQUEST_ID, json::Value(6));
 
    std::shared_ptr<Request> request;
    Error error = Request::fromJson(requestObj, request);
@@ -104,26 +105,26 @@ TEST_CASE("Parse invalid bootstrap request")
    CHECK(error.getMessage().find("Invalid request received from launcher") != std::string::npos);
    REQUIRE(logDest->getSize() == 1);
    CHECK(logDest->peek().Level == LogLevel::ERR);
-   CHECK(logDest->pop().Message.find("minor") != std::string::npos);
+   CHECK(logDest->pop().Message.find(FIELD_VERSION_MINOR) != std::string::npos);
 }
 
 TEST_CASE("Parse invalid request - missing message type")
 {
    json::Object requestObj;
-   requestObj.insert("requestId", json::Value(6));
+   requestObj.insert(FIELD_REQUEST_ID, json::Value(6));
 
    std::shared_ptr<Request> request;
    Error error = Request::fromJson(requestObj, request);
 
    REQUIRE(error);
-   REQUIRE(error.getMessage().find("messageType") != std::string::npos);
+   REQUIRE(error.getMessage().find(FIELD_MESSAGE_TYPE) != std::string::npos);
 }
 
 TEST_CASE("Parse invalid request - missing request request ID")
 {
    LogPtr logDest = getLogDest();
    json::Object requestObj;
-   requestObj.insert("messageType", json::Value(static_cast<int>(Request::Type::BOOTSTRAP)));
+   requestObj.insert(FIELD_MESSAGE_TYPE, json::Value(static_cast<int>(Request::Type::BOOTSTRAP)));
 
 
    std::shared_ptr<Request> request;
@@ -133,17 +134,17 @@ TEST_CASE("Parse invalid request - missing request request ID")
    CHECK(error.getMessage().find("Invalid request received from launcher") != std::string::npos);
    REQUIRE(logDest->getSize() == 2);
    CHECK(logDest->peek().Level == LogLevel::ERR);
-   CHECK(logDest->pop().Message.find("requestId") != std::string::npos); // Base constructor runs first.
+   CHECK(logDest->pop().Message.find(FIELD_REQUEST_ID) != std::string::npos); // Base constructor runs first.
    CHECK(logDest->peek().Level == LogLevel::ERR);
-   CHECK(logDest->pop().Message.find("version") != std::string::npos); // Then bootstrap.
+   CHECK(logDest->pop().Message.find(FIELD_VERSION) != std::string::npos); // Then bootstrap.
 }
 
 TEST_CASE("Parse invalid request - negative message type")
 {
    LogPtr logDest = getLogDest();
    json::Object requestObj;
-   requestObj.insert("messageType", json::Value(-4));
-   requestObj.insert("requestId", json::Value(6));
+   requestObj.insert(FIELD_MESSAGE_TYPE, json::Value(-4));
+   requestObj.insert(FIELD_REQUEST_ID, json::Value(6));
 
    std::shared_ptr<Request> request;
    Error error = Request::fromJson(requestObj, request);
@@ -157,8 +158,8 @@ TEST_CASE("Parse invalid request - message type too large")
 {
    LogPtr logDest = getLogDest();
    json::Object requestObj;
-   requestObj.insert("messageType", json::Value(568));
-   requestObj.insert("requestId", json::Value(6));
+   requestObj.insert(FIELD_MESSAGE_TYPE, json::Value(568));
+   requestObj.insert(FIELD_REQUEST_ID, json::Value(6));
 
    std::shared_ptr<Request> request;
    Error error = Request::fromJson(requestObj, request);

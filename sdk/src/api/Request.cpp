@@ -29,21 +29,13 @@
 #include <logging/Logger.hpp>
 #include <system/User.hpp>
 
+#include "Constants.hpp"
+
 namespace rstudio {
 namespace launcher_plugins {
 namespace api {
 
 namespace {
-
-// Common fields for all requests.
-constexpr char const * FIELD_MESSAGE_TYPE = "messageType";
-constexpr char const * FIELD_REQUEST_ID = "requestId";
-
-// Bootstrap request fields.
-constexpr char const * FIELD_VERSION = "version";
-constexpr char const * FIELD_VERSION_MAJOR = "major";
-constexpr char const * FIELD_VERSION_MINOR = "minor";
-constexpr char const * FIELD_VERSION_PATCH = "patch";
 
 enum class RequestError
 {
