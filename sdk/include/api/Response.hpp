@@ -54,7 +54,7 @@ public:
     *
     * @return The JSON object which represents this response.
     */
-   json::Object asJson() const;
+   virtual json::Object asJson() const;
 
 protected:
    /**
@@ -103,15 +103,6 @@ protected:
    Response(Type in_responseType, uint64_t in_requestId);
 
 private:
-   /**
-    * @brief Adds the child class details to the JSON object.
-    *
-    * @param in_jsonObject      The JSON object containing this base Response's details.
-    *
-    * @return The completed JSON object representing this Response.
-    */
-   virtual json::Object asJson(json::Object in_jsonObject) const = 0;
-
    // The private implementation of Response.
    PRIVATE_IMPL(m_responseImpl);
 };
@@ -126,15 +117,12 @@ public:
     */
    explicit BootstrapResponse(uint64_t in_requestId);
 
-private:
    /**
-    * @brief Adds the child class details to the JSON object.
+    * @brief Converts this bootstrap response to a JSON object.
     *
-    * @param in_jsonObject      The JSON object containing this base Response's details.
-    *
-    * @return The completed JSON object representing this Response.
+    * @return The JSON object which represents this bootstrap response.
     */
-   json::Object asJson(json::Object in_jsonObject) const override;
+   json::Object asJson() const override;
 };
 
 } // namespace api
