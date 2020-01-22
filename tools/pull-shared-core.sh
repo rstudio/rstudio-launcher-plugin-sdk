@@ -61,11 +61,55 @@ cd ..
 
 # Copy the files we want.
 # These arrays need to have the same length and order (e.g. index of source Json.hpp == index of destination Json.hpp). We're not using maps because Bash 3 doesn't support them.
-SRC_INCLUDES=( "Error.hpp" "PImpl.hpp" "json/Json.hpp" "ILogDestination.hpp" "FileLogDestination.hpp" "Logger.hpp" "DateTime.hpp" "FilePath.hpp" "system/User.hpp" )
-DEST_INCLUDES=( "Error.hpp" "PImpl.hpp" "json/Json.hpp" "logging/ILogDestination.hpp" "logging/FileLogDestination.hpp" "logging/Logger.hpp" "system/DateTime.hpp" "system/FilePath.hpp" "system/User.hpp")
+SRC_INCLUDES=(
+  "Error.hpp"                         #  1
+  "PImpl.hpp"                         #  2
+  "json/Json.hpp"                     #  3
+  "ILogDestination.hpp"               #  4
+  "FileLogDestination.hpp"            #  5
+  "Logger.hpp"                        #  6
+  "DateTime.hpp"                      #  7
+  "FilePath.hpp"                      #  8
+  "system/User.hpp")                  #  9
+DEST_INCLUDES=(
+  "Error.hpp"                         #  1
+  "PImpl.hpp"                         #  2
+  "json/Json.hpp"                     #  3
+  "logging/ILogDestination.hpp"       #  4
+  "logging/FileLogDestination.hpp"    #  5
+  "logging/Logger.hpp"                #  6
+  "system/DateTime.hpp"               #  7
+  "system/FilePath.hpp"               #  8
+  "system/User.hpp")                  #  9
 
-SRC_SOURCES=( "Error.cpp" "SafeConvert.hpp" "json/Json.cpp" "FileLogDestination.cpp" "Logger.cpp" "StderrLogDestination.hpp" "StderrLogDestination.cpp" "system/SyslogDestination.hpp" "system/SyslogDestination.cpp" "FilePath.cpp" "ReaderWriterMutex.hpp" "ReaderWriterMutex.cpp" "system/User.cpp" )
-DEST_SOURCES=( "Error.cpp" "SafeConvert.hpp" "json/Json.cpp" "logging/FileLogDestination.cpp" "logging/Logger.cpp" "logging/StderrLogDestination.hpp" "logging/StderrLogDestination.cpp" "logging/SyslogDestination.hpp" "logging/SyslogDestination.cpp" "system/FilePath.cpp" "system/ReaderWriterMutex.hpp" "system/ReaderWriterMutex.cpp" "system/User.cpp" )
+SRC_SOURCES=(
+  "Error.cpp"                         #  1
+  "SafeConvert.hpp"                   #  2
+  "json/Json.cpp"                     #  3
+  "FileLogDestination.cpp"            #  4
+  "Logger.cpp"                        #  5
+  "StderrLogDestination.hpp"          #  6
+  "StderrLogDestination.cpp"          #  7
+  "system/SyslogDestination.hpp"      #  8
+  "system/SyslogDestination.cpp"      #  9
+  "FilePath.cpp"                      # 10
+  "ReaderWriterMutex.hpp"             # 11
+  "ReaderWriterMutex.cpp"             # 12
+  "system/User.cpp")                  # 13
+DEST_SOURCES=(
+  "Error.cpp"                         #  1
+  "SafeConvert.hpp"                   #  2
+  "json/Json.cpp"                     #  3
+  "logging/FileLogDestination.cpp"    #  4
+  "logging/Logger.cpp"                #  5
+  "logging/StderrLogDestination.hpp"  #  6
+  "logging/StderrLogDestination.cpp"  #  7
+  "logging/SyslogDestination.hpp"     #  8
+  "logging/SyslogDestination.cpp"     #  9
+  "system/FilePath.cpp"               # 10
+  "system/ReaderWriterMutex.hpp"      # 11
+  "system/ReaderWriterMutex.cpp"      # 12
+  "system/User.cpp")                  # 13
 
 
 replace()
