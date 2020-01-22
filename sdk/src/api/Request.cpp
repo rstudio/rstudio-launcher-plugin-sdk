@@ -190,6 +190,8 @@ struct BootstrapRequest::Impl
    int Patch;
 };
 
+PRIVATE_IMPL_DELETER_IMPL(BootstrapRequest)
+
 BootstrapRequest::BootstrapRequest(const json::Object& in_requestJson) :
    Request(Type::BOOTSTRAP, in_requestJson),
    m_impl(new Impl())
