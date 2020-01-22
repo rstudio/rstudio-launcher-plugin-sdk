@@ -88,15 +88,23 @@ Error requestError(RequestError in_errorCode, const std::string& in_details, con
 // Request =============================================================================================================
 struct Request::Impl
 {
-   Impl() :
+   /**
+    * @brief Constructor.
+    */
+   Impl(Type in_requestType) :
       Id(0),
-      RequestType(Type::HEARTBEAT),
-      IsValid(false)
+      RequestType(in_requestType),
+      IsValid(true)
    {
    }
 
+   /** The ID of the request. */
    uint64_t Id;
+
+   /** The type of the request. */
    Type RequestType;
+
+   /** Whether the request is valid. */
    bool IsValid;
 };
 
@@ -144,8 +152,8 @@ Request::Type Request::getType() const
    return m_baseImpl->RequestType;
 }
 
-Request::Request(Type in_type, const json::Object& in_requestJson) :
-   m_baseImpl(new Impl())
+Request::Request(Type in_requestType, const json::Object& in_requestJson) :
+   m_baseImpl(new Impl(in_requestType))
 {
    Error error = json::readObject(
       in_requestJson,
@@ -157,13 +165,14 @@ Request::Request(Type in_type, const json::Object& in_requestJson) :
       m_baseImpl->IsValid = false;
       return;
    }
-
-   m_baseImpl->RequestType = in_type;
 }
 
 // Bootstrap ===========================================================================================================
 struct BootstrapRequest::Impl
 {
+   /**
+    * @brief Constructor.
+    */
    Impl() :
       Major(0),
       Minor(0),
@@ -171,8 +180,13 @@ struct BootstrapRequest::Impl
    {
    }
 
+   /** The major value of the version. */
    int Major;
+
+   /** The minor value of the version. */
    int Minor;
+
+   /** The patch value of the version. */
    int Patch;
 };
 

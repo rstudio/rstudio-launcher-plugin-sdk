@@ -103,8 +103,11 @@ public:
 protected:
    /**
     * @brief Constructor.
+    *
+    * @param in_requestType     The type of the request.
+    * @param in_requestJson     The JSON object representing the request.
     */
-   explicit Request(Type in_type, const json::Object& in_requestJson);
+   explicit Request(Type in_requestType, const json::Object& in_requestJson);
 
    // The private implementation of Request
    PRIVATE_IMPL(m_baseImpl);
