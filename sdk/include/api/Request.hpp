@@ -54,6 +54,7 @@ namespace api {
  */
 class Request
 {
+public:
    /**
     * @enum Type
     * @brief Enum which represents the type of request.
@@ -93,39 +94,61 @@ class Request
    uint64_t getId() const;
 
    /**
-    * @brief Gets the actual username used when the request was submitted.
-    *
-    * This value should be ignored by most plugins, and only used as additional information when needed.
-    *
-    * @return The actual username used when the request was submitted.
-    */
-   const std::string& getRequestUsername() const;
-
-   /**
     * @brief Gets the request type.
     *
     * @return The type of the request.
     */
    Type getType() const;
 
-   /**
-    * @brief Gets the user who made this request.
-    *
-    * @return The user who made this request.
-    */
-   const system::User& getUser() const;
-
 protected:
    /**
     * @brief Constructor.
     */
-   explicit Request(const json::Object& in_requestJson);
+   explicit Request(Type in_type, const json::Object& in_requestJson);
 
-private:
    // The private implementation of Request
    PRIVATE_IMPL(m_baseImpl);
+};
+
+/**
+ * @brief Represents a bootstrap request received from the RStudio Launcher.
+ */
+class BootstrapRequest: public Request
+{
+public:
+   /**
+    * @brief Gets the major version of the RStudio Launcher that sent this bootstrap request.
+    *
+    * @return The major version of the RStudio Launcher.
+    */
+   int getMajorVersion() const;
+
+   /**
+    * @brief Gets the minor version of the RStudio Launcher that sent this bootstrap request.
+    *
+    * @return The minor version of the RStudio Launcher.
+    */
+   int getMinorVersion() const;
+
+   /**
+    * @brief Gets the patch number of the RStudio Launcher that sent this bootstrap request.
+    *
+    * @return The patch number of the RStudio Launcher.
+    */
+   int getPatchNumber() const;
+
+private:
+   /**
+    * @brief Constructor.
+    *
+    * @param in_requestJson     The JSON Object which represents the bootstrap request.
+    */
+   explicit BootstrapRequest(const json::Object& in_requestJson);
+
+   // The private implementation of BootstrapRequest.
    PRIVATE_IMPL(m_impl);
 
+   friend class Request;
 };
 
 } // namespace api

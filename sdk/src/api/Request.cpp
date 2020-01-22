@@ -35,10 +35,15 @@ namespace api {
 
 namespace {
 
+// Common fields for all requests.
 constexpr char const * FIELD_MESSAGE_TYPE = "messageType";
 constexpr char const * FIELD_REQUEST_ID = "requestId";
-constexpr char const * FIELD_USERNAME = "username";
-constexpr char const * FIELD_REQUEST_USERNAME = "requestUsername";
+
+// Bootstrap request fields.
+constexpr char const * FIELD_VERSION = "version";
+constexpr char const * FIELD_VERSION_MAJOR = "major";
+constexpr char const * FIELD_VERSION_MINOR = "minor";
+constexpr char const * FIELD_VERSION_PATCH = "patch";
 
 enum class RequestError
 {
@@ -91,9 +96,7 @@ struct Request::Impl
    }
 
    uint64_t Id;
-   std::string RequestUsername;
    Type RequestType;
-   system::User User;
    bool IsValid;
 };
 
@@ -101,6 +104,33 @@ PRIVATE_IMPL_DELETER_IMPL(Request)
 
 Error Request::fromJson(const json::Object& in_requestJson, std::shared_ptr<Request>& out_request)
 {
+   int messageTypeVal = static_cast<int>(Type::INVALID);
+   Error error = json::readObject(in_requestJson, FIELD_MESSAGE_TYPE, messageTypeVal);
+   if (error)
+      return error;
+
+   if (messageTypeVal >= static_cast<int>(Type::INVALID))
+      return requestError(
+         RequestError::INVALID_REQUEST_TYPE,
+         std::to_string(messageTypeVal),
+         ERROR_LOCATION);
+
+   Type messageType = static_cast<Type>(messageTypeVal);
+   switch (messageType)
+   {
+      case Type::BOOTSTRAP:
+      {
+         out_request.reset(new BootstrapRequest(in_requestJson));
+      }
+      default:
+      {
+         return requestError(
+            RequestError::INVALID_REQUEST_TYPE,
+            std::to_string(messageTypeVal),
+            ERROR_LOCATION);
+      }
+   }
+
    return Success();
 }
 
@@ -109,31 +139,17 @@ uint64_t Request::getId() const
    return m_baseImpl->Id;
 }
 
-const std::string& Request::getRequestUsername() const
-{
-   return m_baseImpl->RequestUsername;
-}
-
 Request::Type Request::getType() const
 {
    return m_baseImpl->RequestType;
 }
 
-const system::User& Request::getUser() const
-{
-   return m_baseImpl->User;
-}
-
-Request::Request(const json::Object& in_requestJson) :
+Request::Request(Type in_type, const json::Object& in_requestJson) :
    m_baseImpl(new Impl())
 {
-   int messageType;
    Error error = json::readObject(
       in_requestJson,
-      FIELD_MESSAGE_TYPE,
-      messageType,
-      FIELD_REQUEST_ID,
-      m_baseImpl->Id);
+      FIELD_REQUEST_ID, m_baseImpl->Id);
 
    if (error)
    {
@@ -142,48 +158,63 @@ Request::Request(const json::Object& in_requestJson) :
       return;
    }
 
-   if (messageType >= static_cast<int>(Type::INVALID))
+   m_baseImpl->RequestType = in_type;
+}
+
+// Bootstrap ===========================================================================================================
+struct BootstrapRequest::Impl
+{
+   Impl() :
+      Major(0),
+      Minor(0),
+      Patch(0)
    {
-      logging::logError(
-         requestError(
-            RequestError::INVALID_REQUEST_TYPE,
-            std::to_string(messageType), ERROR_LOCATION));
-      m_baseImpl->IsValid = false;
-      return;
    }
 
-   // Username is not required for all request types.
-   std::string username;
-   error = json::readObject(in_requestJson, FIELD_USERNAME, username);
-   if (error && !json::isMissingMemberError(error))
+   int Major;
+   int Minor;
+   int Patch;
+};
+
+BootstrapRequest::BootstrapRequest(const json::Object& in_requestJson) :
+   Request(Type::BOOTSTRAP, in_requestJson),
+   m_impl(new Impl())
+{
+   json::Object versionObject;
+   Error error = json::readObject(in_requestJson, FIELD_VERSION, versionObject);
+
+   if (error)
    {
       logging::logError(error);
       m_baseImpl->IsValid = false;
       return;
    }
-   else if (!error)
-   {
-      error = system::User::getUserFromIdentifier(username, m_baseImpl->User);
-      if (error)
-      {
-         logging::logError(error);
-         m_baseImpl->IsValid = false;
-         return;
-      }
-   }
 
-   // Request username is not required for all request types.
-   error = json::readObject(in_requestJson, FIELD_REQUEST_USERNAME, m_baseImpl->RequestUsername);
-   if (error && !json::isMissingMemberError(error))
+   error = json::readObject(
+      versionObject,
+      FIELD_VERSION_MAJOR, m_impl->Major,
+      FIELD_VERSION_MINOR, m_impl->Minor,
+      FIELD_VERSION_PATCH, m_impl->Patch);
+   if (error)
    {
       logging::logError(error);
       m_baseImpl->IsValid = false;
    }
 }
 
-Request::Request() :
-   m_impl(new Impl())
+int BootstrapRequest::getMajorVersion() const
 {
+   return m_impl->Major;
+}
+
+int BootstrapRequest::getMinorVersion() const
+{
+   return m_impl->Minor;
+}
+
+int BootstrapRequest::getPatchNumber() const
+{
+   return m_impl->Patch;
 }
 
 } // namespace api
