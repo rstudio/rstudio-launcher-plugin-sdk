@@ -56,23 +56,44 @@ class Request
 {
 public:
    /**
-    * @enum Type
-    * @brief Enum which represents the type of request.
+    * @enum Request::Type
+    * @brief Enum which represents the type of a Request.
     *
     * The last enum value, INVALID, must always be the last value and is used to validate the received request.
     */
-   enum class Type : unsigned int
+   enum class Type
    {
+      /** Heartbeat request */
       HEARTBEAT               = 0,
+
+      /** Bootstrap request */
       BOOTSTRAP               = 1,
+
+      /** Submit Job request */
       SUBMIT_JOB              = 2,
+
+      /** Get Job request */
       GET_JOB                 = 3,
+
+      /** Get Job Status request */
       GET_JOB_STATUS          = 4,
+
+      /** Control Job request */
       CONTROL_JOB             = 5,
+
+      /** Get Job Output request */
       GET_JOB_OUTPUT          = 6,
+
+      /** Get Job Resource Utilization request */
       GET_JOB_RESOURCE_UTIL   = 7,
+
+      /** Get Job Network information request */
       GET_JOB_NETWORK         = 8,
+
+      /** Get Cluster Info request */
       GET_CLUSTER_INFO        = 9,
+
+      /** Invalid request. Should not be received. Always the last element of this enum for comparison purposes. */
       INVALID
    };
 
