@@ -80,6 +80,23 @@ Response::Response(Type in_responseType, uint64_t in_requestId) :
 {
 }
 
+// Bootstrap Response ==================================================================================================
+BootstrapResponse::BootstrapResponse(uint64_t in_requestId) :
+   Response(Type::BOOTSTRAP, in_requestId)
+{
+}
+
+json::Object BootstrapResponse::asJson(json::Object in_jsonObject) const
+{
+   json::Object version;
+   version.insert(FIELD_VERSION_MAJOR, json::Value(API_VERSION_MAJOR));
+   version.insert(FIELD_VERSION_MINOR, json::Value(API_VERSION_MINOR));
+   version.insert(FIELD_VERSION_PATCH, json::Value(API_VERSION_PATCH));
+
+   in_jsonObject.insert(FIELD_VERSION, version);
+   return in_jsonObject;
+}
+
 } // namespace api
 } // namespace launcher_plugins
 } // namespace rstudio

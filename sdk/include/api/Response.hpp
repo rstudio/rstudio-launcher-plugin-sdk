@@ -116,6 +116,27 @@ private:
    PRIVATE_IMPL(m_responseImpl);
 };
 
+class BootstrapResponse : public Response
+{
+public:
+   /**
+    * @brief Constructor.
+    *
+    * @param in_requestId       The ID of the bootstrap request for which this bootstrap response is being sent.
+    */
+   explicit BootstrapResponse(uint64_t in_requestId);
+
+private:
+   /**
+    * @brief Adds the child class details to the JSON object.
+    *
+    * @param in_jsonObject      The JSON object containing this base Response's details.
+    *
+    * @return The completed JSON object representing this Response.
+    */
+   json::Object asJson(json::Object in_jsonObject) const override;
+};
+
 } // namespace api
 } // namespace launcher_plugins
 } // namespace rstudio
