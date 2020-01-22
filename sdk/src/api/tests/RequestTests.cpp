@@ -24,15 +24,40 @@
 #include <TestMain.hpp>
 
 #include <Error.hpp>
+#include <MockLogDestination.hpp>
 #include <api/Request.hpp>
 #include <json/Json.hpp>
+#include <logging/Logger.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
 namespace api {
 
+using namespace logging;
+typedef std::shared_ptr<MockLogDestination> LogPtr;
+
+LogPtr getLogDest()
+{
+   static LogPtr logDest(new MockLogDestination());
+   static bool added = false;
+
+   if (!added)
+   {
+      logging::addLogDestination(logDest);
+      added = true;
+   }
+
+   // Clear out any old logs.
+   while (logDest->getSize() > 0) logDest->pop();
+
+   return logDest;
+}
+
+
 TEST_CASE("Parse valid bootstrap request")
 {
+   LogPtr logDest = getLogDest();
+
    json::Object versionObj;
    versionObj.insert("major", json::Value(2));
    versionObj.insert("minor", json::Value(11));
@@ -56,10 +81,13 @@ TEST_CASE("Parse valid bootstrap request")
    CHECK(bootstrapRequest->getMajorVersion() == 2);
    CHECK(bootstrapRequest->getMinorVersion() == 11);
    CHECK(bootstrapRequest->getPatchNumber() == 375);
+   CHECK(logDest->getSize() == 0);
 }
 
 TEST_CASE("Parse invalid bootstrap request")
 {
+   LogPtr logDest = getLogDest();
+
    json::Object versionObj;
    versionObj.insert("major", json::Value(2));
    versionObj.insert("patch", json::Value(375));
@@ -72,9 +100,11 @@ TEST_CASE("Parse invalid bootstrap request")
    std::shared_ptr<Request> request;
    Error error = Request::fromJson(requestObj, request);
 
-   // TODO: check logs for more detailed message.
    REQUIRE(error);
-   REQUIRE(error.getMessage().find("Invalid request received from launcher") != std::string::npos);
+   CHECK(error.getMessage().find("Invalid request received from launcher") != std::string::npos);
+   REQUIRE(logDest->getSize() == 1);
+   CHECK(logDest->peek().Level == LogLevel::ERR);
+   CHECK(logDest->pop().Message.find("minor") != std::string::npos);
 }
 
 TEST_CASE("Parse invalid request - missing message type")
@@ -92,6 +122,7 @@ TEST_CASE("Parse invalid request - missing message type")
 
 TEST_CASE("Parse invalid request - missing request request ID")
 {
+   LogPtr logDest = getLogDest();
    json::Object requestObj;
    requestObj.insert("messageType", json::Value(static_cast<int>(Request::Type::BOOTSTRAP)));
 
@@ -99,13 +130,18 @@ TEST_CASE("Parse invalid request - missing request request ID")
    std::shared_ptr<Request> request;
    Error error = Request::fromJson(requestObj, request);
 
-   // TODO: check logs for more detailed message.
    REQUIRE(error);
-   REQUIRE(error.getMessage().find("Invalid request received from launcher") != std::string::npos);
+   CHECK(error.getMessage().find("Invalid request received from launcher") != std::string::npos);
+   REQUIRE(logDest->getSize() == 2);
+   CHECK(logDest->peek().Level == LogLevel::ERR);
+   CHECK(logDest->pop().Message.find("requestId") != std::string::npos); // Base constructor runs first.
+   CHECK(logDest->peek().Level == LogLevel::ERR);
+   CHECK(logDest->pop().Message.find("version") != std::string::npos); // Then bootstrap.
 }
 
 TEST_CASE("Parse invalid request - negative message type")
 {
+   LogPtr logDest = getLogDest();
    json::Object requestObj;
    requestObj.insert("messageType", json::Value(-4));
    requestObj.insert("requestId", json::Value(6));
@@ -114,11 +150,13 @@ TEST_CASE("Parse invalid request - negative message type")
    Error error = Request::fromJson(requestObj, request);
 
    REQUIRE(error);
-   REQUIRE(error.getMessage().find("-4") != std::string::npos);
+   CHECK(error.getMessage().find("-4") != std::string::npos);
+   CHECK(logDest->getSize() == 0);
 }
 
 TEST_CASE("Parse invalid request - message type too large")
 {
+   LogPtr logDest = getLogDest();
    json::Object requestObj;
    requestObj.insert("messageType", json::Value(568));
    requestObj.insert("requestId", json::Value(6));
@@ -128,6 +166,7 @@ TEST_CASE("Parse invalid request - message type too large")
 
    REQUIRE(error);
    REQUIRE(error.getMessage().find("568") != std::string::npos);
+   CHECK(logDest->getSize() == 0);
 }
 
 } // namespace api
