@@ -35,6 +35,11 @@ class Noncopyable
 {
 public:
    /**
+    * @brief Default constructor.
+    */
+   Noncopyable() = default;
+
+   /**
     * @brief Deleted copy constructor.
     */
    Noncopyable(const Noncopyable&) = delete;
