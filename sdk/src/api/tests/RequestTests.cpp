@@ -112,7 +112,6 @@ TEST_CASE("Parse invalid request - missing message type")
    json::Object requestObj;
    requestObj.insert("requestId", json::Value(6));
 
-
    std::shared_ptr<Request> request;
    Error error = Request::fromJson(requestObj, request);
 
