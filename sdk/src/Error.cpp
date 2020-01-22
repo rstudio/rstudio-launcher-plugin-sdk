@@ -23,11 +23,12 @@
 
 #include <ostream>
 
+#include <boost/system/error_code.hpp>
+
 #include <Error.hpp>
 #include <system/FilePath.hpp>
 #include <logging/Logger.hpp>
 #include <SafeConvert.hpp>
-
 
 using namespace rstudio::launcher_plugins::system;
 
@@ -395,7 +396,8 @@ std::ostream& operator<<(std::ostream& io_ostream, const Error& in_error)
 // Common error creation functions =====================================================================================
 Error systemError(int in_value, const ErrorLocation& in_location)
 {
-   return Error("SystemError", in_value, in_location);
+   boost::system::error_code ec(in_value, boost::system::system_category());
+   return Error("SystemError", in_value, ec.message(), in_location);
 }
 
 Error systemError(int in_value,
