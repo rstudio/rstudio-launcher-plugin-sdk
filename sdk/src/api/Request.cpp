@@ -49,6 +49,7 @@ enum class RequestError
 {
    SUCCESS = 0,
    INVALID_REQUEST_TYPE = 1,
+   INVALID_REQUEST = 2,
 };
 
 Error requestError(
@@ -64,6 +65,11 @@ Error requestError(
       case RequestError::INVALID_REQUEST_TYPE:
       {
          message.append("Invalid request type received from launcher");
+         break;
+      }
+      case RequestError::INVALID_REQUEST:
+      {
+         message.append("Invalid request received from launcher");
          break;
       }
       case RequestError::SUCCESS:
@@ -139,6 +145,11 @@ Error Request::fromJson(const json::Object& in_requestJson, std::shared_ptr<Requ
             ERROR_LOCATION);
       }
    }
+
+   if (!out_request->m_baseImpl->IsValid)
+      return requestError(RequestError::INVALID_REQUEST,
+         in_requestJson.writeFormatted(),
+         ERROR_LOCATION);
 
    return Success();
 }
