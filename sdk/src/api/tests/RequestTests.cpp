@@ -72,8 +72,9 @@ TEST_CASE("Parse invalid bootstrap request")
    std::shared_ptr<Request> request;
    Error error = Request::fromJson(requestObj, request);
 
+   // TODO: check logs for more detailed message.
    REQUIRE(error);
-   REQUIRE(error.getMessage().find("minor") != std::string::npos);
+   REQUIRE(error.getMessage().find("Invalid request received from launcher") != std::string::npos);
 }
 
 TEST_CASE("Parse invalid request - missing message type")
@@ -98,8 +99,9 @@ TEST_CASE("Parse invalid request - missing request request ID")
    std::shared_ptr<Request> request;
    Error error = Request::fromJson(requestObj, request);
 
+   // TODO: check logs for more detailed message.
    REQUIRE(error);
-   REQUIRE(error.getMessage().find("requestId") != std::string::npos);
+   REQUIRE(error.getMessage().find("Invalid request received from launcher") != std::string::npos);
 }
 
 TEST_CASE("Parse invalid request - negative message type")
