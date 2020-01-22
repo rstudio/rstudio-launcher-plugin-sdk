@@ -27,9 +27,6 @@
 #include <string>
 #include <vector>
 
-#include <boost/current_function.hpp>
-#include <boost/system/error_code.hpp>
-
 #include <logging/Logger.hpp>
 #include <PImpl.hpp>
 
@@ -192,88 +189,6 @@ public:
    /**
     * @brief Constructor.
     *
-    * @param in_ec              The boost error code to convert from.
-    * @param in_location        The location of the error.
-    */
-   Error(const boost::system::error_code& in_ec, const ErrorLocation& in_location);
-
-   /**
-    * @brief Constructor.
-    *
-    * @param in_ec              The boost error code to convert from.
-    * @param in_cause           The error which caused this error.
-    * @param in_location        The location of the error.
-    */
-   Error(const boost::system::error_code& in_ec, const Error& in_cause, const ErrorLocation& in_location);
-
-   /**
-    * @brief Constructor.
-    *
-    * @param in_ec              The boost error code to convert from.
-    * @param in_message         The detailed error message. (e.g. "The JobNetworkRequest is not supported by this
-    *                           plugin.")
-    * @param in_location        The location of the error.
-    */
-   Error(const boost::system::error_code& in_ec, std::string in_message, const ErrorLocation& in_location);
-
-   /**
-    * @brief Constructor.
-    *
-    * @param in_ec              The boost error code to convert from.
-    * @param in_message         The detailed error message. (e.g. "The JobNetworkRequest is not supported by this
-    *                           plugin.")
-    * @param in_cause           The error which caused this error.
-    * @param in_location        The location of the error.
-    */
-   Error(const boost::system::error_code& in_ec,
-         std::string in_message,
-         const Error& in_cause,
-         const ErrorLocation& in_location);
-
-   /**
-    * @brief Constructor.
-    *
-    * @param in_ec              The boost error condition to convert from.
-    * @param in_location        The location of the error.
-    */
-   Error(const boost::system::error_condition& in_ec, const ErrorLocation& in_location);
-
-   /**
-    * @brief Constructor.
-    *
-    * @param in_ec              The boost error condition to convert from.
-    * @param in_cause           The error which caused this error.
-    * @param in_location        The location of the error.
-    */
-   Error(const boost::system::error_condition& in_ec, const Error& in_cause, const ErrorLocation& in_location);
-
-   /**
-    * @brief Constructor.
-    *
-    * @param in_ec              The boost error condition to convert from.
-    * @param in_message         The detailed error message. (e.g. "The JobNetworkRequest is not supported by this
-    *                           plugin.")
-    * @param in_location        The location of the error.
-    */
-   Error(const boost::system::error_condition& in_ec, std::string in_message, const ErrorLocation& in_location);
-
-   /**
-    * @brief Constructor.
-    *
-    * @param in_ec              The boost error condition to convert from.
-    * @param in_message         The detailed error message. (e.g. "The JobNetworkRequest is not supported by this
-    *                           plugin.")
-    * @param in_cause           The error which caused this error.
-    * @param in_location        The location of the error.
-    */
-   Error(const boost::system::error_condition& in_ec,
-         std::string in_message,
-         const Error& in_cause,
-         const ErrorLocation& in_location);
-
-   /**
-    * @brief Constructor.
-    *
     * @param in_name            A contextual or categorical name for the error. (e.g. "RequestNotSupported")
     * @param in_code            The non-zero error code. Note that an error code of zero indicates success. (e.g. 1)
     * @param in_location        The location of the error.
@@ -347,15 +262,6 @@ public:
    bool operator==(const Error& in_other) const;
 
    /**
-    * @brief Equality operator. Two errors are equal if their codes and names are the same.
-    *
-    * @param in_ec   The boost error code to compare with this error.
-    *
-    * @return True if in_ec has the same error code and category name as this error; false otherwise.
-    */
-   bool operator==(const boost::system::error_code& in_ec) const;
-
-   /**
     * @brief Inequality operator. Two errors are equal if their codes and names are the same.
     *
     * @param in_other   The error to compare with this error.
@@ -363,15 +269,6 @@ public:
     * @return True if in_other is not equal to this error; false otherwise.
     */
    bool operator!=(const Error& in_other) const;
-
-   /**
-    * @brief Inequality operator. Two errors are equal if their codes and names are the same.
-    *
-    * @param in_ec   The boost error code to compare with this error.
-    *
-    * @return True if !(this == in_ec) would return true; false otherwise.
-    */
-   bool operator!=(const boost::system::error_code& in_ec) const;
 
    /**
     * @brief Add or updates a property of this error. If any properties with the specified name exist, they will all be
@@ -548,16 +445,6 @@ public:
  */
 std::ostream& operator<<(std::ostream& io_ostream, const Error& in_error);
 
-#ifdef _WIN32
-
-// Use this macro instead of systemError(::GetLastError(), ERROR_LOCATION) otherwise
-// the ERROR_LOCATION macro may evaluate first and reset the Win32 error code to
-// zero (no error), causing the wrong value to be passed to systemError. This is currently
-// the case on debug builds using MSVC.
-#define LAST_SYSTEM_ERROR() []() {auto lastErr = ::GetLastError(); return systemError(lastErr, ERROR_LOCATION);}()
-
-#endif // _WIN32
-
 /**
  * @brief Function which creates a system error.
  *
@@ -635,20 +522,20 @@ Error unknownError(const std::string& in_message, const Error& in_cause, const E
 
 #ifdef STRIPPED_FILENAME
 #define ERROR_LOCATION rstudio::launcher_plugins::ErrorLocation( \
-      BOOST_CURRENT_FUNCTION, STRIPPED_FILENAME, __LINE__)
+      __FUNCTION__, STRIPPED_FILENAME, __LINE__)
 #else
 #define ERROR_LOCATION rstudio::launcher_plugins::ErrorLocation( \
-      BOOST_CURRENT_FUNCTION, __FILE__, __LINE__)
+      __FUNCTION__, __FILE__, __LINE__)
 #endif
 
-#define CATCH_UNEXPECTED_EXCEPTION                                                  \
-   catch(const std::exception& e)                                                   \
-   {                                                                                \
+#define CATCH_UNEXPECTED_EXCEPTION                                                                  \
+   catch(const std::exception& e)                                                                   \
+   {                                                                                                \
       rstudio::launcher_plugins::logging::logErrorMessage(std::string("Unexpected exception: ") +   \
-                        e.what(), "") ;                                             \
-   }                                                                                \
-   catch(...)                                                                       \
-   {                                                                                \
+                        e.what(), "") ;                                                             \
+   }                                                                                                \
+   catch(...)                                                                                       \
+   {                                                                                                \
       rstudio::launcher_plugins::logging::logErrorMessage("Unknown exception", "");                 \
    }
 

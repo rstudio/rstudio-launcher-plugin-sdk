@@ -495,13 +495,6 @@ public:
    bool isHidden() const;
 
    /**
-    * @brief Checks whether this file path is a Windows junction.
-    *
-    * @return True if this file path is a Windows junction; false otherwise.
-    */
-   bool isJunction() const;
-
-   /**
     * @brief Checks whether this file path is a regular file.
     *
     * @return True if this file path is a regular file; false otherwise.

@@ -26,16 +26,6 @@
 #include <algorithm>
 #include <fstream>
 
-#ifdef _WIN32
-#include <windows.h>
-
-#include <boost/iostreams/stream.hpp>
-#include <boost/iostreams/device/file_descriptor.hpp>
-#include <boost/system/windows_error.hpp>
-
-#include <shared_core/system/Win32StringUtils.hpp>
-#endif
-
 #define BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/filesystem.hpp>
 #undef BOOST_NO_CXX11_SCOPED_ENUMS
@@ -45,8 +35,9 @@
 #include <boost/bind.hpp>
 #include <boost/make_shared.hpp>
 
-#include <logging/Logger.hpp>
 #include <Error.hpp>
+#include <utils/ErrorUtils.hpp>
+#include <logging/Logger.hpp>
 #include <system/User.hpp>
 
 typedef boost::filesystem::path path_t;
@@ -200,16 +191,7 @@ const std::string s_homePathLeafAlias = "~";
 //   because narrow character paths on Windows can't cover the entire
 //   Unicode space since there is no ANSI code page for UTF-8.
 // - On non-Windows, we use Filesystem v3.
-#ifdef _WIN32
-
-#define BOOST_FS_STRING(path) toString((path).generic_wstring())
-#define BOOST_FS_PATH2STR(path) toString((path).generic_wstring())
-#define BOOST_FS_PATH2STRNATIVE(path) toString((path).wstring())
-#define BOOST_FS_COMPLETE(p, base) boost::filesystem::absolute(fromString(p), base)
-typedef boost::filesystem::directory_iterator dir_iterator;
-typedef boost::filesystem::recursive_directory_iterator recursive_dir_iterator;
-
-#elif defined(BOOST_FILESYSTEM_VERSION) && BOOST_FILESYSTEM_VERSION != 2
+#if defined(BOOST_FILESYSTEM_VERSION) && BOOST_FILESYSTEM_VERSION != 2
 
 #define BOOST_FS_STRING(path) ((path).generic_string())
 #define BOOST_FS_PATH2STR(path) ((path).generic_string())
@@ -222,29 +204,6 @@ typedef boost::filesystem::recursive_directory_iterator recursive_dir_iterator;
 #error FilePath requires Filesystem v3
 #endif
 
-#ifdef _WIN32
-
-// For Windows only, we need to use the wide character versions of the file
-// APIs in order to deal properly with characters that cannot be represented
-// in the default system encoding. (It would be preferable if UTF-8 were the
-// system encoding, but Windows doesn't support that.) However, we can't give
-// FilePath a wide character API because Mac needs to use narrow characters
-// (see note below). So we use wstring internally, and translate to/from UTF-8
-// narrow strings that are used in the API.
-
-typedef std::wstring internal_string;
-
-std::string toString(const internal_string& value)
-{
-   return string_utils::wideToUtf8(value);
-}
-
-internal_string fromString(const std::string& value)
-{
-   return string_utils::utf8ToWide(value);
-}
-
-#else
 
 // We only support running with UTF-8 codeset on Mac and Linux, so
 // strings are a passthrough.
@@ -255,8 +214,6 @@ inline internal_string fromString(const std::string& in_value)
 {
    return in_value;
 }
-
-#endif
 
 void addErrorProperties(path_t path, Error* pError)
 {
@@ -289,7 +246,7 @@ void logError(path_t path,
               const boost::filesystem::filesystem_error& e,
               const ErrorLocation& errorLocation)
 {
-   Error error(e.code(), errorLocation);
+   Error error = utils::createErrorFromBoostError(e.code(), errorLocation);
    addErrorProperties(path, &error);
    logging::logError(error, errorLocation);
 }
@@ -324,13 +281,6 @@ FilePath::FilePath(const std::string& in_absolutePath) :
    m_impl(new Impl(fromString(std::string(in_absolutePath.c_str())))) // thwart ref-count
 {
 }
-
-#ifdef _WIN32
-FilePath::FilePath(const std::wstring& absolutePath)
-   : m_impl(new Impl(absolutePath)) // thwart ref-count
-{
-}
-#endif
 
 bool FilePath::operator==(const FilePath& in_other) const
 {
@@ -436,16 +386,12 @@ FilePath FilePath::safeCurrentPath(const FilePath& in_revertToPath)
 {
    try
    {
-#ifdef _WIN32
-      return FilePath(boost::filesystem::current_path().wstring());
-#else
       return FilePath(boost::filesystem::current_path().string());
-#endif
    }
    catch(const boost::filesystem::filesystem_error& e)
    {
       if (e.code() != boost::system::errc::no_such_file_or_directory)
-         logging::logError(Error(e.code(), ERROR_LOCATION));
+         logging::logError(utils::createErrorFromBoostError(e.code(), ERROR_LOCATION));
    }
    CATCH_UNEXPECTED_EXCEPTION
 
@@ -478,7 +424,7 @@ Error FilePath::tempFilePath(const std::string& in_extension, FilePath& out_file
    }
    catch (const filesystem_error& e)
    {
-      return Error(e.code(), ERROR_LOCATION);
+      return utils::createErrorFromBoostError(e.code(), ERROR_LOCATION);
    }
 
    // keep compiler happy
@@ -504,7 +450,7 @@ Error FilePath::uniqueFilePath(const std::string& in_basePath, const std::string
    }
    catch(const filesystem_error& e)
    {
-      return Error(e.code(), ERROR_LOCATION);
+      return utils::createErrorFromBoostError(e.code(), ERROR_LOCATION);
    }
 
    // keep compiler happy
@@ -561,7 +507,7 @@ Error FilePath::completeChildPath(const std::string& in_filePath, FilePath& out_
    {
       out_childPath = *this;
 
-      Error error(e.code(), ERROR_LOCATION);
+      Error error = utils::createErrorFromBoostError(e.code(), ERROR_LOCATION);
       addErrorProperties(m_impl->Path, &error);
       error.addProperty("path", in_filePath);
       return error;
@@ -585,7 +531,7 @@ FilePath FilePath::completePath(const std::string& in_filePath) const
    }
    catch(const boost::filesystem::filesystem_error& e)
    {
-      Error error(e.code(), ERROR_LOCATION);
+      Error error = utils::createErrorFromBoostError(e.code(), ERROR_LOCATION);
       addErrorProperties(m_impl->Path, &error);
       error.addProperty("path", in_filePath);
       logging::logError(error);
@@ -602,7 +548,7 @@ Error FilePath::copy(const FilePath& in_targetPath) const
    }
    catch(const boost::filesystem::filesystem_error& e)
    {
-      Error error(e.code(), ERROR_LOCATION);
+      Error error = utils::createErrorFromBoostError(e.code(), ERROR_LOCATION);
       addErrorProperties(m_impl->Path, &error);
       error.addProperty("target-path", in_targetPath.getAbsolutePath());
       return error;
@@ -632,7 +578,7 @@ Error FilePath::createDirectory(const std::string& in_filePath) const
    }
    catch(const boost::filesystem::filesystem_error& e)
    {
-      Error error(e.code(), ERROR_LOCATION);
+      Error error = utils::createErrorFromBoostError(e.code(), ERROR_LOCATION);
       addErrorProperties(m_impl->Path, &error);
       error.addProperty("target-dir", in_filePath);
       return error;
@@ -696,16 +642,6 @@ std::string FilePath::getAbsolutePathNative() const
       return BOOST_FS_PATH2STRNATIVE(m_impl->Path);
 }
 
-#ifdef _WIN32
-std::wstring FilePath::getAbsolutePathW() const
-{
-   if (isEmpty())
-      return std::wstring();
-   else
-      return m_impl->Path.wstring();
-}
-#endif
-
 std::string FilePath::getCanonicalPath() const
 {
    if (isEmpty())
@@ -733,7 +669,7 @@ Error FilePath::getChildren(std::vector<FilePath>& out_filePaths) const
    }
    catch(const boost::filesystem::filesystem_error& e)
    {
-      Error error(e.code(), ERROR_LOCATION);
+      Error error = utils::createErrorFromBoostError(e.code(), ERROR_LOCATION);
       addErrorProperties(m_impl->Path, &error);
       return error;
    }
@@ -764,7 +700,7 @@ Error FilePath::getChildrenRecursive(const RecursiveIterationFunction& in_iterat
    }
    catch(const boost::filesystem::filesystem_error& e)
    {
-      Error error(e.code(), ERROR_LOCATION);
+      Error error = utils::createErrorFromBoostError(e.code(), ERROR_LOCATION);
       addErrorProperties(m_impl->Path, &error);
       return error;
    }
@@ -836,7 +772,7 @@ FilePath FilePath::getParent() const
    }
    catch(const boost::filesystem::filesystem_error& e)
    {
-      Error error(e.code(), ERROR_LOCATION);
+      Error error = utils::createErrorFromBoostError(e.code(), ERROR_LOCATION);
       addErrorProperties(m_impl->Path, &error);
       logging::logError(error);
       return *this;
@@ -863,11 +799,7 @@ uintmax_t FilePath::getSize() const
    }
    catch(const boost::filesystem::filesystem_error& e)
    {
-#ifdef _WIN32
-      if (e.code().value() == ERROR_NOT_SUPPORTED)
-         return 0;
-#endif
-      Error err = Error(e.code(), ERROR_LOCATION);
+      Error err = utils::createErrorFromBoostError(e.code(), ERROR_LOCATION);
       err.addProperty("path", getAbsolutePath());
       logging::logError(err);
       return 0;
@@ -917,11 +849,7 @@ bool FilePath::isDirectory() const
          return false;
       else
       {
-         return boost::filesystem::is_directory(m_impl->Path)
-#ifdef _WIN32
-            || isJunction()
-#endif
-            ;
+         return boost::filesystem::is_directory(m_impl->Path);
       }
    }
    catch(const boost::filesystem::filesystem_error& e)
@@ -948,7 +876,7 @@ bool FilePath::isEquivalentTo(const FilePath& in_other) const
    }
    catch(const boost::filesystem::filesystem_error& e)
    {
-      Error error(e.code(), ERROR_LOCATION);
+      Error error = utils::createErrorFromBoostError(e.code(), ERROR_LOCATION);
       addErrorProperties(m_impl->Path, &error);
       error.addProperty("equivalent-to", in_other);
       return false;
@@ -958,32 +886,6 @@ bool FilePath::isEquivalentTo(const FilePath& in_other) const
 bool FilePath::isHidden() const
 {
    return !getFilename().empty() && (getFilename()[0] == '.');
-}
-
-bool FilePath::isJunction() const
-{
-#ifndef _WIN32
-   return false;
-#else
-   if (!exists())
-      return false;
-
-   const wchar_t* path = m_impl->Path.c_str();
-   DWORD fa = GetFileAttributesW(path);
-   if (fa == INVALID_FILE_ATTRIBUTES)
-   {
-      return false;
-   }
-   if (fa & FILE_ATTRIBUTE_REPARSE_POINT &&
-       fa & FILE_ATTRIBUTE_DIRECTORY)
-   {
-      return true;
-   }
-   else
-   {
-      return false;
-   }
-#endif
 }
 
 bool FilePath::isRegularFile() const
@@ -1065,7 +967,7 @@ Error FilePath::makeCurrentPath(bool in_autoCreate) const
    }
    catch(const boost::filesystem::filesystem_error& e)
    {
-      Error error(e.code(), ERROR_LOCATION);
+      Error error = utils::createErrorFromBoostError(e.code(), ERROR_LOCATION);
       addErrorProperties(m_impl->Path, &error);
       return error;
    }
@@ -1087,7 +989,7 @@ Error FilePath::move(const FilePath& in_targetPath, MoveType in_type) const
          // device to another; in this case, fall back to copy/delete
          return moveIndirect(in_targetPath);
       }
-      Error error(e.code(), ERROR_LOCATION);
+      Error error= utils::createErrorFromBoostError(e.code(), ERROR_LOCATION);
       addErrorProperties(m_impl->Path, &error);
       error.addProperty("target-path", in_targetPath.getAbsolutePath());
       return error;
@@ -1121,27 +1023,7 @@ Error FilePath::openForRead(std::shared_ptr<std::istream>& out_stream) const
    try
    {
       std::istream* pResult = nullptr;
-#ifdef _WIN32
-      using namespace boost::iostreams;
-      HANDLE hFile = ::CreateFileW(m_impl->Path.wstring().c_str(),
-                                   GENERIC_READ,
-                                   FILE_SHARE_READ,
-                                   nullptr,
-                                   OPEN_EXISTING,
-                                   0,
-                                   nullptr);
-      if (hFile == INVALID_HANDLE_VALUE)
-      {
-         Error error = LAST_SYSTEM_ERROR();
-         error.addProperty("path", getAbsolutePath());
-         return error;
-      }
-      boost::iostreams::file_descriptor_source fd;
-      fd.open(hFile, boost::iostreams::close_handle);
-      pResult = new boost::iostreams::stream<file_descriptor_source>(fd);
-#else
       pResult = new std::ifstream(getAbsolutePath().c_str(), std::ios_base::in | std::ios_base::binary);
-#endif
 
       // In case we were able to make the stream but it failed to open
       if (!(*pResult))
@@ -1172,25 +1054,6 @@ Error FilePath::openForWrite(std::shared_ptr<std::ostream>& out_stream, bool in_
    try
    {
       std::ostream* pResult = nullptr;
-#ifdef _WIN32
-      using namespace boost::iostreams;
-      HANDLE hFile = ::CreateFileW(m_impl->Path.wstring().c_str(),
-                                   in_truncate ? GENERIC_WRITE : FILE_APPEND_DATA,
-                                   0, // exclusive access
-                                   nullptr,
-                                   in_truncate ? CREATE_ALWAYS : OPEN_ALWAYS,
-                                   0,
-                                   nullptr);
-      if (hFile == INVALID_HANDLE_VALUE)
-      {
-         Error error = LAST_SYSTEM_ERROR();
-         error.addProperty("path", getAbsolutePath());
-         return error;
-      }
-      file_descriptor_sink fd;
-      fd.open(hFile, close_handle);
-      pResult = new boost::iostreams::stream<file_descriptor_sink>(fd);
-#else
       using std::ios_base;
       ios_base::openmode flags = ios_base::out | ios_base::binary;
       if (in_truncate)
@@ -1198,7 +1061,6 @@ Error FilePath::openForWrite(std::shared_ptr<std::ostream>& out_stream, bool in_
       else
          flags |= ios_base::app;
       pResult = new std::ofstream(getAbsolutePath().c_str(), flags);
-#endif
 
       if (!(*pResult))
       {
@@ -1235,7 +1097,7 @@ Error FilePath::remove() const
    }
    catch(const boost::filesystem::filesystem_error& e)
    {
-      Error error(e.code(), ERROR_LOCATION);
+      Error error = utils::createErrorFromBoostError(e.code(), ERROR_LOCATION);
       addErrorProperties(m_impl->Path, &error);
       return error;
    }
@@ -1355,11 +1217,7 @@ std::ostream& operator<<(std::ostream& io_stream, const FilePath& in_filePath)
 
 Error fileExistsError(const ErrorLocation& in_location)
 {
-#ifdef _WIN32
-   return systemError(boost::system::windows_error::file_exists, in_location);
-#else
    return systemError(boost::system::errc::file_exists, in_location);
-#endif
 }
 
 Error fileExistsError(const FilePath& in_filePath, const ErrorLocation& in_location)
@@ -1371,20 +1229,12 @@ Error fileExistsError(const FilePath& in_filePath, const ErrorLocation& in_locat
 
 bool isFileNotFoundError(const Error& in_error)
 {
-#ifdef _WIN32
-   return in_error == boost::system::windows_error::file_not_found;
-#else
    return in_error == systemError(boost::system::errc::no_such_file_or_directory, ErrorLocation());
-#endif
 }
 
 Error fileNotFoundError(const ErrorLocation& in_location)
 {
-#ifdef _WIN32
-   return systemError(boost::system::windows_error::file_not_found, in_location);
-#else
    return systemError(boost::system::errc::no_such_file_or_directory, in_location);
-#endif
 }
 
 Error fileNotFoundError(const std::string& in_filePath, const ErrorLocation& in_location)
@@ -1403,20 +1253,12 @@ Error fileNotFoundError(const FilePath& in_filePath, const ErrorLocation& in_loc
 
 bool isPathNotFoundError(const Error& in_error)
 {
-#ifdef _WIN32
-   return in_error == boost::system::windows_error::path_not_found;
-#else
    return in_error == systemError(boost::system::errc::no_such_file_or_directory, ErrorLocation());
-#endif
 }
 
 Error pathNotFoundError(const ErrorLocation& in_location)
 {
-#ifdef _WIN32
-   return systemError(boost::system::windows_error::path_not_found, in_location);
-#else
    return systemError(boost::system::errc::no_such_file_or_directory, in_location);
-#endif
 }
 
 Error pathNotFoundError(const std::string& in_path, const ErrorLocation& in_location)
@@ -1428,12 +1270,7 @@ Error pathNotFoundError(const std::string& in_path, const ErrorLocation& in_loca
 
 bool isNotFoundError(const Error& in_error)
 {
-#ifdef _WIN32
-   return in_error == boost::system::windows_error::file_not_found ||
-          in_error == boost::system::windows_error::path_not_found;
-#else
    return in_error == systemError(boost::system::errc::no_such_file_or_directory, ErrorLocation());
-#endif
 }
 
 } // namespace system

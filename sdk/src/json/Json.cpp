@@ -30,6 +30,7 @@
 #include <boost/system/error_code.hpp>
 
 #include <Error.hpp>
+#include <utils/ErrorUtils.hpp>
 
 #include "json/rapidjson/document.h"
 #include "json/rapidjson/stringbuffer.h"
@@ -119,7 +120,7 @@ const boost::system::error_category& jsonPointerParseCategory()
 
 const char* JsonParseErrorCategory::name() const BOOST_NOEXCEPT
 {
-   return "json-parse";
+   return "JsonParseError";
 }
 
 std::string JsonParseErrorCategory::message(int ev) const
@@ -129,7 +130,7 @@ std::string JsonParseErrorCategory::message(int ev) const
 
 const char* JsonPointerParseErrorCategory::name() const BOOST_NOEXCEPT
 {
-   return "json-pointer-parse";
+   return "JsonPointerParseError";
 }
 
 std::string JsonPointerParseErrorCategory::message(int ev) const
@@ -392,7 +393,7 @@ Error Value::coerce(const std::string& in_schema,
    rapidjson::ParseResult result = sd.Parse(in_schema.c_str());
    if (result.IsError())
    {
-      error = Error(result.Code(), ERROR_LOCATION);
+      error = utils::createErrorFromBoostError(result.Code(), ERROR_LOCATION);
       error.addProperty("offset", result.Offset());
       return error;
    }
@@ -412,7 +413,7 @@ Error Value::coerce(const std::string& in_schema,
       {
          // If this is the same as the last invalid piece we tried to remove, then removing
          // it didn't actually fix the problem.
-         error = Error(rapidjson::kParseErrorUnspecificSyntaxError, ERROR_LOCATION);
+         error = utils::createErrorFromBoostError(rapidjson::kParseErrorUnspecificSyntaxError, ERROR_LOCATION);
          error.addProperty("keyword", validator.GetInvalidSchemaKeyword());
          invalid.StringifyUriFragment(sb);
          error.addProperty("document", sb.GetString());
@@ -660,7 +661,7 @@ Error Value::parse(const char* in_jsonStr)
    if (result.IsError())
    {
       std::string message = "An error occurred while parsing json. Offset: " + std::to_string(result.Offset());
-      return Error(result.Code(), message, ERROR_LOCATION);
+      return utils::createErrorFromBoostError(result.Code(), message, ERROR_LOCATION);
    }
 
    return Success();
@@ -688,7 +689,7 @@ Error Value::setValueAtPointerPath(const std::string& in_pointerPath,
    JsonPointer pointer(in_pointerPath.c_str());
    if (!pointer.IsValid())
    {
-      Error error(pointer.GetParseErrorCode(), ERROR_LOCATION);
+      Error error = utils::createErrorFromBoostError(pointer.GetParseErrorCode(), ERROR_LOCATION);
       error.addProperty("offset", pointer.GetParseErrorOffset());
       return error;
    }
@@ -706,7 +707,7 @@ Error Value::validate(const std::string& in_schema) const
    rapidjson::ParseResult result = sd.Parse(in_schema.c_str());
    if (result.IsError())
    {
-      error = Error(result.Code(), ERROR_LOCATION);
+      error = utils::createErrorFromBoostError(result.Code(), ERROR_LOCATION);
       error.addProperty("offset", result.Offset());
       return error;
    }
@@ -717,7 +718,7 @@ Error Value::validate(const std::string& in_schema) const
    if (!m_impl->Document->Accept(validator))
    {
       rapidjson::StringBuffer sb;
-      error = Error(rapidjson::kParseErrorUnspecificSyntaxError, ERROR_LOCATION);
+      error = utils::createErrorFromBoostError(rapidjson::kParseErrorUnspecificSyntaxError, ERROR_LOCATION);
       validator.GetInvalidSchemaPointer().StringifyUriFragment(sb);
       error.addProperty("schema", sb.GetString());
       error.addProperty("keyword", validator.GetInvalidSchemaKeyword());
@@ -896,7 +897,7 @@ Error Object::getSchemaDefaults(const std::string& in_schema, Object& out_schema
       return error;
 
    if (!schema.isObject())
-      return Error(rapidjson::kParseErrorValueInvalid, ERROR_LOCATION);
+      return utils::createErrorFromBoostError(rapidjson::kParseErrorValueInvalid, ERROR_LOCATION);
 
    out_schemaDefaults = ::rstudio::launcher_plugins::json::getSchemaDefaults(schema.getObject());
    return Success();
