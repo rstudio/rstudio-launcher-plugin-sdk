@@ -44,7 +44,7 @@ struct Response::Impl
    Impl(Type in_responseType, uint64_t in_requestId) :
       ResponseType(static_cast<int>(in_responseType)),
       RequestId(in_requestId),
-      ResponseId(NEXT_RESPONSE_ID.fetch_add(1))
+      ResponseId((in_responseType == Type::HEARTBEAT) ? 0 : NEXT_RESPONSE_ID.fetch_add(1))
    {
    }
 
