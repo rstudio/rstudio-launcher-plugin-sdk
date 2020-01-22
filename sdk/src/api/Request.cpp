@@ -81,15 +81,17 @@ Error requestError(RequestError in_errorCode, const std::string& in_details, con
    return requestError(in_errorCode, in_details, Success(), in_errorLocation);
 }
 
-}
+} // anonymous namespace
 
 // Request =============================================================================================================
 struct Request::Impl
 {
    /**
     * @brief Constructor.
+    *
+    * @param in_requestType     The type of this request.
     */
-   Impl(Type in_requestType) :
+   explicit Impl(Type in_requestType) :
       Id(0),
       RequestType(in_requestType),
       IsValid(true)
