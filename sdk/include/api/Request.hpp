@@ -77,6 +77,11 @@ public:
    };
 
    /**
+    * @brief Virtual destructor for inheritance.
+    */
+   virtual ~Request() = default;
+
+   /**
     * @brief Converts a Json::Object into the appropriate Request object.
     *
     * @param in_requestJson     The json object which represents a request from the Launcher.
