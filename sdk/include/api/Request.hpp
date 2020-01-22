@@ -57,6 +57,8 @@ class Request
    /**
     * @enum Type
     * @brief Enum which represents the type of request.
+    *
+    * The last enum value, INVALID, must always be the last value and is used to validate the received request.
     */
    enum class Type : unsigned int
    {
@@ -70,6 +72,7 @@ class Request
       GET_JOB_RESOURCE_UTIL   = 7,
       GET_JOB_NETWORK         = 8,
       GET_CLUSTER_INFO        = 9,
+      INVALID
    };
 
    /**

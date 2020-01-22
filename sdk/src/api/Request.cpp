@@ -24,18 +24,69 @@
 #include <api/Request.hpp>
 
 #include <Error.hpp>
+#include <json/Json.hpp>
+#include <json/JsonUtils.hpp>
+#include <logging/Logger.hpp>
 #include <system/User.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
 namespace api {
 
+namespace {
+
+constexpr char const * FIELD_MESSAGE_TYPE = "messageType";
+constexpr char const * FIELD_REQUEST_ID = "requestId";
+constexpr char const * FIELD_USERNAME = "username";
+constexpr char const * FIELD_REQUEST_USERNAME = "requestUsername";
+
+enum class RequestError
+{
+   SUCCESS = 0,
+   INVALID_REQUEST_TYPE = 1,
+};
+
+Error requestError(
+   RequestError in_errorCode,
+   const std::string& in_details,
+   const Error& in_cause,
+   const ErrorLocation& in_errorLocation)
+{
+   std::string message;
+
+   switch (in_errorCode)
+   {
+      case RequestError::INVALID_REQUEST_TYPE:
+      {
+         message.append("Invalid request type received from launcher");
+         break;
+      }
+      case RequestError::SUCCESS:
+         return Success();
+   }
+
+   message.append(in_details.empty() ? "." : ": " + in_details + ".");
+
+   if (in_cause == Success())
+      return Error("RequestError", static_cast<int>(in_errorCode), message, in_errorLocation);
+
+   return Error("RequestError", static_cast<int>(in_errorCode), message, in_cause, in_errorLocation);
+}
+
+Error requestError(RequestError in_errorCode, const std::string& in_details, const ErrorLocation& in_errorLocation)
+{
+   return requestError(in_errorCode, in_details, Success(), in_errorLocation);
+}
+
+}
+
+// Request =============================================================================================================
 struct Request::Impl
 {
    Impl() :
       Id(0),
       RequestType(Type::HEARTBEAT),
-      Valid(false)
+      IsValid(false)
    {
    }
 
@@ -43,7 +94,7 @@ struct Request::Impl
    std::string RequestUsername;
    Type RequestType;
    system::User User;
-   bool Valid;
+   bool IsValid;
 };
 
 PRIVATE_IMPL_DELETER_IMPL(Request)
@@ -76,6 +127,58 @@ const system::User& Request::getUser() const
 Request::Request(const json::Object& in_requestJson) :
    m_baseImpl(new Impl())
 {
+   int messageType;
+   Error error = json::readObject(
+      in_requestJson,
+      FIELD_MESSAGE_TYPE,
+      messageType,
+      FIELD_REQUEST_ID,
+      m_baseImpl->Id);
+
+   if (error)
+   {
+      logging::logError(error);
+      m_baseImpl->IsValid = false;
+      return;
+   }
+
+   if (messageType >= static_cast<int>(Type::INVALID))
+   {
+      logging::logError(
+         requestError(
+            RequestError::INVALID_REQUEST_TYPE,
+            std::to_string(messageType), ERROR_LOCATION));
+      m_baseImpl->IsValid = false;
+      return;
+   }
+
+   // Username is not required for all request types.
+   std::string username;
+   error = json::readObject(in_requestJson, FIELD_USERNAME, username);
+   if (error && !json::isMissingMemberError(error))
+   {
+      logging::logError(error);
+      m_baseImpl->IsValid = false;
+      return;
+   }
+   else if (!error)
+   {
+      error = system::User::getUserFromIdentifier(username, m_baseImpl->User);
+      if (error)
+      {
+         logging::logError(error);
+         m_baseImpl->IsValid = false;
+         return;
+      }
+   }
+
+   // Request username is not required for all request types.
+   error = json::readObject(in_requestJson, FIELD_REQUEST_USERNAME, m_baseImpl->RequestUsername);
+   if (error && !json::isMissingMemberError(error))
+   {
+      logging::logError(error);
+      m_baseImpl->IsValid = false;
+   }
 }
 
 Request::Request() :
