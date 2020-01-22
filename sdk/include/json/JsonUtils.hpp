@@ -85,7 +85,7 @@ template <typename T>
 Error readObject(const Object& in_object, const std::string& in_name, T& out_value)
 {
    Object::Iterator itr = in_object.find(in_name);
-   if (itr != in_object.end())
+   if (itr == in_object.end())
       return jsonReadError(
          JsonReadError::MISSING_MEMBER,
          "Member " + in_name + " does not exist in the specified JSON object.",
@@ -121,7 +121,7 @@ template <typename T>
 Error readObject(const Object& in_object, const std::string& in_name, std::vector<T>& out_values)
 {
    Object::Iterator itr = in_object.find(in_name);
-   if (itr != in_object.end())
+   if (itr == in_object.end())
       return jsonReadError(
          JsonReadError::MISSING_MEMBER,
          "Member " + in_name + " does not exist in the specified JSON object.",
