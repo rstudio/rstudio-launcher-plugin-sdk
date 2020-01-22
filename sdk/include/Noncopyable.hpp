@@ -22,8 +22,8 @@
  */
 
 
-#ifndef LAUNCHER_PLUGINS_NONCOPYABLE
-#define LAUNCHER_PLUGINS_NONCOPYABLE
+#ifndef LAUNCHER_PLUGINS_NONCOPYABLE_HPP
+#define LAUNCHER_PLUGINS_NONCOPYABLE_HPP
 
 namespace rstudio {
 namespace launcher_plugins {
