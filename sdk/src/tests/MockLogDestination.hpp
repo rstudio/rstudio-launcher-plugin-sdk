@@ -132,6 +132,31 @@ private:
    std::queue<LogRecord> m_records;
 };
 
+/** Typedef for a shared_ptr to a MockLogDestination. */
+typedef std::shared_ptr<MockLogDestination> MockLogPtr;
+
+/**
+ * @brief Function which either initializes or clears and then returns a MockLogDestination.
+ *
+ * @return The clean MockLogDestination.
+ */
+MockLogPtr getMockLogDest()
+{
+   static MockLogPtr logDest(new MockLogDestination());
+   static bool added = false;
+
+   if (!added)
+   {
+      logging::addLogDestination(logDest);
+      added = true;
+   }
+
+   // Clear out any old logs.
+   while (logDest->getSize() > 0) logDest->pop();
+
+   return logDest;
+}
+
 } // namespace logging
 } // namespace launcher_plugins
 } // namespace rstudio

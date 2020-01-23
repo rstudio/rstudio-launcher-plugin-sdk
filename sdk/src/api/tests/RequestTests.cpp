@@ -35,29 +35,10 @@ namespace launcher_plugins {
 namespace api {
 
 using namespace logging;
-typedef std::shared_ptr<MockLogDestination> LogPtr;
-
-LogPtr getLogDest()
-{
-   static LogPtr logDest(new MockLogDestination());
-   static bool added = false;
-
-   if (!added)
-   {
-      logging::addLogDestination(logDest);
-      added = true;
-   }
-
-   // Clear out any old logs.
-   while (logDest->getSize() > 0) logDest->pop();
-
-   return logDest;
-}
-
 
 TEST_CASE("Parse valid bootstrap request")
 {
-   LogPtr logDest = getLogDest();
+   MockLogPtr logDest = getMockLogDest();
 
    json::Object versionObj;
    versionObj.insert(FIELD_VERSION_MAJOR, json::Value(2));
@@ -87,7 +68,7 @@ TEST_CASE("Parse valid bootstrap request")
 
 TEST_CASE("Parse invalid bootstrap request")
 {
-   LogPtr logDest = getLogDest();
+   MockLogPtr logDest = getMockLogDest();
 
    json::Object versionObj;
    versionObj.insert(FIELD_VERSION_MAJOR, json::Value(2));
@@ -122,7 +103,7 @@ TEST_CASE("Parse invalid request - missing message type")
 
 TEST_CASE("Parse invalid request - missing request request ID")
 {
-   LogPtr logDest = getLogDest();
+   MockLogPtr logDest = getMockLogDest();
    json::Object requestObj;
    requestObj.insert(FIELD_MESSAGE_TYPE, json::Value(static_cast<int>(Request::Type::BOOTSTRAP)));
 
@@ -141,7 +122,7 @@ TEST_CASE("Parse invalid request - missing request request ID")
 
 TEST_CASE("Parse invalid request - negative message type")
 {
-   LogPtr logDest = getLogDest();
+   MockLogPtr logDest = getMockLogDest();
    json::Object requestObj;
    requestObj.insert(FIELD_MESSAGE_TYPE, json::Value(-4));
    requestObj.insert(FIELD_REQUEST_ID, json::Value(6));
@@ -156,7 +137,7 @@ TEST_CASE("Parse invalid request - negative message type")
 
 TEST_CASE("Parse invalid request - message type too large")
 {
-   LogPtr logDest = getLogDest();
+   MockLogPtr logDest = getMockLogDest();
    json::Object requestObj;
    requestObj.insert(FIELD_MESSAGE_TYPE, json::Value(568));
    requestObj.insert(FIELD_REQUEST_ID, json::Value(6));
