@@ -123,11 +123,11 @@ protected:
 
 private:
    /**
-    * @brief Sends the formatted response to the RStudio Launcher via implementation specific communication method.
+    * @brief Writes the formatted response to the RStudio Launcher via implementation specific communication method.
     *
     * @param in_responseMessage     The formatted response to send to the RStudio Launcher.
     */
-   virtual void sendResponse(const std::string& in_responseMessage) = 0;
+   virtual void writeResponse(const std::string& in_responseMessage) = 0;
 
    // The private implementation of AbstractCommunicator.
    PRIVATE_IMPL(m_baseImpl);

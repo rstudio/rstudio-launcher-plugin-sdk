@@ -74,7 +74,7 @@ void AbstractCommunicator::registerRequestHandler(
 void AbstractCommunicator::sendResponse(const api::Response& in_response)
 {
    std::string message = m_baseImpl->MsgHandler.formatMessage(in_response.asJson().write());
-   sendResponse(message);
+   writeResponse(message);
 }
 
 Error AbstractCommunicator::start()
