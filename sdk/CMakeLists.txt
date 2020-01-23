@@ -34,6 +34,7 @@ set(RLPS_SOURCE_FILES
    src/api/Constants.cpp
    src/api/Request.cpp
    src/api/Response.cpp
+   src/comms/AbstractCommunicator.cpp
    src/comms/MessageHandler.cpp
    src/json/Json.cpp
    src/json/JsonUtils.cpp
