@@ -49,9 +49,9 @@ struct AbstractCommunicator::Impl
     * @param in_onError             Error handler to allow the creator of this communicator to receive communications
     *                               errors.
     */
-   explicit Impl(size_t in_maxMessageSize, const ErrorHandler& in_onError) :
+   explicit Impl(size_t in_maxMessageSize, ErrorHandler in_onError) :
       MsgHandler(in_maxMessageSize),
-      OnError(in_onError)
+      OnError(std::move(in_onError))
    {
    }
 
