@@ -24,6 +24,7 @@
 #include "AbstractCommunicator.hpp"
 
 #include <map>
+#include <sstream>
 
 #include <Error.hpp>
 #include <api/Response.hpp>
@@ -72,9 +73,9 @@ void AbstractCommunicator::registerRequestHandler(
 {
    if (m_baseImpl->RequestHandlers.find(in_requestType) != m_baseImpl->RequestHandlers.end())
    {
-      std::string message = "Overwriting existing request handler for request type " +
-         std::to_string(static_cast<int>(in_requestType)) + ".";
-      logging::logDebugMessage(message, ERROR_LOCATION);
+      std::ostringstream msgStream;
+      msgStream << "Overwriting existing request handler for request type " << in_requestType << ".";
+      logging::logDebugMessage(msgStream.str(), ERROR_LOCATION);
    }
 
    m_baseImpl->RequestHandlers[in_requestType] = in_requestHandler;
@@ -135,10 +136,9 @@ Error AbstractCommunicator::onDataReceived(const char* in_data, size_t in_length
       auto itr = m_baseImpl->RequestHandlers.find(request->getType());
       if (itr == m_baseImpl->RequestHandlers.end())
       {
-         std::string logMessage = "No request handler found for request type " +
-            std::to_string(static_cast<int>(request->getType())) + ".";
-         logging::logDebugMessage(logMessage, ERROR_LOCATION);
-         // TODO: return error?
+         std::ostringstream msgStream;
+         msgStream << "No request handler found for request type " << request->getType() << ".";
+         logging::logDebugMessage(msgStream.str(), ERROR_LOCATION);
       }
       else
       {

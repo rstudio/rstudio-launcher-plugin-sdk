@@ -33,6 +33,7 @@
 #include <api/Response.hpp>
 #include <comms/AbstractCommunicator.hpp>
 #include <json/Json.hpp>
+#include <sstream>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -152,10 +153,14 @@ TEST_CASE("Receive a request for a type that doesn't have a handler")
    MockCommunicator comms;
    Error error = comms.receiveData(convertHeader(requestMsg.size()).append(requestMsg));
 
+
+   std::ostringstream expectedStr;
+   expectedStr << "request type " << api::Request::Type::BOOTSTRAP;
+
    CHECK_FALSE(error);
    REQUIRE(mockLog->getSize() == 1);
    CHECK(mockLog->peek().Level == logging::LogLevel::DEBUG);
-   CHECK(mockLog->pop().Message.find("request type " + std::to_string(bootstrapType)) != std::string::npos);
+   CHECK(mockLog->pop().Message.find(expectedStr.str()) != std::string::npos);
 }
 
 TEST_CASE("Register request handler for same request type")
@@ -198,10 +203,13 @@ TEST_CASE("Register request handler for same request type")
    comms.registerRequestHandler(api::Request::Type::BOOTSTRAP, handler);
    Error error = comms.receiveData(convertHeader(requestMsg.size()).append(requestMsg));
 
+   std::ostringstream expectedStr;
+   expectedStr << "request type " << api::Request::Type::BOOTSTRAP;
+
    CHECK_FALSE(error);
    REQUIRE(mockLog->getSize() == 1);
    CHECK(mockLog->peek().Level == logging::LogLevel::DEBUG);
-   CHECK(mockLog->pop().Message.find("request type " + std::to_string(bootstrapType)) != std::string::npos);
+   CHECK(mockLog->pop().Message.find(expectedStr.str()) != std::string::npos);
 
 }
 

@@ -133,9 +133,11 @@ Error Request::fromJson(const json::Object& in_requestJson, std::shared_ptr<Requ
       }
       default:
       {
+         std::ostringstream osstream;
+         osstream << messageType;
          return requestError(
             RequestError::INVALID_REQUEST_TYPE,
-            std::to_string(messageTypeVal),
+            osstream.str(),
             ERROR_LOCATION);
       }
    }
