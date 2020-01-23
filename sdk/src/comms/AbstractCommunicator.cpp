@@ -45,14 +45,23 @@ struct AbstractCommunicator::Impl
     *
     * @param in_maxMessageSize      The maximum allowable size of a message which can be received from or sent to the
     *                               RStudio Launcher.
+    * @param in_onError             Error handler to allow the creator of this communicator to receive communications
+    *                               errors.
     */
-   explicit Impl(size_t in_maxMessageSize) :
-      MsgHandler(in_maxMessageSize)
+   explicit Impl(size_t in_maxMessageSize, const ErrorHandler& in_onError) :
+      MsgHandler(in_maxMessageSize),
+      OnError(in_onError)
    {
    }
 
+   /** The map of registered request handlers */
    RequestHandlerMap RequestHandlers;
+
+   /** The message handler object which parses and formats messages. */
    MessageHandler MsgHandler;
+
+   /** The error handler function, provided by the communicator creator. */
+   const ErrorHandler OnError;
 };
 
 PRIVATE_IMPL_DELETER_IMPL(AbstractCommunicator)
@@ -88,9 +97,17 @@ void AbstractCommunicator::stop()
    // Eventually this will stop the heartbeat timer.
 }
 
-AbstractCommunicator::AbstractCommunicator(size_t in_maxMessageSize) :
-   m_baseImpl(new Impl(in_maxMessageSize))
+AbstractCommunicator::AbstractCommunicator(size_t in_maxMessageSize, const ErrorHandler& in_onError) :
+   m_baseImpl(new Impl(in_maxMessageSize, in_onError))
 {
+}
+
+void AbstractCommunicator::reportError(const Error& in_error)
+{
+   stop();
+
+   if (m_baseImpl->OnError)
+      m_baseImpl->OnError(in_error);
 }
 
 Error AbstractCommunicator::onDataReceived(const char* in_data, size_t in_length)

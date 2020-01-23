@@ -53,6 +53,11 @@ namespace comms {
 typedef std::function<void(std::shared_ptr<api::Request>)> RequestHandler;
 
 /**
+ * @brief Function which allows the caller to handle communicator errors.
+ */
+typedef std::function<void(const Error&)> ErrorHandler;
+
+/**
  * @brief Base class responsible for communicating the the launcher. The type of communication is implementation
  *        dependent.
  */
@@ -106,8 +111,17 @@ protected:
     *
     * @param in_maxMessageSize      The maximum allowable size of a message which can be received from or sent to the
     *                               RStudio Launcher.
+    * @param in_onError             Error handler to allow the creator of this communicator to receive communications
+    *                               errors.
     */
-   explicit AbstractCommunicator(size_t in_maxMessageSize);
+   AbstractCommunicator(size_t in_maxMessageSize, const ErrorHandler& in_onError);
+
+   /**
+    * @brief Reports an error and stops the communicator.
+    *
+    * @param in_error       The error to report.
+    */
+    void reportError(const Error& in_error);
 
    /**
     * @brief Handles data that is received from the RStudio Launcher.

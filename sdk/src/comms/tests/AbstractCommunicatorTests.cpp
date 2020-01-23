@@ -44,7 +44,7 @@ class MockCommunicator : public AbstractCommunicator
 {
 public:
    explicit MockCommunicator(size_t in_maxMessageSize = 5242880) :
-      AbstractCommunicator(in_maxMessageSize)
+      AbstractCommunicator(in_maxMessageSize, [](const Error&) {})
    {
    }
 
