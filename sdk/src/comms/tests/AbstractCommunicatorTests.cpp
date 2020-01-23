@@ -205,6 +205,49 @@ TEST_CASE("Register request handler for same request type")
 
 }
 
+TEST_CASE("Bad request - not JSON")
+{
+   std::string message = convertHeader(20).append("This message is 20 B");
+
+   MockCommunicator comms;
+   Error error = comms.receiveData(message);
+
+   REQUIRE(error);
+   CHECK(error.getName() == "JsonParseError");
+}
+
+TEST_CASE("Bad request - invalid type")
+{
+   json::Object request;
+   request.insert(api::FIELD_MESSAGE_TYPE, json::Value(-1));
+   request.insert(api::FIELD_REQUEST_ID, json::Value(2));
+
+   std::string message = convertHeader(request.write().size()).append(request.write());
+
+   MockCommunicator comms;
+   Error error = comms.receiveData(message);
+
+   REQUIRE(error);
+   CHECK(error.getName() == "RequestError");
+   CHECK(error.getCode() == 1);
+   CHECK(error.getMessage().find(std::to_string(-1)) != std::string::npos);
+}
+
+TEST_CASE("Bad request - invalid request")
+{
+   json::Object request;
+   request.insert(api::FIELD_MESSAGE_TYPE, json::Value(static_cast<int>(api::Request::Type::BOOTSTRAP)));
+
+   std::string message = convertHeader(request.write().size()).append(request.write());
+
+   MockCommunicator comms;
+   Error error = comms.receiveData(message);
+
+   REQUIRE(error);
+   CHECK(error.getName() == "RequestError");
+   CHECK(error.getCode() == 2);
+}
+
 } // namespace comms
 } // namespace launcher_plugins
 } // namespace rstudio
