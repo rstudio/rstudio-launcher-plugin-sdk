@@ -158,6 +158,53 @@ TEST_CASE("Receive a request for a type that doesn't have a handler")
    CHECK(mockLog->pop().Message.find("request type " + std::to_string(bootstrapType)) != std::string::npos);
 }
 
+TEST_CASE("Register request handler for same request type")
+{
+   logging::MockLogPtr mockLog = logging::getMockLogDest();
+
+   int bootstrapType = static_cast<int>(api::Request::Type::BOOTSTRAP);
+
+   json::Object version;
+   version.insert(api::FIELD_VERSION_MAJOR, json::Value(5));
+   version.insert(api::FIELD_VERSION_MINOR, json::Value(99));
+   version.insert(api::FIELD_VERSION_PATCH, json::Value(26));
+
+   json::Object requestObj;
+   requestObj.insert(api::FIELD_VERSION, version);
+   requestObj.insert(api::FIELD_REQUEST_ID, json::Value(33));
+   requestObj.insert(api::FIELD_MESSAGE_TYPE, json::Value(bootstrapType));
+   std::string requestMsg = requestObj.write();
+
+   RequestHandler badHandler = [](std::shared_ptr<api::Request>)
+   {
+      CHECK(false);
+   };
+
+   RequestHandler handler = [](std::shared_ptr<api::Request> in_request)
+   {
+      REQUIRE(in_request != nullptr);
+      CHECK(in_request->getId() == 33);
+      REQUIRE(in_request->getType() == api::Request::Type::BOOTSTRAP);
+
+      api::BootstrapRequest* bootstrapRequest = dynamic_cast<api::BootstrapRequest*>(in_request.get());
+      REQUIRE(bootstrapRequest != nullptr);
+      CHECK(bootstrapRequest->getMajorVersion() == 5);
+      CHECK(bootstrapRequest->getMinorVersion() == 99);
+      CHECK(bootstrapRequest->getPatchNumber() == 26);
+   };
+
+   MockCommunicator comms;
+   comms.registerRequestHandler(api::Request::Type::BOOTSTRAP, badHandler);
+   comms.registerRequestHandler(api::Request::Type::BOOTSTRAP, handler);
+   Error error = comms.receiveData(convertHeader(requestMsg.size()).append(requestMsg));
+
+   CHECK_FALSE(error);
+   REQUIRE(mockLog->getSize() == 1);
+   CHECK(mockLog->peek().Level == logging::LogLevel::DEBUG);
+   CHECK(mockLog->pop().Message.find("request type " + std::to_string(bootstrapType)) != std::string::npos);
+
+}
+
 } // namespace comms
 } // namespace launcher_plugins
 } // namespace rstudio
