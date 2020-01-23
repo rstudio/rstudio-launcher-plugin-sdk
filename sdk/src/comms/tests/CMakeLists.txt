@@ -29,6 +29,20 @@ include_directories(
    ../../tests
 )
 
+# Abstract Communicator Tests
+add_executable(rlps-abstract-communicator-tests
+   ${RLPS_COMMS_TEST_MAIN}
+   AbstractCommunicatorTests.cpp
+   ${RLPS_HEADER_FILES}
+   )
+
+target_link_libraries(rlps-abstract-communicator-tests
+   rstudio-launcher-plugin-sdk-lib
+   ${RLPS_BOOST_LIBS}
+   )
+
+
+# Message Handler Tests
 add_executable(rlps-message-handler-tests
    ${RLPS_COMMS_TEST_MAIN}
    MessageHandlerTests.cpp
