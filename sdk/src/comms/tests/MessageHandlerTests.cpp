@@ -36,7 +36,7 @@ namespace comms {
 
 namespace {
 
-static const size_t MESSAGE_HEADER_SIZE = 4;
+const size_t MESSAGE_HEADER_SIZE = 4;
 
 std::string convertHeader(size_t payloadSize)
 {
