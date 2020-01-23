@@ -59,6 +59,17 @@ typedef std::function<void(std::shared_ptr<api::Request>)> RequestHandler;
 class AbstractCommunicator : public Noncopyable
 {
 public:
+   /**
+    * @brief Virtual destructor to allow for inheritance.
+    */
+   virtual ~AbstractCommunicator() = default;
+
+   /**
+    * @brief Registers a request handler for the specified type. Only one handler may be registered per type.
+    *
+    * @param in_requestType         The type of the request.
+    * @param in_requestHandler      The handler for the request.
+    */
    void registerRequestHandler(api::Request::Type in_requestType, const RequestHandler& in_requestHandler);
 
    /**
