@@ -239,6 +239,67 @@ int BootstrapRequest::getPatchNumber() const
    return m_impl->Patch;
 }
 
+std::ostream& operator<<(std::ostream& in_ostream, Request::Type in_type)
+{
+   switch(in_type)
+   {
+      case Request::Type::HEARTBEAT:
+      {
+         in_ostream << "Heartbeat";
+         break;
+      }
+      case Request::Type::BOOTSTRAP:
+      {
+         in_ostream << "Bootstrap";
+         break;
+      }
+      case Request::Type::SUBMIT_JOB:
+      {
+         in_ostream << "SubmitJob";
+         break;
+      }
+      case Request::Type::GET_JOB:
+      {
+         in_ostream << "GetJob";
+         break;
+      }
+      case Request::Type::GET_JOB_STATUS:
+      {
+         in_ostream << "GetJobStatus";
+         break;
+      }
+      case Request::Type::CONTROL_JOB:
+      {
+         in_ostream << "ControlJob";
+         break;
+      }
+      case Request::Type::GET_JOB_OUTPUT:
+      {
+         in_ostream << "GetJobOutput";
+         break;
+      }
+      case Request::Type::GET_JOB_RESOURCE_UTIL:
+      {
+         in_ostream << "GetJobResourceUtil";
+         break;
+      }
+      case Request::Type::GET_JOB_NETWORK:
+      {
+         in_ostream << "GetJobNetwork";
+         break;
+      }
+      case Request::Type::GET_CLUSTER_INFO:
+      {
+         in_ostream << "GetClusterInfo";
+         break;
+      }
+      default:
+         in_ostream << "Invalid";
+   }
+
+   return in_ostream;
+}
+
 } // namespace api
 } // namespace launcher_plugins
 } // namespace rstudio

@@ -180,6 +180,16 @@ private:
    friend class Request;
 };
 
+/**
+ * @brief Converts a Request::Type to string and adds it to the specified stream.
+ *
+ * @param in_ostream    The stream to which to add the string version of the type.
+ * @param in_type       The type to convert to string.
+ *
+ * @return The provided stream.
+ */
+std::ostream& operator<<(std::ostream& in_ostream, Request::Type in_type);
+
 } // namespace api
 } // namespace launcher_plugins
 } // namespace rstudio
