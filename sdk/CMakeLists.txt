@@ -43,6 +43,7 @@ set(RLPS_SOURCE_FILES
    src/logging/StderrLogDestination.cpp
    src/logging/SyslogDestination.cpp
    src/options/Options.cpp
+   src/system/Asio.cpp
    src/system/FilePath.cpp
    src/system/ReaderWriterMutex.cpp
    src/system/User.cpp
