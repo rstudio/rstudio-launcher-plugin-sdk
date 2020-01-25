@@ -39,37 +39,39 @@ namespace system {
  */
 typedef std::function<void()> AsioFunction;
 
-// Forward Declarations
-class AsioStreamDescriptor;
-class AsioWorkerThread;
-
 /**
  * @brief Async input/output class which may be used to manage ASIO operations.
  */
 class AsioService : public Noncopyable
 {
 public:
-   /**
-    * @brief Gets the single ASIO service for this process.
-    *
-    * @return The single ASIO service for this process.
-    */
-   static AsioService& getAsioService();
 
    /**
     * @brief Posts a job to be completed by this ASIO Service.
     *
     * @param in_work    The job to be posted to the ASIO Service.
     */
-   void post(const AsioFunction& in_work);
+   static void post(const AsioFunction& in_work);
 
    /**
-    * @brief Stops the IO Service.
+    * @brief Creates and adds the specified number of worker threads to the ASIO service.
     *
-    * Calling this function will stop all async IO operations for the whole Plugin. Should only be called prior to
-    * termination of the Plugin.
+    * @param in_numThreads  The number of worker threads to add to the ASIO service.
     */
-   void stop();
+   static void startThreads(size_t in_numThreads);
+
+   /**
+    * @brief Stops the ASIO Service.
+    *
+    * Calling this function will stop all async IO operations for the whole Plugin.
+    * IMPORTANT: Only call this function from the main thread immediately prior to shutdown.
+    */
+   static void stop();
+
+   /*
+    * @brief Waits for the ASIO service to exit.
+    */
+   static void waitForExit();
 
 private:
    /**
@@ -77,12 +79,15 @@ private:
     */
    AsioService();
 
-   // Private implementation of AsioService.
-   PRIVATE_IMPL(m_impl);
+   /**
+    * @brief Gets the single ASIO service for this process.
+    *
+    * @return The single ASIO service for this process.
+    */
+   static AsioService& getAsioService();
 
-   // These ASIO classes need to use the internals of AsioService.
-   friend class AsioStreamDescriptor;
-   friend class AsioWorkerThread;
+   // Private implementation of AsioService.
+   PRIVATE_IMPL_SHARED(m_impl);
 };
 
 /**
@@ -100,32 +105,6 @@ public:
 
 private:
    // The private implementation of AsioStreamDescriptor.
-   PRIVATE_IMPL(m_impl);
-};
-
-/**
- * @brief Class which represents a thread that can be used to do ASIO work.
- */
-class AsioWorkerThread : public Noncopyable, public std::enable_shared_from_this<AsioWorkerThread>
-{
-public:
-   /**
-    * @brief Constructor.
-    */
-   AsioWorkerThread() = default;
-
-   /**
-    * @brief Joins this thread to the main thread, after execution on it has stopped.
-    */
-   void join();
-
-   /**
-    * @brief Runs the current thread for use by the AsioService until it is interrupted or join() is called.
-    */
-   void run();
-
-private:
-   // The private implementation of AsioWorkerThread.
    PRIVATE_IMPL(m_impl);
 };
 

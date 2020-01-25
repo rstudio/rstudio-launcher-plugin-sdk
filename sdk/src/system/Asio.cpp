@@ -26,10 +26,22 @@
 #include <thread>
 
 #include <boost/asio.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/lock_guard.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
 namespace system {
+
+namespace {
+
+boost::asio::io_service& getIoService()
+{
+   static boost::asio::io_service ioService;
+   return ioService;
+}
+
+}
 
 // Asio Service ========================================================================================================
 struct AsioService::Impl
@@ -38,37 +50,76 @@ struct AsioService::Impl
     * @brief Constructor.
     */
    Impl() :
+      IoService(getIoService()),
       IsRunning(true)
    {
    }
 
+   void startWorkerThread()
+   {
+      boost::asio::io_service::work work(IoService);
+      IoService.run();
+   }
+
    /** The underlying async IO service. */
-   boost::asio::io_service IoService;
+   boost::asio::io_service& IoService;
 
    /** Whether the ASIO service is running */
    bool IsRunning;
+
+   /** The worker threads of the ASIO service. */
+   std::vector<std::shared_ptr<std::thread> > Threads;
+
+   /** The mutex to protect the ASIO service. */
+   boost::mutex Mutex;
 };
 
-PRIVATE_IMPL_DELETER_IMPL(AsioService)
+void AsioService::post(const AsioFunction& in_work)
+{
+   boost::asio::post(getAsioService().m_impl->IoService, in_work);
+}
+
+void AsioService::startThreads(size_t in_numThreads)
+{
+   std::shared_ptr<Impl> sharedThis = getAsioService().m_impl;
+   boost::unique_lock<boost::mutex> lock(sharedThis->Mutex);
+   if (sharedThis->IsRunning)
+   {
+      for (size_t i = 0; i < in_numThreads; ++i)
+      {
+         sharedThis->Threads.emplace_back(new std::thread(
+            [sharedThis]()
+            {
+               sharedThis->startWorkerThread();
+            }));
+      }
+   }
+}
+
+void AsioService::stop()
+{
+   std::shared_ptr<Impl> sharedThis = getAsioService().m_impl;
+   boost::lock_guard<boost::mutex> lock(sharedThis->Mutex);
+   if (sharedThis->IsRunning)
+   {
+      sharedThis->IoService.stop();
+      sharedThis->IsRunning = false;
+   }
+}
+
+void AsioService::waitForExit()
+{
+   std::shared_ptr<Impl> sharedThis = getAsioService().m_impl;
+   for (const std::shared_ptr<std::thread>& thread: sharedThis->Threads)
+   {
+      thread->join();
+   }
+}
 
 AsioService& AsioService::getAsioService()
 {
    static AsioService asioService;
    return asioService;
-}
-
-void AsioService::post(const AsioFunction& in_work)
-{
-   boost::asio::post(m_impl->IoService, in_work);
-}
-
-void AsioService::stop()
-{
-   if (m_impl->IsRunning)
-   {
-      m_impl->IoService.stop();
-      m_impl->IsRunning = false;
-   }
 }
 
 AsioService::AsioService() :
@@ -82,13 +133,10 @@ struct AsioStreamDescriptor::Impl
    /**
     * @brief Constructor.
     *
-    * @param in_ioService       The IO service which manages asynchronous reading and writing to this stream.
     * @param in_streamHandle    The handle of the stream to open.
     */
-   Impl(
-      boost::asio::io_service& in_ioService,
-      boost::asio::posix::stream_descriptor::native_handle_type in_streamHandle) :
-         StreamDescriptor(in_ioService, in_streamHandle)
+   explicit Impl(boost::asio::posix::stream_descriptor::native_handle_type in_streamHandle) :
+         StreamDescriptor(getIoService(), in_streamHandle)
    {
    }
 
@@ -99,56 +147,8 @@ struct AsioStreamDescriptor::Impl
 PRIVATE_IMPL_DELETER_IMPL(AsioStreamDescriptor)
 
 AsioStreamDescriptor::AsioStreamDescriptor(int in_streamHandle) :
-   m_impl(new Impl(AsioService::getAsioService().m_impl->IoService, in_streamHandle))
+   m_impl(new Impl(in_streamHandle))
 {
-}
-
-// Asio Worker Thread ==================================================================================================
-struct AsioWorkerThread::Impl
-{
-   /**
-    * @brief Constructor.
-    *
-    * @param in_workFunction    The function which should be run on this thread.
-    */
-   explicit Impl(const AsioFunction& in_workFunction) :
-      Thread(in_workFunction)
-   {
-   }
-
-   /**
-    * @brief Run function to use to register this thread as an ASIO worker thread.
-    *
-    * @param in_ioService   The ASIO service to which to register this thread.
-    */
-   static void run(boost::asio::io_service& in_ioService)
-   {
-      boost::asio::io_service::work work(in_ioService);
-      in_ioService.run();
-   }
-
-   /** The underlying thread. */
-   std::thread Thread;
-};
-
-PRIVATE_IMPL_DELETER_IMPL(AsioWorkerThread)
-
-void AsioWorkerThread::join()
-{
-   if (m_impl)
-      m_impl->Thread.join();
-}
-
-void AsioWorkerThread::run()
-{
-   // Ensure that this thread won't be deleted until the underlying thread is joined.
-   std::shared_ptr<AsioWorkerThread> sharedThis = shared_from_this();
-   AsioFunction runFunction = [sharedThis]()
-   {
-      sharedThis->m_impl->run(AsioService::getAsioService().m_impl->IoService);
-   };
-
-   m_impl.reset(new Impl(runFunction));
 }
 
 } // namespace system
