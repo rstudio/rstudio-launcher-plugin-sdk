@@ -133,6 +133,53 @@ public:
    json::Object asJson() const override;
 };
 
+class ErrorResponse : public Response
+{
+public:
+   /**
+    * @enum ErrorResponse::Type
+    * @brief Represents the type of error to send to the RStudio Launcher.
+    *
+    * Types are defined as described in the RStudio Launcher API Documentation. See
+    * https://docs.rstudio.com/job-launcher/latest/creating-plugins.html#plugin-messages for more details.
+    */
+   enum class Type
+   {
+      INVALID_RESPONSE        = -1,
+      UNKNOWN                 = 0,
+      REQUEST_NOT_SUPPORTED   = 1,
+      INVALID_REQUEST         = 2,
+      JOB_NOT_FOUND           = 3,
+      PLUGIN_RESTARTED        = 4,
+      TIMEOUT                 = 5,
+      JOB_NOT_RUNNING         = 6,
+      JOB_OUTPUT_NOT_FOUND    = 7,
+      INVALID_JOB_STATE       = 8,
+      JOB_CONTROL_FAILURE     = 9,
+      UNSUPPORTED_VERSION     = 10,
+   };
+
+   /**
+    * @brief Constructor.
+    *
+    * @param in_requestId       The ID of the request for which this error is being returned.
+    * @param in_errorType       The type of error which occurred while processing the request.
+    * @param in_errorMessage    A message describing the details of the error.
+    */
+   ErrorResponse(uint64_t in_requestId, Type in_errorType, std::string in_errorMessage);
+
+   /**
+    * @brief Converts this error response to a JSON object.
+    *
+    * @return The JSON object which represents this error response.
+    */
+   json::Object asJson() const override;
+
+private:
+   // The private implementation of ErrorResponse.
+   PRIVATE_IMPL(m_impl);
+};
+
 } // namespace api
 } // namespace launcher_plugins
 } // namespace rstudio

@@ -44,7 +44,9 @@ struct Response::Impl
    Impl(Type in_responseType, uint64_t in_requestId) :
       ResponseType(static_cast<int>(in_responseType)),
       RequestId(in_requestId),
-      ResponseId((in_responseType == Type::HEARTBEAT) ? 0 : NEXT_RESPONSE_ID.fetch_add(1))
+      ResponseId(
+         ((in_responseType == Type::HEARTBEAT) || (in_responseType == Type::ERROR)) ?
+            0 : NEXT_RESPONSE_ID.fetch_add(1))
    {
    }
 
@@ -99,6 +101,45 @@ json::Object BootstrapResponse::asJson() const
 
    jsonObject.insert(FIELD_VERSION, version);
    return jsonObject;
+}
+
+// Error Response ======================================================================================================
+struct ErrorResponse::Impl
+{
+   /**
+    * @brief Constructor.
+    *
+    * @param in_errorType       The type of error.
+    * @param in_errorMessage    The message of the error.
+    */
+   Impl(Type in_errorType, std::string in_errorMessage) :
+      ErrorCode(static_cast<int>(in_errorType)),
+      ErrorMessage(std::move(in_errorMessage))
+   {
+   }
+
+   /** The error code. */
+   int ErrorCode;
+
+   /** The error message. */
+   std::string ErrorMessage;
+};
+
+PRIVATE_IMPL_DELETER_IMPL(ErrorResponse)
+
+ErrorResponse::ErrorResponse(uint64_t in_requestId, Type in_errorType, std::string in_errorMessage) :
+   Response(Response::Type::ERROR, in_requestId),
+   m_impl(new Impl(in_errorType, std::move(in_errorMessage)))
+{
+}
+
+json::Object ErrorResponse::asJson() const
+{
+   json::Object responseObject = Response::asJson();
+   responseObject.insert(FIELD_ERROR_CODE, json::Value(m_impl->ErrorCode));
+   responseObject.insert(FIELD_ERROR_MESSAGE, json::Value(m_impl->ErrorMessage));
+
+   return responseObject;
 }
 
 } // namespace api
