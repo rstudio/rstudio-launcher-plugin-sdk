@@ -60,6 +60,9 @@ public:
     * @brief Enum which represents the type of a Request.
     *
     * The last enum value, INVALID, must always be the last value and is used to validate the received request.
+    *
+    * Types are defined as described in the RStudio Launcher API Documentation. See
+    * https://docs.rstudio.com/job-launcher/latest/creating-plugins.html#plugin-messages for more details.
     */
    enum class Type
    {

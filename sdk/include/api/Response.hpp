@@ -65,6 +65,9 @@ protected:
    /**
     * @enum Response::Type
     * @brief Enum which represents the type of a Response.
+    *
+    * Types are defined as described in the RStudio Launcher API Documentation. See
+    * https://docs.rstudio.com/job-launcher/latest/creating-plugins.html#plugin-messages for more details.
     */
    enum class Type
    {
