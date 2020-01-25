@@ -26,10 +26,14 @@
 #include <map>
 #include <sstream>
 
+#include <boost/system/error_code.hpp>
+
 #include <Error.hpp>
 #include <api/Response.hpp>
 #include <logging/Logger.hpp>
 #include <json/Json.hpp>
+#include <system/Asio.hpp>
+#include <utils/MutexUtils.hpp>
 
 #include "MessageHandler.hpp"
 
@@ -49,7 +53,7 @@ struct AbstractCommunicator::Impl
     * @param in_onError             Error handler to allow the creator of this communicator to receive communications
     *                               errors.
     */
-   explicit Impl(size_t in_maxMessageSize, ErrorHandler in_onError) :
+   Impl(size_t in_maxMessageSize, ErrorHandler in_onError) :
       MsgHandler(in_maxMessageSize),
       OnError(std::move(in_onError))
    {
@@ -63,6 +67,9 @@ struct AbstractCommunicator::Impl
 
    /** The error handler function, provided by the communicator creator. */
    const ErrorHandler OnError;
+
+   /** Mutex to protect members during threaded operations. */
+   boost::mutex Mutex;
 };
 
 PRIVATE_IMPL_DELETER_IMPL(AbstractCommunicator)
@@ -111,42 +118,83 @@ void AbstractCommunicator::reportError(const Error& in_error)
       m_baseImpl->OnError(in_error);
 }
 
-Error AbstractCommunicator::onDataReceived(const char* in_data, size_t in_length)
+void AbstractCommunicator::onDataReceived(const char* in_data, size_t in_length)
 {
+   SharedThis sharedThis = shared_from_this();
+   std::function<void(const std::string&)> parseMessage =
+      [sharedThis](const std::string& in_message)
+      {
+         // Parse the JSON object.
+         json::Object jsonRequest;
+         Error error = jsonRequest.parse(in_message);
+         if (error)
+         {
+            sharedThis->reportError(
+               systemError(boost::system::errc::protocol_error,
+                  "Received malformed launcher message: " + in_message,
+                  error,
+                  ERROR_LOCATION));
+            return;
+         }
+
+         // Try to construct a request object.
+         std::shared_ptr<api::Request> request;
+         error = api::Request::fromJson(jsonRequest, request);
+         if (error)
+         {
+            Error specificError;
+            if (!request)
+               specificError = systemError(boost::system::errc::protocol_error,
+                                           "Could not deserialize launcher message: " + in_message,
+                                           error,
+                                           ERROR_LOCATION);
+            else
+               specificError = systemError(boost::system::errc::protocol_error,
+                                           "Received invalid launcher message: " + in_message,
+                                           error,
+                                           ERROR_LOCATION);
+
+            sharedThis->reportError(specificError);
+            return;
+         }
+
+         // Send the object to the appropriate handler, or send an error to the launcher.
+         auto itr = sharedThis->m_baseImpl->RequestHandlers.find(request->getType());
+         if (itr == sharedThis->m_baseImpl->RequestHandlers.end())
+         {
+            std::ostringstream msgStream;
+            msgStream << "No request handler found for request type " << request->getType() << ".";
+            logging::logDebugMessage(msgStream.str(), ERROR_LOCATION);
+
+            // Send an error response to the launcher.
+            sharedThis->sendResponse(api::ErrorResponse(
+               request->getId(),
+               api::ErrorResponse::Type::REQUEST_NOT_SUPPORTED,
+               "Request not supported"));
+            return;
+         }
+
+         itr->second(request);
+      };
+
    std::vector<std::string> messages;
-   Error error = m_baseImpl->MsgHandler.parseMessages(in_data, in_length, messages);
+   Error error;
+
+   LOCK_MUTEX(m_baseImpl->Mutex)
+      // Lock here to protect the message handler member, which is not thread-safe.
+      error = m_baseImpl->MsgHandler.processBytes(in_data, in_length, messages);
+   END_LOCK_MUTEX
+
    if (error)
-      return error;
+   {
+      reportError(error);
+      return;
+   }
 
    for (const std::string& message: messages)
    {
-      // Parse the JSON object.
-      json::Object jsonRequest;
-      error = jsonRequest.parse(message);
-      if (error)
-         return error;
-
-      // Try to construct a request object.
-      std::shared_ptr<api::Request> request;
-      error = api::Request::fromJson(jsonRequest, request);
-      if (error)
-         return error;
-
-      // Send the object to the appropriate handle.
-      auto itr = m_baseImpl->RequestHandlers.find(request->getType());
-      if (itr == m_baseImpl->RequestHandlers.end())
-      {
-         std::ostringstream msgStream;
-         msgStream << "No request handler found for request type " << request->getType() << ".";
-         logging::logDebugMessage(msgStream.str(), ERROR_LOCATION);
-      }
-      else
-      {
-         itr->second(request);
-      }
+      system::AsioService::post(std::bind(parseMessage, message));
    }
-
-   return Success();
 }
 
 } // namespace comms

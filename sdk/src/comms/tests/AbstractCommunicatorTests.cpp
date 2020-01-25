@@ -34,6 +34,7 @@
 #include <comms/AbstractCommunicator.hpp>
 #include <json/Json.hpp>
 #include <sstream>
+#include <system/Asio.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -41,17 +42,28 @@ namespace comms {
 
 namespace {
 
+void initAsioService()
+{
+   static bool isInit = false;
+   if (!isInit)
+   {
+      system::AsioService::startThreads(2);
+      isInit = true;
+   }
+}
+
 class MockCommunicator : public AbstractCommunicator
 {
 public:
    explicit MockCommunicator(size_t in_maxMessageSize = 5242880) :
-      AbstractCommunicator(in_maxMessageSize, [](const Error&) {})
+      AbstractCommunicator(in_maxMessageSize, [](const Error& in_error) { logging::logError(in_error); })
    {
+      initAsioService();
    }
 
-   Error receiveData(const std::string& in_data)
+   void receiveData(const std::string& in_data)
    {
-      return onDataReceived(in_data.c_str(), in_data.size());
+      onDataReceived(in_data.c_str(), in_data.size());
    }
 
    void waitForExit() override
@@ -65,6 +77,8 @@ private:
       SentMessages.push(in_responseMessage);
    }
 };
+
+typedef std::shared_ptr<MockCommunicator> CommsPtr;
 
 const size_t MESSAGE_HEADER_SIZE = 4;
 
@@ -89,12 +103,12 @@ TEST_CASE("Send a simple response")
    std::string strResponse = response.asJson().write();
    std::string expectedResult = convertHeader(strResponse.size()).append(strResponse);
 
-   MockCommunicator comms;
-   comms.sendResponse(response);
+   CommsPtr comms(new MockCommunicator());
+   comms->sendResponse(response);
 
    CHECK(mockLog->getSize() == 0);
-   REQUIRE(comms.SentMessages.size() == 1);
-   CHECK(comms.SentMessages.front() == expectedResult);
+   REQUIRE(comms->SentMessages.size() == 1);
+   CHECK(comms->SentMessages.front() == expectedResult);
 }
 
 TEST_CASE("Receive a simple request")
@@ -112,7 +126,7 @@ TEST_CASE("Receive a simple request")
    requestObj.insert(api::FIELD_MESSAGE_TYPE, json::Value(static_cast<int>(api::Request::Type::BOOTSTRAP)));
    std::string requestMsg = requestObj.write();
 
-   RequestHandler handler = [](std::shared_ptr<api::Request> in_request)
+   RequestHandler handler = [](const std::shared_ptr<api::Request>& in_request)
    {
       REQUIRE(in_request != nullptr);
       CHECK(in_request->getId() == 33);
@@ -125,11 +139,10 @@ TEST_CASE("Receive a simple request")
       CHECK(bootstrapRequest->getPatchNumber() == 26);
    };
 
-   MockCommunicator comms;
-   comms.registerRequestHandler(api::Request::Type::BOOTSTRAP, handler);
-   Error error = comms.receiveData(convertHeader(requestMsg.size()).append(requestMsg));
+   CommsPtr comms(new MockCommunicator());
+   comms->registerRequestHandler(api::Request::Type::BOOTSTRAP, handler);
+   comms->receiveData(convertHeader(requestMsg.size()).append(requestMsg));
 
-   CHECK_FALSE(error);
    CHECK(mockLog->getSize() == 0);
 }
 
@@ -150,17 +163,28 @@ TEST_CASE("Receive a request for a type that doesn't have a handler")
    requestObj.insert(api::FIELD_MESSAGE_TYPE, json::Value(bootstrapType));
    std::string requestMsg = requestObj.write();
 
-   MockCommunicator comms;
-   Error error = comms.receiveData(convertHeader(requestMsg.size()).append(requestMsg));
-
+   CommsPtr comms(new MockCommunicator());
+   comms->receiveData(convertHeader(requestMsg.size()).append(requestMsg));
 
    std::ostringstream expectedStr;
    expectedStr << "request type " << api::Request::Type::BOOTSTRAP;
 
-   CHECK_FALSE(error);
+   // Wait a couple of seconds to ensure the other threads finish.
+   sleep(2);
+
    REQUIRE(mockLog->getSize() == 1);
    CHECK(mockLog->peek().Level == logging::LogLevel::DEBUG);
    CHECK(mockLog->pop().Message.find(expectedStr.str()) != std::string::npos);
+
+   std::string expectedMessage = api::ErrorResponse(
+      33,
+      api::ErrorResponse::Type::REQUEST_NOT_SUPPORTED,
+      "Request not supported").asJson().write();
+
+   REQUIRE(comms->SentMessages.size() == 1);
+   CHECK(comms->SentMessages.front() == convertHeader(expectedMessage.size()).append(expectedMessage));
+
+   comms->SentMessages.pop();
 }
 
 TEST_CASE("Register request handler for same request type")
@@ -180,7 +204,7 @@ TEST_CASE("Register request handler for same request type")
    requestObj.insert(api::FIELD_MESSAGE_TYPE, json::Value(bootstrapType));
    std::string requestMsg = requestObj.write();
 
-   RequestHandler badHandler = [](std::shared_ptr<api::Request>)
+   RequestHandler badHandler = [](const std::shared_ptr<api::Request>&)
    {
       CHECK(false);
    };
@@ -198,15 +222,14 @@ TEST_CASE("Register request handler for same request type")
       CHECK(bootstrapRequest->getPatchNumber() == 26);
    };
 
-   MockCommunicator comms;
-   comms.registerRequestHandler(api::Request::Type::BOOTSTRAP, badHandler);
-   comms.registerRequestHandler(api::Request::Type::BOOTSTRAP, handler);
-   Error error = comms.receiveData(convertHeader(requestMsg.size()).append(requestMsg));
+   CommsPtr comms(new MockCommunicator());
+   comms->registerRequestHandler(api::Request::Type::BOOTSTRAP, badHandler);
+   comms->registerRequestHandler(api::Request::Type::BOOTSTRAP, handler);
+   comms->receiveData(convertHeader(requestMsg.size()).append(requestMsg));
 
    std::ostringstream expectedStr;
    expectedStr << "request type " << api::Request::Type::BOOTSTRAP;
 
-   CHECK_FALSE(error);
    REQUIRE(mockLog->getSize() == 1);
    CHECK(mockLog->peek().Level == logging::LogLevel::DEBUG);
    CHECK(mockLog->pop().Message.find(expectedStr.str()) != std::string::npos);
@@ -215,45 +238,70 @@ TEST_CASE("Register request handler for same request type")
 
 TEST_CASE("Bad request - not JSON")
 {
+   logging::MockLogPtr logPtr = logging::getMockLogDest();
    std::string message = convertHeader(20).append("This message is 20 B");
 
-   MockCommunicator comms;
-   Error error = comms.receiveData(message);
+   CommsPtr comms(new MockCommunicator());
+   comms->receiveData(message);
 
-   REQUIRE(error);
-   CHECK(error.getName() == "JsonParseError");
+   // Wait a couple of seconds to ensure the other threads finish.
+   sleep(2);
+
+   REQUIRE(logPtr->getSize() == 1);
+   CHECK(logPtr->peek().Level == logging::LogLevel::ERR);
+   CHECK(logPtr->pop().Message.find("JsonParseError") != std::string::npos);
 }
 
 TEST_CASE("Bad request - invalid type")
 {
+   logging::MockLogPtr logPtr = logging::getMockLogDest();
    json::Object request;
    request.insert(api::FIELD_MESSAGE_TYPE, json::Value(-1));
    request.insert(api::FIELD_REQUEST_ID, json::Value(2));
 
    std::string message = convertHeader(request.write().size()).append(request.write());
 
-   MockCommunicator comms;
-   Error error = comms.receiveData(message);
+   CommsPtr comms(new MockCommunicator());
+   comms->receiveData(message);
 
-   REQUIRE(error);
-   CHECK(error.getName() == "RequestError");
-   CHECK(error.getCode() == 1);
-   CHECK(error.getMessage().find(std::to_string(-1)) != std::string::npos);
+   // Wait a couple of seconds to ensure the other threads finish.
+   sleep(2);
+
+   REQUIRE(logPtr->getSize() == 1);
+   CHECK(logPtr->peek().Level == logging::LogLevel::ERR);
+   CHECK(logPtr->pop().Message.find("Could not deserialize launcher message: " + request.write()) != std::string::npos);
 }
 
 TEST_CASE("Bad request - invalid request")
 {
+   logging::MockLogPtr logPtr = logging::getMockLogDest();
    json::Object request;
    request.insert(api::FIELD_MESSAGE_TYPE, json::Value(static_cast<int>(api::Request::Type::BOOTSTRAP)));
 
    std::string message = convertHeader(request.write().size()).append(request.write());
 
-   MockCommunicator comms;
-   Error error = comms.receiveData(message);
+   CommsPtr comms(new MockCommunicator());
+   comms->receiveData(message);
 
-   REQUIRE(error);
-   CHECK(error.getName() == "RequestError");
-   CHECK(error.getCode() == 2);
+   // Wait a couple of seconds to ensure the other threads finish.
+   sleep(2);
+
+   REQUIRE(logPtr->getSize() == 3);
+   // The order of the error messages here should be deterministic. First base request missing value, then bootstrap
+   // missing value, then comm error.
+   CHECK(logPtr->peek().Level == logging::LogLevel::ERR);
+   CHECK(logPtr->pop().Message.find(api::FIELD_REQUEST_ID) != std::string::npos);
+   CHECK(logPtr->peek().Level == logging::LogLevel::ERR);
+   CHECK(logPtr->pop().Message.find(api::FIELD_VERSION) != std::string::npos);
+   CHECK(logPtr->peek().Level == logging::LogLevel::ERR);
+   CHECK(logPtr->pop().Message.find("Received invalid launcher message: " + request.write()) != std::string::npos);
+}
+
+// This test case must always come last.
+TEST_CASE("Clean up")
+{
+   system::AsioService::stop();
+   system::AsioService::waitForExit();
 }
 
 } // namespace comms

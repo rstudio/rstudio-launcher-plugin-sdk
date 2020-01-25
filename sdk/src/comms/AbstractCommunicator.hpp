@@ -50,7 +50,7 @@ namespace comms {
 /**
  * @brief Function which handles a request from the RStudio Launcher.
  */
-typedef std::function<void(std::shared_ptr<api::Request>)> RequestHandler;
+typedef std::function<void(const std::shared_ptr<api::Request>&)> RequestHandler;
 
 /**
  * @brief Function which allows the caller to handle communicator errors.
@@ -61,7 +61,8 @@ typedef std::function<void(const Error&)> ErrorHandler;
  * @brief Base class responsible for communicating the the launcher. The type of communication is implementation
  *        dependent.
  */
-class AbstractCommunicator : public Noncopyable
+class AbstractCommunicator : public Noncopyable,
+                             public std::enable_shared_from_this<AbstractCommunicator>
 {
 public:
    /**
@@ -126,14 +127,10 @@ protected:
    /**
     * @brief Handles data that is received from the RStudio Launcher.
     *
-    * If this method returns an error, the plugin should shut down.
-    *
     * @param in_data        The data received from the RStudio Launcher.
     * @param in_length      The length of the data received from the RStudio Launcher.
-    *
-    * @return Success if the data was valid; Error otherwise.
     */
-   Error onDataReceived(const char* in_data, size_t in_length);
+   void onDataReceived(const char* in_data, size_t in_length);
 
 private:
    /**
@@ -145,6 +142,8 @@ private:
 
    // The private implementation of AbstractCommunicator.
    PRIVATE_IMPL(m_baseImpl);
+
+   typedef std::shared_ptr<AbstractCommunicator> SharedThis;
 };
 
 } // namespace comms
