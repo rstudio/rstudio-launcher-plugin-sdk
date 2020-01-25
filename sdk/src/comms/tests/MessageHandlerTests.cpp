@@ -97,7 +97,7 @@ TEST_CASE("Simple message is processed")
 
    MessageHandler msgHandler;
    std::vector<std::string> messages;
-   Error error = msgHandler.parseMessages(payload.c_str(), payload.size(), messages);
+   Error error = msgHandler.processBytes(payload.c_str(), payload.size(), messages);
 
    REQUIRE_FALSE(error);
    REQUIRE(messages.size() == 1);
@@ -113,24 +113,24 @@ TEST_CASE("Header bytes are correctly processed one-by-one")
    std::vector<std::string> messages;
 
    // Parse each byte of the header one at a time.
-   Error error = msgHandler.parseMessages(payload.c_str(), 1, messages);
+   Error error = msgHandler.processBytes(payload.c_str(), 1, messages);
    REQUIRE_FALSE(error);
    REQUIRE(messages.empty());
 
-   error = msgHandler.parseMessages(payload.c_str() + 1, 1, messages);
+   error = msgHandler.processBytes(payload.c_str() + 1, 1, messages);
    REQUIRE_FALSE(error);
    REQUIRE(messages.empty());
 
-   error = msgHandler.parseMessages(payload.c_str() + 2, 1, messages);
+   error = msgHandler.processBytes(payload.c_str() + 2, 1, messages);
    REQUIRE_FALSE(error);
    REQUIRE(messages.empty());
 
-   error = msgHandler.parseMessages(payload.c_str() + 3, 1, messages);
+   error = msgHandler.processBytes(payload.c_str() + 3, 1, messages);
    REQUIRE_FALSE(error);
    REQUIRE(messages.empty());
 
    // Parse the rest of the message
-   error = msgHandler.parseMessages(payload.c_str() + 4, payload.size() - 4, messages);
+   error = msgHandler.processBytes(payload.c_str() + 4, payload.size() - 4, messages);
    REQUIRE_FALSE(error);
    REQUIRE(messages.size() == 1);
    CHECK(messages.front() == message);
@@ -153,27 +153,27 @@ TEST_CASE("Complex message processed correctly piecemeal")
    std::vector<std::string> messages;
 
    // Parse the complex message in pieces
-   Error error = msgHandler.parseMessages(header.c_str(), 2,  messages);
+   Error error = msgHandler.processBytes(header.c_str(), 2, messages);
    REQUIRE_FALSE(error);
    REQUIRE(messages.empty());
 
-   error = msgHandler.parseMessages(header.c_str() + 2, 2, messages);
+   error = msgHandler.processBytes(header.c_str() + 2, 2, messages);
    REQUIRE_FALSE(error);
    REQUIRE(messages.empty());
 
-   error = msgHandler.parseMessages(messagePart1.c_str(), messagePart1.size(), messages);
+   error = msgHandler.processBytes(messagePart1.c_str(), messagePart1.size(), messages);
    REQUIRE_FALSE(error);
    REQUIRE(messages.empty());
 
-   error = msgHandler.parseMessages(messagePart2.c_str(), messagePart2.size(), messages);
+   error = msgHandler.processBytes(messagePart2.c_str(), messagePart2.size(), messages);
    REQUIRE_FALSE(error);
    REQUIRE(messages.empty());
 
-   error = msgHandler.parseMessages(messagePart3.c_str(), messagePart3.size(), messages);
+   error = msgHandler.processBytes(messagePart3.c_str(), messagePart3.size(), messages);
    REQUIRE_FALSE(error);
    REQUIRE(messages.empty());
 
-   error = msgHandler.parseMessages(messagePart4.c_str(), messagePart4.size(), messages);
+   error = msgHandler.processBytes(messagePart4.c_str(), messagePart4.size(), messages);
    REQUIRE_FALSE(error);
 
    REQUIRE(messages.size() == 1);
@@ -192,7 +192,7 @@ TEST_CASE("Multiple messages in one buffer")
    MessageHandler msgHandler;
    std::vector<std::string> messages;
 
-   Error error = msgHandler.parseMessages(compoundBuffer.c_str(), compoundBuffer.size(), messages);
+   Error error = msgHandler.processBytes(compoundBuffer.c_str(), compoundBuffer.size(), messages);
    REQUIRE_FALSE(error);
    REQUIRE(messages.size() == 10);
 
@@ -226,11 +226,11 @@ TEST_CASE("Multiple complex messages in one buffer processed in two parts")
 
    MessageHandler msgHandler;
    std::vector<std::string> messages;
-   Error error = msgHandler.parseMessages(compoundBuffer.c_str(), firstChunkSize, messages);
+   Error error = msgHandler.processBytes(compoundBuffer.c_str(), firstChunkSize, messages);
    REQUIRE_FALSE(error);
    CHECK(messages.size() == 1);
 
-   error = msgHandler.parseMessages(compoundBuffer.c_str() + firstChunkSize, secondChunkSize, messages);
+   error = msgHandler.processBytes(compoundBuffer.c_str() + firstChunkSize, secondChunkSize, messages);
    REQUIRE_FALSE(error);
    REQUIRE(messages.size() == 3);
 
@@ -246,7 +246,7 @@ TEST_CASE("Received message is too large")
 
    MessageHandler msgHandler(10);
    std::vector<std::string> messages;
-   Error error = msgHandler.parseMessages(message.c_str(), message.size(), messages);
+   Error error = msgHandler.processBytes(message.c_str(), message.size(), messages);
 
    CHECK(error);
    CHECK(error.getCode() == boost::system::errc::protocol_error);

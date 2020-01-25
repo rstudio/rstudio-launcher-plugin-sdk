@@ -112,7 +112,7 @@ std::string MessageHandler::formatMessage(const std::string& message)
    return payload.append(message);
 }
 
-Error MessageHandler::parseMessages(const char* in_rawData, size_t in_dataLen, std::vector<std::string>& out_messages)
+Error MessageHandler::processBytes(const char* in_rawData, size_t in_dataLen, std::vector<std::string>& out_messages)
 {
    do
    {

@@ -81,7 +81,7 @@ public:
     *
     * @return Success if the raw data is valid and no messages exceed the maximum message size (5 MB); Error otherwise.
     */
-   Error parseMessages(const char* in_rawData, size_t in_dataLen, std::vector<std::string>& out_messages);
+   Error processBytes(const char* in_rawData, size_t in_dataLen, std::vector<std::string>& out_messages);
 
 private:
    // The private implemenation of MessageHandler.
