@@ -33,7 +33,6 @@ constexpr int API_VERSION_MAJOR = 1;
 constexpr int API_VERSION_MINOR = 0;
 constexpr int API_VERSION_PATCH = 0;
 
-
 // Common fields for all requests and responses.
 constexpr char const* FIELD_MESSAGE_TYPE = "messageType";
 constexpr char const* FIELD_REQUEST_ID = "requestId";
@@ -46,6 +45,10 @@ constexpr char const* FIELD_VERSION = "version";
 constexpr char const* FIELD_VERSION_MAJOR = "major";
 constexpr char const* FIELD_VERSION_MINOR = "minor";
 constexpr char const* FIELD_VERSION_PATCH = "patch";
+
+// Error response fields.
+constexpr char const* FIELD_ERROR_CODE = "errorCode";
+constexpr char const* FIELD_ERROR_MESSAGE = "errorMessage";
 
 } // namespace api
 } // namespace launcher_plugins
