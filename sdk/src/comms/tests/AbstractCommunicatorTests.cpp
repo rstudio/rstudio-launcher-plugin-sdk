@@ -31,7 +31,7 @@
 #include <MockLogDestination.hpp>
 #include <api/Constants.hpp>
 #include <api/Response.hpp>
-#include <comms/AbstractCommunicator.hpp>
+#include <comms/AbstractLauncherCommunicator.hpp>
 #include <json/Json.hpp>
 #include <sstream>
 #include <system/Asio.hpp>
@@ -52,11 +52,11 @@ void initAsioService()
    }
 }
 
-class MockCommunicator : public AbstractCommunicator
+class MockCommunicator : public AbstractLauncherCommunicator
 {
 public:
    explicit MockCommunicator(size_t in_maxMessageSize = 5242880) :
-      AbstractCommunicator(in_maxMessageSize, [](const Error& in_error) { logging::logError(in_error); })
+      AbstractLauncherCommunicator(in_maxMessageSize, [](const Error& in_error) { logging::logError(in_error); })
    {
       initAsioService();
    }

@@ -1,5 +1,5 @@
 /*
- * AbstractCommunicator.hpp
+ * AbstractLauncherCommunicator.hpp
  *
  * Copyright (C) 2020 by RStudio, Inc.
  *
@@ -61,14 +61,14 @@ typedef std::function<void(const Error&)> ErrorHandler;
  * @brief Base class responsible for communicating the the launcher. The type of communication is implementation
  *        dependent.
  */
-class AbstractCommunicator : public Noncopyable,
-                             public std::enable_shared_from_this<AbstractCommunicator>
+class AbstractLauncherCommunicator : public Noncopyable,
+                                     public std::enable_shared_from_this<AbstractLauncherCommunicator>
 {
 public:
    /**
     * @brief Virtual destructor to allow for inheritance.
     */
-   virtual ~AbstractCommunicator() = default;
+   virtual ~AbstractLauncherCommunicator() = default;
 
    /**
     * @brief Registers a request handler for the specified type. Only one handler may be registered per type.
@@ -115,7 +115,7 @@ protected:
     * @param in_onError             Error handler to allow the creator of this communicator to receive communications
     *                               errors.
     */
-   AbstractCommunicator(size_t in_maxMessageSize, const ErrorHandler& in_onError);
+   AbstractLauncherCommunicator(size_t in_maxMessageSize, const ErrorHandler& in_onError);
 
    /**
     * @brief Reports an error and stops the communicator.
@@ -140,10 +140,10 @@ private:
     */
    virtual void writeResponse(const std::string& in_responseMessage) = 0;
 
-   // The private implementation of AbstractCommunicator.
+   // The private implementation of AbstractLauncherCommunicator.
    PRIVATE_IMPL(m_baseImpl);
 
-   typedef std::shared_ptr<AbstractCommunicator> SharedThis;
+   typedef std::shared_ptr<AbstractLauncherCommunicator> SharedThis;
 };
 
 } // namespace comms

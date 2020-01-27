@@ -1,5 +1,5 @@
 /*
- * AbstractCommunicator.cpp
+ * AbstractLauncherCommunicator.cpp
  *
  * Copyright (C) 2020 by RStudio, Inc.
  *
@@ -21,7 +21,7 @@
  *
  */
 
-#include "AbstractCommunicator.hpp"
+#include "AbstractLauncherCommunicator.hpp"
 
 #include <map>
 #include <sstream>
@@ -43,7 +43,7 @@ namespace comms {
 
 typedef std::map<api::Request::Type, RequestHandler> RequestHandlerMap;
 
-struct AbstractCommunicator::Impl
+struct AbstractLauncherCommunicator::Impl
 {
    /**
     * @brief Constructor.
@@ -72,9 +72,9 @@ struct AbstractCommunicator::Impl
    boost::mutex Mutex;
 };
 
-PRIVATE_IMPL_DELETER_IMPL(AbstractCommunicator)
+PRIVATE_IMPL_DELETER_IMPL(AbstractLauncherCommunicator)
 
-void AbstractCommunicator::registerRequestHandler(
+void AbstractLauncherCommunicator::registerRequestHandler(
    api::Request::Type in_requestType,
    const RequestHandler& in_requestHandler)
 {
@@ -88,29 +88,29 @@ void AbstractCommunicator::registerRequestHandler(
    m_baseImpl->RequestHandlers[in_requestType] = in_requestHandler;
 }
 
-void AbstractCommunicator::sendResponse(const api::Response& in_response)
+void AbstractLauncherCommunicator::sendResponse(const api::Response& in_response)
 {
    std::string message = m_baseImpl->MsgHandler.formatMessage(in_response.asJson().write());
    writeResponse(message);
 }
 
-Error AbstractCommunicator::start()
+Error AbstractLauncherCommunicator::start()
 {
    // Eventually this will start the heartbeat timer.
    return Success();
 }
 
-void AbstractCommunicator::stop()
+void AbstractLauncherCommunicator::stop()
 {
    // Eventually this will stop the heartbeat timer.
 }
 
-AbstractCommunicator::AbstractCommunicator(size_t in_maxMessageSize, const ErrorHandler& in_onError) :
+AbstractLauncherCommunicator::AbstractLauncherCommunicator(size_t in_maxMessageSize, const ErrorHandler& in_onError) :
    m_baseImpl(new Impl(in_maxMessageSize, in_onError))
 {
 }
 
-void AbstractCommunicator::reportError(const Error& in_error)
+void AbstractLauncherCommunicator::reportError(const Error& in_error)
 {
    stop();
 
@@ -118,7 +118,7 @@ void AbstractCommunicator::reportError(const Error& in_error)
       m_baseImpl->OnError(in_error);
 }
 
-void AbstractCommunicator::onDataReceived(const char* in_data, size_t in_length)
+void AbstractLauncherCommunicator::onDataReceived(const char* in_data, size_t in_length)
 {
    SharedThis sharedThis = shared_from_this();
    std::function<void(const std::string&)> parseMessage =
