@@ -296,6 +296,9 @@ struct Options::Impl
             ("log-level",
                value<logging::LogLevel>(&MaxLogLevel)->default_value(logging::LogLevel::WARN),
                "the maximum level of log messages to write")
+            ("max-message-size",
+               value<size_t>(&MaxMessageSize)->default_value(5242880),
+               "the maximum size of a message which can be sent to or received from the RStudio Launcher")
             ("scratch-path",
                value<system::FilePath>(&ScratchPath)->default_value(
                   system::FilePath("/var/lib/rstudio-launcher/")),
@@ -304,8 +307,8 @@ struct Options::Impl
                value<std::string>(&ServerUser)->default_value("rstudio-server"),
                "user to run the plugin as")
             ("thread-pool-size",
-               value<unsigned int>(&ThreadPoolSize)->default_value(
-                  std::max<unsigned int>(4, boost::thread::hardware_concurrency())),
+               value<size_t>(&ThreadPoolSize)->default_value(
+                  std::max<size_t>(4, boost::thread::hardware_concurrency())),
                "the number of threads in the thread pool");
 
          IsInitialized = true;
@@ -327,9 +330,10 @@ struct Options::Impl
    unsigned int HeartbeatIntervalSeconds;
    system::FilePath LauncherConfigFile;
    logging::LogLevel MaxLogLevel;
+   size_t MaxMessageSize;
    system::FilePath ScratchPath;
    std::string ServerUser;
-   unsigned int ThreadPoolSize;
+   size_t ThreadPoolSize;
 
 };
 
@@ -486,6 +490,11 @@ logging::LogLevel Options::getLogLevel() const
       logging::LogLevel::DEBUG);
 }
 
+size_t Options::getMaxMessageSize() const
+{
+   return m_impl->MaxMessageSize;
+}
+
 const system::FilePath& Options::getScratchPath() const
 {
    return m_impl->ScratchPath;
@@ -496,7 +505,7 @@ Error Options::getServerUser(system::User& out_serverUser) const
    return system::User::getUserFromIdentifier(m_impl->ServerUser, out_serverUser);
 }
 
-unsigned int Options::getThreadPoolSize() const
+size_t Options::getThreadPoolSize() const
 {
    return m_impl->ThreadPoolSize;
 }
