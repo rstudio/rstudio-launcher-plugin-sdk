@@ -98,13 +98,13 @@ void AbstractLauncherCommunicator::sendResponse(const api::Response& in_response
 
 Error AbstractLauncherCommunicator::start()
 {
-   // Eventually this will start the heartbeat timer.
+   // Nothing to explicitly start.
    return Success();
 }
 
 void AbstractLauncherCommunicator::stop()
 {
-   // Eventually this will stop the heartbeat timer.
+   // Nothing to explicitly stop.
 }
 
 AbstractLauncherCommunicator::AbstractLauncherCommunicator(size_t in_maxMessageSize, const OnError& in_onError) :
