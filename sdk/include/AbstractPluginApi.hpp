@@ -23,7 +23,15 @@
 
 #include <Noncopyable.hpp>
 
-#include "Error.hpp"
+#include <PImpl.hpp>
+
+namespace rstudio {
+namespace launcher_plugins {
+
+class Error;
+
+}
+}
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -37,15 +45,27 @@ public:
    /**
     * @brief Virtual destructor.
     */
-   virtual ~AbstractPluginApi() = default;
+   virtual ~AbstractPluginApi();
 
    /**
-    * @brief This method should initialize any components needed to communicate with the job scheduling tool, including
-    *        custom options (TODO: other examples).
+    * @brief This method initializes the abstract plugin API.
     *
-    * @return Success if all components needed by this Plugin were successfully initialized; Error otherwise.
+    * @return Success if the abstract plugin API was successfully initialized; Error otherwise.
     */
-   virtual Error initialize() = 0;
+   Error initialize();
+
+private:
+   /**
+    * @brief This method is responsible for initializing all components necessary to communicate with the job launching
+    *        system supported by this Plugin, such as initializing Plugin specific options or the communication method
+    *        (e.g. a TCP socket).
+    *
+    * @return Success if all components of the Plugin API could be initialized; Error otherwise.
+    */
+   virtual Error doInitialize() = 0;
+
+   // The private implementation of
+   PRIVATE_IMPL(m_abstractPluginImpl);
 };
 
 } // namespace launcher_plugins
