@@ -26,9 +26,8 @@
 
 #include <Noncopyable.hpp>
 
-#include <functional>
-
 #include <api/Request.hpp>
+#include <utils/Functionals.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -48,14 +47,9 @@ namespace launcher_plugins {
 namespace comms {
 
 /**
- * @brief Function which handles a request from the RStudio Launcher.
+ * @brief Callback function which will be invoked a particular request type is received from the RStudio Launcher.
  */
 typedef std::function<void(const std::shared_ptr<api::Request>&)> RequestHandler;
-
-/**
- * @brief Function which allows the caller to handle communicator errors.
- */
-typedef std::function<void(const Error&)> ErrorHandler;
 
 /**
  * @brief Base class responsible for communicating the the launcher. The type of communication is implementation
@@ -115,7 +109,7 @@ protected:
     * @param in_onError             Error handler to allow the creator of this communicator to receive communications
     *                               errors.
     */
-   AbstractLauncherCommunicator(size_t in_maxMessageSize, const ErrorHandler& in_onError);
+   AbstractLauncherCommunicator(size_t in_maxMessageSize, const OnError& in_onError);
 
    /**
     * @brief Reports an error and stops the communicator.

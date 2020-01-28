@@ -53,9 +53,9 @@ struct AbstractLauncherCommunicator::Impl
     * @param in_onError             Error handler to allow the creator of this communicator to receive communications
     *                               errors.
     */
-   Impl(size_t in_maxMessageSize, ErrorHandler in_onError) :
+   Impl(size_t in_maxMessageSize, OnError in_onError) :
       MsgHandler(in_maxMessageSize),
-      OnError(std::move(in_onError))
+      OnErrorFunc(std::move(in_onError))
    {
    }
 
@@ -66,7 +66,7 @@ struct AbstractLauncherCommunicator::Impl
    MessageHandler MsgHandler;
 
    /** The error handler function, provided by the communicator creator. */
-   const ErrorHandler OnError;
+   const OnError OnErrorFunc;
 
    /** Mutex to protect members during threaded operations. */
    boost::mutex Mutex;
@@ -105,7 +105,7 @@ void AbstractLauncherCommunicator::stop()
    // Eventually this will stop the heartbeat timer.
 }
 
-AbstractLauncherCommunicator::AbstractLauncherCommunicator(size_t in_maxMessageSize, const ErrorHandler& in_onError) :
+AbstractLauncherCommunicator::AbstractLauncherCommunicator(size_t in_maxMessageSize, const OnError& in_onError) :
    m_baseImpl(new Impl(in_maxMessageSize, in_onError))
 {
 }
@@ -114,8 +114,8 @@ void AbstractLauncherCommunicator::reportError(const Error& in_error)
 {
    stop();
 
-   if (m_baseImpl->OnError)
-      m_baseImpl->OnError(in_error);
+   if (m_baseImpl->OnErrorFunc)
+      m_baseImpl->OnErrorFunc(in_error);
 }
 
 void AbstractLauncherCommunicator::onDataReceived(const char* in_data, size_t in_length)
