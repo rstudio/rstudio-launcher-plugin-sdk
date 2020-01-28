@@ -38,9 +38,9 @@ LocalOptions& LocalOptions::getInstance()
    return options;
 }
 
-boost::posix_time::time_duration LocalOptions::getNodeConnectionTimeoutSeconds() const
+size_t LocalOptions::getNodeConnectionTimeoutSeconds() const
 {
-   return boost::posix_time::seconds(m_nodeConnectionTimeoutSeconds);
+   return m_nodeConnectionTimeoutSeconds;
 }
 
 const system::FilePath& LocalOptions::getRsandboxPath() const
@@ -71,7 +71,7 @@ void LocalOptions::initialize()
    Options& options = Options::getInstance();
    options.registerOptions()
        ("node-connection-timeout-seconds",
-          Value<int>(m_nodeConnectionTimeoutSeconds).setDefaultValue(3),
+          Value<size_t>(m_nodeConnectionTimeoutSeconds).setDefaultValue(3),
           "amount of seconds to allow for outgoing connections to other nodes in a load balanced cluster or 0 to use "
           "the system default")
        ("save-unspecified-output",
@@ -89,7 +89,7 @@ void LocalOptions::initialize()
           "the system default");
 }
 
-}
+} // namespace local
 } // namespace launcher_plugins
 } // namespace rstudio
 

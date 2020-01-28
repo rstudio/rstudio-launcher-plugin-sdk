@@ -21,9 +21,7 @@
 #ifndef LAUNCHER_PLUGINS_LOCAL_OPTIONS_HPP
 #define LAUNCHER_PLUGINS_LOCAL_OPTIONS_HPP
 
-#include <boost/noncopyable.hpp>
-
-#include <boost/date_time/posix_time/posix_time.hpp>
+#include <Noncopyable.hpp>
 
 #include <system/FilePath.hpp>
 
@@ -34,7 +32,7 @@ namespace local {
 /**
  * @brief Class which stores options specific to the Local Container system.
  */
-class LocalOptions : public boost::noncopyable
+class LocalOptions : public Noncopyable
 {
 public:
    /**
@@ -50,7 +48,7 @@ public:
     *
     * @return The timeout for connecting to other local nodes, in seconds.
     */
-   boost::posix_time::time_duration getNodeConnectionTimeoutSeconds() const;
+   size_t getNodeConnectionTimeoutSeconds() const;
 
    /**
     * @brief Gets the path to the rsandbox executable provided by the RStudio Server Pro installation.
@@ -105,7 +103,7 @@ private:
    /**
     * The number of seconds that can elapse before an attempted connection to another local node will be timed out.
     */
-   int m_nodeConnectionTimeoutSeconds;
+   size_t m_nodeConnectionTimeoutSeconds;
 
    /**
     * Whether to save output for a job when the output path has not been specified.
