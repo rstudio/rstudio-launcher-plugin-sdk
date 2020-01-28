@@ -56,7 +56,7 @@ typedef std::function<void(const std::shared_ptr<api::Request>&)> RequestHandler
  *        dependent.
  */
 class AbstractLauncherCommunicator : public Noncopyable,
-                                     public std::enable_shared_from_this<AbstractLauncherCommunicator>
+                                     private std::enable_shared_from_this<AbstractLauncherCommunicator>
 {
 public:
    /**
@@ -126,6 +126,18 @@ protected:
     */
    void onDataReceived(const char* in_data, size_t in_length);
 
+protected:
+   template <typename T>
+   std::shared_ptr<T> shared_from_derived()
+   {
+      static_assert(
+         std::is_base_of<AbstractLauncherCommunicator, T>::value,
+         "T must inherit from AbstractLauncherCommunicator");
+
+      return std::static_pointer_cast<T>(shared_from_this());
+   }
+
+
 private:
    /**
     * @brief Writes the formatted response to the RStudio Launcher via implementation specific communication method.
@@ -136,8 +148,6 @@ private:
 
    // The private implementation of AbstractLauncherCommunicator.
    PRIVATE_IMPL(m_baseImpl);
-
-   typedef std::shared_ptr<AbstractLauncherCommunicator> SharedThis;
 };
 
 } // namespace comms

@@ -43,6 +43,8 @@ namespace comms {
 
 typedef std::map<api::Request::Type, RequestHandler> RequestHandlerMap;
 
+typedef std::shared_ptr<AbstractLauncherCommunicator> SharedThis;
+
 struct AbstractLauncherCommunicator::Impl
 {
    /**
