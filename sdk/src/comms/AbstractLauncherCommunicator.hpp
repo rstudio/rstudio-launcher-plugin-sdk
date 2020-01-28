@@ -142,6 +142,8 @@ private:
    /**
     * @brief Writes the formatted response to the RStudio Launcher via implementation specific communication method.
     *
+    * This function must be thread safe. Each response must be fully written before the next begins.
+    *
     * @param in_responseMessage     The formatted response to send to the RStudio Launcher.
     */
    virtual void writeResponse(const std::string& in_responseMessage) = 0;
