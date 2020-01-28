@@ -26,7 +26,7 @@
 #include <memory>
 #include <system/FilePath.hpp>
 
-#include "AbstractPluginApi.hpp"
+#include <api/AbstractPluginApi.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -63,7 +63,7 @@ private:
     *
     * @return The Plugin specific Launcher Plugin API.
     */
-   virtual std::shared_ptr<AbstractPluginApi> createLauncherPluginApi() const = 0;
+   virtual std::shared_ptr<api::AbstractPluginApi> createLauncherPluginApi() const = 0;
 
    /**
     * @brief Gets the configuration file for this program. The default is /etc/rstudio/launcher.<pluginName>.conf.

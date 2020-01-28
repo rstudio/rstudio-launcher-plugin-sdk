@@ -35,6 +35,7 @@ class Error;
 
 namespace rstudio {
 namespace launcher_plugins {
+namespace api {
 
 /**
  * @brief Base class for the Launcher Plugin API.
@@ -68,6 +69,7 @@ private:
    PRIVATE_IMPL(m_abstractPluginImpl);
 };
 
+} // namespace api
 } // namespace launcher_plugins
 } // namespace rstudio
 

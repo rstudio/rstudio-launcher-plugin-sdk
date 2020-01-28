@@ -21,7 +21,7 @@
 #ifndef QUICKSTART_QUICK_START_PLUGIN_API_HPP
 #define QUICKSTART_QUICK_START_PLUGIN_API_HPP
 
-#include <AbstractPluginApi.hpp>
+#include <api/AbstractPluginApi.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -30,16 +30,19 @@ namespace quickstart {
 /**
  * @brief Launcher Plugin API for the QuickStart Plugin.
  */
-class QuickStartPluginApi : public AbstractPluginApi
+class QuickStartPluginApi : public api::AbstractPluginApi
 {
 public:
+
+private:
    /**
-    * @brief This method should initialize any components needed to communicate with the job scheduling tool, including
-    *        custom options (TODO: other examples).
+    * @brief This method is responsible for initializing all components necessary to communicate with the job launching
+    *        system supported by this Plugin, such as initializing Plugin specific options or the communication method
+    *        (e.g. a TCP socket).
     *
-    * @return Success if all components needed by this Plugin were successfully initialized; Error otherwise.
+    * @return Success if all components of the Plugin API could be initialized; Error otherwise.
     */
-   Error initialize() override;
+   Error doInitialize() override;
 };
 
 } // namespace quickstart

@@ -18,13 +18,15 @@
  *
  */
 
-#include "QuickStartPluginApi.hpp"
+#include <QuickStartPluginApi.hpp>
+
+#include <Error.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
 namespace quickstart {
 
-Error QuickStartPluginApi::initialize()
+Error QuickStartPluginApi::doInitialize()
 {
    // TODO #?: Initialize everything your plugin API needs to work. For example:
    //    - ensure your custom options are registered.

@@ -18,15 +18,15 @@
  *
  */
 
-#include "LocalPluginApi.hpp"
+#include <LocalPluginApi.hpp>
 
-#include "LocalOptions.hpp"
+#include <LocalOptions.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
 namespace local {
 
-Error LocalPluginApi::initialize()
+Error LocalPluginApi::doInitialize()
 {
    // Make sure LocalOptions have been initialized.
    LocalOptions::getInstance().initialize();
