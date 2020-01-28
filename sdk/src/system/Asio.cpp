@@ -128,7 +128,7 @@ AsioService::AsioService() :
 }
 
 // Asio Stream Descriptor ==============================================================================================
-struct AsioStreamDescriptor::Impl
+struct AsioStream::Impl
 {
    /**
     * @brief Constructor.
@@ -144,9 +144,9 @@ struct AsioStreamDescriptor::Impl
    boost::asio::posix::stream_descriptor StreamDescriptor;
 };
 
-PRIVATE_IMPL_DELETER_IMPL(AsioStreamDescriptor)
+PRIVATE_IMPL_DELETER_IMPL(AsioStream)
 
-AsioStreamDescriptor::AsioStreamDescriptor(int in_streamHandle) :
+AsioStream::AsioStream(int in_streamHandle) :
    m_impl(new Impl(in_streamHandle))
 {
 }

@@ -93,7 +93,7 @@ private:
 /**
  * @brief Class which allows reading from or writing to streams asynchronously.
  */
-class AsioStreamDescriptor
+class AsioStream
 {
 public:
    /**
@@ -101,10 +101,10 @@ public:
     *
     * @param in_streamHandle    The handle of the stream for which to create this ASIO stream descriptor.
     */
-   explicit AsioStreamDescriptor(int in_streamHandle);
+   explicit AsioStream(int in_streamHandle);
 
 private:
-   // The private implementation of AsioStreamDescriptor.
+   // The private implementation of AsioStream.
    PRIVATE_IMPL(m_impl);
 };
 
