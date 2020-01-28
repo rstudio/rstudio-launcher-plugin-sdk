@@ -29,15 +29,21 @@
 #include <functional>
 
 #include <PImpl.hpp>
+#include <utils/Functionals.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
 namespace system {
 
 /**
- * @brief Function which will be run asynchronously by the AsioService.
+ * @brief Callback function which will be invoked asynchronously by the AsioService.
  */
 typedef std::function<void()> AsioFunction;
+
+/**
+ * @brief Callback function which will be invoked when bytes are read from an AsioStream.
+ */
+typedef std::function<void(const char*, size_t)> OnReadBytes;
 
 /**
  * @brief Async input/output class which may be used to manage ASIO operations.
@@ -103,9 +109,17 @@ public:
     */
    explicit AsioStream(int in_streamHandle);
 
+   /**
+    * @brief Attempts to read bytes from this ASIO stream.
+    *
+    * @param in_onReadBytes     Callback function which will be invoked on successful read.
+    * @param in_onError         Callback function which will be invoked if an error occurs.
+    */
+   void readBytes(const OnReadBytes& in_onReadBytes, const OnError& in_onError);
+
 private:
    // The private implementation of AsioStream.
-   PRIVATE_IMPL(m_impl);
+   PRIVATE_IMPL_SHARED(m_impl);
 };
 
 } // namespace system

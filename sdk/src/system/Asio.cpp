@@ -29,6 +29,8 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/lock_guard.hpp>
 
+#include <Error.hpp>
+
 namespace rstudio {
 namespace launcher_plugins {
 namespace system {
@@ -140,15 +142,45 @@ struct AsioStream::Impl
    {
    }
 
+   /** The size of the buffer for reading data. */
+   static const size_t BUFFER_SIZE = 1024;
+
    /** The underlying stream descriptor. */
    boost::asio::posix::stream_descriptor StreamDescriptor;
-};
 
-PRIVATE_IMPL_DELETER_IMPL(AsioStream)
+   /** The buffer into which to read data. */
+   char Buffer[BUFFER_SIZE];
+};
 
 AsioStream::AsioStream(int in_streamHandle) :
    m_impl(new Impl(in_streamHandle))
 {
+}
+
+void AsioStream::readBytes(const OnReadBytes& in_onReadBytes, const OnError& in_onError)
+{
+   std::shared_ptr<Impl> implPtr = m_impl;
+   auto onRead =
+      [=](const boost::system::error_code& in_ec, size_t in_bytesRead)
+      {
+         // If the read was aborted, there's nothing else to do.
+         if (in_ec == boost::asio::error::operation_aborted)
+            return;
+
+         if (in_ec)
+         {
+            in_onError(
+               systemError(
+                  in_ec.value(),
+                  "Could not read from stream with descriptor " + std::to_string(implPtr->StreamDescriptor.native_handle()) + ".",
+                  ERROR_LOCATION));
+            return;
+         }
+
+         in_onReadBytes(implPtr->Buffer, in_bytesRead);
+      };
+
+   m_impl->StreamDescriptor.async_read_some(boost::asio::buffer(m_impl->Buffer, Impl::BUFFER_SIZE), onRead);
 }
 
 } // namespace system
