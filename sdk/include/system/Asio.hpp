@@ -117,6 +117,14 @@ public:
     */
    void readBytes(const OnReadBytes& in_onReadBytes, const OnError& in_onError);
 
+   /*
+    * @brief Writes the provided data to the stream asynchronously.
+    *
+    * This method is threadsafe. Each provided block of data will be written to the stream in full before a new one
+    * begins.
+    */
+   void writeBytes(const std::string& in_data, const OnError& in_onError);
+
 private:
    // The private implementation of AsioStream.
    PRIVATE_IMPL_SHARED(m_impl);
