@@ -36,6 +36,7 @@ set(RLPS_SOURCE_FILES
    src/api/Response.cpp
    src/comms/AbstractLauncherCommunicator.cpp
    src/comms/MessageHandler.cpp
+   src/comms/StdIOLauncherCommunicator.cpp
    src/json/Json.cpp
    src/json/JsonUtils.cpp
    src/logging/FileLogDestination.cpp
