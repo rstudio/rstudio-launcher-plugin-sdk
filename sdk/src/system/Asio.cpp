@@ -226,6 +226,11 @@ AsioStream::AsioStream(int in_streamHandle) :
 {
 }
 
+void AsioStream::close()
+{
+   m_impl->StreamDescriptor.close();
+}
+
 void AsioStream::readBytes(const OnReadBytes& in_onReadBytes, const OnError& in_onError)
 {
    std::shared_ptr<Impl> implPtr = m_impl;

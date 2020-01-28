@@ -110,6 +110,11 @@ public:
    explicit AsioStream(int in_streamHandle);
 
    /**
+    * @brief Closes the stream. Nothing may be read from or written to the stream after this is called.
+    */
+   void close();
+
+   /**
     * @brief Attempts to read bytes from this ASIO stream.
     *
     * @param in_onReadBytes     Callback function which will be invoked on successful read.
@@ -117,7 +122,7 @@ public:
     */
    void readBytes(const OnReadBytes& in_onReadBytes, const OnError& in_onError);
 
-   /*
+   /**
     * @brief Writes the provided data to the stream asynchronously.
     *
     * This method is threadsafe. Each provided block of data will be written to the stream in full before a new one
