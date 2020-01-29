@@ -70,8 +70,11 @@ set(RLPS_BOOST_LIBS
    Boost::thread
 )
 
+find_library(PTHREAD_LIBS pthread)
+
 target_link_libraries(rstudio-launcher-plugin-sdk-lib
    ${RLPS_BOOST_LIBS}
+   ${PTHREAD_LIBS}
 )
 
 # define executables for unit tests
