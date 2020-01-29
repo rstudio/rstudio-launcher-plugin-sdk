@@ -115,6 +115,10 @@ private:
    PRIVATE_IMPL(m_responseImpl);
 };
 
+/**
+ * @brief Class which represents a bootstrap response which can be sent to the RStudio Launcher in response to a
+ *        bootstrap request.
+ */
 class BootstrapResponse : public Response
 {
 public:
@@ -133,6 +137,9 @@ public:
    json::Object asJson() const override;
 };
 
+/**
+ * @brief Class which represents an error response which can be sent to the RStudio Launcher in response to any request.
+ */
 class ErrorResponse : public Response
 {
 public:

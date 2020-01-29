@@ -122,11 +122,17 @@ int configureScratchPath(const system::FilePath& in_scratchPath, const system::U
 
 struct AbstractMain::Impl
 {
+   /**
+    * @brief Constructor.
+    */
    Impl() :
       m_exitProcess(false)
    {
    }
 
+   /**
+    * @brief Signals shutdown for the whole process.
+    */
    void signalShutdown()
    {
       UNIQUE_LOCK_MUTEX(m_mutex)
@@ -135,12 +141,25 @@ struct AbstractMain::Impl
       END_UNIQUE_LOCK_MUTEX
    }
 
+   /**
+    * @brief Signal handler to be invoked when the process recevies a signal such as SIGINT.
+    *
+    * @param in_sharedThis      A shared pointer to this.
+    * @param in_signal          The signal which was received.
+    */
    static void onSignal(std::shared_ptr<Impl> in_sharedThis, int in_signal)
    {
       logging::logInfoMessage("Received signal: " + std::to_string(in_signal));
       in_sharedThis->signalShutdown();
    }
 
+   /**
+    * @brief Callback function to be invoked when a communication error occurrs with the RStudio Launcher, such as a
+    *        malformed message.
+    *
+    * @param in_sharedThis      A shared pointer to this.
+    * @param in_error           The error which occurred while communicating with the RStudio Launcher..
+    */
    static void onCommunicationError(std::shared_ptr<Impl> in_sharedThis, const Error& in_error)
    {
       logging::logError(in_error);
@@ -149,6 +168,9 @@ struct AbstractMain::Impl
       in_sharedThis->signalShutdown();
    }
 
+   /**
+    * @brief Runs the process until a shutdown signal is recevied.
+    */
    void waitForSignal()
    {
       UNIQUE_LOCK_MUTEX(m_mutex)
@@ -158,8 +180,13 @@ struct AbstractMain::Impl
    }
 
 private:
+   /** Indicates whether the process should exit (true) or continue running (false).*/
    bool m_exitProcess;
+
+   /** Mutex to protect the exit process boolean value. */
    boost::mutex m_mutex;
+
+   /** Condition variable to use to wait for or send a shutdown signal. */
    boost::condition_variable m_exitConditionVar;
 };
 

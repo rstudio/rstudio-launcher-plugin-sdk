@@ -129,14 +129,21 @@ protected:
    void onDataReceived(const char* in_data, size_t in_length);
 
 protected:
-   template <typename T>
-   std::shared_ptr<T> shared_from_derived()
+   /**
+    * @breif Template method which allows classes which inherit AbstractLauncherCommunicator to get a shared_ptr to
+    *        themselves.
+    * @tparam Derived       Type of the class which inherits from AbstractLauncherCommunicator.
+    *
+    * @return A shared_ptr to this derived class.
+    */
+   template <typename Derived>
+   std::shared_ptr<Derived> shared_from_derived()
    {
       static_assert(
-         std::is_base_of<AbstractLauncherCommunicator, T>::value,
-         "T must inherit from AbstractLauncherCommunicator");
+         std::is_base_of<AbstractLauncherCommunicator, Derived>::value,
+         "Derived must inherit from AbstractLauncherCommunicator");
 
-      return std::static_pointer_cast<T>(shared_from_this());
+      return std::static_pointer_cast<Derived>(shared_from_this());
    }
 
 

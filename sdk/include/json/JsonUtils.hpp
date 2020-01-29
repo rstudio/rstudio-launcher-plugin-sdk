@@ -69,7 +69,6 @@ Error jsonReadError(JsonReadError in_errorCode, const std::string& in_message, c
  */
 bool isMissingMemberError(const Error& in_error);
 
-
 /**
  * @brief Reads a member from an object.
  *
