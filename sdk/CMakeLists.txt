@@ -31,6 +31,7 @@ file(GLOB_RECURSE RLPS_HEADER_FILES "*.h*")
 set(RLPS_SOURCE_FILES
    src/AbstractMain.cpp
    src/Error.cpp
+   src/api/AbstractPluginApi.cpp
    src/api/Constants.cpp
    src/api/Request.cpp
    src/api/Response.cpp
