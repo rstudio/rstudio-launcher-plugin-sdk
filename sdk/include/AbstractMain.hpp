@@ -27,6 +27,7 @@
 #include <system/FilePath.hpp>
 
 #include <api/AbstractPluginApi.hpp>
+#include <comms/AbstractLauncherCommunicator.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -46,6 +47,13 @@ public:
     * @brief Default destructor.
     */
    virtual ~AbstractMain() = default;
+
+   /**
+    * @brief Initializes the process in preparation to run.
+    *
+    * @return Success if the process could be initialized; Error otherwise.
+    */
+   Error initialize();
 
    /**
     * @brief Runs the plugin.
@@ -89,6 +97,9 @@ private:
     * @return The unique program ID for this plugin.
     */
     virtual std::string getProgramId() const;
+
+    // Private implementation of abstract main.
+    PRIVATE_IMPL_SHARED(m_abstractMainImpl);
 };
 
 } // namespace launcher_plugins
