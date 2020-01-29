@@ -24,7 +24,7 @@
 #ifndef LAUNCHER_PLUGINS_STD_IO_COMMUNICATOR_HPP
 #define LAUNCHER_PLUGINS_STD_IO_COMMUNICATOR_HPP
 
-#include "AbstractLauncherCommunicator.hpp"
+#include <comms/AbstractLauncherCommunicator.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {

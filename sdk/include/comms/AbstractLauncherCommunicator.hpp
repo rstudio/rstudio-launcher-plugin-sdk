@@ -97,8 +97,10 @@ public:
 
    /**
     * @brief Blocks until the communicator has successfully stopped.
+    *
+    * Child classes which override this method should also invoke the base method.
     */
-   virtual void waitForExit() = 0;
+   virtual void waitForExit();
 
 protected:
    /**

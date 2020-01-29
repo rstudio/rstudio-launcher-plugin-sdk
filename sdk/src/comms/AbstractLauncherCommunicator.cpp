@@ -21,7 +21,7 @@
  *
  */
 
-#include "AbstractLauncherCommunicator.hpp"
+#include <comms/AbstractLauncherCommunicator.hpp>
 
 #include <map>
 #include <sstream>
@@ -105,6 +105,11 @@ Error AbstractLauncherCommunicator::start()
 void AbstractLauncherCommunicator::stop()
 {
    // Nothing to explicitly stop.
+}
+
+void AbstractLauncherCommunicator::waitForExit()
+{
+   // Nothing to wait for, for now.
 }
 
 AbstractLauncherCommunicator::AbstractLauncherCommunicator(size_t in_maxMessageSize, const OnError& in_onError) :
