@@ -26,6 +26,11 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace quickstart {
 
+QuickStartPluginApi::QuickStartPluginApi(std::shared_ptr<comms::AbstractLauncherCommunicator> in_launcherCommunicator) :
+   AbstractPluginApi(std::move(in_launcherCommunicator))
+{
+}
+
 Error QuickStartPluginApi::doInitialize()
 {
    // TODO #?: Initialize everything your plugin API needs to work. For example:

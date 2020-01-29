@@ -61,9 +61,13 @@ private:
    /**
     * @brief Creates the Launcher Plugin API.
     *
+    * @param in_launcherCommunicator        The communicator created by this class to communicate with the RStudio
+ *                                          Launcher.
+    *
     * @return The Plugin specific Launcher Plugin API.
     */
-   virtual std::shared_ptr<api::AbstractPluginApi> createLauncherPluginApi() const = 0;
+   virtual std::shared_ptr<api::AbstractPluginApi> createLauncherPluginApi(
+      std::shared_ptr<comms::AbstractLauncherCommunicator> in_launcherCommunicator) const = 0;
 
    /**
     * @brief Gets the configuration file for this program. The default is /etc/rstudio/launcher.<pluginName>.conf.

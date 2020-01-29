@@ -37,9 +37,10 @@ private:
     *
     * @return The Plugin specific Launcher Plugin API.
     */
-   std::shared_ptr<AbstractPluginApi> createLauncherPluginApi() const override
+   std::shared_ptr<api::AbstractPluginApi> createLauncherPluginApi(
+      std::shared_ptr<comms::AbstractLauncherCommunicator> in_launcherCommunicator) const override
    {
-      return std::shared_ptr<AbstractPluginApi>(new LocalPluginApi());
+      return std::shared_ptr<api::AbstractPluginApi>(new LocalPluginApi(in_launcherCommunicator));
    }
 
    /**

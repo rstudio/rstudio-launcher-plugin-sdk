@@ -24,6 +24,7 @@
 #include <Noncopyable.hpp>
 
 #include <PImpl.hpp>
+#include <comms/AbstractLauncherCommunicator.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -46,7 +47,7 @@ public:
    /**
     * @brief Virtual destructor.
     */
-   virtual ~AbstractPluginApi();
+   virtual ~AbstractPluginApi() = default;
 
    /**
     * @brief This method initializes the abstract plugin API.
@@ -54,6 +55,15 @@ public:
     * @return Success if the abstract plugin API was successfully initialized; Error otherwise.
     */
    Error initialize();
+
+protected:
+   /**
+    * @brief Constructor.
+    *
+    * @param in_launcherCommunicator    The communicator to use for sending and receiving messages from the RStudio
+    *                                   Launcher.
+    */
+   explicit AbstractPluginApi(std::shared_ptr<comms::AbstractLauncherCommunicator> in_launcherCommunicator);
 
 private:
    /**
@@ -65,7 +75,7 @@ private:
     */
    virtual Error doInitialize() = 0;
 
-   // The private implementation of
+   // The private implementation of AbstractPluginApi
    PRIVATE_IMPL(m_abstractPluginImpl);
 };
 

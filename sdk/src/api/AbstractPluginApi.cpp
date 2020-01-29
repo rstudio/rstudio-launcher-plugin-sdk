@@ -1,7 +1,10 @@
 /*
- * QuickStartPluginApi.hpp
- * 
- * Copyright (C) 2019 by RStudio, Inc.
+ * AbstractPluginApi.cpp
+ *
+ * Copyright (C) 2020 by RStudio, Inc.
+ *
+ * Unless you have received this program directly from RStudio pursuant to the terms of a commercial license agreement
+ * with RStudio, then this program is licensed to you under the following terms:
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
  * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
@@ -18,42 +21,36 @@
  *
  */
 
-#ifndef QUICKSTART_QUICK_START_PLUGIN_API_HPP
-#define QUICKSTART_QUICK_START_PLUGIN_API_HPP
-
 #include <api/AbstractPluginApi.hpp>
+
+#include <options/Options.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
-namespace quickstart {
+namespace api {
 
-/**
- * @brief Launcher Plugin API for the QuickStart Plugin.
- */
-class QuickStartPluginApi : public api::AbstractPluginApi
+struct AbstractPluginApi::Impl
 {
-public:
-   /**
-    * @brief Constructor.
-    *
-    * @param in_launcherCommunicator    The communicator to use for sending and receiving messages from the RStudio
-    *                                   Launcher.
-    */
-   explicit QuickStartPluginApi(std::shared_ptr<comms::AbstractLauncherCommunicator> in_launcherCommunicator);
+   explicit Impl(std::shared_ptr<comms::AbstractLauncherCommunicator> in_launcherCommunicator) :
+      LauncherCommunicator(std::move(in_launcherCommunicator))
+   {
+   }
 
-private:
-   /**
-    * @brief This method is responsible for initializing all components necessary to communicate with the job launching
-    *        system supported by this Plugin, such as initializing Plugin specific options or the communication method
-    *        (e.g. a TCP socket).
-    *
-    * @return Success if all components of the Plugin API could be initialized; Error otherwise.
-    */
-   Error doInitialize() override;
+   std::shared_ptr<comms::AbstractLauncherCommunicator> LauncherCommunicator;
 };
 
-} // namespace quickstart
+PRIVATE_IMPL_DELETER_IMPL(AbstractPluginApi)
+
+Error AbstractPluginApi::initialize()
+{
+   return doInitialize();
+}
+
+AbstractPluginApi::AbstractPluginApi(std::shared_ptr<comms::AbstractLauncherCommunicator> in_launcherCommunicator) :
+   m_abstractPluginImpl(new Impl(std::move(in_launcherCommunicator)))
+{
+}
+
+} // namespace api
 } // namespace launcher_plugins
 } // namespace rstudio
-
-#endif

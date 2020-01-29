@@ -25,6 +25,16 @@
 
 namespace rstudio {
 namespace launcher_plugins {
+namespace comms {
+
+class AbstractLauncherCommunicator;
+
+}
+}
+}
+
+namespace rstudio {
+namespace launcher_plugins {
 namespace local {
 
 /**
@@ -33,6 +43,13 @@ namespace local {
 class LocalPluginApi : public api::AbstractPluginApi
 {
 public:
+   /**
+    * @brief Constructor.
+    *
+    * @param in_launcherCommunicator    The communicator to use for sending and receiving messages from the RStudio
+    *                                   Launcher.
+    */
+   explicit LocalPluginApi(std::shared_ptr<comms::AbstractLauncherCommunicator> in_launcherCommunicator);
 
 private:
    /**

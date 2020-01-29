@@ -39,9 +39,10 @@ class QuickStartMain : public AbstractMain
     *
     * @return The QuickStart Launcher Plugin API.
     */
-   std::shared_ptr<AbstractPluginApi> createLauncherPluginApi() const override
+   std::shared_ptr<api::AbstractPluginApi> createLauncherPluginApi(
+      std::shared_ptr<comms::AbstractLauncherCommunicator> in_launcherCommunicator) const override
    {
-      return std::shared_ptr<AbstractPluginApi>(new QuickStartPluginApi());
+      return std::shared_ptr<api::AbstractPluginApi>(new QuickStartPluginApi(in_launcherCommunicator));
    }
 
    /**

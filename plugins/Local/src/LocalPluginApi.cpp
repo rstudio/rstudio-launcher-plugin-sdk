@@ -26,6 +26,11 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace local {
 
+LocalPluginApi::LocalPluginApi(std::shared_ptr<comms::AbstractLauncherCommunicator> in_launcherCommunicator) :
+   AbstractPluginApi(std::move(in_launcherCommunicator))
+{
+}
+
 Error LocalPluginApi::doInitialize()
 {
    // Make sure LocalOptions have been initialized.
