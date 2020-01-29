@@ -83,6 +83,17 @@ void AsioService::post(const AsioFunction& in_work)
    boost::asio::post(getAsioService().m_impl->IoService, in_work);
 }
 
+void AsioService::setSignalHandler(const OnSignal &in_onSignal)
+{
+   // Create the signal handlers and register them with the IO service.
+   boost::asio::signal_set signalSet(getAsioService().m_impl->IoService);
+
+   // Invoke the provided signal handler on SIGINT or SIGTERM.
+   signalSet.add(SIGINT);
+   signalSet.add(SIGTERM);
+   signalSet.async_wait(std::bind(in_onSignal, std::placeholders::_2));
+}
+
 void AsioService::startThreads(size_t in_numThreads)
 {
    std::shared_ptr<Impl> sharedThis = getAsioService().m_impl;

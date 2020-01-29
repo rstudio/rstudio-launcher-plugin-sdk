@@ -46,6 +46,11 @@ typedef std::function<void()> AsioFunction;
 typedef std::function<void(const char*, size_t)> OnReadBytes;
 
 /**
+ * @brief Callback function which will be invoked when a signal is sent to this process.
+ */
+typedef std::function<void(int)> OnSignal;
+
+/**
  * @brief Async input/output class which may be used to manage ASIO operations.
  */
 class AsioService : public Noncopyable
@@ -58,6 +63,16 @@ public:
     * @param in_work    The job to be posted to the ASIO Service.
     */
    static void post(const AsioFunction& in_work);
+
+   /**
+    * @brief Sets the signal handler on the ASIO service.
+    *
+    * The ASIO service will manage signals sent to the process. The signal handler provided here will be invoked when a
+    * signal is received.
+    *
+    * @param in_onSignal    The function to invoke when a signal is received.
+    */
+   static void setSignalHandler(const OnSignal& in_onSignal);
 
    /**
     * @brief Creates and adds the specified number of worker threads to the ASIO service.
