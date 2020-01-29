@@ -31,11 +31,18 @@ namespace api {
 
 struct AbstractPluginApi::Impl
 {
+   /**
+    * @brief Constructor.
+    *
+    * @param in_launcherCommunicator    The communicator that will be used to send and receive messages from the RStudio
+    *                                   Launcher.
+    */
    explicit Impl(std::shared_ptr<comms::AbstractLauncherCommunicator> in_launcherCommunicator) :
       LauncherCommunicator(std::move(in_launcherCommunicator))
    {
    }
 
+   /** The communicator that will be used to send and receive messages from the RStudio Launcher. */
    std::shared_ptr<comms::AbstractLauncherCommunicator> LauncherCommunicator;
 };
 

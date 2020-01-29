@@ -69,8 +69,8 @@ private:
    /**
     * @brief Creates the Launcher Plugin API.
     *
-    * @param in_launcherCommunicator        The communicator created by this class to communicate with the RStudio
- *                                          Launcher.
+    * @param in_launcherCommunicator    The communicator that will be used to send and receive messages from the RStudio
+    *                                   Launcher.
     *
     * @return The Plugin specific Launcher Plugin API.
     */

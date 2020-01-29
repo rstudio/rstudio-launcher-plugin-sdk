@@ -39,6 +39,9 @@ typedef std::weak_ptr<StdIOLauncherCommunicator> WeakThis;
 
 struct StdIOLauncherCommunicator::Impl
 {
+   /**
+    * @brief Constructor.
+    */
    Impl() :
       StdInStream(STDIN_FILENO),
       StdOutStream(STDOUT_FILENO)
@@ -46,7 +49,10 @@ struct StdIOLauncherCommunicator::Impl
 
    }
 
+   /** The standard input stream. */
    system::AsioStream StdInStream;
+
+   /** The standard output stream. */
    system::AsioStream StdOutStream;
 };
 

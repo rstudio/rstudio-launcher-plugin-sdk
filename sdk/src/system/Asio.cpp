@@ -59,6 +59,10 @@ struct AsioService::Impl
    {
    }
 
+   /**
+    * @brief Callback function which may be used to register a thread with the ASIO service and ensure it is available
+    *        for ASIO work.
+    */
    void startWorkerThread()
    {
       boost::asio::io_service::work work(IoService);
