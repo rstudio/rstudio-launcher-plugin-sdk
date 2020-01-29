@@ -50,6 +50,8 @@ struct StdIOLauncherCommunicator::Impl
    system::AsioStream StdOutStream;
 };
 
+PRIVATE_IMPL_DELETER_IMPL(StdIOLauncherCommunicator)
+
 StdIOLauncherCommunicator::StdIOLauncherCommunicator(size_t in_maxMessageSize, const OnError& in_onError) :
       AbstractLauncherCommunicator(in_maxMessageSize, in_onError),
       m_impl(new Impl())
