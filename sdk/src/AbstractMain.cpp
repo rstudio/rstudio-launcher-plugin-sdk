@@ -72,12 +72,6 @@ if (in_error)                             \
 
 namespace {
 
-
-Error changeFileOwnership(const system::FilePath& in_filePath, const std::string& in_username)
-{
-   return Success();
-}
-
 int configureScratchPath(const system::FilePath& in_scratchPath, const system::User& in_serverUser)
 {
    std::string message;
