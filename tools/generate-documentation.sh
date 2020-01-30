@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #
-# generate-doxygen
+# generate-documentation
 #
 # Copyright (C) 2019 by RStudio, Inc.
 #
