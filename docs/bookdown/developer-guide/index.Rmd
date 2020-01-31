@@ -13,4 +13,7 @@ params:
 ---
 
 # Introduction {#intro}
+
 This document is the RStudio Launcher Plugin SDK Developer's Guide. It covers the architecture of the RStudio Launcher, the architecture of the RStudio Launcher Plugin SDK, and the advanced features of the RStudio Launcher Plugin SDK. To implement a RStudio Launcher Plugin using the provided QuickStart RStudio Launcher Plugin, please refer to the RStudio Launcher Plugin SDK QuickStart guide.
+
+For the remainder of this document, the RStudio Launcher may alternately be referred to as "the Launcher", RStudio Launcher Plugins as "Plugins" (plural) or "Plugin" (singular), and the RStudio Launcher Plugin SDK as "the SDK".
