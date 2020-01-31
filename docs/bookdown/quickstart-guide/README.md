@@ -1,1 +1,1 @@
-This is the RStudio Launcher Plugin SDK Quickstart Guide.
+This is the RStudio Launcher Plugin SDK QuickStart Guide.

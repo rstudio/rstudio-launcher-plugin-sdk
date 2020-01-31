@@ -1,6 +1,6 @@
 --- 
 title: "RStudio Launcher Plugin Software Development Kit `r params$version`"
-subtitle: "Quickstart Guide"
+subtitle: "QuickStart Guide"
 date: "`r Sys.Date()`"
 site: bookdown::bookdown_site
 lang: en
