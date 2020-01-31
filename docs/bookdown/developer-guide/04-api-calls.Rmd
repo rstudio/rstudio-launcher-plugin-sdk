@@ -1,0 +1,3 @@
+# Plugin API {#pluginapi}
+
+Talk about the Plugin API in detail.
