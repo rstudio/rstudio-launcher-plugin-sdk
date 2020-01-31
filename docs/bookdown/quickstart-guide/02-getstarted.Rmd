@@ -46,4 +46,6 @@ The following describes the purpose of the files and folders which can be found 
 * `sdk` - The source code for the RStudio Launcher Plugin SDK.
 
 ## Development Process {#devproc}
-The RStudio Launcher Plugin SDK provides the QuickStart RStudio Launcher Plugin to help reduce the complexity of developing an RStudio Launcher Plugin using the SDK. The QuickStart Plugin includes a series of `TODO` items. This document will walk the developer through the steps of each `TODO`. At the end of this document, the developer should have a functional RStudio Launcher Plugin.
+The RStudio Launcher Plugin SDK provides the QuickStart RStudio Launcher Plugin to help reduce the complexity of developing an RStudio Launcher Plugin using the SDK. The QuickStart Plugin includes a series of `TODO` items. This document will walk the developer through the steps of each `TODO`. At the end of this document, the developer should have a functional RStudio Launcher Plugin. 
+
+If any feature requires a more complex implementation than is possible by following the `TODO` for that feature, please refer to the RStudio Launcher Plugin SDK Developer's Guide.
