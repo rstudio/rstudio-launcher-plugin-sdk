@@ -1,0 +1,20 @@
+# The RStudio Launcher {#launcher}
+
+The purpose of the RStudio Launcher is to provide a generic interface to integrate job scheduling systems with RStudio Server Pro and other RStudio products. The Launcher itself is not specific to R processes, and should be able to launch arbitrary work through any job scheduling system for which a Plugin  exists. This section will describe the way that RStudio products may integrate with the Launcher, the way the Launcher communicates with and manages Plugins, and network architecture requirements.
+
+## Public Interface {#launcher-pub}
+
+On the front-end, the Launcher exposes an HTTP API. RStudio products which wish to integrate with the Launcher send HTTP requests, such as `GET /jobs` or `POST /jobs` to the Launcher. The Launcher handles authentication and authorization for each of these requests, distills the necessary information for a Plugin, and forwards those details to the appropriate Plugin. As a result, there is no requirement for the Launcher to be running on the same machine as the RStudio product which will make use of it. For more information about network architecture requirements, see section \@ref(net-arch).
+
+## Plugin Management {#plugin-mgmt}
+
+When the Launcher is started, it reads `/etc/rstudio/launcher.conf` which contains a (SECTION NAME) section for each Plugin which should be used. The Launcher will start a child process for each Plugin and request that the Plugin initialize itself with a `Bootstrap` request. During this request, the Plugin is responsible for ensuring that it has an accurate list of the jobs currently in its respective job scheduling system. If any configured Plugin fails to bootstrap correctly, the Launcher will fail to start. 
+
+During the lifetime of the Launcher, it will forward requests to the Plugins as appropriate, via the JSON Launcher Plugin API. In the current version, the Launcher is only able to communicate with Plugins over standard input and output. As a result, the Launcher and each Plugin must be run on the same machine.
+
+When the Launcher is terminated, it will send a termination signal to each of the Plugins it is managing.
+
+Receiving requests, formatting and sending responses, and listening for signals are all handled by the SDK before the Plugin specific implementations are invoked. Thus, the Plugin developer can focus solely on the parts of the implementation that will integrate the Plugin with the job scheduling system.
+
+## Network Architecture Requirements {#net-arch}
+
