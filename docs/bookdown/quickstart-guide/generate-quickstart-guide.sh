@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #
-# generate-documentation
+# generate-developers-guide
 #
 # Copyright (C) 2019 by RStudio, Inc.
 #
@@ -31,8 +31,9 @@ if [[ -n $1 ]]; then
   VERSION=$1
 fi
 
-cd "$(dirname "${BASH_SOURCE[0]}")/../docs"
+cd "$(dirname "${BASH_SOURCE[0]}")"
 
-./doxygen/generate-doxygen.sh "${VERSION}"
-./bookdown/quickstart-guide/generate-quickstart-guide.sh "${VERSION}"
+# update the version number
+sed -e "s/\\\${RLPS_VERSION}/${VERSION}/g" _bookdown.yml.in > _bookdown.yml
 
+RSTUDIO_PANDOC="/usr/lib/rstudio/bin/pandoc" Rscript -e "bookdown::render_book(\"index.Rmd\", \"bookdown::pdf_book\")"

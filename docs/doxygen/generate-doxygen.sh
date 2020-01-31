@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #
-# generate-documentation
+# generate-doxygen
 #
 # Copyright (C) 2019 by RStudio, Inc.
 #
@@ -31,8 +31,15 @@ if [[ -n $1 ]]; then
   VERSION=$1
 fi
 
-cd "$(dirname "${BASH_SOURCE[0]}")/../docs"
+cd "$(dirname "${BASH_SOURCE[0]}")"
 
-./doxygen/generate-doxygen.sh "${VERSION}"
-./bookdown/quickstart-guide/generate-quickstart-guide.sh "${VERSION}"
+# update the version number
+sed -e "s/\\\${RLPS_VERSION}/${VERSION}/g" Doxyfile.in > Doxyfile
 
+# Generate Doxygen documetnation
+sudo doxygen Doxyfile
+cd latex
+sudo make
+cp refman.pdf "../../RStudio Launcher Plugin SDK API Reference.pdf"
+cd ..
+sudo rm -r latex
