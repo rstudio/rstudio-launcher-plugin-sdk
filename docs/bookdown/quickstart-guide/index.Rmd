@@ -1,0 +1,20 @@
+--- 
+title: "RStudio Launcher Plugin Software Development Kit `r params$version`"
+subtitle: "Quickstart Guide"
+date: "`r Sys.Date()`"
+site: bookdown::bookdown_site
+lang: en
+documentclass: book
+classoption: oneside
+description: "This is the quick start guide for developing Plugins for the RStudio Launcher using the RStudio Launcher Plugin SDK."
+fontsize: 11pt
+params:
+  version: 99.9.9
+---
+
+# Preface {#preface}
+This is the quick start guide for writing RStudio Launcher Plugins using the
+RStudio Launcher Plugin SDK. It will cover the minimum steps required to create
+a working RStudio Launcher Plugin for a job scheduling system. For more detailed
+information and advanced topics, please see the RStudio Launcher Plugin SDK
+Developer's Guide.
