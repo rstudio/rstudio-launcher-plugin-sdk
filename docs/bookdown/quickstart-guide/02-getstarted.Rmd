@@ -40,7 +40,9 @@ The following describes the purpose of the files and folders which can be found 
 * `docs` - Formal documentation for the RStudio Launcher Plugin SDK, including the QuickStart Guide, the Developer's Guide and the source code Doxygen documentation.
 * `plugins` - The sample Local RStudio Launcher Plugin and the QuickStart RStudio Launcher Plugin.
    * `Local` - The source code for the Local RStudio Launcher Plugin.
+       * `CMakeLists.txt` - The cmake project definition for the Local RStudio Launcher Plugin. This file may be opened in any IDE which supports cmake projects for a view of only the Local RStudio Launcher Plugin.
    * `QuickStart` - The source code for the QuickStart RStudio Launcher Plugin.
+       * `CMakeLists.txt` - The cmake project definition for the QuickStart RStudio Launcher Plugin. This file may be opened in any IDE which supports cmake projects for a view of only the QuickStart RStudio Launcher Plugin.
 * `sdk` - The source code for the RStudio Launcher Plugin SDK.
 
 ## Development Process {#devproc}
