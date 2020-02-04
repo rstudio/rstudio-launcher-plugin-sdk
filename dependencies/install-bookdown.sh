@@ -44,7 +44,7 @@ fi
 set -e
 
 # Make sure we're in the directory of this script
-cd "$(dirname "${BASH_SOURCE[0]}")"
+cd "$(readlink "$(dirname "${BASH_SOURCE[0]}")")"
 
 if [[ $INSTALL_R -eq 1 ]]; then
   if [[ $HAVE_YUM -eq 1 ]]; then
@@ -63,16 +63,16 @@ fi
 # Install Pandoc
 PANDOC_VER="2.7.3"
 PANDOC_INSTALL_DIR="/usr/lib/rstudio/bin/pandoc/"
-PANDOC_DIR="pandoc-${PANDOC_VER}-linux"
-PANDOC_TAR="${PANDOC_DIR}.tar.gz"
+PANDOC_DIR="pandoc-${PANDOC_VER}"
+PANDOC_TAR="${PANDOC_DIR}-linux.tar.gz"
 PANDOC_URL="https://s3.amazonaws.com/rstudio-buildtools/pandoc/${PANDOC_VER}/${PANDOC_TAR}"
 
 if ! [ -d "${PANDOC_INSTALL_DIR}" ]; then
 
   mkdir -p "${PANDOC_INSTALL_DIR}"
 
-  mkdir tmp
-  pushd tmp
+  mkdir -p temp
+  pushd temp
 
   wget "${PANDOC_URL}"
   tar -xzf "${PANDOC_TAR}"
@@ -84,7 +84,7 @@ if ! [ -d "${PANDOC_INSTALL_DIR}" ]; then
   popd
   popd
 
-  rm -rf tmp
+  rm -rf temp
 fi
 
 # Install R libraries

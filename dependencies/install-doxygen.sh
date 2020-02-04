@@ -38,6 +38,10 @@ fi
 
 # Install doxygen build dependencies, if not installed
 set -e
+
+# Ensure we're in the directory of this script.
+cd "$(readlink "$(dirname "${BASH_SOURCE[0]}")")"
+
 if [[ $HAVE_YUM -eq 1 ]]; then
   sudo yum update -y
   sudo yum install -y wget flex bison libc6 make binutils python texlive-full gcc gcc-c++ git
@@ -77,22 +81,25 @@ if [[ $CMAKE_VER_MAJOR -lt 3 ]] ||
 fi
 
 # Download Doxygen Source
-mkdir -p tmp
-cd tmp
+mkdir -p temp
+pushd temp
 
 DOXYGEN_VER="1.8.16"
 DOXYGEN_TAR="doxygen-${DOXYGEN_VER}.src.tar.gz"
 wget "http://doxygen.nl/files/${DOXYGEN_TAR}"
 
 tar -xzf "${DOXYGEN_TAR}"
-cd "doxygen-${DOXYGEN_VER}"
+pushd "doxygen-${DOXYGEN_VER}"
 mkdir -p build
-cd build
+pushd build
 
 cmake -G "Unix Makefiles" ..
 make
 
 sudo make install
 
-cd ../../../
-rm -rf tmp
+popd
+popd
+popd
+
+rm -rf temp
