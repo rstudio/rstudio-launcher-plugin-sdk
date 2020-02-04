@@ -62,7 +62,7 @@ fi
 
 # Install Pandoc
 PANDOC_VER="2.7.3"
-PANDOC_INSTALL_DIR="/usr/lib/rstudio/bin/pandoc/${PANDOC_VER}"
+PANDOC_INSTALL_DIR="/usr/lib/rstudio/bin/pandoc/"
 PANDOC_DIR="pandoc-${PANDOC_VER}"
 PANDOC_TAR="${PANDOC_DIR}-linux.tar.gz"
 PANDOC_URL="https://s3.amazonaws.com/rstudio-buildtools/pandoc/${PANDOC_VER}/${PANDOC_TAR}"
