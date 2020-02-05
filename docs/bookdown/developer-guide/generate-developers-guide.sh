@@ -37,3 +37,5 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 sed -e "s/\\\${RLPS_VERSION}/${VERSION}/g" _bookdown.yml.in > _bookdown.yml
 
 RSTUDIO_PANDOC="/usr/lib/rstudio/bin/pandoc" Rscript -e "bookdown::render_book(\"index.Rmd\", \"bookdown::pdf_book\")"
+
+cp "rlps-${VERSION}-developers-guide.pdf" "../../RStudio Launcher Plugin SDK Developer Guide.pdf"
