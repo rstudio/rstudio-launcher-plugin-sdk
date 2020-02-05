@@ -35,4 +35,4 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../docs"
 
 ./doxygen/generate-doxygen.sh "${VERSION}"
 ./bookdown/quickstart-guide/generate-quickstart-guide.sh "${VERSION}"
-./bookdown/developers-guide/generate-developers-guide.sh "${VERSION}"
+./bookdown/developer-guide/generate-developers-guide.sh "${VERSION}"
