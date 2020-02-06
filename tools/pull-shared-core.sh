@@ -25,6 +25,7 @@
 #
 
 set -e # exit on failed commands.
+set -x
 
 # Get the optional branch parameter
 BRANCH="master"
@@ -32,32 +33,27 @@ if [[ -n $1 ]]; then
     BRANCH=$1
 fi
 
-SRC_INCLUDE="rstudio-clone/src/cpp/shared_core/include/shared_core"
-SRC_SRC="rstudio-clone/src/cpp/shared_core"
-DEST_INCLUDE="sdk/include"
-DEST_SRC="sdk/src"
+ROOT_DIR="$(readlink -e "$(dirname "${BASH_SOURCE[0]}")/..")"
+
+SRC_INCLUDE="temp/rstudio-clone/src/cpp/shared_core/include/shared_core"
+SRC_SRC="temp/rstudio-clone/src/cpp/shared_core"
+DEST_INCLUDE="${ROOT_DIR}/sdk/include"
+DEST_SRC="${ROOT_DIR}/sdk/src"
 
 # Clone the RStudio repo.
-cd "$(dirname "${BASH_SOURCE[0]}")/.."
-if [[ -d rstudio-clone ]]; then
-    cd rstudio-clone
+cd "${ROOT_DIR}/.."
+mkdir -p temp/rstudio-clone
+pushd temp/rstudio-clone
 
-    if git status; then
-        git checkout "$BRANCH"
-        git pull
-    else
-        cd ..
-        git clone --branch "$BRANCH" --origin origin --progress -v https://github.com/rstudio/rstudio.git rstudio-clone
-        cd rstudio-clone
-    fi
+if git status; then
+    git checkout "$BRANCH"
+    git pull
 else
-    mkdir rstudio-clone
-    git clone --branch "$BRANCH" --origin origin --progress -v https://github.com/rstudio/rstudio.git rstudio-clone
-    cd rstudio-clone
+    git clone --branch "$BRANCH" --origin origin --progress -v https://github.com/rstudio/rstudio.git ./
 fi
 
-# eave rstudio-clone
-cd ..
+# leave temp/rstudio-clone
+popd
 
 # Copy the files we want.
 # These arrays need to have the same length and order (e.g. index of source Json.hpp == index of destination Json.hpp). We're not using maps because Bash 3 doesn't support them.
@@ -249,9 +245,9 @@ for I in "${!SRC_SOURCES[@]}"; do
 done
 
 echo "Copying rapidjson library..."
-if [[ -e sdk/src/json/rapidjson ]]; then
-    sudo rm -r sdk/src/json/rapidjson
+if [[ -e "${ROOT_DIR}/sdk/src/json/rapidjson" ]]; then
+    sudo rm -r "${ROOT_DIR}/sdk/src/json/rapidjson"
 fi
-cp -r rstudio-clone/src/cpp/shared_core/include/shared_core/json/rapidjson sdk/src/json/rapidjson
+cp -r temp/rstudio-clone/src/cpp/shared_core/include/shared_core/json/rapidjson "${ROOT_DIR}/sdk/src/json/rapidjson"
 
-sudo rm -r rstudio-clone/
+sudo rm -r temp/
