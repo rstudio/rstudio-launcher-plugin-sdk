@@ -70,7 +70,8 @@ SRC_INCLUDES=(
   "Logger.hpp"                        #  6
   "DateTime.hpp"                      #  7
   "FilePath.hpp"                      #  8
-  "system/User.hpp")                  #  9
+  "system/User.hpp"                   #  9
+  "system/PosixSystem.hpp")           # 10
 DEST_INCLUDES=(
   "Error.hpp"                         #  1
   "PImpl.hpp"                         #  2
@@ -80,7 +81,8 @@ DEST_INCLUDES=(
   "logging/Logger.hpp"                #  6
   "system/DateTime.hpp"               #  7
   "system/FilePath.hpp"               #  8
-  "system/User.hpp")                  #  9
+  "system/User.hpp"                   #  9
+  "system/PosixSystem.hpp")           # 10
 
 SRC_SOURCES=(
   "Error.cpp"                         #  1
@@ -166,7 +168,7 @@ for I in "${!SRC_INCLUDES[@]}"; do
     DEST_PATH="$DEST_INCLUDE/${DEST_INCLUDES[$I]}"
 
     # Make DateTime private in the SDK.
-    if [[ "$SRC_FILE" == "DateTime.hpp" ]]; then
+    if [[ "$SRC_FILE" == "DateTime.hpp" || "$SRC_FILE" == "system/PosixSystem.hpp" ]]; then
       DEST_PATH="$DEST_SRC/${DEST_INCLUDES[$I]}"
     fi
 
