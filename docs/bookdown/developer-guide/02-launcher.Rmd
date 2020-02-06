@@ -8,7 +8,7 @@ On the front-end, the Launcher exposes an HTTP API. RStudio products which wish 
 
 ## Plugin Management {#plugin-mgmt}
 
-When the Launcher is started, it reads `/etc/rstudio/launcher.conf` which contains a (SECTION NAME) section for each Plugin which should be used. The Launcher will start a child process for each Plugin and request that the Plugin initialize itself with a `Bootstrap` request. During this request, the Plugin is responsible for ensuring that it has an accurate list of the jobs currently in its respective job scheduling system. If any configured Plugin fails to bootstrap correctly, the Launcher will fail to start. 
+When the Launcher is started, it reads `/etc/rstudio/launcher.conf` which contains a `[cluster]` section for each Plugin which should be used. The Launcher will start a child process for each Plugin and request that the Plugin initialize itself with a `Bootstrap` request. During this request, the Plugin is responsible for ensuring that it has an accurate list of the jobs currently in its respective job scheduling system. If any configured Plugin fails to bootstrap correctly, the Launcher will fail to start. 
 
 During the lifetime of the Launcher, it will forward requests to the Plugins as appropriate, via the JSON Launcher Plugin API. In the current version, the Launcher is only able to communicate with Plugins over standard input and output. As a result, the Launcher and each Plugin must be run on the same machine.
 
