@@ -24,7 +24,7 @@ As mentioned in section \@ref(launcher-pub), it is not necessary for the Launche
 knitr::include_graphics("images/simple-two-machine.png")
 ```
 
-It is possible to load balance multiple instances of the Launcher for improved request throughput. An example with two Launcher instances is depicted in \@ref(fig:load-balanced-net), below.
+It is possible to load balance multiple instances of the Launcher for improved request throughput. An example with two Launcher instances is depicted in figure \@ref(fig:load-balanced-net), below.
 
 ```{r load-balanced-net, echo=FALSE, eval=TRUE, fig.cap="Load Balanced Launcher Network Architecture"}
 knitr::include_graphics("images/load-balanced.png")
