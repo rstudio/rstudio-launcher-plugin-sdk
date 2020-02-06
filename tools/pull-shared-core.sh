@@ -25,7 +25,6 @@
 #
 
 set -e # exit on failed commands.
-set -x
 
 # Get the optional branch parameter
 BRANCH="master"
