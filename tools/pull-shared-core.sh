@@ -93,7 +93,8 @@ SRC_SOURCES=(
   "FilePath.cpp"                      # 10
   "ReaderWriterMutex.hpp"             # 11
   "ReaderWriterMutex.cpp"             # 12
-  "system/User.cpp")                  # 13
+  "system/User.cpp"                   # 13
+  "system/PosixSystem.cpp")           # 14
 DEST_SOURCES=(
   "Error.cpp"                         #  1
   "SafeConvert.hpp"                   #  2
@@ -107,8 +108,8 @@ DEST_SOURCES=(
   "system/FilePath.cpp"               # 10
   "system/ReaderWriterMutex.hpp"      # 11
   "system/ReaderWriterMutex.cpp"      # 12
-  "system/User.cpp")                  # 13
-
+  "system/User.cpp"                   # 13
+  "system/PosixSystem.cpp")           # 14
 
 replace()
 {
