@@ -1,7 +1,7 @@
 /*
  * Logger.cpp
  * 
- * Copyright (C) 2019 by RStudio, Inc.
+ * Copyright (C) 2019-20 by RStudio, PBC
  *
  * Unless you have received this program directly from RStudio pursuant to the terms of a commercial license agreement
  * with RStudio, then this program is licensed to you under the following terms:
@@ -29,9 +29,8 @@
 #include <sstream>
 
 #include <Error.hpp>
-#include <logging/ILogDestination.hpp>
-
 #include "../system/DateTime.hpp"
+#include <logging/ILogDestination.hpp>
 #include "../system/ReaderWriterMutex.hpp"
 
 namespace rstudio {

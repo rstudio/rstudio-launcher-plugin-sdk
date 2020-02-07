@@ -1,7 +1,7 @@
 /*
  * Error.cpp
  *
- * Copyright (C) 2009-19 by RStudio, Inc.
+ * Copyright (C) 2009-20 by RStudio, PBC
  *
  * Unless you have received this program directly from RStudio pursuant to the terms of a commercial license agreement
  * with RStudio, then this program is licensed to you under the following terms:
@@ -37,8 +37,8 @@ namespace launcher_plugins {
 
 namespace {
 
-const std::string s_errorExpected = "expected";
-const std::string s_errorExpectedValue = "yes";
+constexpr const char* s_errorExpected = "expected";
+constexpr const char* s_errorExpectedValue = "yes";
 
 constexpr const char* s_occurredAt = "OCCURRED AT";
 constexpr const char* s_causedBy = "CAUSED BY";
@@ -234,6 +234,11 @@ bool Error::operator==(const Error& in_other) const
    return (m_impl->Code == in_other.m_impl->Code) && (m_impl->Name == in_other.m_impl->Name);
 }
 
+bool Error::operator!=(const rstudio::launcher_plugins::Error& in_other) const
+{
+   return !(*this == in_other);
+}
+
 void Error::addOrUpdateProperty(const std::string& in_name, const std::string& in_value)
 {
    copyOnWrite();
@@ -412,6 +417,16 @@ Error systemError(int in_value,
                   const ErrorLocation& in_location)
 {
    Error error = systemError(in_value, in_location);
+   error.addProperty("description", in_description);
+   return error;
+}
+
+Error systemError(int in_value,
+                  const std::string& in_description,
+                  const Error& in_cause,
+                  const ErrorLocation& in_location)
+{
+   Error error = systemError(in_value, in_cause, in_location);
    error.addProperty("description", in_description);
    return error;
 }

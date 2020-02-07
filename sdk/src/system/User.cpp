@@ -1,7 +1,7 @@
 /*
  * User.cpp
  * 
- * Copyright (C) 2019 by RStudio, Inc.
+ * Copyright (C) 2019-20 by RStudio, PBC
  *
  * Unless you have received this program directly from RStudio pursuant to the terms of a commercial license agreement
  * with RStudio, then this program is licensed to you under the following terms:
@@ -99,10 +99,10 @@ struct User::Impl
 
 PRIVATE_IMPL_DELETER_IMPL(User)
 
-User::User() :
+User::User(bool in_isEmpty) :
    m_impl(new Impl())
 {
-   m_impl->Name = "*";
+   m_impl->Name = in_isEmpty ? "" : "*";
 }
 
 User::User(const User& in_other) :

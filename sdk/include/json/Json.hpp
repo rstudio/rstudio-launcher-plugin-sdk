@@ -1,7 +1,7 @@
 /*
  * Json.hpp
  *
- * Copyright (C) 2009-19 by RStudio, Inc.
+ * Copyright (C) 2009-20 by RStudio, PBC
  *
  * Unless you have received this program directly from RStudio pursuant to the terms of a commercial license agreement
  * with RStudio, then this program is licensed to you under the following terms:
@@ -290,6 +290,15 @@ public:
    bool operator==(const Value& in_other) const;
 
    /**
+    * @brief Inequality operator.
+    *
+    * @param in_other   The value to compare this value to.
+    *
+    * @return True if the two values are not the same; false if they are the same.
+    */
+   bool operator!=(const Value& in_other) const;
+
+   /**
     * @brief Makes a copy of this JSON value.
     *
     * @return A copy of this JSON value.
@@ -484,7 +493,7 @@ public:
     *
     * @return Success on successful parse; error otherwise (e.g. ParseError)
     */
-   Error parse(const char* in_jsonStr);
+   virtual Error parse(const char* in_jsonStr);
 
    /**
     * @brief Parses the JSON string into this value.
@@ -493,7 +502,7 @@ public:
     *
     * @return Success on successful parse; error otherwise (e.g. ParseError)
     */
-   Error parse(const std::string& in_jsonStr);
+   virtual Error parse(const std::string& in_jsonStr);
 
    /**
     * @brief Parses the JSON string and validates it against the schema.
@@ -509,11 +518,121 @@ public:
     * @brief Sets a value within the current value based on the specified JSON Pointer path.
     *
     * @param in_pointerPath The JSON Pointer path.
-    * @param in_valie       The JSON value to set at the path. This value is copied before being set.
+    * @param in_value       The JSON value to set at the path. This value is copied before being set.
     *
     * @return Success if the pointer is valid; Error otherwise.
     */
    Error setValueAtPointerPath(const std::string& in_pointerPath, const json::Value& in_value);
+
+   /**
+    * @brief Sets a value within the current value based on the specified JSON Pointer path.
+    *
+    * @param in_pointerPath The JSON Pointer path.
+    * @param in_value       The JSON value to set at the path. This value is copied before being set.
+    *
+    * @return Success if the pointer is valid; Error otherwise.
+    */
+   Error setValueAtPointerPath(const std::string& in_pointerPath, bool in_value);
+
+   /**
+    * @brief Sets a value within the current value based on the specified JSON Pointer path.
+    *
+    * @param in_pointerPath The JSON Pointer path.
+    * @param in_value       The JSON value to set at the path. This value is copied before being set.
+    *
+    * @return Success if the pointer is valid; Error otherwise.
+    */
+   Error setValueAtPointerPath(const std::string& in_pointerPath, double in_value);
+
+   /**
+    * @brief Sets a value within the current value based on the specified JSON Pointer path.
+    *
+    * @param in_pointerPath The JSON Pointer path.
+    * @param in_value       The JSON value to set at the path. This value is copied before being set.
+    *
+    * @return Success if the pointer is valid; Error otherwise.
+    */
+   Error setValueAtPointerPath(const std::string& in_pointerPath, float in_value);
+
+   /**
+    * @brief Sets a value within the current value based on the specified JSON Pointer path.
+    *
+    * @param in_pointerPath The JSON Pointer path.
+    * @param in_value       The JSON value to set at the path. This value is copied before being set.
+    *
+    * @return Success if the pointer is valid; Error otherwise.
+    */
+   Error setValueAtPointerPath(const std::string& in_pointerPath, int in_value);
+
+   /**
+    * @brief Sets a value within the current value based on the specified JSON Pointer path.
+    *
+    * @param in_pointerPath The JSON Pointer path.
+    * @param in_value       The JSON value to set at the path. This value is copied before being set.
+    *
+    * @return Success if the pointer is valid; Error otherwise.
+    */
+   Error setValueAtPointerPath(const std::string& in_pointerPath, int64_t in_value);
+
+   /**
+    * @brief Sets a value within the current value based on the specified JSON Pointer path.
+    *
+    * @param in_pointerPath The JSON Pointer path.
+    * @param in_value       The JSON value to set at the path. This value is copied before being set.
+    *
+    * @return Success if the pointer is valid; Error otherwise.
+    */
+   Error setValueAtPointerPath(const std::string& in_pointerPath, const char* in_value);
+
+   /**
+    * @brief Sets a value within the current value based on the specified JSON Pointer path.
+    *
+    * @param in_pointerPath The JSON Pointer path.
+    * @param in_value       The JSON value to set at the path. This value is copied before being set.
+    *
+    * @return Success if the pointer is valid; Error otherwise.
+    */
+   Error setValueAtPointerPath(const std::string& in_pointerPath, const std::string& in_value);
+
+   /**
+    * @brief Sets a value within the current value based on the specified JSON Pointer path.
+    *
+    * @param in_pointerPath The JSON Pointer path.
+    * @param in_value       The JSON value to set at the path. This value is copied before being set.
+    *
+    * @return Success if the pointer is valid; Error otherwise.
+    */
+   Error setValueAtPointerPath(const std::string& in_pointerPath, unsigned int in_value);
+
+   /**
+    * @brief Sets a value within the current value based on the specified JSON Pointer path.
+    *
+    * @param in_pointerPath The JSON Pointer path.
+    * @param in_value       The JSON value to set at the path. This value is copied before being set.
+    *
+    * @return Success if the pointer is valid; Error otherwise.
+    */
+   Error setValueAtPointerPath(const std::string& in_pointerPath, uint64_t in_value);
+
+   /**
+    * @brief Sets a value within the current value based on the specified JSON Pointer path.
+    *
+    * @param in_pointerPath The JSON Pointer path.
+    * @param in_value       The JSON value to set at the path. This value is copied before being set.
+    *
+    * @return Success if the pointer is valid; Error otherwise.
+    */
+   Error setValueAtPointerPath(const std::string& in_pointerPath, const Array& in_value);
+
+   /**
+    * @brief Sets a value within the current value based on the specified JSON Pointer path.
+    *
+    * @param in_pointerPath The JSON Pointer path.
+    * @param in_value       The JSON value to set at the path. This value is copied before being set.
+    *
+    * @return Success if the pointer is valid; Error otherwise.
+    */
+   Error setValueAtPointerPath(const std::string& in_pointerPath, const Object& in_value);
 
    /**
     * @brief Validates this JSON value against a schema.
@@ -591,7 +710,7 @@ public:
        *
        * @param in_impl The private implementation of the member.
        */
-      Member(const std::shared_ptr<Impl>& in_impl);
+      explicit Member(const std::shared_ptr<Impl>& in_impl);
 
       /**
        * @brief Gets the name of the member.
@@ -736,7 +855,7 @@ public:
     *
     * @param in_other   The JSON object to move to this Object.
     */
-   Object(Object&& in_other);
+   Object(Object&& in_other) noexcept;
 
    /**
     * @brief Creates a JSON object from the given name and JSON value.
@@ -924,6 +1043,105 @@ public:
     * @brief Inserts the specified member into this JSON object. If an object with the same name already exists, it will be
     *        overridden.
     *
+    * @param in_name        The name of the JSON value to insert.
+    * @param in_value       The value to insert.
+    */
+   void insert(const std::string& in_name, bool in_value);
+
+   /**
+    * @brief Inserts the specified member into this JSON object. If an object with the same name already exists, it will be
+    *        overridden.
+    *
+    * @param in_name        The name of the JSON value to insert.
+    * @param in_value       The value to insert.
+    */
+   void insert(const std::string& in_name, double in_value);
+
+   /**
+    * @brief Inserts the specified member into this JSON object. If an object with the same name already exists, it will be
+    *        overridden.
+    *
+    * @param in_name        The name of the JSON value to insert.
+    * @param in_value       The value to insert.
+    */
+   void insert(const std::string& in_name, float in_value);
+
+   /**
+    * @brief Inserts the specified member into this JSON object. If an object with the same name already exists, it will be
+    *        overridden.
+    *
+    * @param in_name        The name of the JSON value to insert.
+    * @param in_value       The value to insert.
+    */
+   void insert(const std::string& in_name, int in_value);
+
+   /**
+    * @brief Inserts the specified member into this JSON object. If an object with the same name already exists, it will be
+    *        overridden.
+    *
+    * @param in_name        The name of the JSON value to insert.
+    * @param in_value       The value to insert.
+    */
+   void insert(const std::string& in_name, int64_t in_value);
+
+   /**
+    * @brief Inserts the specified member into this JSON object. If an object with the same name already exists, it will be
+    *        overridden.
+    *
+    * @param in_name        The name of the JSON value to insert.
+    * @param in_value       The value to insert.
+    */
+   void insert(const std::string& in_name, const char* in_value);
+
+   /**
+    * @brief Inserts the specified member into this JSON object. If an object with the same name already exists, it will be
+    *        overridden.
+    *
+    * @param in_name        The name of the JSON value to insert.
+    * @param in_value       The value to insert.
+    */
+   void insert(const std::string& in_name, const std::string& in_value);
+
+   /**
+    * @brief Inserts the specified member into this JSON object. If an object with the same name already exists, it will be
+    *        overridden.
+    *
+    * @param in_name        The name of the JSON value to insert.
+    * @param in_value       The value to insert.
+    */
+   void insert(const std::string& in_name, unsigned int in_value);
+
+   /**
+    * @brief Inserts the specified member into this JSON object. If an object with the same name already exists, it will be
+    *        overridden.
+    *
+    * @param in_name        The name of the JSON value to insert.
+    * @param in_value       The value to insert.
+    */
+   void insert(const std::string& in_name, uint64_t in_value);
+
+   /**
+    * @brief Inserts the specified member into this JSON object. If an object with the same name already exists, it will be
+    *        overridden.
+    *
+    * @param in_name        The name of the JSON value to insert.
+    * @param in_value       The value to insert.
+    */
+   void insert(const std::string& in_name, const Array& in_value);
+
+   /**
+    * @brief Inserts the specified member into this JSON object. If an object with the same name already exists, it will be
+    *        overridden.
+    *
+    * @param in_name        The name of the JSON value to insert.
+    * @param in_value       The value to insert.
+    */
+   void insert(const std::string& in_name, const Object& in_value);
+
+   /**
+    * @brief Inserts the specified member into this JSON object. If an object with the same name already exists, it will be
+    *        overridden.
+    *
     * @param in_member      The member to insert.
     */
    void insert(const Member& in_member);
@@ -934,6 +1152,26 @@ public:
     * @return True if the JSON object has no members; false otherwise.
     */
    bool isEmpty() const;
+
+   /**
+    * @brief Parses the JSON string into this object.
+    *
+    * @param in_jsonStr     The JSON string to parse.
+    *
+    * @return Success on successful parse when the resulting JSON value is a JSON Object; error otherwise
+    *         (e.g. ParseError).
+    */
+   Error parse(const char* in_jsonStr) override;
+
+   /**
+    * @brief Parses the JSON string into this object.
+    *
+    * @param in_jsonStr     The JSON string to parse.
+    *
+    * @return Success on successful parse when the resulting JSON value is a JSON Object; error otherwise
+    *         (e.g. ParseError).
+    */
+   Error parse(const std::string& in_jsonStr) override;
 
    /**
     * @brief Converts this JSON object to a map with string keys and a list of string values.
@@ -1104,7 +1342,7 @@ public:
     *
     * @param in_other   The JSON array to move to this Object.
     */
-   Array(Array&& in_other);
+   Array(Array&& in_other) noexcept;
 
    /**
     * @brief Assignment operator.
@@ -1226,6 +1464,26 @@ public:
    bool isEmpty() const;
 
    /**
+    * @brief Parses the JSON string into this array.
+    *
+    * @param in_jsonStr     The JSON string to parse.
+    *
+    * @return Success on successful parse when the resulting JSON value is a JSON Array; error otherwise
+    *         (e.g. ParseError).
+    */
+   Error parse(const char* in_jsonStr) override;
+
+   /**
+    * @brief Parses the JSON string into this array.
+    *
+    * @param in_jsonStr     The JSON string to parse.
+    *
+    * @return Success on successful parse when the resulting JSON value is a JSON Array; error otherwise
+    *         (e.g. ParseError).
+    */
+   Error parse(const std::string& in_jsonStr) override;
+
+   /**
     * @brief Pushes the value onto the end of the JSON array.
     *
     * MAINTENANCE NOTE: This method must be named in the STL style to work with STL functions and types such as
@@ -1234,6 +1492,116 @@ public:
     * @param in_value   The value to push onto the end of the JSON array.
     */
    void push_back(const Value& in_value);
+
+   /**
+    * @brief Pushes the value onto the end of the JSON array.
+    *
+    * MAINTENANCE NOTE: This method must be named in the STL style to work with STL functions and types such as
+    * std::back_inserter.
+    *
+    * @param in_value   The value to push onto the end of the JSON array.
+    */
+   void push_back(bool in_value);
+
+   /**
+    * @brief Pushes the value onto the end of the JSON array.
+    *
+    * MAINTENANCE NOTE: This method must be named in the STL style to work with STL functions and types such as
+    * std::back_inserter.
+    *
+    * @param in_value   The value to push onto the end of the JSON array.
+    */
+   void push_back(double in_value);
+
+   /**
+    * @brief Pushes the value onto the end of the JSON array.
+    *
+    * MAINTENANCE NOTE: This method must be named in the STL style to work with STL functions and types such as
+    * std::back_inserter.
+    *
+    * @param in_value   The value to push onto the end of the JSON array.
+    */
+   void push_back(float in_value);
+
+   /**
+    * @brief Pushes the value onto the end of the JSON array.
+    *
+    * MAINTENANCE NOTE: This method must be named in the STL style to work with STL functions and types such as
+    * std::back_inserter.
+    *
+    * @param in_value   The value to push onto the end of the JSON array.
+    */
+   void push_back(int in_value);
+
+   /**
+    * @brief Pushes the value onto the end of the JSON array.
+    *
+    * MAINTENANCE NOTE: This method must be named in the STL style to work with STL functions and types such as
+    * std::back_inserter.
+    *
+    * @param in_value   The value to push onto the end of the JSON array.
+    */
+   void push_back(int64_t in_value);
+
+   /**
+    * @brief Pushes the value onto the end of the JSON array.
+    *
+    * MAINTENANCE NOTE: This method must be named in the STL style to work with STL functions and types such as
+    * std::back_inserter.
+    *
+    * @param in_value   The value to push onto the end of the JSON array.
+    */
+   void push_back(const char* in_value);
+
+   /**
+    * @brief Pushes the value onto the end of the JSON array.
+    *
+    * MAINTENANCE NOTE: This method must be named in the STL style to work with STL functions and types such as
+    * std::back_inserter.
+    *
+    * @param in_value   The value to push onto the end of the JSON array.
+    */
+   void push_back(const std::string& in_value);
+
+   /**
+    * @brief Pushes the value onto the end of the JSON array.
+    *
+    * MAINTENANCE NOTE: This method must be named in the STL style to work with STL functions and types such as
+    * std::back_inserter.
+    *
+    * @param in_value   The value to push onto the end of the JSON array.
+    */
+   void push_back(unsigned int in_value);
+
+   /**
+    * @brief Pushes the value onto the end of the JSON array.
+    *
+    * MAINTENANCE NOTE: This method must be named in the STL style to work with STL functions and types such as
+    * std::back_inserter.
+    *
+    * @param in_value   The value to push onto the end of the JSON array.
+    */
+   void push_back(uint64_t in_value);
+
+   /**
+    * @brief Pushes the value onto the end of the JSON array.
+    *
+    * MAINTENANCE NOTE: This method must be named in the STL style to work with STL functions and types such as
+    * std::back_inserter.
+    *
+    * @param in_value   The value to push onto the end of the JSON array.
+    */
+   void push_back(const Array& in_value);
+
+   /**
+    * @brief Pushes the value onto the end of the JSON array.
+    *
+    * MAINTENANCE NOTE: This method must be named in the STL style to work with STL functions and types such as
+    * std::back_inserter.
+    *
+    * @param in_value   The value to push onto the end of the JSON array.
+    */
+   void push_back(const Object& in_value);
 
    /**
     * @brief Converts this JSON array to a set of strings.
@@ -1387,7 +1755,7 @@ Array toJsonArray(const std::vector<T>& vector)
    Array results;
    for (const T& val : vector)
    {
-      results.push_back(Value(val));
+      results.push_back(val);
    }
    return results;
 }
@@ -1398,7 +1766,7 @@ Array toJsonArray(const std::set<T>& set)
    Array results;
    for (const T& val : set)
    {
-      results.push_back(Value(val));
+      results.push_back(val);
    }
    return results;
 }

@@ -1,7 +1,7 @@
 /*
  * Json.cpp
  *
- * Copyright (C) 2019 by RStudio, Inc.
+ * Copyright (C) 2019-20 by RStudio, PBC
  *
  * Unless you have received this program directly from RStudio pursuant to the terms of a commercial license agreement
  * with RStudio, then this program is licensed to you under the following terms:
@@ -375,7 +375,19 @@ bool Value::operator==(const Value& in_other) const
    if (this == &in_other)
       return true;
 
-   return m_impl->Document == in_other.m_impl->Document;
+   if (m_impl->Document == in_other.m_impl->Document)
+      return true;
+
+   // Exactly one is null (they're not equal) - return false.
+   if ((m_impl->Document == nullptr) || (in_other.m_impl->Document == nullptr))
+      return false;
+
+   return *m_impl->Document == *in_other.m_impl->Document;
+}
+
+bool Value::operator!=(const Value& in_other) const
+{
+   return !(*this == in_other);
 }
 
 Value Value::clone() const
@@ -426,7 +438,7 @@ Error Value::coerce(const std::string& in_schema,
 
       // Accumulate the error for the caller
       invalid.Stringify(sb);
-      out_propViolations.push_back(sb.GetString());
+      out_propViolations.emplace_back(sb.GetString());
 
       // Remove the invalid part of the document
       JsonPointer pointer(sb.GetString(), &s_allocator);
@@ -683,8 +695,7 @@ Error Value::parseAndValidate(const std::string& in_jsonStr, const std::string& 
    return validate(in_schema);
 }
 
-Error Value::setValueAtPointerPath(const std::string& in_pointerPath,
-                            const json::Value& in_value)
+Error Value::setValueAtPointerPath(const std::string& in_pointerPath, const json::Value& in_value)
 {
    JsonPointer pointer(in_pointerPath.c_str());
    if (!pointer.IsValid())
@@ -696,6 +707,61 @@ Error Value::setValueAtPointerPath(const std::string& in_pointerPath,
 
    pointer.Set(*m_impl->Document, *in_value.clone().m_impl->Document);
    return Success();
+}
+
+Error Value::setValueAtPointerPath(const std::string& in_pointerPath, bool in_value)
+{
+   return setValueAtPointerPath(in_pointerPath, json::Value(in_value));
+}
+
+Error Value::setValueAtPointerPath(const std::string& in_pointerPath, double in_value)
+{
+   return setValueAtPointerPath(in_pointerPath, json::Value(in_value));
+}
+
+Error Value::setValueAtPointerPath(const std::string& in_pointerPath, float in_value)
+{
+   return setValueAtPointerPath(in_pointerPath, json::Value(in_value));
+}
+
+Error Value::setValueAtPointerPath(const std::string& in_pointerPath, int in_value)
+{
+   return setValueAtPointerPath(in_pointerPath, json::Value(in_value));
+}
+
+Error Value::setValueAtPointerPath(const std::string& in_pointerPath, int64_t in_value)
+{
+   return setValueAtPointerPath(in_pointerPath, json::Value(in_value));
+}
+
+Error Value::setValueAtPointerPath(const std::string& in_pointerPath, const char* in_value)
+{
+   return setValueAtPointerPath(in_pointerPath, json::Value(in_value));
+}
+
+Error Value::setValueAtPointerPath(const std::string& in_pointerPath, const std::string& in_value)
+{
+   return setValueAtPointerPath(in_pointerPath, json::Value(in_value));
+}
+
+Error Value::setValueAtPointerPath(const std::string& in_pointerPath, unsigned int in_value)
+{
+   return setValueAtPointerPath(in_pointerPath, json::Value(in_value));
+}
+
+Error Value::setValueAtPointerPath(const std::string& in_pointerPath, uint64_t in_value)
+{
+   return setValueAtPointerPath(in_pointerPath, json::Value(in_value));
+}
+
+Error Value::setValueAtPointerPath(const std::string& in_pointerPath, const Array& in_value)
+{
+   return setValueAtPointerPath(in_pointerPath, json::Value(in_value));
+}
+
+Error Value::setValueAtPointerPath(const std::string& in_pointerPath, const Object& in_value)
+{
+   return setValueAtPointerPath(in_pointerPath, json::Value(in_value));
 }
 
 Error Value::validate(const std::string& in_schema) const
@@ -781,7 +847,7 @@ struct Object::Member::Impl
 };
 
 Object::Member::Member(const std::shared_ptr<Object::Member::Impl>& in_impl) :
-   m_impl(std::move(in_impl))
+   m_impl(in_impl)
 {
 }
 
@@ -884,7 +950,7 @@ Object::Object(const Object& in_other) :
 {
 }
 
-Object::Object(Object&& in_other) :
+Object::Object(Object&& in_other) noexcept :
    Value(in_other)
 {
 }
@@ -1053,6 +1119,61 @@ void Object::insert(const std::string& in_name, const Value& in_value)
    (*this)[in_name] = in_value;
 }
 
+void Object::insert(const std::string& in_name, bool in_value)
+{
+   insert(in_name, json::Value(in_value));
+}
+
+void Object::insert(const std::string& in_name, double in_value)
+{
+   insert(in_name, json::Value(in_value));
+}
+
+void Object::insert(const std::string& in_name, float in_value)
+{
+   insert(in_name, json::Value(in_value));
+}
+
+void Object::insert(const std::string& in_name, int in_value)
+{
+   insert(in_name, json::Value(in_value));
+}
+
+void Object::insert(const std::string& in_name, int64_t in_value)
+{
+   insert(in_name, json::Value(in_value));
+}
+
+void Object::insert(const std::string& in_name, const char* in_value)
+{
+   insert(in_name, json::Value(in_value));
+}
+
+void Object::insert(const std::string& in_name, const std::string& in_value)
+{
+   insert(in_name, json::Value(in_value));
+}
+
+void Object::insert(const std::string& in_name, unsigned int in_value)
+{
+   insert(in_name, json::Value(in_value));
+}
+
+void Object::insert(const std::string& in_name, uint64_t in_value)
+{
+   insert(in_name, json::Value(in_value));
+}
+
+void Object::insert(const std::string& in_name, const Array& in_value)
+{
+   insert(in_name, json::Value(in_value));
+}
+
+void Object::insert(const std::string& in_name, const Object& in_value)
+{
+   insert(in_name, json::Value(in_value));
+}
+
 void Object::insert(const Member& in_member)
 {
    insert(in_member.getName(), in_member.getValue());
@@ -1062,6 +1183,21 @@ void Object::insert(const Member& in_member)
 bool Object::isEmpty() const
 {
    return m_impl->Document->ObjectEmpty();
+}
+
+Error Object::parse(const char* in_jsonStr)
+{
+   static const std::string kObjectSchema = "{ \"type\": \"object\" }";
+   Error error = Value::parse(in_jsonStr);
+   if (error)
+      return error;
+
+   return validate(kObjectSchema);
+}
+
+Error Object::parse(const std::string& in_jsonStr)
+{
+   return parse(in_jsonStr.c_str());
 }
 
 bool Object::toStringMap(StringListMap& out_map) const
@@ -1203,7 +1339,7 @@ Array::Array(const Array& in_other) :
 {
 }
 
-Array::Array(Array&& in_other) :
+Array::Array(Array&& in_other) noexcept :
    Value(in_other)
 {
 }
@@ -1300,11 +1436,81 @@ bool Array::isEmpty() const
    return m_impl->Document->Empty();
 }
 
+Error Array::parse(const char* in_jsonStr)
+{
+   static const std::string kObjectSchema = "{ \"type\": \"array\" }";
+   Error error = Value::parse(in_jsonStr);
+   if (error)
+      return error;
+
+   return validate(kObjectSchema);
+}
+
+Error Array::parse(const std::string& in_jsonStr)
+{
+   return parse(in_jsonStr.c_str());
+}
+
 void Array::push_back(const Value& in_value)
 {
    JsonDocument doc;
    doc.CopyFrom(*in_value.m_impl->Document, s_allocator);
    m_impl->Document->PushBack(doc, s_allocator);
+}
+
+void Array::push_back(bool in_value)
+{
+   push_back(json::Value(in_value));
+}
+
+void Array::push_back(double in_value)
+{
+   push_back(json::Value(in_value));
+}
+
+void Array::push_back(float in_value)
+{
+   push_back(json::Value(in_value));
+}
+
+void Array::push_back(int in_value)
+{
+   push_back(json::Value(in_value));
+}
+
+void Array::push_back(int64_t in_value)
+{
+   push_back(json::Value(in_value));
+}
+
+void Array::push_back(const char* in_value)
+{
+   push_back(json::Value(in_value));
+}
+
+void Array::push_back(const std::string& in_value)
+{
+   push_back(json::Value(in_value));
+}
+
+void Array::push_back(unsigned int in_value)
+{
+   push_back(json::Value(in_value));
+}
+
+void Array::push_back(uint64_t in_value)
+{
+   push_back(json::Value(in_value));
+}
+
+void Array::push_back(const json::Array& in_value)
+{
+   push_back(json::Value(in_value));
+}
+
+void Array::push_back(const json::Object& in_value)
+{
+   push_back(json::Value(in_value));
 }
 
 bool Array::toSetString(std::set<std::string>& out_set) const

@@ -1,7 +1,7 @@
 /*
  * User.hpp
  * 
- * Copyright (C) 2019 by RStudio, Inc.
+ * Copyright (C) 2019-20 by RStudio, PBC
  *
  * Unless you have received this program directly from RStudio pursuant to the terms of a commercial license agreement
  * with RStudio, then this program is licensed to you under the following terms:
@@ -89,11 +89,14 @@ public:
 #ifndef _WIN32
 
    /**
-    * @brief Default constructor.
+    * @brief Constructor.
     *
-    * Creates a user object which represents all users.
+    * Creates a user object which is either empty or represents all users.
+    *
+    * @param in_isEmpty    True to create an empty user; False to create a user which represents all users.
+    *                      Default: false.
     */
-    User();
+    explicit User(bool in_isEmpty = false);
 
    /**
     * @brief Copy constructor.
@@ -151,7 +154,8 @@ public:
 
    /**
     * @brief Checks whether this user is empty or not.
-    * @return
+    *
+    * @return True if this is user is empty; False otherwise.
     */
    bool isEmpty() const;
 
