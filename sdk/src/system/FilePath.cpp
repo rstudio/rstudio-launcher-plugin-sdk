@@ -1070,7 +1070,7 @@ bool FilePath::isHidden() const
    return !getFilename().empty() && (getFilename()[0] == '.');
 }
 
-Error FilePath::isReadable(bool &out_readable)
+Error FilePath::isReadable(bool &out_readable) const
 {
    int result = ::access(getAbsolutePath().c_str(), R_OK);
    if (result == 0)
@@ -1155,7 +1155,7 @@ bool FilePath::isWithin(const FilePath& in_scopePath) const
    return true;
 }
 
-Error FilePath::isWriteable(bool &out_writeable)
+Error FilePath::isWriteable(bool &out_writeable) const
 {
    int result = ::access(getAbsolutePath().c_str(), W_OK);
    if (result == 0)

@@ -565,7 +565,7 @@ public:
     *
     * @return Success if the readability of this file could be checked; Error otherwise. (e.g. EACCES).
     */
-   Error isReadable(bool& out_readable);
+   Error isReadable(bool& out_readable) const;
 
    /**
     * @brief Checks whether this file path is a regular file.
@@ -598,7 +598,7 @@ public:
     *
     * @return Success if the writeability of this file could be checked; Error otherwise. (e.g. EACCES).
     */
-   Error isWriteable(bool& out_writeable);
+   Error isWriteable(bool& out_writeable) const;
 
    /**
     * @brief Changes the current working directory to location represented by this file path.
