@@ -55,7 +55,9 @@ struct AsioService::Impl
     */
    Impl() :
       IoService(getIoService()),
-      IsRunning(true)
+      IsRunning(true),
+      IsSignalSetInit(false),
+      SignalSet(IoService)
    {
    }
 
@@ -75,8 +77,14 @@ struct AsioService::Impl
    /** Whether the ASIO service is running */
    bool IsRunning;
 
+   /** Whether the signal set is initialized or not. */
+   bool IsSignalSetInit;
+
    /** The worker threads of the ASIO service. */
    std::vector<std::shared_ptr<std::thread> > Threads;
+
+   /** The signal set which listens for singals and invokes the handler. */
+   boost::asio::signal_set SignalSet;
 
    /** The mutex to protect the ASIO service. */
    boost::mutex Mutex;
@@ -89,41 +97,60 @@ void AsioService::post(const AsioFunction& in_work)
 
 void AsioService::setSignalHandler(const OnSignal &in_onSignal)
 {
-   // Create the signal handlers and register them with the IO service.
-   boost::asio::signal_set signalSet(getAsioService().m_impl->IoService);
+   std::shared_ptr<Impl> sharedThis = getAsioService().m_impl;
+   try
+   {
+      boost::unique_lock<boost::mutex> lock(sharedThis->Mutex);
 
-   // Invoke the provided signal handler on SIGINT or SIGTERM.
-   signalSet.add(SIGINT);
-   signalSet.add(SIGTERM);
-   signalSet.async_wait(std::bind(in_onSignal, std::placeholders::_2));
+      if (!sharedThis->IsSignalSetInit)
+      {
+         sharedThis->IsSignalSetInit = true;
+
+         // Invoke the provided signal handler on SIGINT or SIGTERM.
+         sharedThis->SignalSet.add(SIGINT);
+         sharedThis->SignalSet.add(SIGTERM);
+         sharedThis->SignalSet.async_wait(std::bind(in_onSignal, std::placeholders::_2));
+      }
+
+   END_LOCK_MUTEX
 }
 
 void AsioService::startThreads(size_t in_numThreads)
 {
    std::shared_ptr<Impl> sharedThis = getAsioService().m_impl;
-   boost::unique_lock<boost::mutex> lock(sharedThis->Mutex);
-   if (sharedThis->IsRunning)
+
+   try
    {
-      for (size_t i = 0; i < in_numThreads; ++i)
+      boost::unique_lock<boost::mutex> lock(sharedThis->Mutex);
+      if (sharedThis->IsRunning)
       {
-         sharedThis->Threads.emplace_back(new std::thread(
-            [sharedThis]()
-            {
-               sharedThis->startWorkerThread();
-            }));
+         for (size_t i = 0; i < in_numThreads; ++i)
+         {
+            sharedThis->Threads.emplace_back(new std::thread(
+               [sharedThis]()
+               {
+                  sharedThis->startWorkerThread();
+               }));
+         }
       }
-   }
+
+   END_LOCK_MUTEX
 }
 
 void AsioService::stop()
 {
    std::shared_ptr<Impl> sharedThis = getAsioService().m_impl;
-   boost::lock_guard<boost::mutex> lock(sharedThis->Mutex);
-   if (sharedThis->IsRunning)
+
+   try
    {
-      sharedThis->IoService.stop();
-      sharedThis->IsRunning = false;
-   }
+      boost::lock_guard<boost::mutex> lock(sharedThis->Mutex);
+      if (sharedThis->IsRunning)
+      {
+         sharedThis->IoService.stop();
+         sharedThis->IsRunning = false;
+      }
+
+   END_LOCK_MUTEX
 }
 
 void AsioService::waitForExit()
