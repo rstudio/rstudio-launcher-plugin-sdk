@@ -92,7 +92,7 @@ int configureScratchPath(const system::FilePath& in_scratchPath, const system::U
       CHECK_ERROR(error, "Could not restore root privilege.")
 
       // Change file ownership to the server user.
-      // TODO: error = changeFileOwnership(in_scratchPath, in_serverUser);
+      error = in_scratchPath.changeOwnership(in_serverUser);
       CHECK_ERROR(
          error,
          "Could not change ownership of scratch path to server user: " +
@@ -106,8 +106,7 @@ int configureScratchPath(const system::FilePath& in_scratchPath, const system::U
 
    // Change the file mode to rwxr-x-r-x so everyone can read the files in the scratch path, but only the server user
    // has full access.
-   // TODO: change file mode to rwxr-xr-x
-   // error = changeFileMode(in_scratchPath, UserReadWriteExecuteGroupEveryoneReadExecuteMode);
+   error = in_scratchPath.changeFileMode(system::FileMode::USER_READ_WRITE_EXECUTE_ALL_READ_EXECUTE);
    CHECK_ERROR(
       error,
       "Could not set permission on scratch path (" +
