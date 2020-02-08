@@ -20,6 +20,7 @@
 
 #include <AbstractMain.hpp>
 
+#include <csignal>
 #include <iostream>
 
 #include <boost/thread/mutex.hpp>
@@ -32,7 +33,7 @@
 #include <logging/StderrLogDestination.hpp>
 #include <logging/SyslogDestination.hpp>
 #include <options/Options.hpp>
-#include <system/PosixSystemUtils.hpp>
+#include <system/PosixSystem.hpp>
 #include <system/User.hpp>
 #include <utils/ErrorUtils.hpp>
 #include <system/Asio.hpp>
@@ -135,7 +136,7 @@ struct AbstractMain::Impl
    void signalShutdown()
    {
       UNIQUE_LOCK_MUTEX(m_mutex)
-         m_exitProcess = true;
+      m_exitProcess = true;
       m_exitConditionVar.notify_all();
       END_UNIQUE_LOCK_MUTEX
    }
@@ -247,7 +248,7 @@ int AbstractMain::run(int in_argc, char** in_argv)
          std::bind(&Impl::onCommunicationError, m_abstractMainImpl, std::placeholders::_1)));
 
    // Ignore SIGPIPE
-   system::posix::ignoreSigPipe();
+   system::posix::ignoreSignal(SIGPIPE);
 
    // Configure the signal handler.
    system::AsioService::setSignalHandler(std::bind(&Impl::onSignal, m_abstractMainImpl, std::placeholders::_1));

@@ -47,7 +47,7 @@ set(RLPS_SOURCE_FILES
    src/options/Options.cpp
    src/system/Asio.cpp
    src/system/FilePath.cpp
-   src/system/PosixSystemUtils.cpp
+   src/system/PosixSystem.cpp
    src/system/ReaderWriterMutex.cpp
    src/system/User.cpp
    src/utils/ErrorUtils.cpp
