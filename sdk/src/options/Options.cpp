@@ -387,10 +387,8 @@ Error Options::readOptions(int in_argc, const char* const in_argv[], const syste
 
    if (!in_location.exists())
    {
-      return systemError(
-         boost::system::errc::no_such_file_or_directory,
-         "Configuration file does not exist: " + in_location.getAbsolutePath(),
-         ERROR_LOCATION);
+      // There's nothing to read.
+      return Success();
    }
 
    try
