@@ -39,11 +39,6 @@ class AbstractMain : public Noncopyable
 {
 public:
    /**
-    * @brief Default Constructor.
-    */
-   AbstractMain() = default;
-
-   /**
     * @brief Default destructor.
     */
    virtual ~AbstractMain() = default;
@@ -64,6 +59,12 @@ public:
     * @return 0 on a successful exit. A non-zero error code, otherwise.
     */
    int run(int in_argCount, char** in_argList);
+
+protected:
+   /**
+    * @brief Default Constructor.
+    */
+   AbstractMain();
 
 private:
    /**

@@ -281,14 +281,19 @@ int AbstractMain::run(int in_argc, char** in_argv)
    return EXIT_SUCCESS;
 }
 
-std::string AbstractMain::getProgramId() const
+AbstractMain::AbstractMain() :
+   m_abstractMainImpl(new Impl())
 {
-   return "rstudio-" + getPluginName() + "-launcher";
 }
 
 system::FilePath AbstractMain::getConfigFile() const
 {
    return system::FilePath("/etc/rstudio/launcher." + getPluginName() + ".conf");
+}
+
+std::string AbstractMain::getProgramId() const
+{
+   return "rstudio-" + getPluginName() + "-launcher";
 }
 
 } // namespace launcher_plugins
