@@ -385,36 +385,33 @@ Error Options::readOptions(int in_argc, const char* const in_argv[], const syste
          ERROR_LOCATION);
    }
 
-   if (!in_location.exists())
-   {
-      // There's nothing to read.
-      return Success();
-   }
-
    try
    {
-      // The configuration file overrides command line options, so parse the config file first.
       variables_map vm;
-      std::shared_ptr<std::istream> inputStream;
-      Error error = in_location.openForRead(inputStream);
-      if (error)
-         return error;
-
       std::vector<std::string> unrecognizedFileOpts;
-      try
+      if (in_location.exists())
       {
-         parsed_options parsed = parse_config_file(*inputStream, m_impl->OptionsDescription, true);
-         store(parsed, vm);
-         notify(vm);
+         // The configuration file overrides command line options, so parse the config file first.
+         std::shared_ptr<std::istream> inputStream;
+         Error error = in_location.openForRead(inputStream);
+         if (error)
+            return error;
 
-         collectUnrecognizedOptions(vm, parsed, unrecognizedFileOpts);
-      }
-      catch (const std::exception& e)
-      {
-         return optionsError(
-            OptionsError::READ_FAILURE,
-            "Error reading " + in_location.getAbsolutePath() + ": " + std::string(e.what()),
-            ERROR_LOCATION);
+         try
+         {
+            parsed_options parsed = parse_config_file(*inputStream, m_impl->OptionsDescription, true);
+            store(parsed, vm);
+            notify(vm);
+
+            collectUnrecognizedOptions(vm, parsed, unrecognizedFileOpts);
+         }
+         catch (const std::exception& e)
+         {
+            return optionsError(
+               OptionsError::READ_FAILURE,
+               "Error reading " + in_location.getAbsolutePath() + ": " + std::string(e.what()),
+               ERROR_LOCATION);
+         }
       }
 
       // Now read the command line arguments.
