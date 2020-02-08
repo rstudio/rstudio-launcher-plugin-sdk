@@ -56,7 +56,7 @@ typedef std::function<void(const std::shared_ptr<api::Request>&)> RequestHandler
  *        dependent.
  */
 class AbstractLauncherCommunicator : public Noncopyable,
-                                     private std::enable_shared_from_this<AbstractLauncherCommunicator>
+                                     public std::enable_shared_from_this<AbstractLauncherCommunicator>
 {
 public:
    /**
