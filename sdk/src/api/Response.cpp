@@ -63,7 +63,7 @@ struct Response::Impl
    const uint64_t ResponseId;
 };
 
-std::atomic_uint64_t Response::Impl::NEXT_RESPONSE_ID { 1 };
+std::atomic_uint64_t Response::Impl::NEXT_RESPONSE_ID { 0 };
 
 PRIVATE_IMPL_DELETER_IMPL(Response)
 
