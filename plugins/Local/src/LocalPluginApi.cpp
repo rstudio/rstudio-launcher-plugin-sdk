@@ -20,6 +20,7 @@
 
 #include <LocalPluginApi.hpp>
 
+#include <LocalJobSource.hpp>
 #include <LocalOptions.hpp>
 
 namespace rstudio {
@@ -29,6 +30,11 @@ namespace local {
 LocalPluginApi::LocalPluginApi(std::shared_ptr<comms::AbstractLauncherCommunicator> in_launcherCommunicator) :
    AbstractPluginApi(std::move(in_launcherCommunicator))
 {
+}
+
+std::shared_ptr<api::IJobSource> LocalPluginApi::createJobSource() const
+{
+   return std::shared_ptr<api::IJobSource>(new LocalJobSource());
 }
 
 Error LocalPluginApi::doInitialize()

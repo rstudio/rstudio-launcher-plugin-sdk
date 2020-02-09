@@ -31,8 +31,13 @@ namespace launcher_plugins {
 
 class Error;
 
-}
-}
+namespace api {
+
+class IJobSource;
+
+} // namespace api
+} // namespace launcher_plugins
+} // namespace rstudio
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -66,6 +71,13 @@ protected:
    explicit AbstractPluginApi(std::shared_ptr<comms::AbstractLauncherCommunicator> in_launcherCommunicator);
 
 private:
+   /**
+    * @brief Creates the job source which can communicate with this Plugin's job scheduling system.
+    *
+    * @return The job source for this Plugin implementation.
+    */
+   virtual std::shared_ptr<IJobSource> createJobSource() const = 0;
+
    /**
     * @brief This method is responsible for initializing all components necessary to communicate with the job launching
     *        system supported by this Plugin, such as initializing Plugin specific options or the communication method

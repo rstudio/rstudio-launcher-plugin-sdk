@@ -20,6 +20,8 @@
 
 #include <QuickStartPluginApi.hpp>
 
+#include <QuickStartJobSource.hpp>
+
 #include <Error.hpp>
 
 namespace rstudio {
@@ -31,12 +33,14 @@ QuickStartPluginApi::QuickStartPluginApi(std::shared_ptr<comms::AbstractLauncher
 {
 }
 
+std::shared_ptr<api::IJobSource> QuickStartPluginApi::createJobSource() const
+{
+   return std::shared_ptr<api::IJobSource>(new QuickStartJobSource());
+}
+
 Error QuickStartPluginApi::doInitialize()
 {
-   // TODO #?: Initialize everything your plugin API needs to work. For example:
-   //    - ensure your custom options are registered.
-   //    - open (or test) communication with the job management system.
-   //    - add any custom logging destinations to the logger.
+   // TODO ?: Anything to do here?
    return Success();
 }
 

@@ -18,8 +18,8 @@
  *
  */
 
-#ifndef QUICKSTART_QUICK_START_PLUGIN_API_HPP
-#define QUICKSTART_QUICK_START_PLUGIN_API_HPP
+#ifndef LAUNCHER_PLUGINS_QUICK_START_PLUGIN_API_HPP
+#define LAUNCHER_PLUGINS_QUICK_START_PLUGIN_API_HPP
 
 #include <api/AbstractPluginApi.hpp>
 
@@ -42,6 +42,12 @@ public:
    explicit QuickStartPluginApi(std::shared_ptr<comms::AbstractLauncherCommunicator> in_launcherCommunicator);
 
 private:
+   /**
+    * @brief Creates the job source which can communicate with this Plugin's job scheduling system.
+    *
+    * @return The job source for this Plugin implementation.
+    */
+   std::shared_ptr<api::IJobSource> createJobSource() const override;
    /**
     * @brief This method is responsible for initializing all components necessary to communicate with the job launching
     *        system supported by this Plugin, such as initializing Plugin specific options or the communication method

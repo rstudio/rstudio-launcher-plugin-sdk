@@ -53,6 +53,13 @@ public:
 
 private:
    /**
+    * @brief Creates the job source which can communicate with the Local system.
+    *
+    * @return The job source for the Local Plugin implementation.
+    */
+   std::shared_ptr<api::IJobSource> createJobSource() const override;
+
+   /**
     * @brief This method is responsible for initializing all components necessary to communicate with the job launching
     *        system supported by this Plugin, such as initializing Plugin specific options or the communication method
     *        (e.g. a TCP socket).
