@@ -23,6 +23,9 @@
 
 #include <api/AbstractPluginApi.hpp>
 
+#include <api/Constants.hpp>
+#include <api/IJobSource.hpp>
+#include <api/Response.hpp>
 #include <options/Options.hpp>
 
 namespace rstudio {
@@ -42,14 +45,96 @@ struct AbstractPluginApi::Impl
    {
    }
 
+   /**
+    * @brief Handles bootstrap requests from the Launcher.
+    *
+    * @param in_bootstrapRequest    The bootstrap request to handle.
+    */
+   void handleBootstrap(const std::shared_ptr<BootstrapRequest>& in_bootstrapRequest)
+   {
+      if (in_bootstrapRequest->getMajorVersion() != API_VERSION_MAJOR)
+      {
+         return LauncherCommunicator->sendResponse(
+            ErrorResponse(
+               in_bootstrapRequest->getId(),
+               ErrorResponse::Type::UNSUPPORTED_VERSION,
+               "The plugin supports API version " +
+               std::to_string(API_VERSION_MAJOR) +
+               ".X.XXXX. The Launcher's API version is" +
+               std::to_string(in_bootstrapRequest->getMajorVersion()) + "." +
+               std::to_string(in_bootstrapRequest->getMinorVersion()) + "." +
+               std::to_string(in_bootstrapRequest->getPatchNumber())));
+      }
+
+      Error error = JobSource->initialize();
+      if (error)
+         return LauncherCommunicator->sendResponse(
+            ErrorResponse(
+               in_bootstrapRequest->getId(),
+               ErrorResponse::Type::UNKNOWN,
+               error.asString()));
+
+      // TODO: pull down existing jobs and put them in the repository.
+
+      LauncherCommunicator->sendResponse(BootstrapResponse(in_bootstrapRequest->getId()));
+   }
+
+   /**
+    * @brief Handles a request from the Launcher.
+    *
+    * @param in_type        The type of request handler which should be invoked.
+    * @param in_request     The request to handle.
+    */
+   void handleRequest(Request::Type in_handlerType, const std::shared_ptr<Request>& in_request)
+   {
+      // This should be impossible. It would effectively be an internal server error.
+      if (in_handlerType != in_request->getType())
+         return LauncherCommunicator->sendResponse(
+            ErrorResponse(
+               in_request->getId(),
+               ErrorResponse::Type::UNKNOWN,
+               "Internal Request Handling Error."));
+
+      switch (in_handlerType)
+      {
+         case Request::Type::BOOTSTRAP:
+         {
+            return handleBootstrap(std::static_pointer_cast<BootstrapRequest>(in_request));
+         }
+         default:
+         {
+            return LauncherCommunicator->sendResponse(
+               ErrorResponse(
+                  in_request->getId(),
+                  ErrorResponse::Type::UNKNOWN,
+                  "Internal Request Handling Error."));
+         }
+      }
+   }
+
    /** The communicator that will be used to send and receive messages from the RStudio Launcher. */
    std::shared_ptr<comms::AbstractLauncherCommunicator> LauncherCommunicator;
+
+   /** The job source which communicates with the job scehduling system. */
+   std::shared_ptr<IJobSource> JobSource;
 };
 
 PRIVATE_IMPL_DELETER_IMPL(AbstractPluginApi)
 
 Error AbstractPluginApi::initialize()
 {
+   // Create the job source.
+   m_abstractPluginImpl->JobSource = createJobSource();
+
+   // Register all the request handlers.
+   std::shared_ptr<comms::AbstractLauncherCommunicator>& comms = m_abstractPluginImpl->LauncherCommunicator;
+
+   using namespace std::placeholders;
+   comms->registerRequestHandler(
+      Request::Type::BOOTSTRAP,
+      std::bind(&Impl::handleRequest, m_abstractPluginImpl.get(), Request::Type::BOOTSTRAP, _1));
+
+   // Initialize the plugin-specific API components.
    return doInitialize();
 }
 
