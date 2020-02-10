@@ -193,6 +193,7 @@ private:
  */
 class HeartbeatResponse : public Response
 {
+public:
    /**
     * @brief Constructor.
     */
