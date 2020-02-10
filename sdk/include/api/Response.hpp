@@ -187,6 +187,18 @@ private:
    PRIVATE_IMPL(m_impl);
 };
 
+/**
+ * @brief Class which represents a heartbeat response which should be sent to the server every configured
+ * heartbeat-interval-seconds.
+ */
+class HeartbeatResponse : public Response
+{
+   /**
+    * @brief Constructor.
+    */
+   HeartbeatResponse();
+};
+
 } // namespace api
 } // namespace launcher_plugins
 } // namespace rstudio
