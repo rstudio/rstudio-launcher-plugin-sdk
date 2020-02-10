@@ -53,6 +53,32 @@ const system::FilePath& LocalOptions::getSecureCookieKeyFile() const
    return m_secureCookieKeyFile;
 }
 
+void LocalOptions::initialize()
+{
+   // These are temporary and will be replaced with a list of available containers, probably using
+   // UserProfiles later on.
+   using namespace rstudio::launcher_plugins::options;
+   Options& options = Options::getInstance();
+   options.registerOptions()
+      ("node-connection-timeout-seconds",
+       Value<size_t>(m_nodeConnectionTimeoutSeconds).setDefaultValue(3),
+       "amount of seconds to allow for outgoing connections to other nodes in a load balanced cluster or 0 to use "
+       "the system default")
+      ("save-unspecified-output",
+       Value<bool>(m_saveUnspecifiedOutput).setDefaultValue(true),
+       "whether or not to save output for jobs that don't specify an output path - saved in scratch path")
+      ("unprivileged-mode",
+       Value<bool>(m_useUnprivilegedMode).setDefaultValue(false),
+       "special unprivileged mode - does not change user, runs without root, no impersonation, single user")
+      ("rsandbox-path",
+       Value<FilePath>(m_rsandboxPath).setDefaultValue(FilePath(s_defaultSandboxPath)),
+       "path to rsandbox executable")
+      ("secure-cookie-key-file",
+       Value<FilePath>(m_secureCookieKeyFile).setDefaultValue(FilePath()),
+       "amount of seconds to allow for outgoing connections to other nodes in a load balanced cluster or 0 to use "
+       "the system default");
+}
+
 bool LocalOptions::shouldSaveUnspecifiedOutput() const
 {
    return m_saveUnspecifiedOutput;
@@ -61,32 +87,6 @@ bool LocalOptions::shouldSaveUnspecifiedOutput() const
 bool LocalOptions::useUnprivilegedMode() const
 {
    return m_useUnprivilegedMode;
-}
-
-void LocalOptions::initialize()
-{
-   // These are temporary and will be replaced with a list of available containers, probably using
-   // UserProfiles later on.
-   using namespace rstudio::launcher_plugins::options;
-   Options& options = Options::getInstance();
-   options.registerOptions()
-       ("node-connection-timeout-seconds",
-          Value<size_t>(m_nodeConnectionTimeoutSeconds).setDefaultValue(3),
-          "amount of seconds to allow for outgoing connections to other nodes in a load balanced cluster or 0 to use "
-          "the system default")
-       ("save-unspecified-output",
-          Value<bool>(m_saveUnspecifiedOutput).setDefaultValue(true),
-          "whether or not to save output for jobs that don't specify an output path - saved in scratch path")
-       ("unprivileged-mode",
-          Value<bool>(m_useUnprivilegedMode).setDefaultValue(false),
-          "special unprivileged mode - does not change user, runs without root, no impersonation, single user")
-       ("rsandbox-path",
-          Value<FilePath>(m_rsandboxPath).setDefaultValue(FilePath(s_defaultSandboxPath)),
-          "path to rsandbox executable")
-       ("secure-cookie-key-file",
-          Value<FilePath>(m_secureCookieKeyFile).setDefaultValue(FilePath()),
-          "amount of seconds to allow for outgoing connections to other nodes in a load balanced cluster or 0 to use "
-          "the system default");
 }
 
 } // namespace local

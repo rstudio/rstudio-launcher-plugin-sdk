@@ -67,12 +67,19 @@ public:
    const system::FilePath& getSecureCookieKeyFile() const;
 
    /**
+    * @brief Method which initializes LocalOptions. This method should be called exactly once, before the options
+    *        file is read.
+    *
+    * This is where Local Options are registered with the Options object.
+    */
+   void initialize();
+
+   /**
     * @brief Gets whether to save output for a job when the output path has not been specified.
     *
     * @return True if job output should be saved when no output path was specified; false otherwise.
     */
    bool shouldSaveUnspecifiedOutput() const;
-
 
    /**
     * @brief Gets whether jobs will be run in an unprivileged environment or not.
@@ -85,14 +92,6 @@ public:
     * @return True if jobs will be run in an unprivileged environment; false otherwise.
     */
    bool useUnprivilegedMode() const;
-
-   /**
-    * @brief Method which initializes LocalOptions. This method should be called exactly once, before the options
-    *        file is read.
-    *
-    * This is where LocalOptions are registered with the Options object.
-    */
-   void initialize();
 
 private:
    /**
