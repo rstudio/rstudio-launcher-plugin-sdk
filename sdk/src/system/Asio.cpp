@@ -312,6 +312,97 @@ void AsioStream::writeBytes(const std::string& in_data, const OnError& in_onErro
    END_LOCK_MUTEX
 }
 
+// AsyncTimedEvent =====================================================================================================
+struct AsyncTimedEvent::Impl
+{
+   typedef std::shared_ptr<AsyncTimedEvent::Impl> SharedImpl;
+   typedef std::weak_ptr<AsyncTimedEvent::Impl> WeakImpl;
+
+   Impl() :
+      Running(true)
+   {
+   }
+
+   static void runEvent(
+      const WeakImpl& in_weakThis,
+      const boost::posix_time::time_duration& in_intervalSeconds,
+      const AsioFunction& in_event,
+      const boost::system::error_code& in_ec)
+   {
+      // If the operation was canceled, there's nothing to do.
+      if (in_ec == boost::asio::error::operation_aborted)
+         return;
+      // If another error occurred, log it and exit.
+      else if (in_ec.value() != 0)
+         return logging::logError(utils::createErrorFromBoostError(in_ec, ERROR_LOCATION));
+
+      // If this has been deleted, there's nothing to do.
+      SharedImpl sharedThis = in_weakThis.lock();
+      if (!sharedThis)
+         return;
+
+      try
+      {
+         boost::unique_lock<boost::mutex> lock(sharedThis->Mutex);
+
+         // If this is no longer running, there's nothing to do.
+         if (!sharedThis->Running)
+            return;
+
+         // Otherwise, perform the action and restart the timer.
+         in_event();
+         sharedThis->Timer->expires_from_now(in_intervalSeconds);
+         sharedThis->Timer->async_wait(
+            std::bind(runEvent, in_weakThis, in_intervalSeconds, in_event, std::placeholders::_1));
+
+      END_LOCK_MUTEX
+   }
+
+   /** Mutex to protect the running status. */
+   boost::mutex Mutex;
+
+   /** Whether the timed event is currently running. */
+   bool Running;
+
+   /** The timer that will invoke the callback function. */
+   std::shared_ptr<boost::asio::deadline_timer> Timer;
+
+};
+
+void AsyncTimedEvent::start(uint64_t in_intervalSeconds, const AsioFunction& in_event)
+{
+   // If the interval is 0 there is nothing to do.
+   if (in_intervalSeconds == 0)
+      return;
+
+   boost::posix_time::time_duration intervalSeconds = boost::posix_time::seconds(in_intervalSeconds);
+
+   m_impl->Timer.reset(
+      new boost::asio::deadline_timer(getIoService(), intervalSeconds));
+
+   Impl::WeakImpl weakImpl = m_impl;
+   m_impl->Timer->async_wait(std::bind(&Impl::runEvent, m_impl, intervalSeconds, in_event, std::placeholders::_1));
+}
+
+void AsyncTimedEvent::cancel()
+{
+   try
+   {
+      boost::unique_lock<boost::mutex> lock(m_impl->Mutex);
+
+      m_impl->Running = false;
+      if (m_impl->Timer)
+         m_impl->Timer->cancel();
+
+   END_LOCK_MUTEX
+}
+
+void AsyncTimedEvent::reportError(const Error &in_error)
+{
+   logging::logError(in_error);
+   cancel();
+}
+
 } // namespace system
 } // namespace launcher_plugins
 } // namespace rstudio

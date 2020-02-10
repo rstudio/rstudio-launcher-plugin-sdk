@@ -140,13 +140,56 @@ public:
    /**
     * @brief Writes the provided data to the stream asynchronously.
     *
-    * This method is threadsafe. Each provided block of data will be written to the stream in full before a new one
+    * This method is thread safe. Each provided block of data will be written to the stream in full before a new one
     * begins.
     */
    void writeBytes(const std::string& in_data, const OnError& in_onError);
 
 private:
    // The private implementation of AsioStream.
+   PRIVATE_IMPL_SHARED(m_impl);
+};
+
+/**
+ * @brief Class which performs an action asynchronously every specified number of seconds.
+ */
+class AsyncTimedEvent
+{
+public:
+   /**
+    * @brief Default constructor.
+    */
+   AsyncTimedEvent();
+
+   /**
+    * @brief Starts performing the specified event every in_intervalSeconds seconds.
+    *
+    * This function may only be called once per instance. Restarting a canceled or otherwise stopped timed event will
+    * not work. Instead, a new instance should be created and started.
+    *
+    * @param in_intervalSeconds     The number of seconds to wait between each event.
+    * @param in_event               The action to perform every in_intervalSeconds seconds.
+    */
+   void start(uint64_t in_intervalSeconds, const AsioFunction& in_event);
+
+   /**
+    * @brief Cancels the timed event.
+    */
+   void cancel();
+
+   /**
+    * @brief Reports a fatal error to the AsyncTimedEvent instance. Invoking this will cause the timed event to stop
+    *        running.
+    *
+    * This method should be invoked by the event passed to start if a fatal error occurs.
+    *
+    * @param in_error   The error which occurred.
+    */
+   void reportError(const Error& in_error);
+
+private:
+
+   // The private implementation of AsyncTimedEvent.
    PRIVATE_IMPL_SHARED(m_impl);
 };
 
