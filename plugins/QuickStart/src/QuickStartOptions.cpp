@@ -46,9 +46,9 @@ void QuickStartOptions::initialize()
    using namespace rstudio::launcher_plugins::options;
    Options& options = Options::getInstance();
    options.registerOptions()
-       ("sample-option",
-        Value<bool>(m_sampleOption).setDefaultValue(true),
-        "sample option to demonstrate how to register options");
+      ("sample-option",
+       Value<bool>(m_sampleOption).setDefaultValue(true),
+       "sample option to demonstrate how to register options");
 }
 
 } // namespace quickstart
