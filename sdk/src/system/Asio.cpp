@@ -369,6 +369,11 @@ struct AsyncTimedEvent::Impl
 
 };
 
+AsyncTimedEvent::AsyncTimedEvent() :
+   m_impl(new Impl())
+{
+}
+
 void AsyncTimedEvent::start(uint64_t in_intervalSeconds, const AsioFunction& in_event)
 {
    // If the interval is 0 there is nothing to do.
