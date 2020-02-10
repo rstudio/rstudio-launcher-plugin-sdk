@@ -27,10 +27,14 @@
 #include <api/IJobSource.hpp>
 #include <api/Response.hpp>
 #include <options/Options.hpp>
+#include <system/Asio.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
 namespace api {
+
+typedef std::shared_ptr<AbstractPluginApi> SharedThis;
+typedef std::weak_ptr<AbstractPluginApi> WeakThis;
 
 struct AbstractPluginApi::Impl
 {
@@ -80,6 +84,15 @@ struct AbstractPluginApi::Impl
    }
 
    /**
+    * @brief "Handles" a received heartbeat request by logging a debug message.
+    */
+   void handleHeartbeat()
+   {
+      // There's really nothing to do here, since if the Launcher dies the plugin will die.
+      logging::logDebugMessage("Received Heartbeat from Launcher.");
+   }
+
+   /**
     * @brief Handles a request from the Launcher.
     *
     * @param in_type        The type of request handler which should be invoked.
@@ -97,26 +110,27 @@ struct AbstractPluginApi::Impl
 
       switch (in_handlerType)
       {
+         case Request::Type::HEARTBEAT:
+            return handleHeartbeat();
          case Request::Type::BOOTSTRAP:
-         {
             return handleBootstrap(std::static_pointer_cast<BootstrapRequest>(in_request));
-         }
          default:
-         {
             return LauncherCommunicator->sendResponse(
                ErrorResponse(
                   in_request->getId(),
                   ErrorResponse::Type::UNKNOWN,
                   "Internal Request Handling Error."));
-         }
       }
    }
+
+   /** The job source which communicates with the job scheduling system. */
+   std::shared_ptr<IJobSource> JobSource;
 
    /** The communicator that will be used to send and receive messages from the RStudio Launcher. */
    std::shared_ptr<comms::AbstractLauncherCommunicator> LauncherCommunicator;
 
-   /** The job source which communicates with the job scehduling system. */
-   std::shared_ptr<IJobSource> JobSource;
+   /** A timed event to send heartbeats on the configured time interval */
+   system::AsyncTimedEvent SendHeartbeatEvent;
 };
 
 PRIVATE_IMPL_DELETER_IMPL(AbstractPluginApi)
@@ -133,6 +147,26 @@ Error AbstractPluginApi::initialize()
    comms->registerRequestHandler(
       Request::Type::BOOTSTRAP,
       std::bind(&Impl::handleRequest, m_abstractPluginImpl.get(), Request::Type::BOOTSTRAP, _1));
+   comms->registerRequestHandler(
+      Request::Type::HEARTBEAT,
+      std::bind(&Impl::handleRequest, m_abstractPluginImpl.get(), Request::Type::HEARTBEAT, _1));
+
+   // Make the heartbeat event.
+   WeakThis weakThis = shared_from_this();
+   auto onHeartbeatTimer = [weakThis]()
+   {
+      // If this doesn't exist just exit.
+      SharedThis sharedThis = weakThis.lock();
+      if (!sharedThis)
+         return;
+
+      sharedThis->m_abstractPluginImpl->LauncherCommunicator->sendResponse(HeartbeatResponse());
+   };
+
+   // Start the heartbeat timer.
+   m_abstractPluginImpl->SendHeartbeatEvent.start(
+      options::Options::getInstance().getHeartbeatIntervalSeconds(),
+      onHeartbeatTimer);
 
    // Initialize the plugin-specific API components.
    return doInitialize();
