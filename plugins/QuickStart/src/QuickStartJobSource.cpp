@@ -31,7 +31,7 @@ namespace quickstart {
 
 Error QuickStartJobSource::initialize()
 {
-   // TODO #?: Initialize communication with the job scheduling system. If communication fails, return an error.
+   // TODO #6: Initialize communication with the job scheduling system. If communication fails, return an error.
    return Success();
 }
 
