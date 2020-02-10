@@ -1,7 +1,10 @@
 /*
- * QuickStartPluginApi.cpp
- * 
- * Copyright (C) 2019 by RStudio, Inc.
+ * QuickStartOptions.cpp
+ *
+ * Copyright (C) 2020 by RStudio, PBC
+ *
+ * Unless you have received this program directly from RStudio pursuant to the terms of a commercial license agreement
+ * with RStudio, then this program is licensed to you under the following terms:
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
  * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
@@ -18,34 +21,36 @@
  *
  */
 
-#include <QuickStartPluginApi.hpp>
-
-#include <QuickStartJobSource.hpp>
 #include <QuickStartOptions.hpp>
 
-#include <Error.hpp>
+#include <options/Options.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
 namespace quickstart {
 
-QuickStartPluginApi::QuickStartPluginApi(std::shared_ptr<comms::AbstractLauncherCommunicator> in_launcherCommunicator) :
-   AbstractPluginApi(std::move(in_launcherCommunicator))
+QuickStartOptions& QuickStartOptions::getInstance()
 {
+   static QuickStartOptions options;
+   return options;
 }
 
-std::shared_ptr<api::IJobSource> QuickStartPluginApi::createJobSource() const
+bool QuickStartOptions::getSampleOption() const
 {
-   return std::shared_ptr<api::IJobSource>(new QuickStartJobSource());
+   return m_sampleOption;
 }
 
-Error QuickStartPluginApi::doInitialize()
+void QuickStartOptions::initialize()
 {
-   QuickStartOptions::getInstance().initialize();
-   return Success();
+   // TODO #5: Add options as necessary.
+   using namespace rstudio::launcher_plugins::options;
+   Options& options = Options::getInstance();
+   options.registerOptions()
+       ("sample-option",
+        Value<bool>(m_sampleOption).setDefaultValue(true),
+        "sample option to demonstrate how to register options");
 }
 
-}
+} // namespace quickstart
 } // namespace launcher_plugins
 } // namespace rstudio
-
