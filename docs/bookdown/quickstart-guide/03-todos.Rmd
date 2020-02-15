@@ -2,9 +2,10 @@
 This section will walk the developer through each of the QuickStart `TODO` items. As each `TODO` is completed, it is recommended to remove it from the code.
 
 ## TODO #1: Change Namespaces
-```{r, echo=FALSE}
-knitr::kable(data.frame("c1" = c("QuickStartMain.cpp"), "c2" = c("All source files")), col.names=c("TODO Location", "Impact"))
-```
+ 
+TODO Location        Impact
+-------------------  -----------------
+QuickStartMain.cpp   All source files
 
 The classes in the QuickStart RStudio Launcher Plugin are all in the `rstudio::launcher_plugins::quickstart` namespace. As desired, these namespaces may be changed. For example, if the developer of the Plugin is part of the "Orchid Organization" and is developing a plugin for the "Tiger Lily" job scheduling system, they may change the following namespace definitions
 
@@ -28,9 +29,10 @@ namespace tiger_lily {
 ```
 
 ## TODO #2: Rename Classes
-```{r, echo=FALSE}
-knitr::kable(data.frame("c1" = c("QuickStartMain.cpp"), "c2" = c("All source files")), col.names=c("TODO Location", "Impact"))
-```
+ 
+TODO Location        Impact
+-------------------  -----------------
+QuickStartMain.cpp   All source files
 
 Continuing with the previous example, the developer may now wish to rename all the classes from `QuickStart*` to `TigerLily*`. For example, `QuickStartMain` would become `TigerLilyMain`.
 
@@ -51,9 +53,11 @@ might become
 The naming schemes described here are only recommendations. The exact naming scheme is completely at the discretion of the developer.
 
 ## TODO #3: Change the Plugin Name
-```{r, echo=FALSE}
-knitr::kable(data.frame("c1" = c("QuickStartMain.cpp"), "c2" = c("QuickStartMain.cpp")), col.names=c("TODO Location", "Impact"))
-```
+ 
+TODO Location        Impact
+-------------------  -------------------
+QuickStartMain.cpp   QuickStartMain.cpp
+
 
 The plugin name is used to generate the program ID, which will be used for logging, and the configuration file name. By default, the program ID will be `"rstudio-" + getPluginName() + "-launcher"`. The configuration file name will be `"launcher." + getPluginName() + ".conf"` and must be located in `/etc/rstudio`. Continuing the previous example, the "Orchid" organization developer might change
 
@@ -75,9 +79,11 @@ std::string getPluginName() const override
 ```
 
 ## TODO #4: Optionally Change the Program ID
-```{r, echo=FALSE}
-knitr::kable(data.frame("c1" = c("QuickStartMain.cpp"), "c2" = c("QuickStartMain.cpp")), col.names=c("TODO Location", "Impact"))
-```
+ 
+TODO Location        Impact
+-------------------  -------------------
+QuickStartMain.cpp   QuickStartMain.cpp
+
 
 The program ID will be used to uniquely identify logs from the plugin that are sent to the system log. By default, the value will be `"rstudio-" + getPluginName() + "-launcher"`, however it is possible to override `AbstractMain::getProgramID()` to set a custom program ID. Continuing with the previous example, the Orchid organization developer might add 
 
