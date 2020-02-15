@@ -82,24 +82,20 @@ fi
 
 # Download Doxygen Source
 mkdir -p temp
-pushd temp
-
 DOXYGEN_VER="1.8.16"
 DOXYGEN_TAR="doxygen-${DOXYGEN_VER}.src.tar.gz"
-wget "http://doxygen.nl/files/${DOXYGEN_TAR}"
+wget "http://doxygen.nl/files/${DOXYGEN_TAR}" -O "temp/${DOXYGEN_TAR}"
 
-tar -xzf "${DOXYGEN_TAR}"
-pushd "doxygen-${DOXYGEN_VER}"
-mkdir -p build
-pushd build
+tar -xzf "temp/${DOXYGEN_TAR}" -C temp/
+
+mkdir -p "temp/doxygen-${DOXYGEN_VER}/build"
+pushd "temp/doxygen-${DOXYGEN_VER}/build"
 
 cmake -G "Unix Makefiles" ..
 make
 
 sudo make install
 
-popd
-popd
 popd
 
 rm -rf temp
