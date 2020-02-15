@@ -24,7 +24,7 @@ knitr::kable(depData, col.names = c("Name", "Minimum Version", "Reference"))
 ```
 
 ## RStudio Server Pro
-This version of the RStudio Launcher Plugin SDK is compatible with RStudio Server Pro v1.2.1500 or greater. To properly test the integration between a Launcher Plugin and RStudio Server Pro, an RStudio Server Pro license with the launcher feature enabled will be required. To acquire a license please contact sales@rstudio.com.
+This version of the RStudio Launcher Plugin SDK is compatible with RStudio Server Pro v1.2.5000 or greater. To properly test the integration between a Launcher Plugin and RStudio Server Pro, an RStudio Server Pro license with the launcher feature enabled will be required. To acquire a license please contact sales@rstudio.com.
 
 ## Job Scheduling System
 Each Plugin is intended to interface with a single job scheduling system. In order to test the Plugin implementation, access to a test environment with the desired job scheduling system will be required.
