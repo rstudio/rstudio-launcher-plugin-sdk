@@ -1,6 +1,6 @@
 # The RStudio Launcher {#launcher}
 
-The purpose of the RStudio Launcher is to provide a generic interface to integrate job scheduling systems with RStudio Server Pro and other RStudio products. The Launcher itself is not specific to R processes, and should be able to launch arbitrary work through any job scheduling system for which a Plugin  exists. This section will describe the way that RStudio products may integrate with the Launcher, the way the Launcher communicates with and manages Plugins, and network architecture requirements.
+The purpose of the RStudio Launcher is to provide a generic interface to integrate job scheduling systems with RStudio Server Pro and other RStudio products. The Launcher itself is not specific to R processes, and can launch arbitrary work through any job scheduling system for which a Plugin  exists. This section will describe the way that RStudio products may integrate with the Launcher, the way the Launcher communicates with and manages Plugins, and network architecture requirements.
 
 ## Public Interface {#launcher-pub}
 
