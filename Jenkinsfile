@@ -47,7 +47,7 @@ def create_package() {
 }
 
 def generate_documentation() {
-  sh "tools/generate-doxygen.sh '${rlpSdkVersionMajor}.${rlpSdkVersionMinor}.${rlpSdkVersionPatch}'"
+  sh "tools/generate-documentation.sh '${rlpSdkVersionMajor}.${rlpSdkVersionMinor}.${rlpSdkVersionPatch}'"
 }
 
 def build_source(type) {

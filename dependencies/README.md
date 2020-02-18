@@ -13,6 +13,11 @@ To install all the dependencies for every part of this project, run `./install-d
 dependencies for a particular part of the project, an option may be provided to 
 `./install-dependencies.sh`. To view the available options run `./install-dependencies.sh --help`.
 
+## install-bookdown.sh
+
+This script installs R, pandoc, and bookdown, which is required for generating the Developer's
+ Guide and QuickStart Guide from the RMarkdown source.
+
 ## install-boost.sh
 
 This script installs boost, which is required to compile the RStudio Launcher Plugin SDK. The 
