@@ -2,9 +2,10 @@ Jenkinsfile
 .idea
 cmake-build*
 docker
+docs/bookdown
 docs/diagrams
-docs/doxygen/latex
-tools/pull-shared-core.sh
+docs/doxygen
+tools
 .git
 .gitignore
 

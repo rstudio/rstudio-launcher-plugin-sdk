@@ -27,15 +27,16 @@
 set -e # exit on failed commands.
 
 VERSION=99.9.9
-if [[ ! -z $1 ]]; then
+if [[ -n $1 ]]; then
   VERSION=$1
 fi
 
-cd $(dirname ${BASH_SOURCE[0]})/../docs/doxygen
+cd "$(dirname "${BASH_SOURCE[0]}")"
 
 # update the version number
 sed -e "s/\\\${RLPS_VERSION}/${VERSION}/g" Doxyfile.in > Doxyfile
 
+# Generate Doxygen documetnation
 sudo doxygen Doxyfile
 cd latex
 sudo make

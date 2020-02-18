@@ -1,0 +1,3 @@
+# RStudio Launcher Plugin SDK Architecture {#sdkarch}
+
+Talk about the SDK code architecture in detail.
