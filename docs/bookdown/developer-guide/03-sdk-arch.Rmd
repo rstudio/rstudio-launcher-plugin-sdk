@@ -79,8 +79,28 @@ Because the Plugin API will construct a new Resource Utilization Stream and Outp
 
 ## Plugin Startup {#startup}
 
+When the Plugin is first launched it will initialize a number of components before entering its normal operating mode. When implementing advanced features of the SDK, it may be useful for the developer to know the order of operations prior to normal operating mode. The ordered list is below.
 
+1. The program ID is set for the whole process. This is used for logging.
+2. A system log destination is created and attached to the process at the INFO log level.
+3. A standard error log destination is created and attached at the INFO level to capture any issues with reading options.
+3. Default options are initialized.
+4. The main process is initialized. Custom options should be initialized here.
+5. The options are read and validated.
+6. The standard error log is detached.
+7. If higher level logging was requested, a file log destination is created in the scratch path location.
+8. The Launcher Communicator is constructed.
+9. Signal handlers are configured and core dumps are enabled.
+10. The Launcher Plugin API is created and initialized.
+11. The worker thread pool is created with the configured number of threads.
+12. The Launcher Communicator is started.
+13. The Plugin enters normal operation mode until it is killed or hits an unrecoverable error.
 
-## Plugin Teardown {#teardown}
+## Plugin Tear Down {#teardown}
 
+When the Plugin receives a termination signal from the Launcher, sit starts the tear down process, which is described below:
 
+1. The Launcher Communicator is stopped. 
+2. The worker thread pool is stopped. This cancels all background thread work, including active streams (such as job status streams or output streams).
+3. The Plugin waits for all activity to fully stop.
+4. The Plugin exits with exit code 0.
