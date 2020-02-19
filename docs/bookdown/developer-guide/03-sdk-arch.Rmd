@@ -7,7 +7,7 @@ knitr::include_graphics("images/sdk-arch.png")
 ```
 
 
-## Launcher Communicator
+## Launcher Communicator Component {#comms-component}
 
 The Launcher Communicator component is responsible for receiving and interpreting requests from the Launcher, and translating and sending responses to the Launcher. 
 
@@ -17,9 +17,14 @@ When the Plugin API has the response to a request, it posts the Response object 
 
 This component is fully implemented by the SDK, and requires no action from the Plugin developer.
 
-## Plugin API
+## Plugin API Component {#api-component}
 
 Where the Launcher Communicator is responsible for translating the requests from the Launcher, the Plugin API component is responsible for understanding the meaning of them. Given a particular request, the Plugin API's responsibility is to dispatch the correct action from the Job Source and then convert the output to the appropriate Response object. 
 
+[Chapter 5](#pluginapi) will discuss each API call and how the Plugin API component translates those requests into actionable items for the Job Source or other components.
+
 <!-- TODO: It's possible some thread safety may be handled by the SDK base classes. This should be updated based on specifics when they're available.  -->
 Each Request that is received is processed on its own thread. As a result, classes which are implemented by the Plugin developer need to be thread safe. If the limit of threads for the process is reached, Requests will be queued until a thread is available.
+
+## Job Source Component {#source-component}
+
