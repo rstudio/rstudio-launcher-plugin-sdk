@@ -20,6 +20,7 @@
 
 #include <AbstractMain.hpp>
 
+#include <LocalOptions.hpp>
 #include <LocalPluginApi.hpp>
 
 namespace rstudio {
@@ -54,6 +55,18 @@ private:
     std::string getPluginName() const override
     {
        return "local";
+    }
+
+   /**
+    * @brief Initializes the main process, including custom options.
+    *
+    * @return Success if the process could be initialized; Error otherwise.
+    */
+    Error initialize() override
+    {
+       // Ensure Local specific options are initialized.
+       LocalOptions::getInstance().initialize();
+       return Success();
     }
 };
 

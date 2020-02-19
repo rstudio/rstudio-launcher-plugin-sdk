@@ -21,7 +21,6 @@
 #include <QuickStartPluginApi.hpp>
 
 #include <QuickStartJobSource.hpp>
-#include <QuickStartOptions.hpp>
 
 #include <Error.hpp>
 
@@ -41,7 +40,6 @@ std::shared_ptr<api::IJobSource> QuickStartPluginApi::createJobSource() const
 
 Error QuickStartPluginApi::doInitialize()
 {
-   QuickStartOptions::getInstance().initialize();
    return Success();
 }
 

@@ -21,7 +21,6 @@
 #include <LocalPluginApi.hpp>
 
 #include <LocalJobSource.hpp>
-#include <LocalOptions.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -39,9 +38,6 @@ std::shared_ptr<api::IJobSource> LocalPluginApi::createJobSource() const
 
 Error LocalPluginApi::doInitialize()
 {
-   // Make sure LocalOptions have been initialized.
-   LocalOptions::getInstance().initialize();
-
    return Success();
 }
 

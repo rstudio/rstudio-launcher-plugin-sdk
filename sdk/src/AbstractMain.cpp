@@ -207,14 +207,17 @@ int AbstractMain::run(int in_argc, char** in_argv)
    std::shared_ptr<ILogDestination> stderrLogDest(new StderrLogDestination(LogLevel::INFO));
    addLogDestination(stderrLogDest);
 
-   // Read the options.
+   // Initialize the default options. This must be done before the custom options are initialized.
    options::Options& options = options::Options::getInstance();
-   Error error = options.readOptions(in_argc, in_argv, getConfigFile());
-   if (error)
-   {
-      logError(error);
-      return error.getCode();
-   }
+
+   // Initialize Main. This should initialize the plugin-specific options, and any other plugin specific elements needed
+   // (e.g it could add a custom logging destination).
+   Error error = initialize();
+   CHECK_ERROR(error)
+
+   // Read the options.
+   error = options.readOptions(in_argc, in_argv, getConfigFile());
+   CHECK_ERROR(error)
 
    // Ensure the server user exists.
    system::User serverUser;

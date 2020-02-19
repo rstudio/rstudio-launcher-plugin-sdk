@@ -44,13 +44,6 @@ public:
    virtual ~AbstractMain() = default;
 
    /**
-    * @brief Initializes the process in preparation to run.
-    *
-    * @return Success if the process could be initialized; Error otherwise.
-    */
-   Error initialize();
-
-   /**
     * @brief Runs the plugin.
     *
     * @param in_argCount    The number of arguments in in_argList.
@@ -98,6 +91,13 @@ private:
     * @return The unique program ID for this plugin.
     */
     virtual std::string getProgramId() const;
+
+    /**
+     * @brief Initializes the main process, including custom options.
+     *
+     * @return Success if the process could be initialized; Error otherwise.
+     */
+    virtual Error initialize() = 0;
 
     // Private implementation of abstract main.
     PRIVATE_IMPL_SHARED(m_abstractMainImpl);

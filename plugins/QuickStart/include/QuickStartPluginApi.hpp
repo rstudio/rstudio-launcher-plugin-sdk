@@ -50,8 +50,7 @@ private:
    std::shared_ptr<api::IJobSource> createJobSource() const override;
    /**
     * @brief This method is responsible for initializing all components necessary to communicate with the job launching
-    *        system supported by this Plugin, such as initializing Plugin specific options or the communication method
-    *        (e.g. a TCP socket).
+    *        system supported by this Plugin, such as initializing the communication method (e.g. a TCP socket).
     *
     * @return Success if all components of the Plugin API could be initialized; Error otherwise.
     */
