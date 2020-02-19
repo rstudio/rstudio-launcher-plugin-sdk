@@ -28,3 +28,10 @@ Each Request that is received is processed on its own thread. As a result, class
 
 ## Job Source Component {#source-component}
 
+The Job Source component is the main point of contact between the job scheduling system and the Plugin. The majority of the implementation work for the Plugin developer will be within this component. There are a few Launcher requests which require streamed responses. These streamed responses are the only ones which aren't covered by the Job Source. 
+
+In the majority of cases, when the Plugin API receives a request from the Launcher, it will invoke one or more methods on the Job Source and then compose a response for the Launcher based on the returned data. 
+
+There is only one instance of the Job Source per instance of the Plugin. Because the Launcher can make multiple requests to a single Plugin without receiving their responses, it is possible that the Plugin API will invoke the same method on the Job Source for the same resource concurrently. In that case, the Job Source may perform the requests sequentially, if necessary. There is no requirement that Launcher requests are responded to in any particular order. For the sake of performance, however, it is ideal to perform any tasks concurrently which may be safely performed concurrently.
+
+
