@@ -214,3 +214,14 @@ void TigerLilyOptions::initialize()
 }
 
 ```
+
+## TODO #6: Initilaize Communication
+ 
+TODO Location             Impact
+------------------------  ------------------------
+QuickStartJobSource.cpp   QuickStartJobSource.cpp
+
+
+The next step is to initialize communication with the job scheduling system. This might involve opening a TCP connection to the job scheduling system which will remain open for the duration of the Plugin's lifetime, or it might involve testing that it is possible to connect to the job scheduling system. In the case of the sample Local Plugin, provided with this SDK, no communication test is necessary since jobs will be run on the local machine.
+
+Any other tasks which need to be completed before the Plugin is ready to launch jobs must be completed here. For example, in the RStudio SLURM Launcher Plugin it was also necessary to check which timezone the SLURM cluster is using, since job timestamps need to be compared later on. If the Plugin implementation will be tied to a specific version, or set of versions, of the job scheduling system, that should be validated here as well.
