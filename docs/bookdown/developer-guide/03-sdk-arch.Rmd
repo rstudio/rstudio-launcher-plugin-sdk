@@ -38,7 +38,7 @@ On Plugin startup,
 
 There is only one instance of the Job Source per instance of the Plugin. Because the Launcher can make multiple requests to a single Plugin without receiving their responses, it is possible that the Plugin API will invoke the same method on the Job Source for the same resource concurrently. In that case, the Job Source may perform the requests sequentially, if necessary. There is no requirement that Launcher requests are responded to in any particular order. For the sake of performance, however, it is ideal to perform any tasks concurrently which may be safely performed concurrently.
 
-### Job Repository Component {#job-repo}
+### Job Repository Component {#job-repo-component}
 
 The Job Repository component maintains a store of jobs. Jobs which have been finished for a configurable period of time will be purged from the system. The Job Repository is mainly managed by SDK implemented classes. To ensure proper job status records, the Plugin developer only needs to be concerned with implementing a Job Status Watcher. 
 
@@ -47,6 +47,35 @@ The Job Status Watcher is responsible for interfacing with the job scheduling sy
 The `AbstractTimedJobStatusWatcher` has a pure virtual method which is responsible for getting the statuses of all the jobs each time it is invoked. On a configurable timer, the `AbstractTimedJobStatusWatcher` will invoke said method, and then use the results to update the Job Status Notifier component, which will in turn update any components which are interested in hearing about job status changes, such as all open Job Status Streams.
 
 On the other hand, the `AbstractJobStatusWatcher` has a pure virtual method which is responsible for streaming job statuses until the stream is canceled. The Plugin developer may choose to use either base class, depending on whether the job scheduling system has a way to stream job statuses or not.
+
+### Stream Components {#stream-components}
+
+The remaining components described in the figure \@ref(fig:sdk-arch) are all related to streamed responses. There are three types of requests which require streamed responses: Job Status Stream, Job Output Stream, and Job Resource Utilization Stream. 
+
+All three stream components are constructed by the Plugin API upon receiving the same request type, and are expected to be able to stream their respective data until canceled or completed. Each stream component has different requirements of the Plugin developer.
+
+#### Job Status Stream Component {#job-status-component}
+
+The Job Status Stream is completely implemented by the SDK and only requires a working Job Status Watcher implementation on the part of the Plugin developer. Each time a Job Status Stream request comes in from the Launcher, the Plugin API will construct a Job Status Stream object with the appropriate parameters and it will subscribe to the job status notifier and emit job status updates to the Plugin API as necessary.
+
+#### Resource Utilization Stream Component {#resource-util-component}
+
+The Resource Utilization Stream component is responsible for streaming whatever resource utilization details are available from the job scheduling system for a particular job. Upon construction, the Resource Utilization Stream is responsible for streaming resource utilization updates from the job scheduling system and emitting them to the Plugin API as they are available. The stream should continue until it is canceled by the Plugin API. 
+
+<!-- TODO: Update if class name is not exactly that later. -->
+If the job scheduling system does not support streaming resource utilization metrics, the Plugin developer may inherit from `AbstractTimedResourceUtilStream` rather than `AbstractResourceUtilStream`. The difference between the two is the same as the difference between `AbstractTimedJobStatusWatcher` and `AbstractJobStatusWatcher` as described in [section 4.2.3](#job-repo-component).
+
+Not all job scheduling systems may expose the same resource utilization metrics, and so it may not be possible for every Plugin to fulfill this request in the same way. While this feature is useful for server administrators to track the utilization of their server resources, it is not necessary for the main functionality of the Plugin, and may be considered a best-effort feature.
+
+#### Output Stream Component {#output-stream-component}
+
+The Output Stream component is responsible for streaming output data for a particular job, given that the job is either running or finished. Each Output Stream must be able to stream standard output, error output, or both simultaneously.
+
+Like the other streams, the Output Stream should emit the requested job's output data until it is canceled; however, it is also possible for an Output Stream to finish. When a job stops executing, either because it is killed or it finishes, it should no longer write output. In that case, the Output Stream may emit the remainder of output data and then self terminate. That being said, some job scheduling systems may buffer output data and write it shortly after the job enters a finished state. If that happens, the Plugin developer must find a way to determine when job output is truly finished. For example, when implementing the RStudio SLURM Launcher Plugin it was necessary to emit a recognizable but very likely unique string as the last step of each job. This way, the Output Stream for the RStudio SLURM Launcher Plugin could remain open until it read that string. The string itself is filtered from the data which is emitted to the Plugin API.
+
+#### Stream Concurrency {#stream-concurrency}
+
+Because the Plugin API will construct a new Resource Utilization Stream and Output Stream for each request of those types it receives, it is not necessary that the implementation of those classes be thread safe. Each instance should only be operating on a single thread. However, it is necessary that multiple Output Streams can be constructed and concurrently stream job output data for a single job.
 
 ## Plugin Startup {#startup}
 
