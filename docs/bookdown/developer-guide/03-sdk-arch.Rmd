@@ -19,3 +19,7 @@ This component is fully implemented by the SDK, and requires no action from the 
 
 ## Plugin API
 
+Where the Launcher Communicator is responsible for translating the requests from the Launcher, the Plugin API component is responsible for understanding the meaning of them. Given a particular request, the Plugin API's responsibility is to dispatch the correct action from the Job Source and then convert the output to the appropriate Response object. 
+
+<!-- TODO: It's possible some thread safety may be handled by the SDK base classes. This should be updated based on specifics when they're available.  -->
+Each Request that is received is processed on its own thread. As a result, classes which are implemented by the Plugin developer need to be thread safe. If the limit of threads for the process is reached, Requests will be queued until a thread is available.
