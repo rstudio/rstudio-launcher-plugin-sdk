@@ -48,8 +48,8 @@ public:
     *
     * @param in_value       The value to set on this optional. The optional takes ownership of this value.
     */
-   explicit Optional(std::unique_ptr<T>& in_value) :
-      m_value(std::move(in_value))
+   explicit Optional(T* in_value) :
+      m_value(in_value)
    {
    }
 
@@ -84,11 +84,11 @@ public:
    }
 
    /**
-    * @brief Boolean operator. Intentionally not explicit to allow for boolean checks on optional values.
+    * @brief Boolean operator.
     *
     * @return True if this optional has a value; false otherwise.
     */
-   operator bool()
+   explicit operator bool() const
    {
       return hasValue();
    }
@@ -98,7 +98,7 @@ public:
     *
     * @return True if this optional does not have a value; false otherwise.
     */
-   bool operator!()
+   bool operator!() const
    {
       return !hasValue();
    }
@@ -126,9 +126,9 @@ public:
     *
     * @return A reference to this optional.
     */
-   Optional& operator=(std::unique_ptr<T> in_value)
+   Optional& operator=(T* in_value)
    {
-      m_value.swap(in_value);
+      m_value.reset(in_value);
       return *this;
    }
 
