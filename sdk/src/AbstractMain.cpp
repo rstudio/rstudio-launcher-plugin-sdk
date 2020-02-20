@@ -35,25 +35,12 @@
 #include <options/Options.hpp>
 #include <system/PosixSystem.hpp>
 #include <system/User.hpp>
-#include <utils/ErrorUtils.hpp>
 #include <system/Asio.hpp>
+#include <utils/ErrorUtils.hpp>
+#include <utils/MutexUtils.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
-
-#define UNIQUE_LOCK_MUTEX(in_mutex)                   \
-try {                                                 \
-   boost::unique_lock<boost::mutex> lock(in_mutex);   \
-
-
-#define END_UNIQUE_LOCK_MUTEX                                                                   \
-}                                                                                               \
-catch (const boost::lock_error& e)                                                              \
-{                                                                                               \
-   logging::logError(utils::createErrorFromBoostError(e.code(), e.what(), ERROR_LOCATION));     \
-}                                                                                               \
-CATCH_UNEXPECTED_EXCEPTION                                                                      \
-
 
 #define CHECK_ERROR_1(in_error, in_msg)   \
 if (in_error)                             \
@@ -176,7 +163,7 @@ struct AbstractMain::Impl
       UNIQUE_LOCK_MUTEX(m_mutex)
       if (!m_exitProcess)
          m_exitConditionVar.wait(lock, [&]{ return m_exitProcess; });
-      END_UNIQUE_LOCK_MUTEX
+      END_UNIQUE_LOCK_MUTEX;
    }
 
 private:
