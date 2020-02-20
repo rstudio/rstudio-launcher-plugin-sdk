@@ -1,4 +1,4 @@
-#!groovy
+#!dgroovy
 
 //
 // JenkinsFile

@@ -3,7 +3,7 @@
 #
 # install-doxygen
 #
-# Copyright (C) 2019 by RStudio, PBC
+# Copyright (C) 2019-20 by RStudio, PBC
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
