@@ -48,7 +48,7 @@ public:
     *
     * @param in_value       The value to set on this optional. The optional takes ownership of this value.
     */
-   explicit Optional(std::unique_ptr<T> in_value) :
+   explicit Optional(std::unique_ptr<T>& in_value) :
       m_value(std::move(in_value))
    {
    }
