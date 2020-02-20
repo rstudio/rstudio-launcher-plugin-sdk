@@ -106,7 +106,7 @@ QuickStartOptions.cpp   QuickStartOptions.cpp, QuickStartOptions.hpp
 
 The QuickStartOptions class demonstrates how to add job scheduling specific options to the Plugin. It may not be immediately obvious what options will be required for the Plugin, but when it does become clear that an option is needed it can be added here.
 
-Continuing the previous example, if the Tiger Lily job scheduling system can be controlled using an HTTP API, and it can be set up at a custom URL and port the Orchid developer might add a required option for the URL, an optional option for whether SSL should be used, and an optional option for the port. In that case, the developer might modify QuickStartOptions.hpp and QuickStartOptions.cpp in the following way:
+Continuing the previous example, suppose that the Tiger Lily job scheduling system can be controlled using an HTTP API, and it can be set up at a custom URL and port. The Orchid developer might then add a required option for the URL, an optional option for whether SSL should be used, and an optional option for the port. In that case, the developer might modify QuickStartOptions.hpp and QuickStartOptions.cpp in the following way:
 
 
 ```{c,eval=FALSE}
