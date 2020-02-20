@@ -38,7 +38,9 @@ In addition, many requests may also include `username` and `requestUsername` fie
 | username        | The username of the user that initiated the request. Used for auditing/security purposes. Some requests have the ability to specify * for this value, indicating all users’ information should be returned. This can occur if a super user (admin user) makes a request, or if authorization is disabled.
 | requestUsername | The actual username used when the request was submitted. This should be ignored in most plugins, and the username value above should be used. This field is provided for additional information if needed.
 
-## Error {#error}
+## Requests and Responses {#req-and-resp}
+
+### Error {#error}
 
 For any request, the Plugin may return an Error response. To return an Error response to the server, the `IJobSource` implementation should return an `Error`. The Plugin API component will generally construct the appropriate Error response based on the `Error` returned by the `IJobSource` call. For the most part, the Plugin developer does not need to be concerned with Error responses.
 
@@ -55,7 +57,7 @@ For any request, the Plugin may return an Error response. To return an Error res
 | errorMessage | The error message. More details in the [Error Codes](#error-codes) section. | Int
 
 
-### Error Codes {#error-codes}
+#### Error Codes {#error-codes}
 
 The code of the Error response must be one of the error codes supported by the Launcher Plugin API. The message can be an arbitrary string which provides more context for the Launcher user.
 
@@ -74,10 +76,45 @@ The code of the Error response must be one of the error codes supported by the L
 | UnsupportedVersion  | The Launcher is using a Launcher Plugin API version that is not supported by the Plugin.                                                                | 10
 
 
-## Heartbeat {#heartbeat}
+### Heartbeat {#heartbeat}
 
 <!-- TODO: next PR -->
 
-## Bootstrap {#bootstrap}
+### Bootstrap {#bootstrap}
 
+This request is sent to the Plugin once, immediately after the Plugin is launched. During this request, the SDK will verify version compatibility with the Launcher and then trigger the population of existing jobs by invoking `IJobSource::getJobs`.
+
+&nbsp;
+
+**Bootstrap Request**
+
+|  Field Name  |                               Description                                   |  Value
+| ------------ | --------------------------------------------------------------------------- | -------
+| messageType  | See above.                                                                  | 1
+| requestId    | See above.                                                                  | 0
+| version      | The Launcher Plugin API version in use by the Launcher.                     | [Version](#api-ver)
+
+&nbsp;
+
+**Bootstrap Response**
+
+|  Field Name  |                               Description                                   |  Value
+| ------------ | --------------------------------------------------------------------------- | -------
+| messageType  | See above.                                                                  | 1
+| requestId    | See above.                                                                  | 0
+| responseId   | See above.                                                                  | 0
+| version      | The Launcher Plugin API version in use by the Plugin.                       | [Version](#api-ver)
+
+
+## Complex API Types {#complex-types}
+
+This section describes the details of API types which are not simple types like String or Int.
+
+### Version {#api-ver}
+
+|  Field Name  |                               Description                                   |  Value
+| ------------ | --------------------------------------------------------------------------- | -------
+| major        | The major component of the supported version.                               | Int
+| minor        | The minor component of the supported version.                               | Int
+| patch        | The patch component of the supported version.                               | Int
 
