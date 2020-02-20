@@ -81,6 +81,7 @@ target_link_libraries(rstudio-launcher-plugin-sdk-lib
 
 # define executables for unit tests
 if (NOT RLPS_UNIT_TESTS_DISABLED)
+   add_subdirectory(src/tests)
    add_subdirectory(src/api/tests)
    add_subdirectory(src/comms/tests)
    add_subdirectory(src/options/tests)
