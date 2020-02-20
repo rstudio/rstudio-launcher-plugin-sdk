@@ -44,6 +44,7 @@ namespace comms {
 typedef std::map<api::Request::Type, RequestHandler> RequestHandlerMap;
 
 typedef std::shared_ptr<AbstractLauncherCommunicator> SharedThis;
+typedef std::weak_ptr<AbstractLauncherCommunicator> WeakThis;
 
 struct AbstractLauncherCommunicator::Impl
 {
@@ -127,10 +128,15 @@ void AbstractLauncherCommunicator::reportError(const Error& in_error)
 
 void AbstractLauncherCommunicator::onDataReceived(const char* in_data, size_t in_length)
 {
-   SharedThis sharedThis = shared_from_this();
+   WeakThis weakThis = shared_from_this();
    std::function<void(const std::string&)> parseMessage =
-      [sharedThis](const std::string& in_message)
+      [weakThis](const std::string& in_message)
       {
+         // If we can't lock the weak pointer, the communicator has been destroyed and there's nothing left to do.
+         SharedThis sharedThis = weakThis.lock();
+         if (!sharedThis)
+            return;
+
          // Parse the JSON object.
          json::Object jsonRequest;
          Error error = jsonRequest.parse(in_message);
