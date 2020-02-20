@@ -27,7 +27,6 @@
 #include <json/Json.hpp>
 #include <json/JsonUtils.hpp>
 #include <logging/Logger.hpp>
-#include <system/User.hpp>
 
 #include "Constants.hpp"
 
