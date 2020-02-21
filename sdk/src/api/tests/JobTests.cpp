@@ -31,6 +31,7 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace api {
 
+// Exposed Port ========================================================================================================
 TEST_CASE("From JSON: Exposed port with only target port")
 {
    json::Object exposedPortObj;
@@ -124,6 +125,82 @@ TEST_CASE("To JSON: Exposed port with all fields")
    expected["publishedPort"] = 667;
 
    REQUIRE(exposedPort.toJson() == expected);
+}
+
+// Job Config ==========================================================================================================
+TEST_CASE("From JSON: JobConfig name and type (float)")
+{
+   json::Object jobConfigObj;
+   jobConfigObj["name"] = "a name";
+   jobConfigObj["valueType"] = "float";
+
+   JobConfig jobConfig;
+   REQUIRE_FALSE(JobConfig::fromJson(jobConfigObj, jobConfig));
+   CHECK(jobConfig.Name == "a name");
+   CHECK(jobConfig.ValueType == JobConfig::Type::FLOAT);
+}
+
+TEST_CASE("From JSON: JobConfig all fields (int)")
+{
+   json::Object jobConfigObj;
+   jobConfigObj["name"] = "customConfigValue";
+   jobConfigObj["valueType"] = "int";
+   jobConfigObj["value"] = "13";
+
+   JobConfig jobConfig;
+   REQUIRE_FALSE(JobConfig::fromJson(jobConfigObj, jobConfig));
+   CHECK(jobConfig.Name == "customConfigValue");
+   CHECK(jobConfig.ValueType == JobConfig::Type::INT);
+   CHECK(jobConfig.Value == "13");
+}
+
+TEST_CASE("From JSON: JobConfig all fields (enum)")
+{
+   json::Object jobConfigObj;
+   jobConfigObj["name"] = "anotherName";
+   jobConfigObj["valueType"] = "enum";
+   jobConfigObj["value"] = "ENUM_VAL";
+
+   JobConfig jobConfig;
+   REQUIRE_FALSE(JobConfig::fromJson(jobConfigObj, jobConfig));
+   CHECK(jobConfig.Name == "anotherName");
+   CHECK(jobConfig.ValueType == JobConfig::Type::ENUM);
+   CHECK(jobConfig.Value == "ENUM_VAL");
+}
+
+TEST_CASE("From JSON: JobConfig all fields (string)")
+{
+   json::Object jobConfigObj;
+   jobConfigObj["name"] = "lastName";
+   jobConfigObj["valueType"] = "string";
+   jobConfigObj["value"] = "Hello, World!";
+
+   JobConfig jobConfig;
+   REQUIRE_FALSE(JobConfig::fromJson(jobConfigObj, jobConfig));
+   CHECK(jobConfig.Name == "lastName");
+   CHECK(jobConfig.ValueType == JobConfig::Type::STRING);
+   CHECK(jobConfig.Value == "Hello, World!");
+}
+
+TEST_CASE("From JSON: JobConfig missing name")
+{
+   json::Object jobConfigObj;
+   jobConfigObj["valueType"] = "string";
+   jobConfigObj["value"] = "Hello, World!";
+
+   JobConfig jobConfig;
+   REQUIRE(JobConfig::fromJson(jobConfigObj, jobConfig));
+}
+
+TEST_CASE("From JSON: JobConfig invalid type")
+{
+   json::Object jobConfigObj;
+   jobConfigObj["name"] = "lastName";
+   jobConfigObj["valueType"] = "string but not";
+   jobConfigObj["value"] = "Hello, World!";
+
+   JobConfig jobConfig;
+   REQUIRE(JobConfig::fromJson(jobConfigObj, jobConfig));
 }
 
 } // namespace api

@@ -26,6 +26,7 @@
 #include <Error.hpp>
 #include <json/Json.hpp>
 #include <json/JsonUtils.hpp>
+#include <boost/algorithm/string/trim.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -40,6 +41,14 @@ constexpr char const* EXPOSED_PORT_PUBLISHED          = "publishedPort";
 constexpr char const* EXPOSED_PORT_PROTOCOL           = "protocol";
 constexpr char const* EXPOSED_PORT_PROTOCOL_DEFAULT   = "TCP";
 
+constexpr char const* JOB_CONFIG                      = "config";
+constexpr char const* JOB_CONFIG_NAME                 = "name";
+constexpr char const* JOB_CONFIG_VALUE                = "value";
+constexpr char const* JOB_CONFIG_TYPE                 = "valueType";
+constexpr char const* JOB_CONFIG_TYPE_ENUM            = "enum";
+constexpr char const* JOB_CONFIG_TYPE_FLOAT           = "float";
+constexpr char const* JOB_CONFIG_TYPE_INT             = "int";
+constexpr char const* JOB_CONFIG_TYPE_STRING          = "string";
 
 Error& updateError(const std::string& in_name, const json::Object& in_object, Error& io_error)
 {
@@ -87,6 +96,46 @@ json::Object ExposedPort::toJson() const
    exposedPortObj[EXPOSED_PORT_PROTOCOL] = Protocol;
 
    return exposedPortObj;
+}
+
+// Job Config ==========================================================================================================
+Error JobConfig::fromJson(const json::Object& in_json, JobConfig& out_jobConfig)
+{
+   std::string strType;
+
+   Error error = json::readObject(in_json,
+      JOB_CONFIG_NAME, out_jobConfig.Name,
+      JOB_CONFIG_TYPE, strType);
+
+   if (error)
+      return updateError(JOB_CONFIG, in_json, error);
+
+   boost::trim(strType);
+   if (strType == JOB_CONFIG_TYPE_ENUM)
+      out_jobConfig.ValueType = Type::ENUM;
+   else if (strType == JOB_CONFIG_TYPE_FLOAT)
+      out_jobConfig.ValueType = Type::FLOAT;
+   else if (strType == JOB_CONFIG_TYPE_INT)
+      out_jobConfig.ValueType = Type::INT;
+   else if (strType == JOB_CONFIG_TYPE_STRING)
+      out_jobConfig.ValueType = Type::STRING;
+   else
+      return updateError(
+         JOB_CONFIG,
+         in_json,
+         error = Error(
+            "JobConfigParseError",
+            1,
+            "Invalid Job Config Value Type (" + strType + ")", ERROR_LOCATION));
+
+   Optional<std::string> value;
+   error = json::readObject(in_json, JOB_CONFIG_VALUE, value);
+   if (error)
+      return updateError(JOB_CONFIG_NAME, in_json, error);
+
+   out_jobConfig.Value = value.getValueOr("");
+
+   return Success();
 }
 
 } // namespace api
