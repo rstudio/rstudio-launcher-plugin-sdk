@@ -143,7 +143,7 @@ struct JobConfig
    std::string Name;
 
    /** The type of the custom job configuration value. */
-   Type ValueType;
+   Optional<Type> ValueType;
 
    /** The value of the custom job configuration value. */
    std::string Value;

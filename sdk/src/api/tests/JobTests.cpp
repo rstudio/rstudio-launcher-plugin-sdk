@@ -128,30 +128,24 @@ TEST_CASE("To JSON: Exposed port with all fields")
 }
 
 // Job Config ==========================================================================================================
-TEST_CASE("From JSON: JobConfig name and type (float)")
+TEST_CASE("From JSON: JobConfig missing value")
 {
    json::Object jobConfigObj;
    jobConfigObj["name"] = "a name";
    jobConfigObj["valueType"] = "float";
 
    JobConfig jobConfig;
-   REQUIRE_FALSE(JobConfig::fromJson(jobConfigObj, jobConfig));
-   CHECK(jobConfig.Name == "a name");
-   CHECK(jobConfig.ValueType == JobConfig::Type::FLOAT);
+   REQUIRE(JobConfig::fromJson(jobConfigObj, jobConfig));
 }
 
-TEST_CASE("From JSON: JobConfig all fields (int)")
+TEST_CASE("From JSON: JobConfig name and value")
 {
    json::Object jobConfigObj;
-   jobConfigObj["name"] = "customConfigValue";
-   jobConfigObj["valueType"] = "int";
-   jobConfigObj["value"] = "13";
+   jobConfigObj["name"] = "a name";
+   jobConfigObj["value"] = "a config value";
 
    JobConfig jobConfig;
    REQUIRE_FALSE(JobConfig::fromJson(jobConfigObj, jobConfig));
-   CHECK(jobConfig.Name == "customConfigValue");
-   CHECK(jobConfig.ValueType == JobConfig::Type::INT);
-   CHECK(jobConfig.Value == "13");
 }
 
 TEST_CASE("From JSON: JobConfig all fields (enum)")
@@ -164,8 +158,39 @@ TEST_CASE("From JSON: JobConfig all fields (enum)")
    JobConfig jobConfig;
    REQUIRE_FALSE(JobConfig::fromJson(jobConfigObj, jobConfig));
    CHECK(jobConfig.Name == "anotherName");
-   CHECK(jobConfig.ValueType == JobConfig::Type::ENUM);
+   CHECK(jobConfig.ValueType);
+   CHECK(jobConfig.ValueType.getValueOr(JobConfig::Type::INT) == JobConfig::Type::ENUM);
    CHECK(jobConfig.Value == "ENUM_VAL");
+}
+
+TEST_CASE("From JSON: JobConfig all fields (float)")
+{
+   json::Object jobConfigObj;
+   jobConfigObj["name"] = "some+conf+val";
+   jobConfigObj["valueType"] = "float";
+   jobConfigObj["value"] = "12.27";
+
+   JobConfig jobConfig;
+   REQUIRE_FALSE(JobConfig::fromJson(jobConfigObj, jobConfig));
+   CHECK(jobConfig.Name == "some+conf+val");
+   CHECK(jobConfig.ValueType);
+   CHECK(jobConfig.ValueType.getValueOr(JobConfig::Type::INT) == JobConfig::Type::FLOAT);
+   CHECK(jobConfig.Value == "12.27");
+}
+
+TEST_CASE("From JSON: JobConfig all fields (int)")
+{
+   json::Object jobConfigObj;
+   jobConfigObj["name"] = "customConfigValue";
+   jobConfigObj["valueType"] = "int";
+   jobConfigObj["value"] = "13";
+
+   JobConfig jobConfig;
+   REQUIRE_FALSE(JobConfig::fromJson(jobConfigObj, jobConfig));
+   CHECK(jobConfig.Name == "customConfigValue");
+   CHECK(jobConfig.ValueType);
+   CHECK(jobConfig.ValueType.getValueOr(JobConfig::Type::ENUM) == JobConfig::Type::INT);
+   CHECK(jobConfig.Value == "13");
 }
 
 TEST_CASE("From JSON: JobConfig all fields (string)")
@@ -178,7 +203,8 @@ TEST_CASE("From JSON: JobConfig all fields (string)")
    JobConfig jobConfig;
    REQUIRE_FALSE(JobConfig::fromJson(jobConfigObj, jobConfig));
    CHECK(jobConfig.Name == "lastName");
-   CHECK(jobConfig.ValueType == JobConfig::Type::STRING);
+   CHECK(jobConfig.ValueType);
+   CHECK(jobConfig.ValueType.getValueOr(JobConfig::Type::FLOAT) == JobConfig::Type::STRING);
    CHECK(jobConfig.Value == "Hello, World!");
 }
 

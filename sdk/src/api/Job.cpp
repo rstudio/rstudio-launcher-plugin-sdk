@@ -101,39 +101,40 @@ json::Object ExposedPort::toJson() const
 // Job Config ==========================================================================================================
 Error JobConfig::fromJson(const json::Object& in_json, JobConfig& out_jobConfig)
 {
-   std::string strType;
 
    Error error = json::readObject(in_json,
       JOB_CONFIG_NAME, out_jobConfig.Name,
-      JOB_CONFIG_TYPE, strType);
+      JOB_CONFIG_VALUE, out_jobConfig.Value);
 
    if (error)
       return updateError(JOB_CONFIG, in_json, error);
 
-   boost::trim(strType);
-   if (strType == JOB_CONFIG_TYPE_ENUM)
-      out_jobConfig.ValueType = Type::ENUM;
-   else if (strType == JOB_CONFIG_TYPE_FLOAT)
-      out_jobConfig.ValueType = Type::FLOAT;
-   else if (strType == JOB_CONFIG_TYPE_INT)
-      out_jobConfig.ValueType = Type::INT;
-   else if (strType == JOB_CONFIG_TYPE_STRING)
-      out_jobConfig.ValueType = Type::STRING;
-   else
-      return updateError(
-         JOB_CONFIG,
-         in_json,
-         error = Error(
-            "JobConfigParseError",
-            1,
-            "Invalid Job Config Value Type (" + strType + ")", ERROR_LOCATION));
-
-   Optional<std::string> value;
-   error = json::readObject(in_json, JOB_CONFIG_VALUE, value);
+   Optional<std::string> optStrType;
+   error = json::readObject(in_json, JOB_CONFIG_TYPE, optStrType);
    if (error)
-      return updateError(JOB_CONFIG_NAME, in_json, error);
+      return updateError(JOB_CONFIG, in_json, error);
 
-   out_jobConfig.Value = value.getValueOr("");
+   if (optStrType)
+   {
+      std::string strType = optStrType.getValueOr("");
+      boost::trim(strType);
+      if (strType == JOB_CONFIG_TYPE_ENUM)
+         out_jobConfig.ValueType = Type::ENUM;
+      else if (strType == JOB_CONFIG_TYPE_FLOAT)
+         out_jobConfig.ValueType = Type::FLOAT;
+      else if (strType == JOB_CONFIG_TYPE_INT)
+         out_jobConfig.ValueType = Type::INT;
+      else if (strType == JOB_CONFIG_TYPE_STRING)
+         out_jobConfig.ValueType = Type::STRING;
+      else
+         return updateError(
+            JOB_CONFIG,
+            in_json,
+            error = Error(
+               "JobConfigParseError",
+               1,
+               "Invalid Job Config Value Type (" + strType + ")", ERROR_LOCATION));
+   }
 
    return Success();
 }
