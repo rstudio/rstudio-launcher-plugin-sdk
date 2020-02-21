@@ -99,6 +99,12 @@ json::Object ExposedPort::toJson() const
 }
 
 // Job Config ==========================================================================================================
+JobConfig::JobConfig(const std::string& in_name, Type in_type) :
+   Name(in_name),
+   ValueType(in_type)
+{
+}
+
 Error JobConfig::fromJson(const json::Object& in_json, JobConfig& out_jobConfig)
 {
 
@@ -137,6 +143,51 @@ Error JobConfig::fromJson(const json::Object& in_json, JobConfig& out_jobConfig)
    }
 
    return Success();
+}
+
+json::Object JobConfig::toJson() const
+{
+   json::Object confObj;
+   confObj[JOB_CONFIG_NAME] = Name;
+
+   if (ValueType)
+   {
+      // It should never use the default value here, since ValueType is set.
+      switch (ValueType.getValueOr(Type::ENUM))
+      {
+         case Type::ENUM:
+         {
+            confObj[JOB_CONFIG_TYPE] = JOB_CONFIG_TYPE_ENUM;
+            break;
+         }
+         case Type::FLOAT:
+         {
+            confObj[JOB_CONFIG_TYPE] = JOB_CONFIG_TYPE_FLOAT;
+            break;
+         }
+         case Type::INT:
+         {
+            confObj[JOB_CONFIG_TYPE] = JOB_CONFIG_TYPE_INT;
+            break;
+         }
+         case Type::STRING:
+         {
+            confObj[JOB_CONFIG_TYPE] = JOB_CONFIG_TYPE_STRING;
+            break;
+         }
+         default:
+         {
+            // We can only reach this if a new Type was added but this switch wasn't updated - do nothing in release, but
+            // assert. It _should_ be caught by unit tests.
+            assert(false);
+         }
+      }
+   }
+
+   if (!Value.empty())
+      confObj[JOB_CONFIG_VALUE] = Value;
+
+   return confObj;
 }
 
 } // namespace api

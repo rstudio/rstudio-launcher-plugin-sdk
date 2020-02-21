@@ -229,6 +229,56 @@ TEST_CASE("From JSON: JobConfig invalid type")
    REQUIRE(JobConfig::fromJson(jobConfigObj, jobConfig));
 }
 
+TEST_CASE("To JSON: JobConfig name and type (float)")
+{
+   JobConfig config("confVal", JobConfig::Type::FLOAT);
+
+   json::Object expected;
+   expected["name"] = "confVal";
+   expected["valueType"] = "float";
+
+   CHECK(config.toJson() == expected);
+}
+
+TEST_CASE("To JSON: JobConfig all fields (int)")
+{
+   JobConfig config("confVal2", JobConfig::Type::INT);
+   config.Value = "38";
+
+   json::Object expected;
+   expected["name"] = "confVal2";
+   expected["valueType"] = "int";
+   expected["value"] = "38";
+
+   CHECK(config.toJson() == expected);
+}
+
+TEST_CASE("To JSON: JobConfig all fields (enum)")
+{
+   JobConfig config("some-conf-val", JobConfig::Type::ENUM);
+   config.Value = "ENUM_VAL_2";
+
+   json::Object expected;
+   expected["name"] = "some-conf-val";
+   expected["valueType"] = "enum";
+   expected["value"] = "ENUM_VAL_2";
+
+   CHECK(config.toJson() == expected);
+}
+
+TEST_CASE("To JSON: JobConfig all fields (string)")
+{
+   JobConfig config("conf3Val", JobConfig::Type::STRING);
+   config.Value = "a string of words";
+
+   json::Object expected;
+   expected["name"] = "conf3Val";
+   expected["valueType"] = "string";
+   expected["value"] = "a string of words";
+
+   CHECK(config.toJson() == expected);
+}
+
 } // namespace api
 } // namespace launcher_plugins
 } // namespace rstudio
