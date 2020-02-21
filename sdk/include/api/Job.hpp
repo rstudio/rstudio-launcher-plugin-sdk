@@ -465,7 +465,7 @@ struct Job
    std::vector<JobConfig> Config;
 
    /** The container to run the job in. Only used for containerized jobs. */
-   Optional<Container> Container;
+   Optional<Container> ContainerDetails;
 
    /** Environment variables to set on the job's run environment. */
    std::vector<EnvVariable> Environment;
