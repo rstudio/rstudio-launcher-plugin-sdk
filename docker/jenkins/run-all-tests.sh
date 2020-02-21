@@ -42,6 +42,7 @@ runTest()
 
 # Unit tests first
 runTest "sdk/src/tests"
+runTest "sdk/src/api/tests"
 runTest "sdk/src/comms/tests"
 runTest "sdk/src/options/tests"
 
