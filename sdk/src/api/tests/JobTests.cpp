@@ -23,12 +23,80 @@
 
 #include <TestMain.hpp>
 
+#include <Error.hpp>
 #include <api/Job.hpp>
+#include <json/Json.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
 namespace api {
 
+TEST_CASE("From JSON: Exposed port with only target port")
+{
+   json::Object exposedPortObj;
+   exposedPortObj.insert("targetPort", 2345);
+
+   ExposedPort exposedPort;
+
+   REQUIRE_FALSE(ExposedPort::fromJson(exposedPortObj, exposedPort));
+   CHECK(exposedPort.TargetPort == 2345);
+   CHECK(exposedPort.Protocol == "TCP");
+   CHECK_FALSE(exposedPort.PublishedPort);
+}
+
+TEST_CASE("From JSON: Exposed port with target port and protocol")
+{
+   json::Object exposedPortObj;
+   exposedPortObj.insert("targetPort", 2345);
+   exposedPortObj.insert("protocol", "HTTP");
+
+   ExposedPort exposedPort;
+
+   REQUIRE_FALSE(ExposedPort::fromJson(exposedPortObj, exposedPort));
+   CHECK(exposedPort.TargetPort == 2345);
+   CHECK(exposedPort.Protocol == "HTTP");
+   CHECK_FALSE(exposedPort.PublishedPort);
+}
+
+TEST_CASE("From JSON: Exposed port with all fields")
+{
+   json::Object exposedPortObj;
+   exposedPortObj.insert("targetPort", 5432);
+   exposedPortObj.insert("protocol", "HTTPS");
+   exposedPortObj.insert("publishedPort", 6978);
+
+   ExposedPort exposedPort;
+
+   REQUIRE_FALSE(ExposedPort::fromJson(exposedPortObj, exposedPort));
+   CHECK(exposedPort.TargetPort == 5432);
+   CHECK(exposedPort.Protocol == "HTTPS");
+   REQUIRE(exposedPort.PublishedPort);
+   CHECK(exposedPort.PublishedPort.getValueOr(0) == 6978);
+}
+
+TEST_CASE("From JSON: Exposed port without target port")
+{
+   json::Object exposedPortObj;
+   exposedPortObj.insert("protocol", "HTTPS");
+   exposedPortObj.insert("publishedPort", 6978);
+
+   ExposedPort exposedPort;
+
+   REQUIRE(ExposedPort::fromJson(exposedPortObj, exposedPort));
+}
+
+
+TEST_CASE("To JSON: Exposed port with only target port")
+{
+}
+
+TEST_CASE("To JSON: Exposed port with target port and protocol")
+{
+}
+
+TEST_CASE("To JSON: Exposed port with all fields")
+{
+}
 
 } // namespace api
 } // namespace launcher_plugins

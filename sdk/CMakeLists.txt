@@ -33,6 +33,7 @@ set(RLPS_SOURCE_FILES
    src/Error.cpp
    src/api/AbstractPluginApi.cpp
    src/api/Constants.cpp
+   src/api/Job.cpp
    src/api/Request.cpp
    src/api/Response.cpp
    src/comms/AbstractLauncherCommunicator.cpp

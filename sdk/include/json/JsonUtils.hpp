@@ -26,8 +26,10 @@
 
 #include "Json.hpp"
 
-#include <Error.hpp>
 #include <sstream>
+
+#include <Error.hpp>
+#include <Optional.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -106,6 +108,40 @@ Error readObject(const Object& in_object, const std::string& in_name, T& out_val
 }
 
 /**
+ * @brief Reads a member from an object.
+ *
+ * @tparam T            The type of the member.
+ *
+ * @param in_object     The object from which the member should be read.
+ * @param in_name       The name of the member to read.
+ * @param out_value     The value of the member, if no error occurs.
+ *
+ * @return Success if the member could be found and is of type T; Error otherwise.
+ */
+template <typename T>
+Error readObject(const Object& in_object, const std::string& in_name, Optional<T>& out_value)
+{
+   // If the value is optional, no need to report that it's missing.
+   Object::Iterator itr = in_object.find(in_name);
+   if (itr == in_object.end())
+      return Success();
+
+   if (!isType<T>((*itr).getValue()))
+   {
+      std::ostringstream msgStream;
+      msgStream << "Member " << in_name << " has type " << (*itr).getValue().getType() <<
+                " which is not compatible with requested type " << typeid(T).name() << ".";
+      return jsonReadError(
+         JsonReadError::INVALID_TYPE,
+         msgStream.str(),
+         ERROR_LOCATION);
+   }
+
+   out_value = (*itr).getValue().getValue<T>();
+   return Success();
+}
+
+/**
  * @brief Reads an array member from an object.
  *
  * @tparam T            The type of values of the array member.
@@ -168,6 +204,29 @@ Error readObject(const Object& in_object, const std::string& in_name, std::vecto
  */
 template <typename T, typename... Args>
 Error readObject(const Object& in_object, const std::string& in_name, T& out_value, Args&... io_args)
+{
+   Error error = readObject(in_object, in_name, out_value);
+   if (error)
+      return error;
+
+   return readObject(in_object, io_args...);
+}
+
+/**
+ * @brief Reads multiple members from an object.
+ *
+ * @tparam T            The type of the first member to read.
+ * @tparam Args         The template parameter pack for the remaining members.
+ *
+ * @param in_object     The object from which to read the members.
+ * @param in_name       The name of the first member to be read.
+ * @param out_value     The value of the first member to be read, if no error occurs.
+ * @param io_args       The parameter pack of the remaining members to be read.
+ *
+ * @return Success if all the members exist and have valid types; Error otherwise.
+ */
+template <typename T, typename... Args>
+Error readObject(const Object& in_object, const std::string& in_name, Optional<T>& out_value, Args&... io_args)
 {
    Error error = readObject(in_object, in_name, out_value);
    if (error)
