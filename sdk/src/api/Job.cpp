@@ -33,6 +33,14 @@ namespace api {
 
 namespace {
 
+// Job JSON field constants
+constexpr char const* EXPOSED_PORT                    = "exposedPort";
+constexpr char const* EXPOSED_PORT_TARGET             = "targetPort";
+constexpr char const* EXPOSED_PORT_PUBLISHED          = "publishedPort";
+constexpr char const* EXPOSED_PORT_PROTOCOL           = "protocol";
+constexpr char const* EXPOSED_PORT_PROTOCOL_DEFAULT   = "TCP";
+
+
 Error& updateError(const std::string& in_name, const json::Object& in_object, Error& io_error)
 {
    if (io_error)
@@ -50,22 +58,35 @@ Error& updateError(const std::string& in_name, const json::Object& in_object, Er
 // Exposed Port ========================================================================================================
 Error ExposedPort::fromJson(const json::Object& in_json, ExposedPort& out_exposedPort)
 {
-   Error error = json::readObject(in_json, "targetPort", out_exposedPort.TargetPort);
+   Error error = json::readObject(in_json, EXPOSED_PORT_TARGET, out_exposedPort.TargetPort);
    if (error)
-      return updateError("exposedPort", in_json, error);
+      return updateError(EXPOSED_PORT, in_json, error);
 
    Optional<std::string> protocol;
-   error = json::readObject(in_json, "protocol", protocol);
+   error = json::readObject(in_json, EXPOSED_PORT_PROTOCOL, protocol);
    if (error)
-      return updateError("exposedPort", in_json, error);
+      return updateError(EXPOSED_PORT, in_json, error);
 
-   out_exposedPort.Protocol = protocol.getValueOr("TCP");
+   out_exposedPort.Protocol = protocol.getValueOr(EXPOSED_PORT_PROTOCOL_DEFAULT);
 
-   error = json::readObject(in_json, "publishedPort", out_exposedPort.PublishedPort);
+   error = json::readObject(in_json, EXPOSED_PORT_PUBLISHED, out_exposedPort.PublishedPort);
    if (error)
-      return updateError("exposedPort", in_json, error);
+      return updateError(EXPOSED_PORT, in_json, error);
 
    return Success();
+}
+
+json::Object ExposedPort::toJson() const
+{
+   json::Object exposedPortObj;
+   exposedPortObj[EXPOSED_PORT_TARGET] = TargetPort;
+
+   if (PublishedPort)
+      exposedPortObj[EXPOSED_PORT_PUBLISHED] = PublishedPort.getValueOr(0);
+
+   exposedPortObj[EXPOSED_PORT_PROTOCOL] = Protocol;
+
+   return exposedPortObj;
 }
 
 } // namespace api

@@ -88,14 +88,42 @@ TEST_CASE("From JSON: Exposed port without target port")
 
 TEST_CASE("To JSON: Exposed port with only target port")
 {
+   ExposedPort exposedPort;
+   exposedPort.TargetPort = 56;
+
+   json::Object expected;
+   expected["targetPort"] = 56;
+   expected["protocol"] = "";
+
+   REQUIRE(exposedPort.toJson() == expected);
 }
 
 TEST_CASE("To JSON: Exposed port with target port and protocol")
 {
+   ExposedPort exposedPort;
+   exposedPort.TargetPort = 382;
+   exposedPort.Protocol = "HTTP";
+
+   json::Object expected;
+   expected["targetPort"] = 382;
+   expected["protocol"] = "HTTP";
+
+   REQUIRE(exposedPort.toJson() == expected);
 }
 
 TEST_CASE("To JSON: Exposed port with all fields")
 {
+   ExposedPort exposedPort;
+   exposedPort.TargetPort = 9091;
+   exposedPort.Protocol = "other";
+   exposedPort.PublishedPort = 667;
+
+   json::Object expected;
+   expected["targetPort"] = 9091;
+   expected["protocol"] = "other";
+   expected["publishedPort"] = 667;
+
+   REQUIRE(exposedPort.toJson() == expected);
 }
 
 } // namespace api
