@@ -145,6 +145,8 @@ copyFile()
     replace "$DEST" 'log::' 'logging::'
     replace "$DEST" "RSTUDIO_BOOST_NAMESPACE" "boost"
     replace "$DEST" "thread::" "system::"
+    replace "$DEST" "#include <boost/noncopyable.hpp>" "#include <Noncopyable.hpp>"
+    replace "$DEST" "boost::noncopyable" "Noncopyable"
 
     # Fix includes
     for I in "${!SRC_INCLUDES[@]}"; do
