@@ -149,45 +149,52 @@ struct JobConfig
    std::string Value;
 };
 
-/** @brief Struct which represents the source path of a Mount. */
-struct MountSource
+/** @brief Struct which represents the source path of an local host system Mount. */
+struct HostMountSource
 {
    /**
-    * @enum MountSource::Type
+    * @brief Constructs a HostMountSource from a JSON object which represents the host mount source.
     *
-    * @brief Represents the type of a MountSource.
-    */
-   enum class Type
-   {
-      /** A host mount to be created within the job process. */
-         HOST,
-
-      /** An NFS mount to set on a containerized job. */
-         NFS
-   };
-
-   /**
-    * @brief Constructs a MountSource from a JSON object which represents the mount source.
-    *
-    * @param in_json            The JSON object which represents the mount source.
+    * @param in_json            The JSON object which represents the host mount source.
     * @param out_mountSource    The populated mount source value. Not valid if an error is returned.
     *
-    * @return Success if in_json could be parsed as a MountSource; Error otherwise.
+    * @return Success if in_json could be parsed as a HostMountSource; Error otherwise.
     */
-   static Error fromJson(const json::Object& in_json, MountSource& out_mountSource);
+   static Error fromJson(const json::Object& in_json, HostMountSource& out_mountSource);
 
    /**
-    * @brief Converts this MountSource to a JSON object which represents it.
+    * @brief Converts this HostMountSource to a JSON object which represents it.
     *
-    * @return The JSON object which represents this MountSource.
+    * @return The JSON object which represents this HostMountSource.
     */
    json::Object toJson() const;
 
-   /** The host of the mount, if this is an NFS MountSource. */
-   Optional<std::string> Host;
+   /** The source path for the mount. */
+   std::string Path;
+};
 
-   /**  The type of the mount source. */
-   Type MountSourceType;
+/** @brief Struct which represents the source path of an NFS Mount. */
+struct NfsMountSource
+{
+   /**
+    * @brief Constructs an NfsMountSource from a JSON object which represents the mount source.
+    *
+    * @param in_json            The JSON object which represents the NFS mount source.
+    * @param out_mountSource    The populated mount source value. Not valid if an error is returned.
+    *
+    * @return Success if in_json could be parsed as an NfsMountSource; Error otherwise.
+    */
+   static Error fromJson(const json::Object& in_json, NfsMountSource& out_mountSource);
+
+   /**
+    * @brief Converts this NfsMountSource to a JSON object which represents it.
+    *
+    * @return The JSON object which represents this NfsMountSource.
+    */
+   json::Object toJson() const;
+
+   /** The host of the source path. */
+   std::string Host;
 
    /** The source path for the mount. */
    std::string Path;
@@ -219,8 +226,11 @@ struct Mount
    /** Whether the mounted path is read only. */
    bool IsReadOnly;
 
-   /** The source path to mount. */
-   MountSource SourcePath;
+   /** The source path to mount. Only one of this and NfsSourcePath may be set per Mount object. */
+   Optional<HostMountSource> HostSourcePath;
+
+   /** The source path to mount. Only one of this and HostSourcePath may be set per Mount object. */
+   Optional<NfsMountSource> NfsSourcePath;
 };
 
 /** @brief Struct which represents a resource limit for a job. */

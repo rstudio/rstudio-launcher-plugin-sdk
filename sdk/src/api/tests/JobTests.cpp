@@ -86,7 +86,6 @@ TEST_CASE("From JSON: Exposed port without target port")
    REQUIRE(ExposedPort::fromJson(exposedPortObj, exposedPort));
 }
 
-
 TEST_CASE("To JSON: Exposed port with only target port")
 {
    ExposedPort exposedPort;
@@ -277,6 +276,154 @@ TEST_CASE("To JSON: JobConfig all fields (string)")
    expected["value"] = "a string of words";
 
    CHECK(config.toJson() == expected);
+}
+
+// Mount ===============================================================================================================
+TEST_CASE("From JSON: Host Mount Source")
+{
+   json::Object mountSourceObj;
+   mountSourceObj["path"] = "/path/to/mount/folder";
+
+   HostMountSource mountSource;
+   REQUIRE_FALSE(HostMountSource::fromJson(mountSourceObj, mountSource));
+   CHECK(mountSource.Path == "/path/to/mount/folder");
+}
+
+TEST_CASE("From JSON: Host Mount Source no path")
+{
+   json::Object mountSourceObj;
+
+   HostMountSource mountSource;
+   REQUIRE(HostMountSource::fromJson(mountSourceObj, mountSource));
+}
+
+TEST_CASE("From JSON: Nfs Mount Source")
+{
+   json::Object mountSourceObj;
+   mountSourceObj["path"] = "/source/path";
+   mountSourceObj["host"] = "192.168.22.1";
+
+   NfsMountSource nfsMountSource;
+   REQUIRE_FALSE(NfsMountSource::fromJson(mountSourceObj, nfsMountSource));
+   CHECK(nfsMountSource.Path == "/source/path");
+   CHECK(nfsMountSource.Host == "192.168.22.1");
+}
+
+TEST_CASE("From JSON: Nfs Mount Source (no host)")
+{
+   json::Object mountSourceObj;
+   mountSourceObj["path"] = "/source/path";
+
+   NfsMountSource nfsMountSource;
+   REQUIRE(NfsMountSource::fromJson(mountSourceObj, nfsMountSource));
+}
+
+TEST_CASE("From JSON: Nfs Mount Source (no path)")
+{
+   json::Object mountSourceObj;
+   mountSourceObj["host"] = "192.168.22.1";
+
+   NfsMountSource nfsMountSource;
+   REQUIRE(NfsMountSource::fromJson(mountSourceObj, nfsMountSource));
+}
+
+TEST_CASE("From JSON: Mount (host source)")
+{
+   json::Object mountSourceObj;
+   mountSourceObj["path"] = "/path/to/mount/folder";
+
+   json::Object mountObj;
+   mountObj["mountPath"] = "/path/to/dest/folder";
+   mountObj["hostMount"] = mountSourceObj;
+
+   Mount mount;
+   REQUIRE_FALSE(Mount::fromJson(mountObj, mount));
+   REQUIRE(mount.HostSourcePath);
+   CHECK_FALSE(mount.NfsSourcePath);
+   CHECK(mount.HostSourcePath.getValueOr(HostMountSource()).Path == "/path/to/mount/folder");
+   CHECK_FALSE(mount.IsReadOnly);
+}
+
+TEST_CASE("From JSON: Mount (nfs source)")
+{
+   json::Object mountSourceObj;
+   mountSourceObj["path"] = "/path/to/mount/folder";
+   mountSourceObj["host"] = "123.65.8.22";
+
+   json::Object mountObj;
+   mountObj["mountPath"] = "/path/to/dest/folder";
+   mountObj["nfsMount"] = mountSourceObj;
+
+   Mount mount;
+   REQUIRE_FALSE(Mount::fromJson(mountObj, mount));
+   REQUIRE(mount.NfsSourcePath);
+   CHECK_FALSE(mount.HostSourcePath);
+   CHECK(mount.NfsSourcePath.getValueOr(NfsMountSource()).Path == "/path/to/mount/folder");
+   CHECK(mount.NfsSourcePath.getValueOr(NfsMountSource()).Host == "123.65.8.22");
+   CHECK_FALSE(mount.IsReadOnly);
+}
+
+TEST_CASE("From JSON: Mount (nfs source with read-only)")
+{
+   json::Object mountSourceObj;
+   mountSourceObj["path"] = "/path/to/mount/folder";
+   mountSourceObj["host"] = "123.65.8.22";
+
+   json::Object mountObj;
+   mountObj["mountPath"] = "/path/to/dest/folder";
+   mountObj["nfsMount"] = mountSourceObj;
+   mountObj["readOnly"] = true;
+
+   Mount mount;
+   REQUIRE_FALSE(Mount::fromJson(mountObj, mount));
+   REQUIRE(mount.NfsSourcePath);
+   CHECK_FALSE(mount.HostSourcePath);
+   CHECK(mount.NfsSourcePath.getValueOr(NfsMountSource()).Path == "/path/to/mount/folder");
+   CHECK(mount.NfsSourcePath.getValueOr(NfsMountSource()).Host == "123.65.8.22");
+   CHECK(mount.IsReadOnly);
+}
+
+TEST_CASE("From JSON: Mount (no source)")
+{
+   json::Object mountObj;
+   mountObj["mountPath"] = "/path/to/dest/folder";
+   mountObj["readOnly"] = true;
+
+   Mount mount;
+   REQUIRE(Mount::fromJson(mountObj, mount));
+}
+
+TEST_CASE("From JSON: Mount (both sources)")
+{
+   json::Object nfsMountSourceObj;
+   nfsMountSourceObj["path"] = "/path/to/mount/folder";
+   nfsMountSourceObj["host"] = "123.65.8.22";
+
+   json::Object hostMountSourceObj;
+   hostMountSourceObj["path"] = "/another/path/";
+
+   json::Object mountObj;
+   mountObj["mountPath"] = "/path/to/dest/folder";
+   mountObj["nfsMount"] = nfsMountSourceObj;
+   mountObj["hostMount"] = hostMountSourceObj;
+   mountObj["readOnly"] = false;
+
+   Mount mount;
+   REQUIRE(Mount::fromJson(mountObj, mount));
+}
+
+TEST_CASE("From JSON: Mount (no destination)")
+{
+   json::Object mountSourceObj;
+   mountSourceObj["path"] = "/path/to/mount/folder";
+   mountSourceObj["host"] = "123.65.8.22";
+
+   json::Object mountObj;
+   mountObj["nfsMount"] = mountSourceObj;
+   mountObj["readOnly"] = true;
+
+   Mount mount;
+   REQUIRE(Mount::fromJson(mountObj, mount));
 }
 
 } // namespace api

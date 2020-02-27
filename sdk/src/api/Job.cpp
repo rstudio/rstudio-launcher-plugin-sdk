@@ -53,6 +53,15 @@ constexpr char const* JOB_CONFIG_TYPE_FLOAT           = "float";
 constexpr char const* JOB_CONFIG_TYPE_INT             = "int";
 constexpr char const* JOB_CONFIG_TYPE_STRING          = "string";
 
+// Mount
+constexpr char const* MOUNT                           = "mount";
+constexpr char const* MOUNT_PATH                      = "mountPath";
+constexpr char const* MOUNT_READ_ONLY                 = "readOnly";
+constexpr char const* MOUNT_SOURCE_HOST               = "hostMount";
+constexpr char const* MOUNT_SOURCE_NFS                = "nfsMount";
+constexpr char const* MOUNT_SOURCE_PATH               = "path";
+constexpr char const* MOUNT_SOURCE_NFS_HOST           = "host";
+
 Error& updateError(const std::string& in_name, const json::Object& in_object, Error& io_error)
 {
    if (io_error)
@@ -182,6 +191,75 @@ json::Object JobConfig::toJson() const
       confObj[JOB_CONFIG_VALUE] = Value;
 
    return confObj;
+}
+
+// Mount ===============================================================================================================
+Error HostMountSource::fromJson(const json::Object& in_json, HostMountSource& out_mountSource)
+{
+   Error error = json::readObject(in_json, MOUNT_SOURCE_PATH, out_mountSource.Path);
+   if (error)
+      return updateError(MOUNT_SOURCE_HOST, in_json, error);
+
+   return Success();
+}
+
+Error NfsMountSource::fromJson(const json::Object& in_json, NfsMountSource& out_mountSource)
+{
+   Error error = json::readObject(in_json,
+      MOUNT_SOURCE_PATH, out_mountSource.Path,
+      MOUNT_SOURCE_NFS_HOST, out_mountSource.Host);
+   if (error)
+      return updateError(MOUNT_SOURCE_NFS, in_json, error);
+
+   return Success();
+}
+
+Error Mount::fromJson(const json::Object& in_json, Mount& out_mount)
+{
+   Optional<json::Object> hostMountSource, nfsMountSource;
+   Optional<bool> isReadOnly;
+   Error error = json::readObject(in_json,
+      MOUNT_PATH, out_mount.DestinationPath,
+      MOUNT_SOURCE_HOST, hostMountSource,
+      MOUNT_SOURCE_NFS, nfsMountSource,
+      MOUNT_READ_ONLY, isReadOnly);
+
+   if (error)
+      return updateError(MOUNT, in_json, error);
+
+   if (!hostMountSource && !nfsMountSource)
+   {
+      // TODO: real error set up.
+      error = Error("JsonConfigParseError", 1, "No mount source specified", ERROR_LOCATION);
+      return updateError(MOUNT, in_json, error);
+   }
+   else if (hostMountSource && nfsMountSource)
+   {
+      error = Error("JsonConfigParseError", 1, "Multiple mount sources specified", ERROR_LOCATION);
+      return updateError(MOUNT, in_json, error);
+   }
+   else if (hostMountSource)
+   {
+      HostMountSource mountSource;
+      error = HostMountSource::fromJson(hostMountSource.getValueOr(json::Object()), mountSource);
+      if (error)
+         return updateError(MOUNT, in_json, error);
+
+      out_mount.HostSourcePath = mountSource;
+   }
+   else
+   {
+      NfsMountSource mountSource;
+      error = NfsMountSource::fromJson(nfsMountSource.getValueOr(json::Object()), mountSource);
+      if (error)
+         return updateError(MOUNT, in_json, error);
+
+      out_mount.NfsSourcePath = mountSource;
+   }
+
+   out_mount.IsReadOnly = isReadOnly.getValueOr(false);
+
+   return Success();
 }
 
 } // namespace api
