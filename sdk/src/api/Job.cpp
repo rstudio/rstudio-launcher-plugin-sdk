@@ -35,12 +35,15 @@ namespace api {
 namespace {
 
 // Job JSON field constants
+
+// Exposed Port
 constexpr char const* EXPOSED_PORT                    = "exposedPort";
 constexpr char const* EXPOSED_PORT_TARGET             = "targetPort";
 constexpr char const* EXPOSED_PORT_PUBLISHED          = "publishedPort";
 constexpr char const* EXPOSED_PORT_PROTOCOL           = "protocol";
 constexpr char const* EXPOSED_PORT_PROTOCOL_DEFAULT   = "TCP";
 
+// Job Config
 constexpr char const* JOB_CONFIG                      = "config";
 constexpr char const* JOB_CONFIG_NAME                 = "name";
 constexpr char const* JOB_CONFIG_VALUE                = "value";
@@ -67,21 +70,13 @@ Error& updateError(const std::string& in_name, const json::Object& in_object, Er
 // Exposed Port ========================================================================================================
 Error ExposedPort::fromJson(const json::Object& in_json, ExposedPort& out_exposedPort)
 {
-   Error error = json::readObject(in_json, EXPOSED_PORT_TARGET, out_exposedPort.TargetPort);
-   if (error)
-      return updateError(EXPOSED_PORT, in_json, error);
-
    Optional<std::string> protocol;
-   error = json::readObject(in_json, EXPOSED_PORT_PROTOCOL, protocol);
-   if (error)
-      return updateError(EXPOSED_PORT, in_json, error);
+   Error error = json::readObject(in_json,
+      EXPOSED_PORT_TARGET, out_exposedPort.TargetPort,
+      EXPOSED_PORT_PROTOCOL, protocol,
+      EXPOSED_PORT_PUBLISHED, out_exposedPort.PublishedPort);
 
    out_exposedPort.Protocol = protocol.getValueOr(EXPOSED_PORT_PROTOCOL_DEFAULT);
-
-   error = json::readObject(in_json, EXPOSED_PORT_PUBLISHED, out_exposedPort.PublishedPort);
-   if (error)
-      return updateError(EXPOSED_PORT, in_json, error);
-
    return Success();
 }
 
@@ -107,16 +102,12 @@ JobConfig::JobConfig(const std::string& in_name, Type in_type) :
 
 Error JobConfig::fromJson(const json::Object& in_json, JobConfig& out_jobConfig)
 {
-
+   Optional<std::string> optStrType;
    Error error = json::readObject(in_json,
       JOB_CONFIG_NAME, out_jobConfig.Name,
-      JOB_CONFIG_VALUE, out_jobConfig.Value);
+      JOB_CONFIG_VALUE, out_jobConfig.Value,
+      JOB_CONFIG_TYPE, optStrType);
 
-   if (error)
-      return updateError(JOB_CONFIG, in_json, error);
-
-   Optional<std::string> optStrType;
-   error = json::readObject(in_json, JOB_CONFIG_TYPE, optStrType);
    if (error)
       return updateError(JOB_CONFIG, in_json, error);
 
