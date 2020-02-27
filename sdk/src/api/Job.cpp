@@ -62,6 +62,17 @@ constexpr char const* MOUNT_SOURCE_NFS                = "nfsMount";
 constexpr char const* MOUNT_SOURCE_PATH               = "path";
 constexpr char const* MOUNT_SOURCE_NFS_HOST           = "host";
 
+// Resource Limit
+constexpr char const* RESOURCE_LIMITS                 = "resourceLimits";
+constexpr char const* RESOURCE_LIMIT_DEFAULT          = "defaultValue";
+constexpr char const* RESOURCE_LIMIT_MAX              = "maxValue";
+constexpr char const* RESOURCE_LIMIT_TYPE             = "type";
+constexpr char const* RESOURCE_LIMIT_TYPE_CPU_COUNT   = "cpuCount";
+constexpr char const* RESOURCE_LIMIT_TYPE_CPU_TIME    = "cpuTime";
+constexpr char const* RESOURCE_LIMIT_TYPE_MEMORY      = "memory";
+constexpr char const* RESOURCE_LIMIT_TYPE_MEMORY_SWAP = "memorySwap";
+constexpr char const* RESOURCE_LIMIT_VALUE            = "value";
+
 Error& updateError(const std::string& in_name, const json::Object& in_object, Error& io_error)
 {
    if (io_error)
@@ -140,7 +151,7 @@ Error JobConfig::fromJson(const json::Object& in_json, JobConfig& out_jobConfig)
             JOB_CONFIG,
             in_json,
             error = Error(
-               "JobConfigParseError",
+               "JobParseError",
                1,
                "Invalid Job Config Value Type (" + strType + ")", ERROR_LOCATION));
    }
@@ -247,12 +258,12 @@ Error Mount::fromJson(const json::Object& in_json, Mount& out_mount)
    if (!hostMountSource && !nfsMountSource)
    {
       // TODO: real error set up.
-      error = Error("JsonConfigParseError", 1, "No mount source specified", ERROR_LOCATION);
+      error = Error("JobParseError", 1, "No mount source specified", ERROR_LOCATION);
       return updateError(MOUNT, in_json, error);
    }
    else if (hostMountSource && nfsMountSource)
    {
-      error = Error("JsonConfigParseError", 1, "Multiple mount sources specified", ERROR_LOCATION);
+      error = Error("JobParseError", 1, "Multiple mount sources specified", ERROR_LOCATION);
       return updateError(MOUNT, in_json, error);
    }
    else if (hostMountSource)
@@ -296,6 +307,85 @@ json::Object Mount::toJson() const
       mountObj[MOUNT_SOURCE_NFS] = NfsSourcePath.getValueOr(NfsMountSource()).toJson();
 
    return mountObj;
+}
+
+// Resource Limit ======================================================================================================
+ResourceLimit::ResourceLimit(Type in_limitType,  std::string in_maxValue, std::string in_defaultValue) :
+   ResourceType(in_limitType),
+   MaxValue(std::move(in_maxValue)),
+   DefaultValue(std::move(in_defaultValue))
+{
+}
+
+Error ResourceLimit::fromJson(const json::Object& in_json, ResourceLimit& out_resourceLimit)
+{
+   std::string strType;
+   Error error = json::readObject(in_json,
+      RESOURCE_LIMIT_TYPE, strType,
+      RESOURCE_LIMIT_VALUE, out_resourceLimit.Value);
+
+   if (error)
+      return updateError(RESOURCE_LIMITS, in_json, error);
+
+   boost::trim(strType);
+   if (strType == RESOURCE_LIMIT_TYPE_CPU_COUNT)
+      out_resourceLimit.ResourceType = Type::CPU_COUNT;
+   else if (strType == RESOURCE_LIMIT_TYPE_CPU_TIME)
+      out_resourceLimit.ResourceType = Type::CPU_TIME;
+   else if (strType == RESOURCE_LIMIT_TYPE_MEMORY)
+      out_resourceLimit.ResourceType = Type::MEMORY;
+   else if (strType == RESOURCE_LIMIT_TYPE_MEMORY_SWAP)
+      out_resourceLimit.ResourceType = Type::MEMORY_SWAP;
+   else
+      return updateError(
+         RESOURCE_LIMITS,
+         in_json,
+         error = Error("JobParseError", 1, "Invalid resource type", ERROR_LOCATION));
+
+   return Success();
+}
+
+json::Object ResourceLimit::toJson() const
+{
+   json::Object limitObj;
+
+   switch (ResourceType)
+   {
+      case Type::CPU_COUNT:
+      {
+         limitObj[RESOURCE_LIMIT_TYPE] = RESOURCE_LIMIT_TYPE_CPU_COUNT;
+         break;
+      }
+      case Type::CPU_TIME:
+      {
+         limitObj[RESOURCE_LIMIT_TYPE] = RESOURCE_LIMIT_TYPE_CPU_TIME;
+         break;
+      }
+      case Type::MEMORY:
+      {
+         limitObj[RESOURCE_LIMIT_TYPE] = RESOURCE_LIMIT_TYPE_MEMORY;
+         break;
+      }
+      case Type::MEMORY_SWAP:
+      {
+         limitObj[RESOURCE_LIMIT_TYPE] = RESOURCE_LIMIT_TYPE_MEMORY_SWAP;
+         break;
+      }
+      default:
+      {
+         // This should only happen if a resource type is added and this method isn't updated.
+         assert(false);
+      }
+   }
+
+   if (!Value.empty())
+      limitObj[RESOURCE_LIMIT_VALUE] = Value;
+   if (!DefaultValue.empty())
+      limitObj[RESOURCE_LIMIT_DEFAULT] = DefaultValue;
+   if (!MaxValue.empty())
+      limitObj[RESOURCE_LIMIT_MAX] = MaxValue;
+
+   return limitObj;
 }
 
 } // namespace api

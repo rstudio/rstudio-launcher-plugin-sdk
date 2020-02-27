@@ -268,7 +268,7 @@ struct ResourceLimit
     * @param in_maxValue        The maximum value of the resource limit.
     * @param in_defaultValue    The default value of the resource limit.
     */
-   ResourceLimit(Type in_limitType, const std::string& in_maxValue, const std::string& in_defaultValue);
+   ResourceLimit(Type in_limitType, std::string in_maxValue, std::string in_defaultValue);
 
    /**
     * @brief Constructs a ResourceLimit from a JSON object which represents the resource limit.

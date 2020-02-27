@@ -492,6 +492,175 @@ TEST_CASE("To JSON: Mount (nfs source w/ false read only)")
    CHECK(mount.toJson() == mountObj);
 }
 
+// Resource Limit ======================================================================================================
+TEST_CASE("From JSON: Resource Limit (cpu count)")
+{
+   json::Object limitObj;
+   limitObj["type"] = "cpuCount";
+   limitObj["value"] = "5";
+
+   ResourceLimit limit;
+   REQUIRE_FALSE(ResourceLimit::fromJson(limitObj, limit));
+   CHECK(limit.ResourceType == ResourceLimit::Type::CPU_COUNT);
+   CHECK(limit.Value == "5");
+}
+
+TEST_CASE("From JSON: Resource Limit (cpu time)")
+{
+   json::Object limitObj;
+   limitObj["type"] = "cpuTime";
+   limitObj["value"] = "6.6";
+
+   ResourceLimit limit;
+   REQUIRE_FALSE(ResourceLimit::fromJson(limitObj, limit));
+   CHECK(limit.ResourceType == ResourceLimit::Type::CPU_TIME);
+   CHECK(limit.Value == "6.6");
+}
+
+TEST_CASE("From JSON: Resource Limit (memory)")
+{
+   json::Object limitObj;
+   limitObj["type"] = "memory";
+   limitObj["value"] = "128";
+
+   ResourceLimit limit;
+   REQUIRE_FALSE(ResourceLimit::fromJson(limitObj, limit));
+   CHECK(limit.ResourceType == ResourceLimit::Type::MEMORY);
+   CHECK(limit.Value == "128");
+}
+
+TEST_CASE("From JSON: Resource Limit (swap)")
+{
+   json::Object limitObj;
+   limitObj["type"] = "memorySwap";
+   limitObj["value"] = "2048";
+
+   ResourceLimit limit;
+   REQUIRE_FALSE(ResourceLimit::fromJson(limitObj, limit));
+   CHECK(limit.ResourceType == ResourceLimit::Type::MEMORY_SWAP);
+   CHECK(limit.Value == "2048");
+}
+
+TEST_CASE("From JSON: Resource Limit (no value)")
+{
+   json::Object limitObj;
+   limitObj["type"] = "memorySwap";
+
+   ResourceLimit limit;
+   REQUIRE(ResourceLimit::fromJson(limitObj, limit));
+}
+
+TEST_CASE("From JSON: Resource Limit (no type)")
+{
+   json::Object limitObj;
+   limitObj["value"] = "63.9";
+
+   ResourceLimit limit;
+   REQUIRE(ResourceLimit::fromJson(limitObj, limit));
+}
+
+TEST_CASE("To JSON: Resource Limit (type only, cpu count)")
+{
+   json::Object limitObj;
+   limitObj["type"] = "cpuCount";
+
+   ResourceLimit limit;
+   limit.ResourceType = ResourceLimit::Type::CPU_COUNT;
+   CHECK(limit.toJson() == limitObj);
+}
+
+TEST_CASE("To JSON: Resource Limit (type and value, cpu time)")
+{
+   json::Object limitObj;
+   limitObj["type"] = "cpuTime";
+   limitObj["value"] = "33";
+
+   ResourceLimit limit;
+   limit.ResourceType = ResourceLimit::Type::CPU_TIME;
+   limit.Value = "33";
+   CHECK(limit.toJson() == limitObj);
+}
+
+TEST_CASE("To JSON: Resource Limit (type and default, memory)")
+{
+   json::Object limitObj;
+   limitObj["type"] = "memory";
+   limitObj["defaultValue"] = "100";
+
+   ResourceLimit limit;
+   limit.ResourceType = ResourceLimit::Type::MEMORY;
+   limit.DefaultValue = "100";
+   CHECK(limit.toJson() == limitObj);
+}
+
+TEST_CASE("To JSON: Resource Limit (type and max, swap)")
+{
+   json::Object limitObj;
+   limitObj["type"] = "memorySwap";
+   limitObj["maxValue"] = "250";
+
+   ResourceLimit limit;
+   limit.ResourceType = ResourceLimit::Type::MEMORY_SWAP;
+   limit.MaxValue = "250";
+   CHECK(limit.toJson() == limitObj);
+   CHECK(limit.toJson().write() == limitObj.write());
+}
+
+TEST_CASE("To JSON: Resource Limit (type, value, and default)")
+{
+   json::Object limitObj;
+   limitObj["type"] = "memory";
+   limitObj["value"] = "55";
+   limitObj["defaultValue"] = "100";
+
+   ResourceLimit limit;
+   limit.ResourceType = ResourceLimit::Type::MEMORY;
+   limit.Value = "55";
+   limit.DefaultValue = "100";
+   CHECK(limit.toJson() == limitObj);
+}
+
+TEST_CASE("To JSON: Resource Limit (type, value, and max)")
+{
+   json::Object limitObj;
+   limitObj["type"] = "memory";
+   limitObj["value"] = "55";
+   limitObj["maxValue"] = "250";
+
+   ResourceLimit limit;
+   limit.ResourceType = ResourceLimit::Type::MEMORY;
+   limit.Value = "55";
+   limit.MaxValue = "250";
+   CHECK(limit.toJson() == limitObj);
+   CHECK(limit.toJson().write() == limitObj.write());
+}
+
+TEST_CASE("To JSON: Resource Limit (type, max, and default)")
+{
+   json::Object limitObj;
+   limitObj["type"] = "cpuTime";
+   limitObj["defaultValue"] = "90";
+   limitObj["maxValue"] = "180";
+
+   ResourceLimit limit(ResourceLimit::Type::CPU_TIME, "180", "90");
+   CHECK(limit.toJson() == limitObj);
+   CHECK(limit.toJson().write() == limitObj.write());
+}
+
+TEST_CASE("To JSON: Resource Limit (type, value, max, and default)")
+{
+   json::Object limitObj;
+   limitObj["type"] = "cpuTime";
+   limitObj["value"] = "127";
+   limitObj["defaultValue"] = "90";
+   limitObj["maxValue"] = "180";
+
+   ResourceLimit limit(ResourceLimit::Type::CPU_TIME, "180", "90");
+   limit.Value = "127";
+   CHECK(limit.toJson() == limitObj);
+   CHECK(limit.toJson().write() == limitObj.write());
+}
+
 } // namespace api
 } // namespace launcher_plugins
 } // namespace rstudio
