@@ -297,6 +297,16 @@ TEST_CASE("From JSON: Host Mount Source no path")
    REQUIRE(HostMountSource::fromJson(mountSourceObj, mountSource));
 }
 
+TEST_CASE("To JSON: Host Mount Source")
+{
+   json::Object mountSourceObj;
+   mountSourceObj["path"] = "/path/to/mount/folder";
+
+   HostMountSource mountSource;
+   mountSource.Path = "/path/to/mount/folder";
+   CHECK(mountSource.toJson() == mountSourceObj);
+}
+
 TEST_CASE("From JSON: Nfs Mount Source")
 {
    json::Object mountSourceObj;
@@ -325,6 +335,18 @@ TEST_CASE("From JSON: Nfs Mount Source (no path)")
 
    NfsMountSource nfsMountSource;
    REQUIRE(NfsMountSource::fromJson(mountSourceObj, nfsMountSource));
+}
+
+TEST_CASE("To JSON: Nfs Mount Source")
+{
+   json::Object mountSourceObj;
+   mountSourceObj["path"] = "/path/to/mount/folder";
+   mountSourceObj["host"] = "192.168.22.1";
+
+   NfsMountSource mountSource;
+   mountSource.Path = "/path/to/mount/folder";
+   mountSource.Host = "192.168.22.1";
+   CHECK(mountSource.toJson() == mountSourceObj);
 }
 
 TEST_CASE("From JSON: Mount (host source)")
@@ -424,6 +446,50 @@ TEST_CASE("From JSON: Mount (no destination)")
 
    Mount mount;
    REQUIRE(Mount::fromJson(mountObj, mount));
+}
+
+TEST_CASE("To JSON: Mount (host source w/ read only)")
+{
+   json::Object mountSourceObj;
+   mountSourceObj["path"] = "/path/to/mount/folder";
+
+   json::Object mountObj;
+   mountObj["mountPath"] = "/path/to/dest/folder";
+   mountObj["hostMount"] = mountSourceObj;
+   mountObj["readOnly"] = true;
+
+   HostMountSource mountSource;
+   mountSource.Path = "/path/to/mount/folder";
+
+   Mount mount;
+   mount.DestinationPath = "/path/to/dest/folder";
+   mount.HostSourcePath = mountSource;
+   mount.IsReadOnly = true;
+
+   CHECK(mount.toJson() == mountObj);
+}
+
+TEST_CASE("To JSON: Mount (nfs source w/ false read only)")
+{
+   json::Object mountSourceObj;
+   mountSourceObj["path"] = "/path/to/mount/folder";
+   mountSourceObj["host"] = "123.65.8.22";
+
+   json::Object mountObj;
+   mountObj["mountPath"] = "/path/to/dest/folder";
+   mountObj["nfsMount"] = mountSourceObj;
+   mountObj["readOnly"] = false;
+
+   NfsMountSource mountSource;
+   mountSource.Path = "/path/to/mount/folder";
+   mountSource.Host = "123.65.8.22";
+
+   Mount mount;
+   mount.DestinationPath = "/path/to/dest/folder";
+   mount.NfsSourcePath = mountSource;
+   mount.IsReadOnly = false;
+
+   CHECK(mount.toJson() == mountObj);
 }
 
 } // namespace api

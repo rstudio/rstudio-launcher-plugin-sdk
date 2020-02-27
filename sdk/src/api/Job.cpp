@@ -203,6 +203,14 @@ Error HostMountSource::fromJson(const json::Object& in_json, HostMountSource& ou
    return Success();
 }
 
+json::Object HostMountSource::toJson() const
+{
+   json::Object mountSourceObj;
+   mountSourceObj[MOUNT_SOURCE_PATH] = Path;
+
+   return mountSourceObj;
+}
+
 Error NfsMountSource::fromJson(const json::Object& in_json, NfsMountSource& out_mountSource)
 {
    Error error = json::readObject(in_json,
@@ -212,6 +220,15 @@ Error NfsMountSource::fromJson(const json::Object& in_json, NfsMountSource& out_
       return updateError(MOUNT_SOURCE_NFS, in_json, error);
 
    return Success();
+}
+
+json::Object NfsMountSource::toJson() const
+{
+   json::Object mountSourceObj;
+   mountSourceObj[MOUNT_SOURCE_PATH] = Path;
+   mountSourceObj[MOUNT_SOURCE_NFS_HOST] = Host;
+
+   return mountSourceObj;
 }
 
 Error Mount::fromJson(const json::Object& in_json, Mount& out_mount)
@@ -260,6 +277,25 @@ Error Mount::fromJson(const json::Object& in_json, Mount& out_mount)
    out_mount.IsReadOnly = isReadOnly.getValueOr(false);
 
    return Success();
+}
+
+json::Object Mount::toJson() const
+{
+   // There should be exactly one mount source. If both are set, it's a programmer error. Assert, but in release mode
+   // just set both (or no) mount sources on the object.
+   assert((NfsSourcePath && !HostSourcePath) || (!NfsSourcePath && HostSourcePath));
+
+   json::Object mountObj;
+   mountObj[MOUNT_PATH] = DestinationPath;
+   mountObj[MOUNT_READ_ONLY] = IsReadOnly;
+
+   if (HostSourcePath)
+      mountObj[MOUNT_SOURCE_HOST] = HostSourcePath.getValueOr(HostMountSource()).toJson();
+
+   if (NfsSourcePath)
+      mountObj[MOUNT_SOURCE_NFS] = NfsSourcePath.getValueOr(NfsMountSource()).toJson();
+
+   return mountObj;
 }
 
 } // namespace api
