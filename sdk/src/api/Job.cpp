@@ -76,6 +76,9 @@ Error ExposedPort::fromJson(const json::Object& in_json, ExposedPort& out_expose
       EXPOSED_PORT_PROTOCOL, protocol,
       EXPOSED_PORT_PUBLISHED, out_exposedPort.PublishedPort);
 
+   if (error)
+      return error;
+
    out_exposedPort.Protocol = protocol.getValueOr(EXPOSED_PORT_PROTOCOL_DEFAULT);
    return Success();
 }
