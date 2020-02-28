@@ -69,6 +69,11 @@ constexpr char const* MOUNT_SOURCE_NFS                = "nfsMount";
 constexpr char const* MOUNT_SOURCE_PATH               = "path";
 constexpr char const* MOUNT_SOURCE_NFS_HOST           = "host";
 
+// Placement Constraint
+constexpr char const* PLACEMENT_CONSTRAINTS           = "placementConstraints";
+constexpr char const* PLACEMENT_CONSTRAINT_NAME       = "name";
+constexpr char const* PLACEMENT_CONSTRAINT_VALUE      = "value";
+
 // Resource Limit
 constexpr char const* RESOURCE_LIMITS                 = "resourceLimits";
 constexpr char const* RESOURCE_LIMIT_DEFAULT          = "defaultValue";
@@ -357,6 +362,34 @@ json::Object NfsMountSource::toJson() const
    mountSourceObj[MOUNT_SOURCE_NFS_HOST] = Host;
 
    return mountSourceObj;
+}
+
+// Placement Constraint ================================================================================================
+PlacementConstraint::PlacementConstraint(std::string in_name, std::string in_value) :
+   Name(std::move(in_name)),
+   Value(std::move(in_value))
+{
+}
+
+Error PlacementConstraint::fromJson(const json::Object& in_json, PlacementConstraint& out_placementConstraint)
+{
+   Error error = json::readObject(in_json,
+      PLACEMENT_CONSTRAINT_NAME, out_placementConstraint.Name,
+      PLACEMENT_CONSTRAINT_VALUE, out_placementConstraint.Value);
+
+   if (error)
+      return updateError(PLACEMENT_CONSTRAINTS, in_json, error);
+
+   return Success();
+}
+
+json::Object PlacementConstraint::toJson() const
+{
+   json::Object constraintObj;
+   constraintObj[PLACEMENT_CONSTRAINT_NAME] = Name;
+   constraintObj[PLACEMENT_CONSTRAINT_VALUE] = Value;
+
+   return constraintObj;
 }
 
 // Resource Limit ======================================================================================================

@@ -467,17 +467,17 @@ struct PlacementConstraint
     * @param in_name        The name of the placement constraint.
     * @param in_value       One of the possible values for the placement constraint with the specified name.
     */
-   PlacementConstraint(const std::string& in_name, const std::string& in_value);
+   PlacementConstraint(std::string in_name, std::string in_value);
 
    /**
     * @brief Constructs a PlacementConstraint from a JSON object which represents the placement constraint.
     *
-    * @param in_json            The JSON object which represents the placement constraint.
-    * @param out_container      The populated placement constraint value. Not valid if an error is returned.
+    * @param in_json                    The JSON object which represents the placement constraint.
+    * @param out_placementConstraint    The populated placement constraint value. Not valid if an error is returned.
     *
     * @return Success if in_json could be parsed as a PlacementConstraint; Error otherwise.
     */
-   static Error fromJson(const json::Object& in_json, ResourceLimit& out_resourceLimit);
+   static Error fromJson(const json::Object& in_json, PlacementConstraint& out_placementConstraint);
 
    /**
     * @brief Converts this PlacementConstraint to a JSON object which represents it.

@@ -779,6 +779,47 @@ TEST_CASE("To JSON: Container (all fields)")
    CHECK(container.toJson() == containerObj);
 }
 
+// Placement Constraint ================================================================================================
+TEST_CASE("From JSON: Placement Constraint")
+{
+   json::Object constraintObj;
+   constraintObj["name"] = "someName";
+   constraintObj["value"] = "a-value";
+
+   PlacementConstraint constraint;
+   REQUIRE_FALSE(PlacementConstraint::fromJson(constraintObj, constraint));
+   CHECK(constraint.Name == "someName");
+   CHECK(constraint.Value == "a-value");
+}
+
+TEST_CASE("From JSON: Placement Constraint (no name)")
+{
+   json::Object constraintObj;
+   constraintObj["value"] = "a-value";
+
+   PlacementConstraint constraint;
+   REQUIRE(PlacementConstraint::fromJson(constraintObj, constraint));
+}
+
+TEST_CASE("From JSON: Placement Constraint (no value)")
+{
+   json::Object constraintObj;
+   constraintObj["name"] = "someName";
+
+   PlacementConstraint constraint;
+   REQUIRE(PlacementConstraint::fromJson(constraintObj, constraint));
+}
+
+TEST_CASE("To JSON: Placement Constraint")
+{
+   json::Object constraintObj;
+   constraintObj["name"] = "someName";
+   constraintObj["value"] = "a-value";
+
+   PlacementConstraint constraint("someName", "a-value");
+   REQUIRE(constraint.toJson() == constraintObj);
+}
+
 } // namespace api
 } // namespace launcher_plugins
 } // namespace rstudio
