@@ -69,7 +69,7 @@ struct Container
     *
     * @return Success if in_json could be parsed as a Container; Error otherwise.
     */
-   static Error fromJson(const json::Object& in_json, ResourceLimit& out_resourceLimit);
+   static Error fromJson(const json::Object& in_json, Container& out_container);
 
    /**
     * @brief Converts this Container to a JSON object which represents it.

@@ -36,6 +36,13 @@ namespace {
 
 // Job JSON field constants
 
+// Container
+constexpr char const* CONTAINER                       = "container";
+constexpr char const* CONTAINER_IMAGE                 = "image";
+constexpr char const* CONTAINER_RUN_AS_USER_ID        = "runAsUserId";
+constexpr char const* CONTAINER_RUN_AS_GROUP_ID       = "runAsGroupId";
+constexpr char const* CONTAINER_SUPP_GROUP_IDS        = "supplementalGroupIds";
+
 // Exposed Port
 constexpr char const* EXPOSED_PORT                    = "exposedPort";
 constexpr char const* EXPOSED_PORT_TARGET             = "targetPort";
@@ -86,6 +93,47 @@ Error& updateError(const std::string& in_name, const json::Object& in_object, Er
 }
 
 } // anonymous namespace
+
+// Container ===========================================================================================================
+Error Container::fromJson(const json::Object& in_json, Container& out_container)
+{
+   Optional<json::Array> supplementalGroupIds;
+
+   Error error = json::readObject(in_json,
+      CONTAINER_IMAGE, out_container.Image,
+      CONTAINER_RUN_AS_USER_ID, out_container.RunAsUserId,
+      CONTAINER_RUN_AS_GROUP_ID, out_container.RunAsGroupId,
+      CONTAINER_SUPP_GROUP_IDS, supplementalGroupIds);
+
+   if (error)
+      return updateError(CONTAINER, in_json, error);
+
+   if (supplementalGroupIds &&
+      !supplementalGroupIds.getValueOr(json::Array()).toVectorInt(out_container.SupplementalGroupIds))
+   {
+     return updateError(
+        CONTAINER,
+        in_json,
+        error = Error("JobParseError", 1, "Invalid type for supplemental group ids", ERROR_LOCATION));
+   }
+
+   return Success();
+}
+
+json::Object Container::toJson() const
+{
+   json::Object containerObj;
+   containerObj[CONTAINER_IMAGE] = Image;
+
+   if (RunAsUserId)
+      containerObj[CONTAINER_RUN_AS_USER_ID] = RunAsUserId.getValueOr(0);
+   if (RunAsGroupId)
+      containerObj[CONTAINER_RUN_AS_GROUP_ID] = RunAsGroupId.getValueOr(0);
+   if (!SupplementalGroupIds.empty())
+      containerObj[CONTAINER_SUPP_GROUP_IDS] = json::toJsonArray(SupplementalGroupIds);
+
+   return containerObj;
+}
 
 // Exposed Port ========================================================================================================
 Error ExposedPort::fromJson(const json::Object& in_json, ExposedPort& out_exposedPort)

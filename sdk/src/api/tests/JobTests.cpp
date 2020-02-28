@@ -661,6 +661,124 @@ TEST_CASE("To JSON: Resource Limit (type, value, max, and default)")
    CHECK(limit.toJson().write() == limitObj.write());
 }
 
+// Container ===========================================================================================================
+TEST_CASE("From JSON: Container (image only)")
+{
+   json::Object containerObj;
+   containerObj["image"] = "name-of-a-container-image-1234";
+
+   Container container;
+   REQUIRE_FALSE(Container::fromJson(containerObj, container));
+   CHECK(container.Image == "name-of-a-container-image-1234");
+   CHECK_FALSE(container.RunAsUserId);
+   CHECK_FALSE(container.RunAsGroupId);
+   CHECK(container.SupplementalGroupIds.empty());
+}
+
+TEST_CASE("From JSON: Container (image and run-as user)")
+{
+   json::Object containerObj;
+   containerObj["image"] = "name-of-a-container-image-1234";
+   containerObj["runAsUserId"] = 1033;
+
+   Container container;
+   REQUIRE_FALSE(Container::fromJson(containerObj, container));
+   CHECK(container.Image == "name-of-a-container-image-1234");
+   CHECK(container.RunAsUserId);
+   CHECK(container.RunAsUserId.getValueOr(0) == 1033);
+   CHECK_FALSE(container.RunAsGroupId);
+   CHECK(container.SupplementalGroupIds.empty());
+}
+
+TEST_CASE("From JSON: Container (image and run-as group)")
+{
+   json::Object containerObj;
+   containerObj["image"] = "name-of-a-container-image-1234";
+   containerObj["runAsGroupId"] = 1257;
+
+   Container container;
+   REQUIRE_FALSE(Container::fromJson(containerObj, container));
+   CHECK(container.Image == "name-of-a-container-image-1234");
+   CHECK_FALSE(container.RunAsUserId);
+   CHECK(container.RunAsGroupId);
+   CHECK(container.RunAsGroupId.getValueOr(0) == 1257);
+   CHECK(container.SupplementalGroupIds.empty());
+
+}
+
+TEST_CASE("From JSON: Container (all fields)")
+{
+   json::Array groupIds;
+   groupIds.push_back(1000);
+   groupIds.push_back(1009);
+
+   json::Object containerObj;
+   containerObj["image"] = "name-of-a-container-image-1234";
+   containerObj["runAsUserId"] = 1033;
+   containerObj["runAsGroupId"] = 1257;
+   containerObj["supplementalGroupIds"] = groupIds;
+
+   Container container;
+   REQUIRE_FALSE(Container::fromJson(containerObj, container));
+   CHECK(container.Image == "name-of-a-container-image-1234");
+   CHECK(container.RunAsUserId);
+   CHECK(container.RunAsUserId.getValueOr(0) == 1033);
+   CHECK(container.RunAsGroupId);
+   CHECK(container.RunAsGroupId.getValueOr(0) == 1257);
+   REQUIRE(container.SupplementalGroupIds.size() == 2);
+   CHECK(container.SupplementalGroupIds[0] == 1000);
+   CHECK(container.SupplementalGroupIds[1] == 1009);
+}
+
+TEST_CASE("From JSON: Container (no image)")
+{
+   json::Array groupIds;
+   groupIds.push_back(1000);
+   groupIds.push_back(1009);
+
+   json::Object containerObj;
+   containerObj["runAsUserId"] = 1033;
+   containerObj["runAsGroupId"] = 1257;
+   containerObj["supplementalGroupIds"] = groupIds;
+
+   Container container;
+   REQUIRE(Container::fromJson(containerObj, container));
+}
+
+TEST_CASE("To JSON: Container (image only)")
+{
+   json::Object containerObj;
+   containerObj["image"] = "some-image_!";
+
+   Container container;
+   container.Image = "some-image_!";
+   CHECK(container.toJson() == containerObj);
+}
+
+TEST_CASE("To JSON: Container (all fields)")
+{
+   json::Array groupIds;
+   groupIds.push_back(1048);
+   groupIds.push_back(1298);
+   groupIds.push_back(364);
+
+   json::Object containerObj;
+   containerObj["image"] = "some-image_!";
+   containerObj["runAsUserId"] = 999;
+   containerObj["runAsGroupId"] = 999;
+   containerObj["supplementalGroupIds"] = groupIds;
+
+   Container container;
+   container.Image = "some-image_!";
+   container.RunAsUserId = 999;
+   container.RunAsGroupId = 999;
+   container.SupplementalGroupIds.push_back(1048);
+   container.SupplementalGroupIds.push_back(1298);
+   container.SupplementalGroupIds.push_back(364);
+
+   CHECK(container.toJson() == containerObj);
+}
+
 } // namespace api
 } // namespace launcher_plugins
 } // namespace rstudio
