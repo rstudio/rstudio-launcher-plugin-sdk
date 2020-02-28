@@ -51,254 +51,12 @@ namespace api {
 /** Convenience typedef for an Environment Variable. */
 typedef std::pair<std::string, std::string> EnvVariable;
 
-/** @brief Struct which represents an exposed port on a containerized job. */
-struct ExposedPort
-{
-   /**
-    * @brief Constructs an ExposedPort from a JSON object which represents the exposed port.
-    *
-    * @param in_json            The JSON object which represents the exposed port.
-    * @param out_exposedPort    The populated exposed port value. Not valid if an error is returned.
-    *
-    * @return Success if in_json could be parsed as an ExposedPort; Error otherwise.
-    */
-   static Error fromJson(const json::Object& in_json, ExposedPort& out_exposedPort);
-
-   /**
-    * @brief Converts this ExposedPort to a JSON object which represents it.
-    *
-    * @return The JSON object which represents this ExposedPort.
-    */
-   json::Object toJson() const;
-
-   /** The published port. */
-   Optional<int> PublishedPort;
-
-   /** The protocol of the port. */
-   std::string Protocol;
-
-   /** The target port. */
-   int TargetPort;
-};
-
-/**
- * @brief Struct which represents a custom configuration setting for jobs launched with a given Plugin.
- *
- * JobConfig values should be used only when there is a necessary per-job configuration that cannot be covered by
- * another aspect of the Job structure, such as a ResourceLimit or PlacementConstraint.
- */
-struct JobConfig
-{
-   /**
-    * @enum JobConfig::Type
-    *
-    * @brief Enum which represents the Type of a JobConfig value.
-    */
-   enum class Type
-   {
-      /** Enumeration type. */
-         ENUM,
-
-      /** Floating point value type. */
-         FLOAT,
-
-      /** Integer type. */
-         INT,
-
-      /** String type. */
-         STRING
-   };
-
-   /**
-    * @brief Default constructor.
-    */
-   JobConfig() = default;
-
-   /**
-    * @brief Constructor.
-    *
-    * @param in_name    The name of the custom job configuration value.
-    * @param in_type    The type of the custom job configuration value.
-    */
-   JobConfig(const std::string& in_name, Type in_type);
-
-   /**
-    * @brief Constructs a JobConfig from a JSON object which represents the job config.
-    *
-    * @param in_json            The JSON object which represents the job config.
-    * @param out_jobConfig      The populated job config value. Not valid if an error is returned.
-    *
-    * @return Success if in_json could be parsed as a JobConfig; Error otherwise.
-    */
-   static Error fromJson(const json::Object& in_json, JobConfig& out_jobConfig);
-
-   /**
-    * @brief Converts this JobConfig to a JSON object which represents it.
-    *
-    * @return The JSON object which represents this JobConfig.
-    */
-   json::Object toJson() const;
-
-   /** The name of the custom job configuration value. */
-   std::string Name;
-
-   /** The type of the custom job configuration value. */
-   Optional<Type> ValueType;
-
-   /** The value of the custom job configuration value. */
-   std::string Value;
-};
-
-/** @brief Struct which represents the source path of an local host system Mount. */
-struct HostMountSource
-{
-   /**
-    * @brief Constructs a HostMountSource from a JSON object which represents the host mount source.
-    *
-    * @param in_json            The JSON object which represents the host mount source.
-    * @param out_mountSource    The populated mount source value. Not valid if an error is returned.
-    *
-    * @return Success if in_json could be parsed as a HostMountSource; Error otherwise.
-    */
-   static Error fromJson(const json::Object& in_json, HostMountSource& out_mountSource);
-
-   /**
-    * @brief Converts this HostMountSource to a JSON object which represents it.
-    *
-    * @return The JSON object which represents this HostMountSource.
-    */
-   json::Object toJson() const;
-
-   /** The source path for the mount. */
-   std::string Path;
-};
-
-/** @brief Struct which represents the source path of an NFS Mount. */
-struct NfsMountSource
-{
-   /**
-    * @brief Constructs an NfsMountSource from a JSON object which represents the mount source.
-    *
-    * @param in_json            The JSON object which represents the NFS mount source.
-    * @param out_mountSource    The populated mount source value. Not valid if an error is returned.
-    *
-    * @return Success if in_json could be parsed as an NfsMountSource; Error otherwise.
-    */
-   static Error fromJson(const json::Object& in_json, NfsMountSource& out_mountSource);
-
-   /**
-    * @brief Converts this NfsMountSource to a JSON object which represents it.
-    *
-    * @return The JSON object which represents this NfsMountSource.
-    */
-   json::Object toJson() const;
-
-   /** The host of the source path. */
-   std::string Host;
-
-   /** The source path for the mount. */
-   std::string Path;
-};
-
-/** @brief Struct which represents an file system mount available to a job. */
-struct Mount
-{
-   /**
-    * @brief Constructs a Mount from a JSON object which represents the mount.
-    *
-    * @param in_json        The JSON object which represents the mount.
-    * @param out_mount      The populated mount value. Not valid if an error is returned.
-    *
-    * @return Success if in_json could be parsed as a Mount; Error otherwise.
-    */
-   static Error fromJson(const json::Object& in_json, Mount& out_mount);
-
-   /**
-    * @brief Converts this Mount to a JSON object which represents it.
-    *
-    * @return The JSON object which represents this Mount.
-    */
-   json::Object toJson() const;
-
-   /** The path to which to mount the source path. */
-   std::string DestinationPath;
-
-   /** Whether the mounted path is read only. */
-   bool IsReadOnly;
-
-   /** The source path to mount. Only one of this and NfsSourcePath may be set per Mount object. */
-   Optional<HostMountSource> HostSourcePath;
-
-   /** The source path to mount. Only one of this and HostSourcePath may be set per Mount object. */
-   Optional<NfsMountSource> NfsSourcePath;
-};
-
-/** @brief Struct which represents a resource limit for a job. */
-struct ResourceLimit
-{
-   /**
-    * @enum ResourceLimit::Type
-    *
-    * @brief The type of resource limit.
-    */
-   enum class Type
-   {
-      /** The required number of CPUs for a job. */
-      CPU_COUNT,
-
-      /** The required amount of CPU time for a job, in seconds. */
-      CPU_TIME,
-
-      /** The required amount of memory for a job, in MB. */
-      MEMORY,
-
-      /** The required amount of swap space for a job, in MB. */
-      MEMORY_SWAP
-   };
-
-   /**
-    * @brief Default constructor.
-    */
-   ResourceLimit() = default;
-
-   /**
-    * @brief Constructor.
-    *
-    * @param in_limitType       The type of the resource limit.
-    * @param in_maxValue        The maximum value of the resource limit.
-    * @param in_defaultValue    The default value of the resource limit.
-    */
-   ResourceLimit(Type in_limitType, std::string in_maxValue, std::string in_defaultValue);
-
-   /**
-    * @brief Constructs a ResourceLimit from a JSON object which represents the resource limit.
-    *
-    * @param in_json                The JSON object which represents the resource limit.
-    * @param out_resourceLimit      The populated resource limit value. Not valid if an error is returned.
-    *
-    * @return Success if in_json could be parsed as a ResourceLimit; Error otherwise.
-    */
-   static Error fromJson(const json::Object& in_json, ResourceLimit& out_resourceLimit);
-
-   /**
-    * @brief Converts this ResourceLimit to a JSON object which represents it.
-    *
-    * @return The JSON object which represents this ResourceLimit.
-    */
-   json::Object toJson() const;
-
-   /** The type of resource to limit. */
-   Type ResourceType;
-
-   /** The value of the resource limit. */
-   std::string Value;
-
-   /** The maximum value that can be set for this type of resource. */
-   std::string MaxValue;
-
-   /** The default value that will be set for this type of resource. */
-   std::string DefaultValue;
-};
+// Forward Declarations
+struct JobConfig;
+struct Mount;
+struct NfsMountSource;
+struct ResourceLimit;
+struct PlacementConstraint;
 
 /** @brief Struct which represents the container to use when launching a containerized job. */
 struct Container
@@ -333,59 +91,58 @@ struct Container
    std::vector<int> SupplementalGroupIds;
 };
 
-/**
- * @brief Struct which represents a custom placement constraint for the job.
- *
- * This may be used to allow users to request other resource limits than those supported by ResourceLimit, or it may be
- * used for any other constraint that can affect where a job is run.
- *
- * There should be a PlacementConstraint for every value of a given constraint type. For example, if the constraint is
- * the AWS region and the allowed AWS regions are us-east-1, us-west-1, and us-west-2, there should be the following
- * PlacementConstraints in the ClusterInfo response:
- * { "name": "region", "value": "us-east-1" }
- * { "name": "region", "value": "us-west-1" }
- * { "name": "region", "value": "us-west-2" }
- *
- * For more details, see ClusterInfoResponse or PlacementConstraint in the RStudio Job Launcher Documentation:
- * https://docs.rstudio.com/job-launcher/latest/creating-plugins.html#plugin-messages.
- */
-struct PlacementConstraint
+/** @brief Struct which represents an exposed port on a containerized job. */
+struct ExposedPort
 {
    /**
-    * @brief Default constructor.
+    * @brief Constructs an ExposedPort from a JSON object which represents the exposed port.
+    *
+    * @param in_json            The JSON object which represents the exposed port.
+    * @param out_exposedPort    The populated exposed port value. Not valid if an error is returned.
+    *
+    * @return Success if in_json could be parsed as an ExposedPort; Error otherwise.
     */
-   PlacementConstraint() = default;
+   static Error fromJson(const json::Object& in_json, ExposedPort& out_exposedPort);
 
    /**
-    * @brief Constructor.
+    * @brief Converts this ExposedPort to a JSON object which represents it.
     *
-    * @param in_name        The name of the placement constraint.
-    * @param in_value       One of the possible values for the placement constraint with the specified name.
-    */
-   PlacementConstraint(const std::string& in_name, const std::string& in_value);
-
-   /**
-    * @brief Constructs a PlacementConstraint from a JSON object which represents the placement constraint.
-    *
-    * @param in_json            The JSON object which represents the placement constraint.
-    * @param out_container      The populated placement constraint value. Not valid if an error is returned.
-    *
-    * @return Success if in_json could be parsed as a PlacementConstraint; Error otherwise.
-    */
-   static Error fromJson(const json::Object& in_json, ResourceLimit& out_resourceLimit);
-
-   /**
-    * @brief Converts this PlacementConstraint to a JSON object which represents it.
-    *
-    * @return The JSON object which represents this PlacementConstraint.
+    * @return The JSON object which represents this ExposedPort.
     */
    json::Object toJson() const;
 
-   /** The name of this placement constraint. */
-   std::string Name;
+   /** The published port. */
+   Optional<int> PublishedPort;
 
-   /** The value of this placement constraint. */
-   std::string Value;
+   /** The protocol of the port. */
+   std::string Protocol;
+
+   /** The target port. */
+   int TargetPort;
+};
+
+/** @brief Struct which represents the source path of an local host system Mount. */
+struct HostMountSource
+{
+   /**
+    * @brief Constructs a HostMountSource from a JSON object which represents the host mount source.
+    *
+    * @param in_json            The JSON object which represents the host mount source.
+    * @param out_mountSource    The populated mount source value. Not valid if an error is returned.
+    *
+    * @return Success if in_json could be parsed as a HostMountSource; Error otherwise.
+    */
+   static Error fromJson(const json::Object& in_json, HostMountSource& out_mountSource);
+
+   /**
+    * @brief Converts this HostMountSource to a JSON object which represents it.
+    *
+    * @return The JSON object which represents this HostMountSource.
+    */
+   json::Object toJson() const;
+
+   /** The source path for the mount. */
+   std::string Path;
 };
 
 /** @brief Structure which represents a job. */
@@ -550,6 +307,257 @@ struct Job
 
    /** The working directory from which to run the job. */
    std::string WorkingDirectory;
+};
+
+
+/**
+ * @brief Struct which represents a custom configuration setting for jobs launched with a given Plugin.
+ *
+ * JobConfig values should be used only when there is a necessary per-job configuration that cannot be covered by
+ * another aspect of the Job structure, such as a ResourceLimit or PlacementConstraint.
+ */
+struct JobConfig
+{
+   /**
+    * @enum JobConfig::Type
+    *
+    * @brief Enum which represents the Type of a JobConfig value.
+    */
+   enum class Type
+   {
+      /** Enumeration type. */
+         ENUM,
+
+      /** Floating point value type. */
+         FLOAT,
+
+      /** Integer type. */
+         INT,
+
+      /** String type. */
+         STRING
+   };
+
+   /**
+    * @brief Default constructor.
+    */
+   JobConfig() = default;
+
+   /**
+    * @brief Constructor.
+    *
+    * @param in_name    The name of the custom job configuration value.
+    * @param in_type    The type of the custom job configuration value.
+    */
+   JobConfig(const std::string& in_name, Type in_type);
+
+   /**
+    * @brief Constructs a JobConfig from a JSON object which represents the job config.
+    *
+    * @param in_json            The JSON object which represents the job config.
+    * @param out_jobConfig      The populated job config value. Not valid if an error is returned.
+    *
+    * @return Success if in_json could be parsed as a JobConfig; Error otherwise.
+    */
+   static Error fromJson(const json::Object& in_json, JobConfig& out_jobConfig);
+
+   /**
+    * @brief Converts this JobConfig to a JSON object which represents it.
+    *
+    * @return The JSON object which represents this JobConfig.
+    */
+   json::Object toJson() const;
+
+   /** The name of the custom job configuration value. */
+   std::string Name;
+
+   /** The type of the custom job configuration value. */
+   Optional<Type> ValueType;
+
+   /** The value of the custom job configuration value. */
+   std::string Value;
+};
+
+/** @brief Struct which represents an file system mount available to a job. */
+struct Mount
+{
+   /**
+    * @brief Constructs a Mount from a JSON object which represents the mount.
+    *
+    * @param in_json        The JSON object which represents the mount.
+    * @param out_mount      The populated mount value. Not valid if an error is returned.
+    *
+    * @return Success if in_json could be parsed as a Mount; Error otherwise.
+    */
+   static Error fromJson(const json::Object& in_json, Mount& out_mount);
+
+   /**
+    * @brief Converts this Mount to a JSON object which represents it.
+    *
+    * @return The JSON object which represents this Mount.
+    */
+   json::Object toJson() const;
+
+   /** The path to which to mount the source path. */
+   std::string DestinationPath;
+
+   /** Whether the mounted path is read only. */
+   bool IsReadOnly;
+
+   /** The source path to mount. Only one of this and NfsSourcePath may be set per Mount object. */
+   Optional<HostMountSource> HostSourcePath;
+
+   /** The source path to mount. Only one of this and HostSourcePath may be set per Mount object. */
+   Optional<NfsMountSource> NfsSourcePath;
+};
+
+/** @brief Struct which represents the source path of an NFS Mount. */
+struct NfsMountSource
+{
+   /**
+    * @brief Constructs an NfsMountSource from a JSON object which represents the mount source.
+    *
+    * @param in_json            The JSON object which represents the NFS mount source.
+    * @param out_mountSource    The populated mount source value. Not valid if an error is returned.
+    *
+    * @return Success if in_json could be parsed as an NfsMountSource; Error otherwise.
+    */
+   static Error fromJson(const json::Object& in_json, NfsMountSource& out_mountSource);
+
+   /**
+    * @brief Converts this NfsMountSource to a JSON object which represents it.
+    *
+    * @return The JSON object which represents this NfsMountSource.
+    */
+   json::Object toJson() const;
+
+   /** The host of the source path. */
+   std::string Host;
+
+   /** The source path for the mount. */
+   std::string Path;
+};
+
+/**
+ * @brief Struct which represents a custom placement constraint for the job.
+ *
+ * This may be used to allow users to request other resource limits than those supported by ResourceLimit, or it may be
+ * used for any other constraint that can affect where a job is run.
+ *
+ * There should be a PlacementConstraint for every value of a given constraint type. For example, if the constraint is
+ * the AWS region and the allowed AWS regions are us-east-1, us-west-1, and us-west-2, there should be the following
+ * PlacementConstraints in the ClusterInfo response:
+ * { "name": "region", "value": "us-east-1" }
+ * { "name": "region", "value": "us-west-1" }
+ * { "name": "region", "value": "us-west-2" }
+ *
+ * For more details, see ClusterInfoResponse or PlacementConstraint in the RStudio Job Launcher Documentation:
+ * https://docs.rstudio.com/job-launcher/latest/creating-plugins.html#plugin-messages.
+ */
+struct PlacementConstraint
+{
+   /**
+    * @brief Default constructor.
+    */
+   PlacementConstraint() = default;
+
+   /**
+    * @brief Constructor.
+    *
+    * @param in_name        The name of the placement constraint.
+    * @param in_value       One of the possible values for the placement constraint with the specified name.
+    */
+   PlacementConstraint(const std::string& in_name, const std::string& in_value);
+
+   /**
+    * @brief Constructs a PlacementConstraint from a JSON object which represents the placement constraint.
+    *
+    * @param in_json            The JSON object which represents the placement constraint.
+    * @param out_container      The populated placement constraint value. Not valid if an error is returned.
+    *
+    * @return Success if in_json could be parsed as a PlacementConstraint; Error otherwise.
+    */
+   static Error fromJson(const json::Object& in_json, ResourceLimit& out_resourceLimit);
+
+   /**
+    * @brief Converts this PlacementConstraint to a JSON object which represents it.
+    *
+    * @return The JSON object which represents this PlacementConstraint.
+    */
+   json::Object toJson() const;
+
+   /** The name of this placement constraint. */
+   std::string Name;
+
+   /** The value of this placement constraint. */
+   std::string Value;
+};
+
+/** @brief Struct which represents a resource limit for a job. */
+struct ResourceLimit
+{
+   /**
+    * @enum ResourceLimit::Type
+    *
+    * @brief The type of resource limit.
+    */
+   enum class Type
+   {
+      /** The required number of CPUs for a job. */
+      CPU_COUNT,
+
+      /** The required amount of CPU time for a job, in seconds. */
+      CPU_TIME,
+
+      /** The required amount of memory for a job, in MB. */
+      MEMORY,
+
+      /** The required amount of swap space for a job, in MB. */
+      MEMORY_SWAP
+   };
+
+   /**
+    * @brief Default constructor.
+    */
+   ResourceLimit() = default;
+
+   /**
+    * @brief Constructor.
+    *
+    * @param in_limitType       The type of the resource limit.
+    * @param in_maxValue        The maximum value of the resource limit.
+    * @param in_defaultValue    The default value of the resource limit.
+    */
+   ResourceLimit(Type in_limitType, std::string in_maxValue, std::string in_defaultValue);
+
+   /**
+    * @brief Constructs a ResourceLimit from a JSON object which represents the resource limit.
+    *
+    * @param in_json                The JSON object which represents the resource limit.
+    * @param out_resourceLimit      The populated resource limit value. Not valid if an error is returned.
+    *
+    * @return Success if in_json could be parsed as a ResourceLimit; Error otherwise.
+    */
+   static Error fromJson(const json::Object& in_json, ResourceLimit& out_resourceLimit);
+
+   /**
+    * @brief Converts this ResourceLimit to a JSON object which represents it.
+    *
+    * @return The JSON object which represents this ResourceLimit.
+    */
+   json::Object toJson() const;
+
+   /** The type of resource to limit. */
+   Type ResourceType;
+
+   /** The value of the resource limit. */
+   std::string Value;
+
+   /** The maximum value that can be set for this type of resource. */
+   std::string MaxValue;
+
+   /** The default value that will be set for this type of resource. */
+   std::string DefaultValue;
 };
 
 } // namespace api

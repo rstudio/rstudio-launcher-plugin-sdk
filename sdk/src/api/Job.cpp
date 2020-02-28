@@ -116,6 +116,24 @@ json::Object ExposedPort::toJson() const
    return exposedPortObj;
 }
 
+// Host Mount Source ===================================================================================================
+Error HostMountSource::fromJson(const json::Object& in_json, HostMountSource& out_mountSource)
+{
+   Error error = json::readObject(in_json, MOUNT_SOURCE_PATH, out_mountSource.Path);
+   if (error)
+      return updateError(MOUNT_SOURCE_HOST, in_json, error);
+
+   return Success();
+}
+
+json::Object HostMountSource::toJson() const
+{
+   json::Object mountSourceObj;
+   mountSourceObj[MOUNT_SOURCE_PATH] = Path;
+
+   return mountSourceObj;
+}
+
 // Job Config ==========================================================================================================
 JobConfig::JobConfig(const std::string& in_name, Type in_type) :
    Name(in_name),
@@ -205,43 +223,6 @@ json::Object JobConfig::toJson() const
 }
 
 // Mount ===============================================================================================================
-Error HostMountSource::fromJson(const json::Object& in_json, HostMountSource& out_mountSource)
-{
-   Error error = json::readObject(in_json, MOUNT_SOURCE_PATH, out_mountSource.Path);
-   if (error)
-      return updateError(MOUNT_SOURCE_HOST, in_json, error);
-
-   return Success();
-}
-
-json::Object HostMountSource::toJson() const
-{
-   json::Object mountSourceObj;
-   mountSourceObj[MOUNT_SOURCE_PATH] = Path;
-
-   return mountSourceObj;
-}
-
-Error NfsMountSource::fromJson(const json::Object& in_json, NfsMountSource& out_mountSource)
-{
-   Error error = json::readObject(in_json,
-      MOUNT_SOURCE_PATH, out_mountSource.Path,
-      MOUNT_SOURCE_NFS_HOST, out_mountSource.Host);
-   if (error)
-      return updateError(MOUNT_SOURCE_NFS, in_json, error);
-
-   return Success();
-}
-
-json::Object NfsMountSource::toJson() const
-{
-   json::Object mountSourceObj;
-   mountSourceObj[MOUNT_SOURCE_PATH] = Path;
-   mountSourceObj[MOUNT_SOURCE_NFS_HOST] = Host;
-
-   return mountSourceObj;
-}
-
 Error Mount::fromJson(const json::Object& in_json, Mount& out_mount)
 {
    Optional<json::Object> hostMountSource, nfsMountSource;
@@ -262,28 +243,28 @@ Error Mount::fromJson(const json::Object& in_json, Mount& out_mount)
       return updateError(MOUNT, in_json, error);
    }
    else if (hostMountSource && nfsMountSource)
-   {
-      error = Error("JobParseError", 1, "Multiple mount sources specified", ERROR_LOCATION);
-      return updateError(MOUNT, in_json, error);
-   }
-   else if (hostMountSource)
-   {
-      HostMountSource mountSource;
-      error = HostMountSource::fromJson(hostMountSource.getValueOr(json::Object()), mountSource);
-      if (error)
+      {
+         error = Error("JobParseError", 1, "Multiple mount sources specified", ERROR_LOCATION);
          return updateError(MOUNT, in_json, error);
+      }
+      else if (hostMountSource)
+         {
+            HostMountSource mountSource;
+            error = HostMountSource::fromJson(hostMountSource.getValueOr(json::Object()), mountSource);
+            if (error)
+               return updateError(MOUNT, in_json, error);
 
-      out_mount.HostSourcePath = mountSource;
-   }
-   else
-   {
-      NfsMountSource mountSource;
-      error = NfsMountSource::fromJson(nfsMountSource.getValueOr(json::Object()), mountSource);
-      if (error)
-         return updateError(MOUNT, in_json, error);
+            out_mount.HostSourcePath = mountSource;
+         }
+         else
+         {
+            NfsMountSource mountSource;
+            error = NfsMountSource::fromJson(nfsMountSource.getValueOr(json::Object()), mountSource);
+            if (error)
+               return updateError(MOUNT, in_json, error);
 
-      out_mount.NfsSourcePath = mountSource;
-   }
+            out_mount.NfsSourcePath = mountSource;
+         }
 
    out_mount.IsReadOnly = isReadOnly.getValueOr(false);
 
@@ -307,6 +288,27 @@ json::Object Mount::toJson() const
       mountObj[MOUNT_SOURCE_NFS] = NfsSourcePath.getValueOr(NfsMountSource()).toJson();
 
    return mountObj;
+}
+
+// NFS Mount Source ====================================================================================================
+Error NfsMountSource::fromJson(const json::Object& in_json, NfsMountSource& out_mountSource)
+{
+   Error error = json::readObject(in_json,
+      MOUNT_SOURCE_PATH, out_mountSource.Path,
+      MOUNT_SOURCE_NFS_HOST, out_mountSource.Host);
+   if (error)
+      return updateError(MOUNT_SOURCE_NFS, in_json, error);
+
+   return Success();
+}
+
+json::Object NfsMountSource::toJson() const
+{
+   json::Object mountSourceObj;
+   mountSourceObj[MOUNT_SOURCE_PATH] = Path;
+   mountSourceObj[MOUNT_SOURCE_NFS_HOST] = Host;
+
+   return mountSourceObj;
 }
 
 // Resource Limit ======================================================================================================
