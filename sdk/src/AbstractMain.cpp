@@ -88,7 +88,7 @@ int configureScratchPath(const system::FilePath& in_scratchPath, const system::U
             ".")
 
       // Drop privileges to the server  user.
-      error = system::posix::temporarilyDropPriv(in_serverUser);
+      error = system::posix::temporarilyDropPrivileges(in_serverUser);
       CHECK_ERROR(error, "Could not lower privilege to server user: " + in_serverUser.getUsername() + ".")
    }
 
