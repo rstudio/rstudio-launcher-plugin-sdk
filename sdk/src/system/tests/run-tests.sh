@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #
-# run-all-tests
+# run-tests
 #
 # Copyright (C) 2019 by RStudio, Inc.
 #
@@ -24,31 +24,13 @@
 # SOFTWARE.
 #
 
-# Get the build dir
-BUILD_DIR=$1
-
 FAILURES=0
-runTest()
-{
-    CURR_DIR=$(pwd)
-    cd "${BUILD_DIR}/${1}" || return $?
-    ./run-tests.sh
 
-    FAILURES=$(expr $FAILURES + $?)
+for test in ./*-tests;
+do
+  echo "Running ${test}..."
+  ${test}
+  FAILURES=$((FAILURES + $?))
+done
 
-    cd "${CURR_DIR}" || exit $?
-}
-
-
-# Unit tests first
-runTest "sdk/src/tests"
-runTest "sdk/src/api/tests"
-runTest "sdk/src/comms/tests"
-runTest "sdk/src/options/tests"
-runTest "sdk/src/system/tests"
-
-# TODO: Integration tests
-
-# Exit
-echo "Test failures: $FAILURES"
 exit $FAILURES
