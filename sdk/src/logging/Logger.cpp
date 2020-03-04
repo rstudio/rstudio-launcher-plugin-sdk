@@ -25,12 +25,13 @@
 
 #include <boost/noncopyable.hpp>
 #include <boost/optional.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include <sstream>
 
 #include <Error.hpp>
-#include "../system/DateTime.hpp"
 #include <logging/ILogDestination.hpp>
+#include <system/DateTime.hpp>
 #include "../system/ReaderWriterMutex.hpp"
 
 namespace rstudio {
@@ -98,10 +99,7 @@ std::string formatLogMessage(
    if (!in_formatForSyslog)
    {
       // Add the time.
-      using namespace boost::posix_time;
-      ptime time = microsec_clock::universal_time();
-
-      oss << system::date_time::format(time, "%d %b %Y %H:%M:%S")
+      oss << system::DateTime().toString("%d %b %Y %H:%M:%S")
           << " [" << in_programId << "] ";
    }
 

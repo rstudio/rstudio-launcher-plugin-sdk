@@ -46,6 +46,13 @@ class DateTime
 {
 public:
    /**
+    * @brief Constructor.
+    *
+    * Creates a date time which represents the time at which it was created.
+    */
+   DateTime();
+
+   /**
     * @brief Copy constructor.
     *
     * @param in_other       The DateTime to copied into this.
@@ -57,37 +64,22 @@ public:
     *
     * @param in_other       The DateTime to moved into this.
     */
-   DateTime(DateTime&& in_other);
+   DateTime(DateTime&& in_other) noexcept;
 
    /**
-    * @brief Constructs a DateTime from an ISO 8601 string representation.
+    * @brief Constructs a DateTime from an ISO 8601 string representation. The string must be in UTC time.
     *
-    * @param in_iso8601TimeStr      The string representation of the DateTime to construct.
+    * Valid format:
+    *       "%Y-%m-%dT%H:%M:%S%F%ZP"
+    *       e.g. "2020-03-05T14:33:15.008765Z"
+    *       e.g. "1995-10-31T02:06:22+8:00" (fractional seconds are 0)
+    *
+    * @param in_timeStr             The string representation of the DateTime to construct.
     * @param out_dateTime           The newly constructed DateTime, if no error occurs.
     *
-    * @return Success if in_iso8601TimeStr is a valid ISO 8601 representation of a date and time; Error otherwise.
+    * @return Success if in_timeStr is a valid ISO 8601 representation of a date and time; Error otherwise.
     */
-   static Error fromString(const std::string& in_iso8601TimeStr, DateTime& out_dateTime);
-
-   /**
-    * @brief Constructs a DateTime from an ISO 8601 string representation.
-    *
-    * @param in_iso8601TimeStr      The string representation of the DateTime to construct.
-    * @param in_timeZone            The time zone of the time string, in the form [+/-]H:MM (e.g. -4:30). This should
-    *                               only be provided if the time string is not already in UTC time and the time zone is
-    *                               not included in the time string.
-    * @param out_dateTime           The newly constructed DateTime, if no error occurs.
-    *
-    * @return Success if in_iso8601TimeStr is a valid ISO 8601 representation of a date and time; Error otherwise.
-    */
-   static Error fromString(const std::string& in_iso8601TimeStr, const std::string& in_timeZone, DateTime& out_dateTime);
-
-   /**
-    * @brief Constructs a DateTime object at the current time.
-    *
-    * @return A DateTime object representing the time at which it was created.
-    */
-   static DateTime getCurrentTime();
+   static Error fromString(const std::string& in_timeStr, DateTime& out_dateTime);
 
    /**
     * @brief Equality operator.
@@ -148,15 +140,19 @@ public:
     *
     * @return This DateTime, as a string with the specified format.
     */
-   std::string toString(const std::string& in_format);
+   std::string toString(const char* in_format) const;
+
+   /**
+    * @brief Converts this DateTime to a string representation defined by the provided format.
+    *
+    * @param in_format      The time format string, as documented by strftime. Also supports fractional seconds as %F.
+    *
+    * @return This DateTime, as a string with the specified format.
+    */
+   std::string toString(const std::string& in_format) const;
 
 private:
-   /**
-    * @brief Private constructor.
-    */
-   DateTime();
-
-   // The private implemenation of DateTime.
+   // The private implementation of DateTime.
    PRIVATE_IMPL(m_impl);
 };
 

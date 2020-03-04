@@ -47,6 +47,7 @@ set(RLPS_SOURCE_FILES
    src/logging/SyslogDestination.cpp
    src/options/Options.cpp
    src/system/Asio.cpp
+   src/system/DateTime.cpp
    src/system/FilePath.cpp
    src/system/PosixSystem.cpp
    src/system/ReaderWriterMutex.cpp

@@ -23,11 +23,41 @@
 
 #include <TestMain.hpp>
 
+#include <Error.hpp>
 #include <system/DateTime.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
 namespace system {
+
+TEST_CASE("Construction and toString")
+{
+   // This is hard to validate because it will change each time - mostly just checks that we won't crash.
+   SECTION("Current Time")
+   {
+      DateTime d;
+      CHECK(true);
+   }
+
+   SECTION("From ISO 8601 str")
+   {
+      std::string timeStr = "2019-02-15T11:23:44.039876Z";
+      DateTime d;
+      Error error = DateTime::fromString(timeStr, d);
+
+      REQUIRE_FALSE(error);
+      CHECK(d.toString() == timeStr);
+   }
+
+   SECTION("Copy construction")
+   {
+      DateTime d1;
+      DateTime d2(d1);
+
+      CHECK(d1 == d2);
+      CHECK(d1.toString() == d2.toString());
+   }
+}
 
 } // namespace system
 } // namespace launcher_plugins
