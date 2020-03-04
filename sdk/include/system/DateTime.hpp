@@ -44,6 +44,7 @@ namespace system {
 /** @brief Class which represents a date and time in UTC. */
 class DateTime
 {
+public:
    /**
     * @brief Copy constructor.
     *
@@ -139,6 +140,15 @@ class DateTime
     * @return This DateTime as an ISO 8601 string representation.
     */
    std::string toString() const;
+
+   /**
+    * @brief Converts this DateTime to a string representation defined by the provided format.
+    *
+    * @param in_format      The time format string, as documented by strftime. Also supports fractional seconds as %F.
+    *
+    * @return This DateTime, as a string with the specified format.
+    */
+   std::string toString(const std::string& in_format);
 
 private:
    /**
