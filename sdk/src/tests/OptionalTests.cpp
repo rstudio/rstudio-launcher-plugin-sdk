@@ -99,5 +99,34 @@ TEST_CASE("Pointer assignment works")
    CHECK(opt.getValueOr("") == "Goodbye!");
 }
 
+TEST_CASE("Copy assignment works")
+{
+   SECTION("Empty into non-empty")
+   {
+      Optional<int> opt1(10), opt2;
+
+      opt1 = opt2;
+      CHECK_FALSE(opt1);
+      CHECK_FALSE(opt2);
+   }
+
+   SECTION("Non-empty into empty")
+   {
+      Optional<int> opt1(10), opt2;
+
+      opt2 = opt1;
+      CHECK(opt1.getValueOr(0) == 10);
+      CHECK(opt2.getValueOr(0) == 10);
+   }
+
+   SECTION("Non-empty into non-empty")
+   {
+      Optional<int> opt1(22), opt2(3);
+      opt1 = opt2;
+      CHECK(opt1.getValueOr(0) == 3);
+      CHECK(opt2.getValueOr(0) == 3);
+   }
+}
+
 } // namespace launcher_plugins
 } // namespace rstudio

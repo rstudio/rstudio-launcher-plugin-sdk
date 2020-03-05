@@ -68,9 +68,9 @@ public:
     *
     * @param in_other       The optional value to copy.
     */
-   Optional(const Optional& in_other) :
-      m_value(new T(*in_other.m_value))
+   Optional(const Optional& in_other)
    {
+      *this = in_other;
    }
 
    /**
@@ -115,7 +115,11 @@ public:
       if (this == &in_other)
          return *this;
 
-      m_value.reset(new T(*in_other.m_value));
+      if (in_other.m_value == nullptr)
+         m_value.reset();
+      else
+         m_value.reset(new T(*in_other.m_value));
+
       return *this;
    }
 
