@@ -182,6 +182,16 @@ struct Job
    };
 
    /**
+    * @brief Constructs a Job from a JSON object which represents the job.
+    *
+    * @param in_json        The JSON object which represents the job.
+    * @param out_job        The populated job value. Not valid if an error is returned.
+    *
+    * @return Success if in_json could be parsed as a Job; Error otherwise.
+    */
+   static Error fromJson(const json::Object& in_json, Job& out_job);
+
+   /**
     * @brief Gets a job configuration value, if it exists.
     *
     * @param in_name    The name of the configuration option to retrieve.
@@ -189,16 +199,6 @@ struct Job
     * @return The value of the configuration option, if any.
     */
    Optional<std::string> getJobConfigValue(const std::string& in_name) const;
-
-   /**
-    * @brief Constructs a Job from a JSON object which represents the job.
-    *
-    * @param in_json            The JSON object which represents the job.
-    * @param out_container      The populated job value. Not valid if an error is returned.
-    *
-    * @return Success if in_json could be parsed as a Job; Error otherwise.
-    */
-   static Error fromJson(const json::Object& in_json, ResourceLimit& out_resourceLimit);
 
    /**
     * @brief Checks whether the job has all of the supplied tags.
