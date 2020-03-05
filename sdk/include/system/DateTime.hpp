@@ -73,6 +73,8 @@ public:
     *       "%Y-%m-%dT%H:%M:%S%F%ZP"
     *       e.g. "2020-03-05T14:33:15.008765Z"
     *       e.g. "1995-10-31T02:06:22+8:00" (fractional seconds are 0)
+    *       e.g. "1988-12-25T23:23:23.054321MST-06"
+    *       e.g. "1972-04-18T00:01:51PST-08PDT+01,M4.1.0/02:00,M10.5.0/02:00" (Full Posix Time Zone String)
     *
     * @param in_timeStr             The string representation of the DateTime to construct.
     * @param out_dateTime           The newly constructed DateTime, if no error occurs.

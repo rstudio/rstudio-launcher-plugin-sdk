@@ -30,7 +30,7 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace system {
 
-TEST_CASE("Construction and toString")
+TEST_CASE("Construction and simple toString")
 {
    // This is hard to validate because it will change each time - mostly just checks that we won't crash.
    SECTION("Current Time")
@@ -39,14 +39,46 @@ TEST_CASE("Construction and toString")
       CHECK(true);
    }
 
-   SECTION("From ISO 8601 str")
+   SECTION("From ISO 8601 str (UTC)")
    {
       std::string timeStr = "2019-02-15T11:23:44.039876Z";
       DateTime d;
-      Error error = DateTime::fromString(timeStr, d);
 
-      REQUIRE_FALSE(error);
+      REQUIRE_FALSE(DateTime::fromString(timeStr, d));
       CHECK(d.toString() == timeStr);
+   }
+
+   SECTION("From ISO 8601 str (+5:30)")
+   {
+      std::string expectedTime = "2019-02-15T05:53:44.039876Z";
+      std::string timeStr =      "2019-02-15T11:23:44.039876+5:30";
+
+      DateTime d;
+
+      REQUIRE_FALSE(DateTime::fromString(timeStr, d));
+      CHECK(d.toString() == expectedTime);
+   }
+
+   SECTION("From ISO 8601 str (-5:00)")
+   {
+      std::string expectedTime = "2019-02-15T16:23:44.039876Z";
+      std::string timeStr =      "2019-02-15T11:23:44.039876-5:00";
+
+      DateTime d;
+
+      REQUIRE_FALSE(DateTime::fromString(timeStr, d));
+      CHECK(d.toString() == expectedTime);
+   }
+
+   SECTION("From ISO 8601 str (Full posix time zone string)")
+   {
+      std::string expectedTime = "2019-02-15T19:23:44.039876Z";
+      std::string timeStr =      "2019-02-15T11:23:44.039876PST-08PDT+01,M4.1.0/02:00,M10.5.0/02:00";
+
+      DateTime d;
+
+      REQUIRE_FALSE(DateTime::fromString(timeStr, d));
+      CHECK(d.toString() == expectedTime);
    }
 
    SECTION("Copy construction")
@@ -57,6 +89,11 @@ TEST_CASE("Construction and toString")
       CHECK(d1 == d2);
       CHECK(d1.toString() == d2.toString());
    }
+}
+
+TEST_CASE("Complex toString")
+{
+
 }
 
 } // namespace system
