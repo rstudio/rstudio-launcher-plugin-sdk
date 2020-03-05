@@ -29,6 +29,7 @@
 #include <vector>
 
 #include <Optional.hpp>
+#include <system/DateTime.hpp>
 #include <system/User.hpp>
 
 namespace rstudio {
@@ -175,6 +176,9 @@ struct Job
 
       /** The job has been suspended. */
       SUSPENDED,
+
+      /** The job status is unknown. */
+      UNKNOWN
    };
 
    /**
@@ -261,7 +265,7 @@ struct Job
    std::string Id;
 
    /** The last time the job was updated. */
-   time_t LastUpdateTime;
+   Optional<system::DateTime> LastUpdateTime;
 
    /** The file system mounts to set when launching this job. */
    std::vector<Mount> Mounts;
@@ -297,7 +301,7 @@ struct Job
    std::string StatusMessage;
 
    /** The time at which the job was submitted to the job scheduling system. */
-   time_t SubmissionTime;
+   Optional<system::DateTime> SubmissionTime;
 
    /** The tags which were set on the job by the user. Can be used for filtering jobs based on tags. */
    std::vector<std::string> Tags;
