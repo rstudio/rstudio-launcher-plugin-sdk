@@ -93,7 +93,35 @@ TEST_CASE("Construction and simple toString")
 
 TEST_CASE("Complex toString")
 {
+   SECTION("Alternate format (%y/%m/%d %H:%M:%S%Q")
+   {
+      std::string timeStr = "2019-02-15T11:23:44.039876Z";
+      DateTime d;
 
+      REQUIRE_FALSE(DateTime::fromString(timeStr, d));
+      CHECK(d.toString() == timeStr);
+      CHECK(d.toString("%y/%m/%d %H:%M:%S%Q") == "19/02/15 11:23:44");
+   }
+
+   SECTION("Alternate format (%b %d, %Y)")
+   {
+      std::string timeStr = "2019-02-15T11:23:44.039876Z";
+      DateTime d;
+
+      REQUIRE_FALSE(DateTime::fromString(timeStr, d));
+      CHECK(d.toString() == timeStr);
+      CHECK(d.toString("%b %d, %Y") == "Feb 15, 2019");
+   }
+
+   SECTION("Alternate format (%A, %B %d %I:%M:%S %p")
+   {
+      std::string timeStr = "2019-02-15T23:23:44.039876Z";
+      DateTime d;
+
+      REQUIRE_FALSE(DateTime::fromString(timeStr, d));
+      CHECK(d.toString() == timeStr);
+      CHECK(d.toString("%A, %B %d %I:%M:%S %p") == "Friday, February 15 11:23:44 PM");
+   }
 }
 
 } // namespace system
