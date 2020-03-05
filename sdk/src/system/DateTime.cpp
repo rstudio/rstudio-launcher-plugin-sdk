@@ -111,6 +111,49 @@ bool DateTime::operator!=(const DateTime& in_other) const
    return !(*this == in_other);
 }
 
+bool DateTime::operator<(const DateTime& in_other) const
+{
+   // If either are NULL or not a time, LT comparison is invalid. LT is also false  if the two objects are the same.
+   if ((m_impl == nullptr) ||
+      (in_other.m_impl == nullptr) ||
+      (m_impl->Time.is_not_a_date_time()) ||
+      (in_other.m_impl->Time.is_not_a_date_time()) ||
+      (this == &in_other))
+      return false;
+
+   return m_impl->Time < in_other.m_impl->Time;
+}
+
+bool DateTime::operator<=(const DateTime& in_other) const
+{
+   // This should return true whenever `operator==` would. Don't rely on operator< + operator== to avoid checking for
+   // NULL and not_a_date_time more than necessary.
+   if (this == &in_other)
+      return true;
+
+   if (((m_impl == nullptr) && (in_other.m_impl == nullptr)) ||
+       ((m_impl == nullptr) && (in_other.m_impl->Time.is_not_a_date_time())) ||
+       ((in_other.m_impl == nullptr) && (m_impl->Time.is_not_a_date_time())))
+      return true;
+   else if ((m_impl == nullptr) || (in_other.m_impl == nullptr))
+         return false;
+
+   if (m_impl->Time.is_not_a_date_time() && in_other.m_impl->Time.is_not_a_date_time())
+      return true;
+
+   return m_impl->Time <= in_other.m_impl->Time;
+}
+
+bool DateTime::operator>(const DateTime& in_other) const
+{
+   return in_other < *this;
+}
+
+bool DateTime::operator>=(const DateTime& in_other) const
+{
+   return in_other <= *this;
+}
+
 std::string DateTime::toString() const
 {
    return toString(ISO_8601_OUTPUT_FORMAT);

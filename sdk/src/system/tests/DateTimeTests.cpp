@@ -130,7 +130,7 @@ TEST_CASE("Equality and Inequality")
 {
    SECTION("Two current times")
    {
-      DateTime d1, d2;
+      DateTime d1, d2(d1);
       CHECK(d1 == d2);
    }
 
@@ -177,6 +177,111 @@ TEST_CASE("Equality and Inequality")
       REQUIRE_FALSE(DateTime::fromString("2019-02-15T11:23:44.039876Z", d2));
 
       CHECK(d1 != d2);
+   }
+
+   SECTION("Same object")
+   {
+      DateTime d;
+      CHECK(d == d);
+   }
+}
+
+TEST_CASE("LT/LTE/GT/GTE Comparisons")
+{
+   SECTION("Two current times")
+   {
+      DateTime d1, d2(d1);
+
+      CHECK_FALSE(d1 < d2);
+      CHECK(d1 <= d2);
+      CHECK_FALSE(d1 > d2);
+      CHECK(d1 >= d2);
+   }
+
+   SECTION("Current time and other time")
+   {
+      DateTime d1, d2;
+      REQUIRE_FALSE(DateTime::fromString("2019-02-15T11:23:44.039876Z", d2));
+
+      CHECK_FALSE(d1 < d2);
+      CHECK_FALSE(d1 <= d2);
+      CHECK(d1 > d2);
+      CHECK(d1 >= d2);
+
+      CHECK(d2 < d1);
+      CHECK(d2 <= d1);
+      CHECK_FALSE(d2 > d1);
+      CHECK_FALSE(d2 >= d1);
+   }
+
+   SECTION("Two non-current times (same initial TZ)")
+   {
+      DateTime d1, d2;
+      REQUIRE_FALSE(DateTime::fromString("2019-02-15T11:23:44.039876Z", d1));
+      REQUIRE_FALSE(DateTime::fromString("2019-02-15T11:23:44.039876Z", d2));
+
+      CHECK_FALSE(d1 < d2);
+      CHECK(d1 <= d2);
+      CHECK_FALSE(d1 > d2);
+      CHECK(d1 >= d2);
+   }
+
+   SECTION("Two non-current times (different initial TZ)")
+   {
+      DateTime d1, d2;
+      REQUIRE_FALSE(DateTime::fromString("2019-02-15T03:23:44.039876-8:00", d1));
+      REQUIRE_FALSE(DateTime::fromString("2019-02-15T11:23:44.039876Z", d2));
+
+      CHECK_FALSE(d1 < d2);
+      CHECK(d1 <= d2);
+      CHECK_FALSE(d1 > d2);
+      CHECK(d1 >= d2);
+   }
+
+   SECTION("Two different current times")
+   {
+      DateTime d1;
+
+      // sleep for 1.2 milliseconds. (There should still be a difference)
+      usleep(1200);
+      DateTime d2;
+
+      CHECK(d1 < d2);
+      CHECK(d1 <= d2);
+      CHECK_FALSE(d1 > d2);
+      CHECK_FALSE(d1 >= d2);
+
+      CHECK_FALSE(d2 < d1);
+      CHECK_FALSE(d2 <= d1);
+      CHECK(d2 > d1);
+      CHECK(d2 >= d1);
+   }
+
+   SECTION("Two non-current times (inequal, different TZ)")
+   {
+      DateTime d1, d2;
+      REQUIRE_FALSE(DateTime::fromString("2019-02-15T03:23:44.039876-5:00", d1));
+      REQUIRE_FALSE(DateTime::fromString("2019-02-15T11:23:44.039876Z", d2));
+
+      CHECK(d1 < d2);
+      CHECK(d1 <= d2);
+      CHECK_FALSE(d1 > d2);
+      CHECK_FALSE(d1 >= d2);
+
+      CHECK_FALSE(d2 < d1);
+      CHECK_FALSE(d2 <= d1);
+      CHECK(d2 > d1);
+      CHECK(d2 >= d1);
+   }
+
+   SECTION("Same object")
+   {
+      DateTime d;
+
+      CHECK_FALSE(d < d);
+      CHECK(d <= d);
+      CHECK_FALSE(d > d);
+      CHECK(d >= d);
    }
 }
 
