@@ -95,3 +95,133 @@ std::string getProgramId() const override
 ```
 
 to `TigerLilyMain.cpp`.
+
+## TODO #5: Add Options 
+ 
+TODO Location           Impact
+----------------------  ---------------------------------------------
+QuickStartOptions.cpp   QuickStartOptions.cpp, QuickStartOptions.hpp
+
+
+
+The QuickStartOptions class demonstrates how to add job scheduling specific options to the Plugin. It may not be immediately obvious what options will be required for the Plugin, but when it does become clear that an option is needed it can be added here.
+
+Continuing the previous example, suppose that the Tiger Lily job scheduling system can be controlled using an HTTP API, and it can be set up at a custom URL and port. The Orchid developer might then add a required option for the URL, an optional option for whether SSL should be used, and an optional option for the port. In that case, the developer might modify QuickStartOptions.hpp and QuickStartOptions.cpp in the following way:
+
+
+```{c,eval=FALSE}
+// QuickStartOptions.hpp =========================
+class QuickStartOptions : public Noncopyable
+{
+public:
+// ...
+  
+  bool getSampleOption() const;
+   
+// ...
+   
+private:
+// ...
+  
+  bool m_sampleOption;
+}
+```
+
+```{c,eval=FALSE}
+// QuickStartOptions.cpp =========================
+bool QuickStartOptions::getSampleOption() const 
+{
+  return m_sampleOption;
+}
+
+void QuickStartOptions::initialize()
+{
+   // TODO #5: Add options, as necessary.
+   using namespace rstudio::launcher_plugins::options;
+   Options& options = Options::getInstance();
+   options.registerOptions()
+      ("sample-option",
+       Value<bool>(m_sampleOption).setDefaultValue(true),
+       "sample option to demonstrate how to register options");
+}
+
+```
+
+```{c,eval=FALSE}
+// TigerLilyOptions.hpp ==========================
+class TigerLilyOptions : public Noncopyable
+{
+public:
+// ...
+  
+  const std::string& getHost() const;
+  
+  unsigned int getPort() const;
+  
+  bool getUseSsl() const;
+   
+// ...
+   
+private:
+// ...
+  
+  std::string m_host;
+  
+  unsigned int m_port;
+  
+  bool m_useSsl;
+}
+```
+
+```{c,eval=FALSE}
+// TigerLilyOptions.cpp ==========================
+const std::string& TigerLilyOptions::getHost() const 
+{
+  return m_host;
+}
+
+unsigned int TigerLilyOptions::getPort() const 
+{
+  if (m_port != 0)
+    return m_port;
+  
+  if (m_useSsl)
+    return 443;
+  
+  return 80;
+}
+
+bool TigerLilyOptions::getUseSsl() const 
+{
+  return m_useSsl;
+}
+
+void TigerLilyOptions::initialize()
+{
+   // TODO #5: Add options, as necessary.
+   using namespace rstudio::launcher_plugins::options;
+   Options& options = Options::getInstance();
+   options.registerOptions()
+      ("host",
+       Value<std::string>(m_host),
+       "the IP address or hostname of the Tiger Lily server")
+      ("port",
+       Value<unsigned int>(m_port).setDefaultValue(0),
+       "the port to use for connecting to the Tiger Lily server")
+      ("use-ssl",
+       Value<bool>(m_useSsl).setDefaultValue(false),
+       "whether to use HTTPS (true) or HTTP (false, default) when connecting to the Tiger Lily server");
+}
+
+```
+
+## TODO #6: Initilaize Communication
+ 
+TODO Location             Impact
+------------------------  ------------------------
+QuickStartJobSource.cpp   QuickStartJobSource.cpp
+
+
+The next step is to initialize communication with the job scheduling system. This might involve opening a TCP connection to the job scheduling system which will remain open for the duration of the Plugin's lifetime, or it might involve testing that it is possible to connect to the job scheduling system. In the case of the sample Local Plugin, provided with this SDK, no communication test is necessary since jobs will be run on the local machine.
+
+Any other tasks which need to be completed before the Plugin is ready to launch jobs must be completed here. For example, in the RStudio SLURM Launcher Plugin it was also necessary to check which timezone the SLURM cluster is using, since job timestamps need to be compared later on. If the Plugin implementation will be tied to a specific version, or set of versions, of the job scheduling system, that should be validated here as well.

@@ -31,15 +31,25 @@ file(GLOB_RECURSE RLPS_HEADER_FILES "*.h*")
 set(RLPS_SOURCE_FILES
    src/AbstractMain.cpp
    src/Error.cpp
+   src/api/AbstractPluginApi.cpp
+   src/api/Constants.cpp
+   src/api/Request.cpp
+   src/api/Response.cpp
+   src/comms/AbstractLauncherCommunicator.cpp
+   src/comms/MessageHandler.cpp
+   src/comms/StdIOLauncherCommunicator.cpp
    src/json/Json.cpp
    src/logging/FileLogDestination.cpp
    src/logging/Logger.cpp
    src/logging/StderrLogDestination.cpp
    src/logging/SyslogDestination.cpp
    src/options/Options.cpp
+   src/system/Asio.cpp
    src/system/FilePath.cpp
+   src/system/PosixSystem.cpp
    src/system/ReaderWriterMutex.cpp
    src/system/User.cpp
+   src/utils/ErrorUtils.cpp
 )
 
 # include directory
@@ -61,12 +71,16 @@ set(RLPS_BOOST_LIBS
    Boost::thread
 )
 
+find_library(PTHREAD_LIBS pthread)
+
 target_link_libraries(rstudio-launcher-plugin-sdk-lib
    ${RLPS_BOOST_LIBS}
+   ${PTHREAD_LIBS}
 )
 
 # define executables for unit tests
 if (NOT RLPS_UNIT_TESTS_DISABLED)
-   # options tests are complex, so they have their own CMakeLists.txt
+   add_subdirectory(src/api/tests)
+   add_subdirectory(src/comms/tests)
    add_subdirectory(src/options/tests)
 endif()

@@ -89,11 +89,14 @@ public:
 #ifndef _WIN32
 
    /**
-    * @brief Default constructor.
+    * @brief Constructor.
     *
-    * Creates a user object which represents all users.
+    * Creates a user object which is either empty or represents all users.
+    *
+    * @param in_isEmpty    True to create an empty user; False to create a user which represents all users.
+    *                      Default: false.
     */
-    User();
+    explicit User(bool in_isEmpty = false);
 
    /**
     * @brief Copy constructor.
@@ -151,7 +154,8 @@ public:
 
    /**
     * @brief Checks whether this user is empty or not.
-    * @return
+    *
+    * @return True if this is user is empty; False otherwise.
     */
    bool isEmpty() const;
 
@@ -168,6 +172,13 @@ public:
     * @return The ID of this user's primary group.
     */
    GidType getGroupId() const;
+   
+   /**
+    * @brief Returns the login shell of this user.
+    *
+    * @return The login shell of this user.
+    */
+   const std::string& getShell() const;
 
    /**
     * @brief Gets the ID of this user.

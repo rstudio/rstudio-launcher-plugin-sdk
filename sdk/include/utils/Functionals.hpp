@@ -1,7 +1,10 @@
 /*
- * AbstractPluginApi.hpp
- * 
- * Copyright (C) 2019-20 by RStudio, PBC
+ * Functionals.hpp
+ *
+ * Copyright (C) 2020 by RStudio, PBC
+ *
+ * Unless you have received this program directly from RStudio pursuant to the terms of a commercial license agreement
+ * with RStudio, then this program is licensed to you under the following terms:
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
  * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
@@ -18,35 +21,26 @@
  *
  */
 
-#ifndef LAUNCHER_PLUGINS_ABSTRACT_PLUGIN_API_HPP
-#define LAUNCHER_PLUGINS_ABSTRACT_PLUGIN_API_HPP
 
-#include <boost/noncopyable.hpp>
+#ifndef LAUNCHER_PLUGINS_FUNCTIONALS_HPP
+#define LAUNCHER_PLUGINS_FUNCTIONALS_HPP
 
-#include "Error.hpp"
+#include <functional>
+
+#include <Error.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
 
 /**
- * @brief Base class for the Launcher Plugin API.
+ * @file
+ * Defines types for common callback functions within the SDK
  */
-class AbstractPluginApi : public boost::noncopyable
-{
-public:
-   /**
-    * @brief Virtual destructor.
-    */
-   virtual ~AbstractPluginApi() = default;
 
-   /**
-    * @brief This method should initialize any components needed to communicate with the job scheduling tool, including
-    *        custom options (TODO: other examples).
-    *
-    * @return Success if all components needed by this Plugin were successfully initialized; Error otherwise.
-    */
-   virtual Error initialize() = 0;
-};
+/**
+ * Callback function which will be invoked when an error occurs.
+ */
+typedef std::function<void(const Error&)> OnError;
 
 } // namespace launcher_plugins
 } // namespace rstudio

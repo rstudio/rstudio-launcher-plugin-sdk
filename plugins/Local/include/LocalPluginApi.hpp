@@ -21,7 +21,17 @@
 #ifndef LAUNCHER_PLUGINS_LOCAL_PLUGIN_API_HPP
 #define LAUNCHER_PLUGINS_LOCAL_PLUGIN_API_HPP
 
-#include <AbstractPluginApi.hpp>
+#include <api/AbstractPluginApi.hpp>
+
+namespace rstudio {
+namespace launcher_plugins {
+namespace comms {
+
+class AbstractLauncherCommunicator;
+
+}
+}
+}
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -30,17 +40,32 @@ namespace local {
 /**
  * @brief Launcher Plugin API for the Local Plugin.
  */
-class LocalPluginApi : public AbstractPluginApi
+class LocalPluginApi : public api::AbstractPluginApi
 {
 public:
+   /**
+    * @brief Constructor.
+    *
+    * @param in_launcherCommunicator    The communicator to use for sending and receiving messages from the RStudio
+    *                                   Launcher.
+    */
+   explicit LocalPluginApi(std::shared_ptr<comms::AbstractLauncherCommunicator> in_launcherCommunicator);
+
+private:
+   /**
+    * @brief Creates the job source which can communicate with the Local system.
+    *
+    * @return The job source for the Local Plugin implementation.
+    */
+   std::shared_ptr<api::IJobSource> createJobSource() const override;
 
    /**
-    * @brief This method should initialize any components needed to communicate with the job scheduling tool, including
-    *        custom options (TODO: other examples).
+    * @brief This method is responsible for initializing all components necessary to communicate with the job launching
+    *        system supported by this Plugin, such as initializing the communication method (e.g. a TCP socket).
     *
-    * @return Success if all components needed by this Plugin were successfully initialized; Error otherwise.
+    * @return Success if all components of the Plugin API could be initialized; Error otherwise.
     */
-   Error initialize() override;
+   Error doInitialize() override;
 };
 
 } // namespace local

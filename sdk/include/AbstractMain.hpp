@@ -21,27 +21,23 @@
 #ifndef LAUNCHER_PLUGINS_ABSTRACT_MAIN_HPP
 #define LAUNCHER_PLUGINS_ABSTRACT_MAIN_HPP
 
-#include <boost/noncopyable.hpp>
+#include <Noncopyable.hpp>
 
 #include <memory>
 #include <system/FilePath.hpp>
 
-#include "AbstractPluginApi.hpp"
+#include <api/AbstractPluginApi.hpp>
+#include <comms/AbstractLauncherCommunicator.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
 
 /**
- * @brief Base class for the Plugin Main class, which runs the plugin.
+ * @brief Base class for the PluginMain class, which runs the plugin.
  */
-class AbstractMain : public boost::noncopyable
+class AbstractMain : public Noncopyable
 {
 public:
-   /**
-    * @brief Default Constructor.
-    */
-   AbstractMain() = default;
-
    /**
     * @brief Default destructor.
     */
@@ -57,13 +53,23 @@ public:
     */
    int run(int in_argCount, char** in_argList);
 
+protected:
+   /**
+    * @brief Default Constructor.
+    */
+   AbstractMain();
+
 private:
    /**
     * @brief Creates the Launcher Plugin API.
     *
+    * @param in_launcherCommunicator    The communicator that will be used to send and receive messages from the RStudio
+    *                                   Launcher.
+    *
     * @return The Plugin specific Launcher Plugin API.
     */
-   virtual std::shared_ptr<AbstractPluginApi> createLauncherPluginApi() const = 0;
+   virtual std::shared_ptr<api::AbstractPluginApi> createLauncherPluginApi(
+      std::shared_ptr<comms::AbstractLauncherCommunicator> in_launcherCommunicator) const = 0;
 
    /**
     * @brief Gets the configuration file for this program. The default is /etc/rstudio/launcher.<pluginName>.conf.
@@ -85,6 +91,16 @@ private:
     * @return The unique program ID for this plugin.
     */
     virtual std::string getProgramId() const;
+
+    /**
+     * @brief Initializes the main process, including custom options.
+     *
+     * @return Success if the process could be initialized; Error otherwise.
+     */
+    virtual Error initialize() = 0;
+
+    // Private implementation of abstract main.
+    PRIVATE_IMPL_SHARED(m_abstractMainImpl);
 };
 
 } // namespace launcher_plugins

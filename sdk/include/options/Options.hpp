@@ -225,6 +225,16 @@ public:
     */
    const system::FilePath& getLauncherConfigFile() const;
 
+   /**
+    * @brief Gets the maximum allowable size of messages which can be used in communications with the RStudio Launcher.
+    *
+    * It is not recommended to change this value directly in the Plugin's configuration file. Changes to this value will
+    * be propagated from the RStudio Launcher to all Plugins.
+    *
+    * @return The maximum allowable size of messages which can be used in communications with the RStudio Launcher.
+    */
+   size_t getMaxMessageSize() const;
+
   /**
    * @brief Gets the scratch path to which log files and other plugin data may be written.
    *
@@ -249,7 +259,7 @@ public:
     *
     * @return The size of the thread pool.
     */
-   unsigned int getThreadPoolSize() const;
+   size_t getThreadPoolSize() const;
 
 private:
    /**

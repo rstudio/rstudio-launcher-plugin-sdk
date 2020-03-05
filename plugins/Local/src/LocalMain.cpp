@@ -20,6 +20,7 @@
 
 #include <AbstractMain.hpp>
 
+#include <LocalOptions.hpp>
 #include <LocalPluginApi.hpp>
 
 namespace rstudio {
@@ -35,11 +36,15 @@ private:
    /**
     * @brief Creates the Launcher Plugin API.
     *
+    * @param in_launcherCommunicator    The communicator that will be used to send and receive messages from the RStudio
+    *                                   Launcher.
+    *
     * @return The Plugin specific Launcher Plugin API.
     */
-   std::shared_ptr<AbstractPluginApi> createLauncherPluginApi() const override
+   std::shared_ptr<api::AbstractPluginApi> createLauncherPluginApi(
+      std::shared_ptr<comms::AbstractLauncherCommunicator> in_launcherCommunicator) const override
    {
-      return std::shared_ptr<AbstractPluginApi>(new LocalPluginApi());
+      return std::shared_ptr<api::AbstractPluginApi>(new LocalPluginApi(in_launcherCommunicator));
    }
 
    /**
@@ -50,6 +55,18 @@ private:
     std::string getPluginName() const override
     {
        return "local";
+    }
+
+   /**
+    * @brief Initializes the main process, including custom options.
+    *
+    * @return Success if the process could be initialized; Error otherwise.
+    */
+    Error initialize() override
+    {
+       // Ensure Local specific options are initialized.
+       LocalOptions::getInstance().initialize();
+       return Success();
     }
 };
 

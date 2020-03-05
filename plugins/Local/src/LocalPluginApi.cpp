@@ -18,19 +18,26 @@
  *
  */
 
-#include "LocalPluginApi.hpp"
+#include <LocalPluginApi.hpp>
 
-#include "LocalOptions.hpp"
+#include <LocalJobSource.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
 namespace local {
 
-Error LocalPluginApi::initialize()
+LocalPluginApi::LocalPluginApi(std::shared_ptr<comms::AbstractLauncherCommunicator> in_launcherCommunicator) :
+   AbstractPluginApi(std::move(in_launcherCommunicator))
 {
-   // Make sure LocalOptions have been initialized.
-   LocalOptions::getInstance().initialize();
+}
 
+std::shared_ptr<api::IJobSource> LocalPluginApi::createJobSource() const
+{
+   return std::shared_ptr<api::IJobSource>(new LocalJobSource());
+}
+
+Error LocalPluginApi::doInitialize()
+{
    return Success();
 }
 

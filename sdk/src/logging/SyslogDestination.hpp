@@ -26,6 +26,8 @@
 
 #include <logging/ILogDestination.hpp>
 
+#include <PImpl.hpp>
+
 namespace rstudio {
 namespace launcher_plugins {
 namespace logging {
@@ -74,6 +76,10 @@ public:
     * @param in_message     The message to write to syslog.
     */
    void writeLog(logging::LogLevel in_logLevel, const std::string& in_message) override;
+
+private:
+   // The private implementation of SyslogDestination
+   PRIVATE_IMPL(m_impl);
 };
 
 } // namespace logging

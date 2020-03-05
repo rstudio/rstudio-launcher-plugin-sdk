@@ -21,9 +21,7 @@
 #ifndef LAUNCHER_PLUGINS_LOCAL_OPTIONS_HPP
 #define LAUNCHER_PLUGINS_LOCAL_OPTIONS_HPP
 
-#include <boost/noncopyable.hpp>
-
-#include <boost/date_time/posix_time/posix_time.hpp>
+#include <Noncopyable.hpp>
 
 #include <system/FilePath.hpp>
 
@@ -34,7 +32,7 @@ namespace local {
 /**
  * @brief Class which stores options specific to the Local Container system.
  */
-class LocalOptions : public boost::noncopyable
+class LocalOptions : public Noncopyable
 {
 public:
    /**
@@ -50,7 +48,7 @@ public:
     *
     * @return The timeout for connecting to other local nodes, in seconds.
     */
-   boost::posix_time::time_duration getNodeConnectionTimeoutSeconds() const;
+   size_t getNodeConnectionTimeoutSeconds() const;
 
    /**
     * @brief Gets the path to the rsandbox executable provided by the RStudio Server Pro installation.
@@ -69,12 +67,19 @@ public:
    const system::FilePath& getSecureCookieKeyFile() const;
 
    /**
+    * @brief Method which initializes LocalOptions. This method should be called exactly once, before the options
+    *        file is read.
+    *
+    * This is where Local Options are registered with the Options object.
+    */
+   void initialize();
+
+   /**
     * @brief Gets whether to save output for a job when the output path has not been specified.
     *
     * @return True if job output should be saved when no output path was specified; false otherwise.
     */
    bool shouldSaveUnspecifiedOutput() const;
-
 
    /**
     * @brief Gets whether jobs will be run in an unprivileged environment or not.
@@ -88,14 +93,6 @@ public:
     */
    bool useUnprivilegedMode() const;
 
-   /**
-    * @brief Method which initializes LocalOptions. This method should be called exactly once, before the options
-    *        file is read.
-    *
-    * This is where LocalOptions are registered with the Options object.
-    */
-   void initialize();
-
 private:
    /**
     * @brief Private constructor to prevent multiple instantiations of this singleton.
@@ -105,7 +102,7 @@ private:
    /**
     * The number of seconds that can elapse before an attempted connection to another local node will be timed out.
     */
-   int m_nodeConnectionTimeoutSeconds;
+   size_t m_nodeConnectionTimeoutSeconds;
 
    /**
     * Whether to save output for a job when the output path has not been specified.

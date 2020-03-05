@@ -20,13 +20,13 @@
 
 #include <AbstractMain.hpp>
 
+#include <QuickStartOptions.hpp>
 #include <QuickStartPluginApi.hpp>
 
-
+// TODO #1: Change the namespaces based on your organization and plugin name.
 namespace rstudio {
 namespace launcher_plugins {
 namespace quickstart {
-// TODO #1: Change the namespaces based on your organization and plugin name.
 
 /**
  * @brief The Main class of the QuickStart Launcher Plugin.
@@ -37,11 +37,15 @@ class QuickStartMain : public AbstractMain
    /**
     * @brief Creates the QuickStart Launcher Plugin API.
     *
+    * @param in_launcherCommunicator    The communicator that will be used to send and receive messages from the RStudio
+    *                                   Launcher.
+    *
     * @return The QuickStart Launcher Plugin API.
     */
-   std::shared_ptr<AbstractPluginApi> createLauncherPluginApi() const override
+   std::shared_ptr<api::AbstractPluginApi> createLauncherPluginApi(
+      std::shared_ptr<comms::AbstractLauncherCommunicator> in_launcherCommunicator) const override
    {
-      return std::shared_ptr<AbstractPluginApi>(new QuickStartPluginApi());
+      return std::shared_ptr<api::AbstractPluginApi>(new QuickStartPluginApi(in_launcherCommunicator));
    }
 
    /**
@@ -57,6 +61,17 @@ class QuickStartMain : public AbstractMain
 
    // TODO #4: Optionally override getProgramId() to change the programID from rstudio-<pluginName>-launcher to
    //          myorg-<pluginName>-launcher or something similar.
+
+   /**
+    * @brief Initializes the main process, including custom options.
+    *
+    * @return Success if the process could be initialized; Error otherwise.
+    */
+   Error initialize() override
+   {
+      QuickStartOptions::getInstance().initialize();
+      return Success();
+   }
 };
 
 } // namespace quickstart

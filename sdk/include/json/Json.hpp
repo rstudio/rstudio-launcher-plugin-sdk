@@ -27,25 +27,24 @@
 #include <map>
 #include <ostream>
 #include <set>
+#include <sstream>
 #include <utility>
 #include <vector>
 
-#include <boost/optional.hpp>
 
-#include <PImpl.hpp>
+#include <Error.hpp>
 #include <logging/Logger.hpp>
-
-namespace rstudio {
-namespace launcher_plugins {
-
-class Error;
-
-} // namespace launcher_plugins
-} // namespace rstudio
+#include <PImpl.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
 namespace json {
+
+/**
+ * @file Json.hpp
+ *
+ * JSON classes and utility functions.
+ */
 
 class Array;
 class Object;
@@ -291,6 +290,15 @@ public:
    bool operator==(const Value& in_other) const;
 
    /**
+    * @brief Inequality operator.
+    *
+    * @param in_other   The value to compare this value to.
+    *
+    * @return True if the two values are not the same; false if they are the same.
+    */
+   bool operator!=(const Value& in_other) const;
+
+   /**
     * @brief Makes a copy of this JSON value.
     *
     * @return A copy of this JSON value.
@@ -485,7 +493,7 @@ public:
     *
     * @return Success on successful parse; error otherwise (e.g. ParseError)
     */
-   Error parse(const char* in_jsonStr);
+   virtual Error parse(const char* in_jsonStr);
 
    /**
     * @brief Parses the JSON string into this value.
@@ -494,7 +502,7 @@ public:
     *
     * @return Success on successful parse; error otherwise (e.g. ParseError)
     */
-   Error parse(const std::string& in_jsonStr);
+   virtual Error parse(const std::string& in_jsonStr);
 
    /**
     * @brief Parses the JSON string and validates it against the schema.
@@ -505,6 +513,126 @@ public:
     * @return Success if the string could be parsed and the parsed object matches the schema; Error otherwise.
     */
    Error parseAndValidate(const std::string& in_jsonStr, const std::string& in_schema);
+
+   /**
+    * @brief Sets a value within the current value based on the specified JSON Pointer path.
+    *
+    * @param in_pointerPath The JSON Pointer path.
+    * @param in_value       The JSON value to set at the path. This value is copied before being set.
+    *
+    * @return Success if the pointer is valid; Error otherwise.
+    */
+   Error setValueAtPointerPath(const std::string& in_pointerPath, const json::Value& in_value);
+
+   /**
+    * @brief Sets a value within the current value based on the specified JSON Pointer path.
+    *
+    * @param in_pointerPath The JSON Pointer path.
+    * @param in_value       The JSON value to set at the path. This value is copied before being set.
+    *
+    * @return Success if the pointer is valid; Error otherwise.
+    */
+   Error setValueAtPointerPath(const std::string& in_pointerPath, bool in_value);
+
+   /**
+    * @brief Sets a value within the current value based on the specified JSON Pointer path.
+    *
+    * @param in_pointerPath The JSON Pointer path.
+    * @param in_value       The JSON value to set at the path. This value is copied before being set.
+    *
+    * @return Success if the pointer is valid; Error otherwise.
+    */
+   Error setValueAtPointerPath(const std::string& in_pointerPath, double in_value);
+
+   /**
+    * @brief Sets a value within the current value based on the specified JSON Pointer path.
+    *
+    * @param in_pointerPath The JSON Pointer path.
+    * @param in_value       The JSON value to set at the path. This value is copied before being set.
+    *
+    * @return Success if the pointer is valid; Error otherwise.
+    */
+   Error setValueAtPointerPath(const std::string& in_pointerPath, float in_value);
+
+   /**
+    * @brief Sets a value within the current value based on the specified JSON Pointer path.
+    *
+    * @param in_pointerPath The JSON Pointer path.
+    * @param in_value       The JSON value to set at the path. This value is copied before being set.
+    *
+    * @return Success if the pointer is valid; Error otherwise.
+    */
+   Error setValueAtPointerPath(const std::string& in_pointerPath, int in_value);
+
+   /**
+    * @brief Sets a value within the current value based on the specified JSON Pointer path.
+    *
+    * @param in_pointerPath The JSON Pointer path.
+    * @param in_value       The JSON value to set at the path. This value is copied before being set.
+    *
+    * @return Success if the pointer is valid; Error otherwise.
+    */
+   Error setValueAtPointerPath(const std::string& in_pointerPath, int64_t in_value);
+
+   /**
+    * @brief Sets a value within the current value based on the specified JSON Pointer path.
+    *
+    * @param in_pointerPath The JSON Pointer path.
+    * @param in_value       The JSON value to set at the path. This value is copied before being set.
+    *
+    * @return Success if the pointer is valid; Error otherwise.
+    */
+   Error setValueAtPointerPath(const std::string& in_pointerPath, const char* in_value);
+
+   /**
+    * @brief Sets a value within the current value based on the specified JSON Pointer path.
+    *
+    * @param in_pointerPath The JSON Pointer path.
+    * @param in_value       The JSON value to set at the path. This value is copied before being set.
+    *
+    * @return Success if the pointer is valid; Error otherwise.
+    */
+   Error setValueAtPointerPath(const std::string& in_pointerPath, const std::string& in_value);
+
+   /**
+    * @brief Sets a value within the current value based on the specified JSON Pointer path.
+    *
+    * @param in_pointerPath The JSON Pointer path.
+    * @param in_value       The JSON value to set at the path. This value is copied before being set.
+    *
+    * @return Success if the pointer is valid; Error otherwise.
+    */
+   Error setValueAtPointerPath(const std::string& in_pointerPath, unsigned int in_value);
+
+   /**
+    * @brief Sets a value within the current value based on the specified JSON Pointer path.
+    *
+    * @param in_pointerPath The JSON Pointer path.
+    * @param in_value       The JSON value to set at the path. This value is copied before being set.
+    *
+    * @return Success if the pointer is valid; Error otherwise.
+    */
+   Error setValueAtPointerPath(const std::string& in_pointerPath, uint64_t in_value);
+
+   /**
+    * @brief Sets a value within the current value based on the specified JSON Pointer path.
+    *
+    * @param in_pointerPath The JSON Pointer path.
+    * @param in_value       The JSON value to set at the path. This value is copied before being set.
+    *
+    * @return Success if the pointer is valid; Error otherwise.
+    */
+   Error setValueAtPointerPath(const std::string& in_pointerPath, const Array& in_value);
+
+   /**
+    * @brief Sets a value within the current value based on the specified JSON Pointer path.
+    *
+    * @param in_pointerPath The JSON Pointer path.
+    * @param in_value       The JSON value to set at the path. This value is copied before being set.
+    *
+    * @return Success if the pointer is valid; Error otherwise.
+    */
+   Error setValueAtPointerPath(const std::string& in_pointerPath, const Object& in_value);
 
    /**
     * @brief Validates this JSON value against a schema.
@@ -582,7 +710,7 @@ public:
        *
        * @param in_impl The private implementation of the member.
        */
-      Member(const std::shared_ptr<Impl>& in_impl);
+      explicit Member(const std::shared_ptr<Impl>& in_impl);
 
       /**
        * @brief Gets the name of the member.
@@ -727,7 +855,7 @@ public:
     *
     * @param in_other   The JSON object to move to this Object.
     */
-   Object(Object&& in_other);
+   Object(Object&& in_other) noexcept;
 
    /**
     * @brief Creates a JSON object from the given name and JSON value.
@@ -915,6 +1043,105 @@ public:
     * @brief Inserts the specified member into this JSON object. If an object with the same name already exists, it will be
     *        overridden.
     *
+    * @param in_name        The name of the JSON value to insert.
+    * @param in_value       The value to insert.
+    */
+   void insert(const std::string& in_name, bool in_value);
+
+   /**
+    * @brief Inserts the specified member into this JSON object. If an object with the same name already exists, it will be
+    *        overridden.
+    *
+    * @param in_name        The name of the JSON value to insert.
+    * @param in_value       The value to insert.
+    */
+   void insert(const std::string& in_name, double in_value);
+
+   /**
+    * @brief Inserts the specified member into this JSON object. If an object with the same name already exists, it will be
+    *        overridden.
+    *
+    * @param in_name        The name of the JSON value to insert.
+    * @param in_value       The value to insert.
+    */
+   void insert(const std::string& in_name, float in_value);
+
+   /**
+    * @brief Inserts the specified member into this JSON object. If an object with the same name already exists, it will be
+    *        overridden.
+    *
+    * @param in_name        The name of the JSON value to insert.
+    * @param in_value       The value to insert.
+    */
+   void insert(const std::string& in_name, int in_value);
+
+   /**
+    * @brief Inserts the specified member into this JSON object. If an object with the same name already exists, it will be
+    *        overridden.
+    *
+    * @param in_name        The name of the JSON value to insert.
+    * @param in_value       The value to insert.
+    */
+   void insert(const std::string& in_name, int64_t in_value);
+
+   /**
+    * @brief Inserts the specified member into this JSON object. If an object with the same name already exists, it will be
+    *        overridden.
+    *
+    * @param in_name        The name of the JSON value to insert.
+    * @param in_value       The value to insert.
+    */
+   void insert(const std::string& in_name, const char* in_value);
+
+   /**
+    * @brief Inserts the specified member into this JSON object. If an object with the same name already exists, it will be
+    *        overridden.
+    *
+    * @param in_name        The name of the JSON value to insert.
+    * @param in_value       The value to insert.
+    */
+   void insert(const std::string& in_name, const std::string& in_value);
+
+   /**
+    * @brief Inserts the specified member into this JSON object. If an object with the same name already exists, it will be
+    *        overridden.
+    *
+    * @param in_name        The name of the JSON value to insert.
+    * @param in_value       The value to insert.
+    */
+   void insert(const std::string& in_name, unsigned int in_value);
+
+   /**
+    * @brief Inserts the specified member into this JSON object. If an object with the same name already exists, it will be
+    *        overridden.
+    *
+    * @param in_name        The name of the JSON value to insert.
+    * @param in_value       The value to insert.
+    */
+   void insert(const std::string& in_name, uint64_t in_value);
+
+   /**
+    * @brief Inserts the specified member into this JSON object. If an object with the same name already exists, it will be
+    *        overridden.
+    *
+    * @param in_name        The name of the JSON value to insert.
+    * @param in_value       The value to insert.
+    */
+   void insert(const std::string& in_name, const Array& in_value);
+
+   /**
+    * @brief Inserts the specified member into this JSON object. If an object with the same name already exists, it will be
+    *        overridden.
+    *
+    * @param in_name        The name of the JSON value to insert.
+    * @param in_value       The value to insert.
+    */
+   void insert(const std::string& in_name, const Object& in_value);
+
+   /**
+    * @brief Inserts the specified member into this JSON object. If an object with the same name already exists, it will be
+    *        overridden.
+    *
     * @param in_member      The member to insert.
     */
    void insert(const Member& in_member);
@@ -925,6 +1152,26 @@ public:
     * @return True if the JSON object has no members; false otherwise.
     */
    bool isEmpty() const;
+
+   /**
+    * @brief Parses the JSON string into this object.
+    *
+    * @param in_jsonStr     The JSON string to parse.
+    *
+    * @return Success on successful parse when the resulting JSON value is a JSON Object; error otherwise
+    *         (e.g. ParseError).
+    */
+   Error parse(const char* in_jsonStr) override;
+
+   /**
+    * @brief Parses the JSON string into this object.
+    *
+    * @param in_jsonStr     The JSON string to parse.
+    *
+    * @return Success on successful parse when the resulting JSON value is a JSON Object; error otherwise
+    *         (e.g. ParseError).
+    */
+   Error parse(const std::string& in_jsonStr) override;
 
    /**
     * @brief Converts this JSON object to a map with string keys and a list of string values.
@@ -1095,7 +1342,7 @@ public:
     *
     * @param in_other   The JSON array to move to this Object.
     */
-   Array(Array&& in_other);
+   Array(Array&& in_other) noexcept;
 
    /**
     * @brief Assignment operator.
@@ -1217,6 +1464,26 @@ public:
    bool isEmpty() const;
 
    /**
+    * @brief Parses the JSON string into this array.
+    *
+    * @param in_jsonStr     The JSON string to parse.
+    *
+    * @return Success on successful parse when the resulting JSON value is a JSON Array; error otherwise
+    *         (e.g. ParseError).
+    */
+   Error parse(const char* in_jsonStr) override;
+
+   /**
+    * @brief Parses the JSON string into this array.
+    *
+    * @param in_jsonStr     The JSON string to parse.
+    *
+    * @return Success on successful parse when the resulting JSON value is a JSON Array; error otherwise
+    *         (e.g. ParseError).
+    */
+   Error parse(const std::string& in_jsonStr) override;
+
+   /**
     * @brief Pushes the value onto the end of the JSON array.
     *
     * MAINTENANCE NOTE: This method must be named in the STL style to work with STL functions and types such as
@@ -1225,6 +1492,116 @@ public:
     * @param in_value   The value to push onto the end of the JSON array.
     */
    void push_back(const Value& in_value);
+
+   /**
+    * @brief Pushes the value onto the end of the JSON array.
+    *
+    * MAINTENANCE NOTE: This method must be named in the STL style to work with STL functions and types such as
+    * std::back_inserter.
+    *
+    * @param in_value   The value to push onto the end of the JSON array.
+    */
+   void push_back(bool in_value);
+
+   /**
+    * @brief Pushes the value onto the end of the JSON array.
+    *
+    * MAINTENANCE NOTE: This method must be named in the STL style to work with STL functions and types such as
+    * std::back_inserter.
+    *
+    * @param in_value   The value to push onto the end of the JSON array.
+    */
+   void push_back(double in_value);
+
+   /**
+    * @brief Pushes the value onto the end of the JSON array.
+    *
+    * MAINTENANCE NOTE: This method must be named in the STL style to work with STL functions and types such as
+    * std::back_inserter.
+    *
+    * @param in_value   The value to push onto the end of the JSON array.
+    */
+   void push_back(float in_value);
+
+   /**
+    * @brief Pushes the value onto the end of the JSON array.
+    *
+    * MAINTENANCE NOTE: This method must be named in the STL style to work with STL functions and types such as
+    * std::back_inserter.
+    *
+    * @param in_value   The value to push onto the end of the JSON array.
+    */
+   void push_back(int in_value);
+
+   /**
+    * @brief Pushes the value onto the end of the JSON array.
+    *
+    * MAINTENANCE NOTE: This method must be named in the STL style to work with STL functions and types such as
+    * std::back_inserter.
+    *
+    * @param in_value   The value to push onto the end of the JSON array.
+    */
+   void push_back(int64_t in_value);
+
+   /**
+    * @brief Pushes the value onto the end of the JSON array.
+    *
+    * MAINTENANCE NOTE: This method must be named in the STL style to work with STL functions and types such as
+    * std::back_inserter.
+    *
+    * @param in_value   The value to push onto the end of the JSON array.
+    */
+   void push_back(const char* in_value);
+
+   /**
+    * @brief Pushes the value onto the end of the JSON array.
+    *
+    * MAINTENANCE NOTE: This method must be named in the STL style to work with STL functions and types such as
+    * std::back_inserter.
+    *
+    * @param in_value   The value to push onto the end of the JSON array.
+    */
+   void push_back(const std::string& in_value);
+
+   /**
+    * @brief Pushes the value onto the end of the JSON array.
+    *
+    * MAINTENANCE NOTE: This method must be named in the STL style to work with STL functions and types such as
+    * std::back_inserter.
+    *
+    * @param in_value   The value to push onto the end of the JSON array.
+    */
+   void push_back(unsigned int in_value);
+
+   /**
+    * @brief Pushes the value onto the end of the JSON array.
+    *
+    * MAINTENANCE NOTE: This method must be named in the STL style to work with STL functions and types such as
+    * std::back_inserter.
+    *
+    * @param in_value   The value to push onto the end of the JSON array.
+    */
+   void push_back(uint64_t in_value);
+
+   /**
+    * @brief Pushes the value onto the end of the JSON array.
+    *
+    * MAINTENANCE NOTE: This method must be named in the STL style to work with STL functions and types such as
+    * std::back_inserter.
+    *
+    * @param in_value   The value to push onto the end of the JSON array.
+    */
+   void push_back(const Array& in_value);
+
+   /**
+    * @brief Pushes the value onto the end of the JSON array.
+    *
+    * MAINTENANCE NOTE: This method must be named in the STL style to work with STL functions and types such as
+    * std::back_inserter.
+    *
+    * @param in_value   The value to push onto the end of the JSON array.
+    */
+   void push_back(const Object& in_value);
 
    /**
     * @brief Converts this JSON array to a set of strings.
@@ -1273,6 +1650,15 @@ private:
    friend class Value;
 };
 
+/**
+ * @brief Checks whether the specified JSON value is of the type specified in the template parameter.
+ *
+ * @tparam T            The type to check the JSON value against.
+ *
+ * @param in_value      The value of which to check the type.
+ *
+ * @return True if in_value is of type T; false otherwise.
+ */
 template <typename T>
 bool isType(const Value& in_value)
 { 
@@ -1307,6 +1693,26 @@ std::ostream& operator<<(std::ostream& io_ostream, Type in_type);
 
 namespace detail {
 
+/**
+ * @brief Struct which is either a child class of std::true_type or std::false_type depending on whether T is a JSON
+ *        type (e.g. Value, Object, Array) or not (e.g. int, bool, string, float, etc.).
+ *
+ * @tparam T    The type of the object for which to test the type.
+ */
+template <typename T>
+struct is_json_type : public std::is_base_of<Value, T>
+{
+};
+
+/**
+ * @brief Internal utility function. Gets the type of the object as a JSON type, if the object is a JSON type (e.g.
+ *        Value, Object, Array).
+ *
+ * @tparam T            The type of in_object.
+ * @param in_object     The object to get the type of.
+ *
+ * @return The JSON type of in_object.
+ */
 template <typename T>
 Type asJsonType(const T& in_object,
                std::true_type)
@@ -1314,6 +1720,15 @@ Type asJsonType(const T& in_object,
    return in_object.getType();
 }
 
+/**
+ * @brief Internal utility function. Gets the type of the object as a JSON type, if the object is not a JSON type (e.g.
+ *        int, bool, string, float, etc.).
+ *
+ * @tparam T            The type of in_object.
+ * @param in_object     The object to get the type of.
+ *
+ * @return The JSON type of in_object.
+ */
 template <typename T>
 Type asJsonType(const T& in_object,
                std::false_type)
@@ -1331,78 +1746,297 @@ Type asJsonType(const T& in_object,
    return Type::NULL_TYPE;
 }
 
+/**
+ * @brief Internal utility function. Converts a C/C++ value to a JSON value.
+ *
+ * @tparam T            The C/C++ type of the value to convert.
+ *
+ * @param in_value      The value to convert to a JSON value.
+ *
+ * @return The converted JSON value.
+ */
 template <typename T>
-struct is_json_type : public std::is_base_of<Value, T>
+inline Value toJsonValue(const T& in_value)
 {
-};
+   return Value(in_value);
+}
+
+/**
+ * @brief Internal utility function. Converts a vector value to a JSON array value.
+ *
+ * @tparam T            The C/C++ type of the vector elements.
+ *
+ * @param in_vector     The vector value to convert to a JSON array value.
+ *
+ * @return The converted JSON array value.
+ */
+template <typename T>
+inline Value toJsonValue(const std::vector<T>& in_vector)
+{
+   Array results;
+   for (const T& val : in_vector)
+   {
+      results.push_back(val);
+   }
+
+   return std::move(results);
+}
+
+/**
+ * @brief Internal utility function. Converts a set value to a JSON array value.
+ *
+ * @tparam T            The C/C++ type of the set elements.
+ *
+ * @param in_set        The set value to convert to a JSON array value.
+ *
+ * @return The converted JSON array value.
+ */
+template <typename T>
+inline Value toJsonValue(const std::set<T>& in_set)
+{
+   Array results;
+   for (const T& val : in_set)
+   {
+      results.push_back(val);
+   }
+
+   return std::move(results);
+}
 
 } // namespace detail
 
+/**
+ * @brief Gets the JSON type of the object.
+ *
+ * @tparam T            The C/C++ type of the object.
+ *
+ * @param in_object     The object for which to retrieve the type.
+ *
+ * @return The JSON type of the specified object.
+ */
 template <typename T>
-Type asJsonType(const T& object)
+Type asJsonType(const T& in_object)
 {
    return detail::asJsonType(
-            object,
-            detail::is_json_type<T>());
+      in_object,
+      detail::is_json_type<T>());
 }
 
-inline std::string typeAsString(const Value& value)
+/**
+ * @brief Gets the type of the JSON value as a string.
+ *
+ * @param in_value      The JSON value for which retrieve the type as a string.
+ *
+ * @return The type of the JSON value, as a string.
+ */
+inline std::string typeAsString(const Value& in_value)
 {
-   return typeAsString(value.getType());
+   return typeAsString(in_value.getType());
 }
 
-namespace detail {
-
+/**
+ * @brief Converts a C/C++ value to a JSON value.
+ *
+ * @tparam T            The C/C++ type of the value to convert.
+ *
+ * @param in_value      The value to convert to a JSON value.
+ *
+ * @return The converted JSON value.
+ */
 template <typename T>
-inline Value toJsonValue(const T& val)
+inline Value toJsonValue(const T& in_value)
 {
-   return Value(val);
+   return detail::toJsonValue(in_value);
 }
 
-template <typename T>
-inline Value toJsonValue(const boost::optional<T>& val)
-{
-   return val ? Value(*val) : Value();
-}
-
-} // namespace detail
-
-template <typename T>
-inline Value toJsonValue(const T& val)
-{
-   return detail::toJsonValue(val);
-}
-
-inline Value toJsonValue(const boost::optional<std::string>& val)
-{
-   return val ? Value(*val) : Value();
-}
-
-inline Value toJsonString(const std::string& val)
-{
-   return Value(val);
-}
-
+/**
+ * @brief Converts a vector value to a JSON array value.
+ *
+ * @tparam T            The C/C++ type of the vector elements.
+ *
+ * @param in_vector     The vector value to convert to a JSON array value.
+ *
+ * @return The converted JSON array value.
+ */
 template<typename T>
-Array toJsonArray(const std::vector<T>& vector)
+Array toJsonArray(const std::vector<T>& in_vector)
 {
-   Array results;
-   for (const T& val : vector)
-   {
-      results.push_back(Value(val));
-   }
-   return results;
+   return detail::toJsonValue(in_vector).getArray();
 }
 
+/**
+ * @brief Converts a set value to a JSON array value.
+ *
+ * @tparam T            The C/C++ type of the set elements.
+ *
+ * @param in_set        The set value to convert to a JSON array value.
+ *
+ * @return The converted JSON array value.
+ */
 template<typename T>
-Array toJsonArray(const std::set<T>& set)
+Array toJsonArray(const std::set<T>& in_set)
 {
-   Array results;
-   for (const T& val : set)
+   return detail::toJsonValue(in_set).getArray();
+}
+
+/**
+ * @enum JsonReadError
+ * @brief Errors which may occur while reading values from JSON objects.
+ */
+enum class JsonReadError
+{
+   SUCCESS = 0,
+   MISSING_MEMBER = 1,
+   INVALID_TYPE = 2,
+};
+
+/**
+ * @brief Creates a JSON read error.
+ *
+ * @param in_errorCode          The code of the error to create.
+ * @param in_message            The message of the error.
+ * @param in_errorLocation      The location at which the error occurred.
+ *
+ * @return The newly created JSON read error.
+ */
+Error jsonReadError(JsonReadError in_errorCode, const std::string& in_message, const ErrorLocation& in_errorLocation);
+
+/**
+ * @brief Checks whether the supplied error is a "missing memeber" error.
+ *
+ * @param in_error      The error to check.
+ *
+ * @return True if the error is a missing member error; False otherwise.
+ */
+bool isMissingMemberError(const Error& in_error);
+
+/**
+ * @brief Reads a member from an object.
+ *
+ * @tparam T            The type of the member.
+ *
+ * @param in_object     The object from which the member should be read.
+ * @param in_name       The name of the member to read.
+ * @param out_value     The value of the member, if no error occurs.
+ *
+ * @return Success if the member could be found and is of type T; Error otherwise.
+ */
+template <typename T>
+Error readObject(const Object& in_object, const std::string& in_name, T& out_value)
+{
+   Object::Iterator itr = in_object.find(in_name);
+   if ((itr == in_object.end()) || (*itr).getValue().isNull())
+      return jsonReadError(
+         JsonReadError::MISSING_MEMBER,
+         "Member " + in_name + " does not exist in the specified JSON object.",
+         ERROR_LOCATION);
+
+   if (!isType<T>((*itr).getValue()))
    {
-      results.push_back(Value(val));
+      std::ostringstream msgStream;
+      msgStream << "Member " << in_name << " has type " << (*itr).getValue().getType() <<
+                " which is not compatible with requested type " << typeid(T).name() << ".";
+      return jsonReadError(
+         JsonReadError::INVALID_TYPE,
+         msgStream.str(),
+         ERROR_LOCATION);
    }
-   return results;
+
+   out_value = (*itr).getValue().getValue<T>();
+   return Success();
+}
+
+/**
+ * @brief Reads an array member from an object.
+ *
+ * @tparam T            The type of values of the array member.
+ *
+ * @param in_object     The object from which the member should be read.
+ * @param in_name       The name of the member to read.
+ * @param out_values    The values of the array member, if no error occurs.
+ *
+ * @return Success if the member could be found and its values are of type T; Error otherwise.
+ */
+template <typename T>
+Error readObject(const Object& in_object, const std::string& in_name, std::vector<T>& out_values)
+{
+   Object::Iterator itr = in_object.find(in_name);
+   if ((itr == in_object.end()) || (*itr).getValue().isNull())
+      return jsonReadError(
+         JsonReadError::MISSING_MEMBER,
+         "Member " + in_name + " does not exist in the specified JSON object.",
+         ERROR_LOCATION);
+
+   if (!(*itr).getValue().isArray())
+      return jsonReadError(JsonReadError::INVALID_TYPE,
+                           "Member " + in_name + " is not an array.",
+                           ERROR_LOCATION);
+
+   Array array = (*itr).getValue().getArray();
+   for (size_t i = 0, n = array.getSize(); i < n; ++i)
+   {
+      const Value& value = array[i];
+      if (!isType<T>(value))
+      {
+         std::ostringstream msgStream;
+         msgStream << "Element " << i << " of member " + in_name << " is of type " <<  value.getType() <<
+                   " which is not compatible with the requested type " << typeid(T).name() << ".";
+         return jsonReadError(
+            JsonReadError::INVALID_TYPE,
+            msgStream.str(),
+            ERROR_LOCATION);
+      }
+
+      out_values.push_back(value.getValue<T>());
+   }
+
+   return Success();
+}
+
+/**
+ * @brief Reads multiple members from an object.
+ *
+ * @tparam T            The type of the first member to read.
+ * @tparam Args         The template parameter pack for the remaining members.
+ *
+ * @param in_object     The object from which to read the members.
+ * @param in_name       The name of the first member to be read.
+ * @param out_value     The value of the first member to be read, if no error occurs.
+ * @param io_args       The parameter pack of the remaining members to be read.
+ *
+ * @return Success if all the members exist and have valid types; Error otherwise.
+ */
+template <typename T, typename... Args>
+Error readObject(const Object& in_object, const std::string& in_name, T& out_value, Args&... io_args)
+{
+   Error error = readObject(in_object, in_name, out_value);
+   if (error)
+      return error;
+
+   return readObject(in_object, io_args...);
+}
+
+/**
+ * @brief Reads multiple members from an object.
+ *
+ * @tparam T            The type of the values of the first array member to read.
+ * @tparam Args         The template parameter pack for the remaining members.
+ *
+ * @param in_object     The object from which to read the members.
+ * @param in_name       The name of the first member to be read.
+ * @param out_values    The values of the first array member to be read, if no error occurs.
+ * @param io_args       The parameter pack of the remaining members to be read.
+ *
+ * @return Success if all the members exist and have valid types; Error otherwise.
+ */
+template <typename T, typename... Args>
+Error readObject(const Object& in_object, const std::string& in_name, std::vector<T>& out_values, Args&... io_args)
+{
+   Error error = readObject(in_object, in_name, out_values);
+   if (error)
+      return error;
+
+   return readObject(in_object, io_args...);
 }
 
 } // namespace json

@@ -26,15 +26,10 @@
 #include <algorithm>
 #include <fstream>
 
-#ifdef _WIN32
-#include <windows.h>
+#include <sys/stat.h>
+#include <sys/unistd.h>
 
-#include <boost/iostreams/stream.hpp>
-#include <boost/iostreams/device/file_descriptor.hpp>
-#include <boost/system/windows_error.hpp>
-
-#include <shared_core/system/Win32StringUtils.hpp>
-#endif
+#include <system/PosixSystem.hpp>
 
 #define BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/filesystem.hpp>
@@ -45,9 +40,11 @@
 #include <boost/bind.hpp>
 #include <boost/make_shared.hpp>
 
-#include <logging/Logger.hpp>
 #include <Error.hpp>
+#include <logging/Logger.hpp>
+#include <SafeConvert.hpp>
 #include <system/User.hpp>
+#include <utils/ErrorUtils.hpp>
 
 typedef boost::filesystem::path path_t;
 
@@ -66,131 +63,131 @@ struct MimeType
 
 // NOTE: should be synced with mime type database in FileSystemItem.java
 MimeType s_mimeTypes[] =
-{
-   // most common web types
-   { "htm",   "text/html" },
-   { "html",  "text/html" },
-   { "css",   "text/css" },
-   { "sass",  "text/sass" },
-   { "scss",  "text/scss" },
-   { "gif",   "image/gif" },
-   { "jpg",   "image/jpeg" },
-   { "jpeg",  "image/jpeg" },
-   { "jpe",   "image/jpeg" },
-   { "png",   "image/png" },
-   { "js",    "text/javascript" },
-   { "pdf",   "application/pdf" },
-   { "svg",   "image/svg+xml" },
-   { "swf",   "application/x-shockwave-flash" },
-   { "ttf",   "application/x-font-ttf" },
-   { "woff",  "application/font-woff" },
+   {
+      // most common web types
+      { "htm",          "text/html" },
+      { "html",         "text/html" },
+      { "css",          "text/css" },
+      { "sass",         "text/sass" },
+      { "scss",         "text/scss" },
+      { "gif",          "image/gif" },
+      { "jpg",          "image/jpeg" },
+      { "jpeg",         "image/jpeg" },
+      { "jpe",          "image/jpeg" },
+      { "png",          "image/png" },
+      { "js",           "text/javascript" },
+      { "pdf",          "application/pdf" },
+      { "svg",          "image/svg+xml" },
+      { "swf",          "application/x-shockwave-flash" },
+      { "ttf",          "application/x-font-ttf" },
+      { "woff",         "application/font-woff" },
 
-   // markdown types
-   { "md",       "text/x-markdown" },
-   { "mdtxt",    "text/x-markdown" },
-   { "markdown", "text/x-markdown" },
-   { "yaml",     "text/x-yaml" },
-   { "yml",      "text/x-yaml" },
+      // markdown types
+      { "md",           "text/x-markdown" },
+      { "mdtxt",        "text/x-markdown" },
+      { "markdown",     "text/x-markdown" },
+      { "yaml",         "text/x-yaml" },
+      { "yml",          "text/x-yaml" },
 
-   // programming language types
-   { "f",        "text/x-fortran" },
-   { "py",       "text/x-python" },
-   { "sh",       "text/x-shell" },
-   { "sql",      "text/x-sql" },
-   { "stan",     "text/x-stan" },
-   { "clj",      "text/x-clojure" },
+      // programming language types
+      { "f",            "text/x-fortran" },
+      { "py",           "text/x-python" },
+      { "sh",           "text/x-shell" },
+      { "sql",          "text/x-sql" },
+      { "stan",         "text/x-stan" },
+      { "clj",          "text/x-clojure" },
 
-   // other types we are likely to serve
-   { "xml",   "text/xml" },
-   { "csv",   "text/csv" },
-   { "ico",   "image/x-icon" },
-   { "zip",   "application/zip" },
-   { "bz",    "application/x-bzip" },
-   { "bz2",   "application/x-bzip2" },
-   { "gz",    "application/x-gzip" },
-   { "tar",   "application/x-tar" },
-   { "json",  "application/json" },
-   { "rstheme", "text/css" },
+      // other types we are likely to serve
+      { "xml",          "text/xml" },
+      { "csv",          "text/csv" },
+      { "ico",          "image/x-icon" },
+      { "zip",          "application/zip" },
+      { "bz",           "application/x-bzip" },
+      { "bz2",          "application/x-bzip2" },
+      { "gz",           "application/x-gzip" },
+      { "tar",          "application/x-tar" },
+      { "json",         "application/json" },
+      { "rstheme",      "text/css" },
 
-   // yet more types...
+      // yet more types...
 
-   { "shtml", "text/html" },
-   { "tsv",   "text/tab-separated-values" },
-   { "tab",   "text/tab-separated-values" },
-   { "dcf",   "text/debian-control-file" },
-   { "ini",   "text/plain" },
-   { "txt",   "text/plain" },
-   { "mml",   "text/mathml" },
-   { "log",   "text/plain" },
-   { "out",   "text/plain" },
-   { "csl",   "text/x-csl" },
-   { "R",     "text/x-r-source"},
-   { "S",     "text/x-r-source"},
-   { "q",     "text/x-r-source"},
-   { "Rd",    "text/x-r-doc"},
-   { "Rnw",   "text/x-r-sweave"},
-   { "Rmd",   "text/x-r-markdown"},
-   { "Rhtml", "text/x-r-html"},
-   { "Rpres", "text/x-r-presentation"},
-   { "Rout",  "text/plain" },
-   { "po",    "text/plain" },
-   { "pot",   "text/plain"},
-   { "rst",   "text/plain"},
-   { "gitignore", "text/plain"},
-   { "Rbuildignore", "text/plain"},
-   { "Rprofile", "text/x-r-source"},
-   { "Renviron", "text/x-shell" },
-   { "rprofvis",   "text/x-r-profile" },
+      { "shtml",        "text/html" },
+      { "tsv",          "text/tab-separated-values" },
+      { "tab",          "text/tab-separated-values" },
+      { "dcf",          "text/debian-control-file" },
+      { "ini",          "text/plain" },
+      { "txt",          "text/plain" },
+      { "mml",          "text/mathml" },
+      { "log",          "text/plain" },
+      { "out",          "text/plain" },
+      { "csl",          "text/x-csl" },
+      { "R",            "text/x-r-source" },
+      { "S",            "text/x-r-source" },
+      { "q",            "text/x-r-source" },
+      { "Rd",           "text/x-r-doc" },
+      { "Rnw",          "text/x-r-sweave" },
+      { "Rmd",          "text/x-r-markdown" },
+      { "Rhtml",        "text/x-r-html" },
+      { "Rpres",        "text/x-r-presentation" },
+      { "Rout",         "text/plain" },
+      { "po",           "text/plain" },
+      { "pot",          "text/plain" },
+      { "rst",          "text/plain" },
+      { "gitignore",    "text/plain" },
+      { "Rbuildignore", "text/plain" },
+      { "Rprofile",     "text/x-r-source" },
+      { "Renviron",     "text/x-shell" },
+      { "rprofvis",     "text/x-r-profile" },
 
-   { "tif",   "image/tiff" },
-   { "tiff",  "image/tiff" },
-   { "bmp",   "image/bmp"  },
-   { "ps",    "application/postscript" },
-   { "eps",   "application/postscript" },
-   { "dvi",    "application/x-dvi" },
+      { "tif",          "image/tiff" },
+      { "tiff",         "image/tiff" },
+      { "bmp",          "image/bmp" },
+      { "ps",           "application/postscript" },
+      { "eps",          "application/postscript" },
+      { "dvi",          "application/x-dvi" },
 
-   { "atom",  "application/atom+xml" },
-   { "rss",   "application/rss+xml" },
+      { "atom",         "application/atom+xml" },
+      { "rss",          "application/rss+xml" },
 
-   { "doc",   "application/msword" },
-   { "docx",  "application/vnd.openxmlformats-officedocument.wordprocessingml.document" },
-   { "odt",   "application/vnd.oasis.opendocument.text" },
-   { "rtf",   "application/rtf" },
-   { "xls",   "application/vnd.ms-excel" },
-   { "xlsx",  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" },
-   { "ods",   "application/x-vnd.oasis.opendocument.spreadsheet" },
-   { "ppt",   "application/vnd.ms-powerpoint" },
-   { "pps",   "application/vnd.ms-powerpoint" },
-   { "pptx",  "application/vnd.openxmlformats-officedocument.presentationml.presentation" },
+      { "doc",          "application/msword" },
+      { "docx",         "application/vnd.openxmlformats-officedocument.wordprocessingml.document" },
+      { "odt",          "application/vnd.oasis.opendocument.text" },
+      { "rtf",          "application/rtf" },
+      { "xls",          "application/vnd.ms-excel" },
+      { "xlsx",         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" },
+      { "ods",          "application/x-vnd.oasis.opendocument.spreadsheet" },
+      { "ppt",          "application/vnd.ms-powerpoint" },
+      { "pps",          "application/vnd.ms-powerpoint" },
+      { "pptx",         "application/vnd.openxmlformats-officedocument.presentationml.presentation" },
 
-   { "sit",   "application/x-stuffit" },
-   { "sxw",   "application/vnd.sun.xml.writer" },
+      { "sit",          "application/x-stuffit" },
+      { "sxw",          "application/vnd.sun.xml.writer" },
 
-   { "iso",   "application/octet-stream" },
-   { "dmg",   "application/octet-stream" },
-   { "exe",   "application/octet-stream" },
-   { "dll",   "application/octet-stream" },
-   { "deb",   "application/octet-stream" },
-   { "otf",   "application/octet-stream" },
-   { "xpi",   "application/x-xpinstall" },
+      { "iso",          "application/octet-stream" },
+      { "dmg",          "application/octet-stream" },
+      { "exe",          "application/octet-stream" },
+      { "dll",          "application/octet-stream" },
+      { "deb",          "application/octet-stream" },
+      { "otf",          "application/octet-stream" },
+      { "xpi",          "application/x-xpinstall" },
 
-   { "mp2",   "audio/mpeg" },
+      { "mp2",          "audio/mpeg" },
 
-   { "mpg",   "video/mpeg" },
-   { "mpeg",  "video/mpeg" },
-   { "flv",   "video/x-flv" },
+      { "mpg",          "video/mpeg" },
+      { "mpeg",         "video/mpeg" },
+      { "flv",          "video/x-flv" },
 
-   { "mp4",   "video/mp4" },
-   { "webm",  "video/webm" },
-   { "ogv",   "video/ogg" },
+      { "mp4",          "video/mp4" },
+      { "webm",         "video/webm" },
+      { "ogv",          "video/ogg" },
 
-   { "mp3",   "audio/mp3" },
-   { "wav",   "audio/wav" },
-   { "oga",   "audio/ogg" },
-   { "ogg",   "audio/ogg" },
+      { "mp3",          "audio/mp3" },
+      { "wav",          "audio/wav" },
+      { "oga",          "audio/ogg" },
+      { "ogg",          "audio/ogg" },
 
-   { nullptr, nullptr }
-};
+      { nullptr,        nullptr }
+   };
 
 const std::string s_homePathAlias = "~/";
 const std::string s_homePathLeafAlias = "~";
@@ -200,16 +197,7 @@ const std::string s_homePathLeafAlias = "~";
 //   because narrow character paths on Windows can't cover the entire
 //   Unicode space since there is no ANSI code page for UTF-8.
 // - On non-Windows, we use Filesystem v3.
-#ifdef _WIN32
-
-#define BOOST_FS_STRING(path) toString((path).generic_wstring())
-#define BOOST_FS_PATH2STR(path) toString((path).generic_wstring())
-#define BOOST_FS_PATH2STRNATIVE(path) toString((path).wstring())
-#define BOOST_FS_COMPLETE(p, base) boost::filesystem::absolute(fromString(p), base)
-typedef boost::filesystem::directory_iterator dir_iterator;
-typedef boost::filesystem::recursive_directory_iterator recursive_dir_iterator;
-
-#elif defined(BOOST_FILESYSTEM_VERSION) && BOOST_FILESYSTEM_VERSION != 2
+#if defined(BOOST_FILESYSTEM_VERSION) && BOOST_FILESYSTEM_VERSION != 2
 
 #define BOOST_FS_STRING(path) ((path).generic_string())
 #define BOOST_FS_PATH2STR(path) ((path).generic_string())
@@ -222,30 +210,6 @@ typedef boost::filesystem::recursive_directory_iterator recursive_dir_iterator;
 #error FilePath requires Filesystem v3
 #endif
 
-#ifdef _WIN32
-
-// For Windows only, we need to use the wide character versions of the file
-// APIs in order to deal properly with characters that cannot be represented
-// in the default system encoding. (It would be preferable if UTF-8 were the
-// system encoding, but Windows doesn't support that.) However, we can't give
-// FilePath a wide character API because Mac needs to use narrow characters
-// (see note below). So we use wstring internally, and translate to/from UTF-8
-// narrow strings that are used in the API.
-
-typedef std::wstring internal_string;
-
-std::string toString(const internal_string& value)
-{
-   return string_utils::wideToUtf8(value);
-}
-
-internal_string fromString(const std::string& value)
-{
-   return string_utils::utf8ToWide(value);
-}
-
-#else
-
 // We only support running with UTF-8 codeset on Mac and Linux, so
 // strings are a passthrough.
 
@@ -255,8 +219,6 @@ inline internal_string fromString(const std::string& in_value)
 {
    return in_value;
 }
-
-#endif
 
 void addErrorProperties(path_t path, Error* pError)
 {
@@ -268,6 +230,25 @@ bool addItemSize(const FilePath& item, boost::shared_ptr<uintmax_t> pTotal)
    if (!item.isDirectory())
       *pTotal = *pTotal + item.getSize();
    return true;
+}
+
+int octalStrToFileMode(const std::string& fileModeStr)
+{
+   return safe_convert::stringTo<int>(fileModeStr, 0666, std::oct);
+}
+
+inline Error changeFileModeImpl(const std::string& filePath, mode_t mode)
+{
+   // change the mode
+   errno = 0;
+   if (::chmod(filePath.c_str(), mode) < 0)
+   {
+      Error error = systemError(errno, ERROR_LOCATION);
+      error.addProperty("path", filePath);
+      return error;
+   }
+   else
+      return Success();
 }
 
 bool copySingleItem(const FilePath& from, const FilePath& to,
@@ -289,7 +270,7 @@ void logError(path_t path,
               const boost::filesystem::filesystem_error& e,
               const ErrorLocation& errorLocation)
 {
-   Error error(e.code(), errorLocation);
+   Error error = utils::createErrorFromBoostError(e.code(), errorLocation);
    addErrorProperties(path, &error);
    logging::logError(error, errorLocation);
 }
@@ -303,15 +284,27 @@ Error notFoundError(const FilePath& filePath,
    return error;
 }
 
-}
+} // anonymous namespace
 
 // FilePath ============================================================================================================
 struct FilePath::Impl
 {
+   /**
+    * @brief Default constructor.
+    */
    Impl() = default;
 
-   explicit Impl(path_t in_path) : Path(std::move(in_path)) { }
+   /**
+    * @brief Constructor.
+    *
+    * @param in_path    The underlying path of this FilePath.
+    */
+   explicit Impl(path_t in_path) :
+      Path(std::move(in_path))
+   {
+   }
 
+   /** The underlying path of this FilePath. */
    path_t Path;
 };
 
@@ -324,13 +317,6 @@ FilePath::FilePath(const std::string& in_absolutePath) :
    m_impl(new Impl(fromString(std::string(in_absolutePath.c_str())))) // thwart ref-count
 {
 }
-
-#ifdef _WIN32
-FilePath::FilePath(const std::wstring& absolutePath)
-   : m_impl(new Impl(absolutePath)) // thwart ref-count
-{
-}
-#endif
 
 bool FilePath::operator==(const FilePath& in_other) const
 {
@@ -436,16 +422,12 @@ FilePath FilePath::safeCurrentPath(const FilePath& in_revertToPath)
 {
    try
    {
-#ifdef _WIN32
-      return FilePath(boost::filesystem::current_path().wstring());
-#else
       return FilePath(boost::filesystem::current_path().string());
-#endif
    }
    catch(const boost::filesystem::filesystem_error& e)
    {
       if (e.code() != boost::system::errc::no_such_file_or_directory)
-         logging::logError(Error(e.code(), ERROR_LOCATION));
+         logging::logError(utils::createErrorFromBoostError(e.code(), ERROR_LOCATION));
    }
    CATCH_UNEXPECTED_EXCEPTION
 
@@ -478,7 +460,7 @@ Error FilePath::tempFilePath(const std::string& in_extension, FilePath& out_file
    }
    catch (const filesystem_error& e)
    {
-      return Error(e.code(), ERROR_LOCATION);
+      return utils::createErrorFromBoostError(e.code(), ERROR_LOCATION);
    }
 
    // keep compiler happy
@@ -504,11 +486,111 @@ Error FilePath::uniqueFilePath(const std::string& in_basePath, const std::string
    }
    catch(const filesystem_error& e)
    {
-      return Error(e.code(), ERROR_LOCATION);
+      return utils::createErrorFromBoostError(e.code(), ERROR_LOCATION);
    }
 
    // keep compiler happy
    return pathNotFoundError(ERROR_LOCATION);
+}
+
+Error FilePath::changeFileMode(const std::string& fileModeStr) const
+{
+   return changeFileModeImpl(getAbsolutePath(), octalStrToFileMode(fileModeStr));
+}
+
+Error FilePath::changeFileMode(FileMode in_fileMode, bool in_setStickyBit) const
+{
+   mode_t mode;
+   switch (in_fileMode)
+   {
+      case FileMode::USER_READ_WRITE:
+         mode = S_IRUSR | S_IWUSR;
+         break;
+
+      case FileMode::USER_READ_WRITE_EXECUTE:
+         mode = S_IRUSR | S_IWUSR | S_IXUSR;
+         break;
+
+      case FileMode::USER_READ_WRITE_GROUP_READ:
+         mode = S_IRUSR | S_IWUSR | S_IRGRP;
+         break;
+
+      case FileMode::USER_READ_WRITE_ALL_READ:
+         mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+         break;
+
+      case FileMode::USER_READ_WRITE_EXECUTE_ALL_READ_EXECUTE:
+         mode = S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH;
+         break;
+
+      case FileMode::ALL_READ:
+         mode = S_IRUSR | S_IRGRP | S_IROTH;
+         break;
+
+      case FileMode::ALL_READ_WRITE:
+         mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+         break;
+
+      case FileMode::ALL_READ_WRITE_EXECUTE:
+         mode = S_IRWXU | S_IRWXG | S_IRWXO;
+         break;
+
+      default:
+         return systemError(ENOTSUP, ERROR_LOCATION);
+   }
+
+   // check for sticky bit
+   if (in_setStickyBit)
+      mode |= S_ISVTX;
+
+   return changeFileModeImpl(getAbsolutePath(), mode);
+}
+
+Error FilePath::changeOwnership(
+   const system::User& in_newUser,
+   bool in_recursive,
+   const RecursiveIterationFunction& in_shouldChown) const
+{
+   // changes ownership of file to the server user
+   auto chown = [&](const std::string& in_absolutePath)
+   {
+      return launcher_plugins::system::posix::posixCall<int>(
+         boost::bind(::chown,
+                     in_absolutePath.c_str(),
+                     in_newUser.getUserId(),
+                     in_newUser.getGroupId()),
+         ERROR_LOCATION);
+   };
+
+   Error error = chown(getAbsolutePath());
+   if (error)
+   {
+      error.addProperty("path", getAbsolutePath());
+      return error;
+   }
+
+   if (!in_recursive)
+      return Success();
+
+   // recurse into subdirectories
+   if (isDirectory())
+   {
+      getChildrenRecursive([&](int depth, const FilePath& child)
+                                {
+                                   if (in_shouldChown && !in_shouldChown(depth, child))
+                                      return true;
+
+                                   error = chown(child.getAbsolutePath());
+                                   if (error)
+                                      error.addProperty("path", child.getAbsolutePath());
+
+                                   // if there was an error, stop iterating
+                                   return !error;
+                                });
+   }
+
+   return error;
+
 }
 
 // note: this differs from complete in the following ways:
@@ -561,7 +643,7 @@ Error FilePath::completeChildPath(const std::string& in_filePath, FilePath& out_
    {
       out_childPath = *this;
 
-      Error error(e.code(), ERROR_LOCATION);
+      Error error = utils::createErrorFromBoostError(e.code(), ERROR_LOCATION);
       addErrorProperties(m_impl->Path, &error);
       error.addProperty("path", in_filePath);
       return error;
@@ -585,7 +667,7 @@ FilePath FilePath::completePath(const std::string& in_filePath) const
    }
    catch(const boost::filesystem::filesystem_error& e)
    {
-      Error error(e.code(), ERROR_LOCATION);
+      Error error = utils::createErrorFromBoostError(e.code(), ERROR_LOCATION);
       addErrorProperties(m_impl->Path, &error);
       error.addProperty("path", in_filePath);
       logging::logError(error);
@@ -602,7 +684,7 @@ Error FilePath::copy(const FilePath& in_targetPath) const
    }
    catch(const boost::filesystem::filesystem_error& e)
    {
-      Error error(e.code(), ERROR_LOCATION);
+      Error error = utils::createErrorFromBoostError(e.code(), ERROR_LOCATION);
       addErrorProperties(m_impl->Path, &error);
       error.addProperty("target-path", in_targetPath.getAbsolutePath());
       return error;
@@ -632,7 +714,7 @@ Error FilePath::createDirectory(const std::string& in_filePath) const
    }
    catch(const boost::filesystem::filesystem_error& e)
    {
-      Error error(e.code(), ERROR_LOCATION);
+      Error error = utils::createErrorFromBoostError(e.code(), ERROR_LOCATION);
       addErrorProperties(m_impl->Path, &error);
       error.addProperty("target-dir", in_filePath);
       return error;
@@ -696,16 +778,6 @@ std::string FilePath::getAbsolutePathNative() const
       return BOOST_FS_PATH2STRNATIVE(m_impl->Path);
 }
 
-#ifdef _WIN32
-std::wstring FilePath::getAbsolutePathW() const
-{
-   if (isEmpty())
-      return std::wstring();
-   else
-      return m_impl->Path.wstring();
-}
-#endif
-
 std::string FilePath::getCanonicalPath() const
 {
    if (isEmpty())
@@ -733,7 +805,7 @@ Error FilePath::getChildren(std::vector<FilePath>& out_filePaths) const
    }
    catch(const boost::filesystem::filesystem_error& e)
    {
-      Error error(e.code(), ERROR_LOCATION);
+      Error error = utils::createErrorFromBoostError(e.code(), ERROR_LOCATION);
       addErrorProperties(m_impl->Path, &error);
       return error;
    }
@@ -764,7 +836,7 @@ Error FilePath::getChildrenRecursive(const RecursiveIterationFunction& in_iterat
    }
    catch(const boost::filesystem::filesystem_error& e)
    {
-      Error error(e.code(), ERROR_LOCATION);
+      Error error = utils::createErrorFromBoostError(e.code(), ERROR_LOCATION);
       addErrorProperties(m_impl->Path, &error);
       return error;
    }
@@ -778,6 +850,52 @@ std::string FilePath::getExtension() const
 std::string FilePath::getExtensionLowerCase() const
 {
    return boost::algorithm::to_lower_copy(getExtension());
+}
+
+Error FilePath::getFileMode(FileMode& out_fileMode) const
+{
+   struct stat st;
+   if (::stat(getAbsolutePath().c_str(), &st) == -1)
+   {
+      Error error = systemError(errno, ERROR_LOCATION);
+      error.addProperty("path", getAbsolutePath());
+      return error;
+   }
+
+   // extract the bits
+   std::string mode(9, '-');
+   if ( st.st_mode & S_IRUSR ) mode[0] = 'r';
+   if ( st.st_mode & S_IWUSR ) mode[1] = 'w';
+   if ( st.st_mode & S_IXUSR ) mode[2] = 'x';
+
+   if ( st.st_mode & S_IRGRP ) mode[3] = 'r';
+   if ( st.st_mode & S_IWGRP ) mode[4] = 'w';
+   if ( st.st_mode & S_IXGRP ) mode[5] = 'x';
+
+   if ( st.st_mode & S_IROTH ) mode[6] = 'r';
+   if ( st.st_mode & S_IWOTH ) mode[7] = 'w';
+   if ( st.st_mode & S_IXOTH ) mode[8] = 'x';
+
+   if (mode ==      "rw-------")
+      out_fileMode = FileMode::USER_READ_WRITE;
+   else if (mode == "rwx------")
+      out_fileMode = FileMode::USER_READ_WRITE_EXECUTE;
+   else if (mode == "rw-r-----")
+      out_fileMode = FileMode::USER_READ_WRITE_GROUP_READ;
+   else if (mode == "rw-r--r--")
+      out_fileMode = FileMode::USER_READ_WRITE_ALL_READ;
+   else if (mode == "r--r--r--")
+      out_fileMode = FileMode::ALL_READ;
+   else if (mode == "rw-rw-rw-")
+      out_fileMode = FileMode::ALL_READ_WRITE;
+   else if (mode == "rwxrwxrwx")
+      out_fileMode = FileMode::ALL_READ_WRITE_EXECUTE;
+   else if (mode == "rwxr-xr-x")
+      out_fileMode = FileMode::USER_READ_WRITE_EXECUTE_ALL_READ_EXECUTE;
+   else
+      return systemError(boost::system::errc::not_supported, ERROR_LOCATION);
+
+   return Success();
 }
 
 std::string FilePath::getFilename() const
@@ -836,7 +954,7 @@ FilePath FilePath::getParent() const
    }
    catch(const boost::filesystem::filesystem_error& e)
    {
-      Error error(e.code(), ERROR_LOCATION);
+      Error error = utils::createErrorFromBoostError(e.code(), ERROR_LOCATION);
       addErrorProperties(m_impl->Path, &error);
       logging::logError(error);
       return *this;
@@ -863,11 +981,7 @@ uintmax_t FilePath::getSize() const
    }
    catch(const boost::filesystem::filesystem_error& e)
    {
-#ifdef _WIN32
-      if (e.code().value() == ERROR_NOT_SUPPORTED)
-         return 0;
-#endif
-      Error err = Error(e.code(), ERROR_LOCATION);
+      Error err = utils::createErrorFromBoostError(e.code(), ERROR_LOCATION);
       err.addProperty("path", getAbsolutePath());
       logging::logError(err);
       return 0;
@@ -917,11 +1031,7 @@ bool FilePath::isDirectory() const
          return false;
       else
       {
-         return boost::filesystem::is_directory(m_impl->Path)
-#ifdef _WIN32
-            || isJunction()
-#endif
-            ;
+         return boost::filesystem::is_directory(m_impl->Path);
       }
    }
    catch(const boost::filesystem::filesystem_error& e)
@@ -948,7 +1058,7 @@ bool FilePath::isEquivalentTo(const FilePath& in_other) const
    }
    catch(const boost::filesystem::filesystem_error& e)
    {
-      Error error(e.code(), ERROR_LOCATION);
+      Error error = utils::createErrorFromBoostError(e.code(), ERROR_LOCATION);
       addErrorProperties(m_impl->Path, &error);
       error.addProperty("equivalent-to", in_other);
       return false;
@@ -960,30 +1070,26 @@ bool FilePath::isHidden() const
    return !getFilename().empty() && (getFilename()[0] == '.');
 }
 
-bool FilePath::isJunction() const
+Error FilePath::isReadable(bool &out_readable) const
 {
-#ifndef _WIN32
-   return false;
-#else
-   if (!exists())
-      return false;
-
-   const wchar_t* path = m_impl->Path.c_str();
-   DWORD fa = GetFileAttributesW(path);
-   if (fa == INVALID_FILE_ATTRIBUTES)
+   int result = ::access(getAbsolutePath().c_str(), R_OK);
+   if (result == 0)
    {
-      return false;
+      // user has access
+      out_readable = true;
    }
-   if (fa & FILE_ATTRIBUTE_REPARSE_POINT &&
-       fa & FILE_ATTRIBUTE_DIRECTORY)
+   else if (errno == EACCES)
    {
-      return true;
+      // this error is expected when the user doesn't have access to the path
+      out_readable = false;
    }
    else
    {
-      return false;
+      // some other error (unexpected)
+      return systemError(errno, ERROR_LOCATION);
    }
-#endif
+
+   return Success();
 }
 
 bool FilePath::isRegularFile() const
@@ -1049,6 +1155,22 @@ bool FilePath::isWithin(const FilePath& in_scopePath) const
    return true;
 }
 
+Error FilePath::isWriteable(bool &out_writeable) const
+{
+   int result = ::access(getAbsolutePath().c_str(), W_OK);
+   if (result == 0)
+   {
+      // user has access
+      out_writeable = true;
+   }
+   else if (errno == EACCES)
+      out_writeable = false;
+   else
+      return systemError(errno, ERROR_LOCATION);
+
+   return Success();
+}
+
 Error FilePath::makeCurrentPath(bool in_autoCreate) const
 {
    if (in_autoCreate)
@@ -1065,7 +1187,7 @@ Error FilePath::makeCurrentPath(bool in_autoCreate) const
    }
    catch(const boost::filesystem::filesystem_error& e)
    {
-      Error error(e.code(), ERROR_LOCATION);
+      Error error = utils::createErrorFromBoostError(e.code(), ERROR_LOCATION);
       addErrorProperties(m_impl->Path, &error);
       return error;
    }
@@ -1087,7 +1209,7 @@ Error FilePath::move(const FilePath& in_targetPath, MoveType in_type) const
          // device to another; in this case, fall back to copy/delete
          return moveIndirect(in_targetPath);
       }
-      Error error(e.code(), ERROR_LOCATION);
+      Error error= utils::createErrorFromBoostError(e.code(), ERROR_LOCATION);
       addErrorProperties(m_impl->Path, &error);
       error.addProperty("target-path", in_targetPath.getAbsolutePath());
       return error;
@@ -1118,30 +1240,10 @@ Error FilePath::moveIndirect(const FilePath& in_targetPath) const
 
 Error FilePath::openForRead(std::shared_ptr<std::istream>& out_stream) const
 {
+   std::istream* pResult = nullptr;
    try
    {
-      std::istream* pResult = nullptr;
-#ifdef _WIN32
-      using namespace boost::iostreams;
-      HANDLE hFile = ::CreateFileW(m_impl->Path.wstring().c_str(),
-                                   GENERIC_READ,
-                                   FILE_SHARE_READ,
-                                   nullptr,
-                                   OPEN_EXISTING,
-                                   0,
-                                   nullptr);
-      if (hFile == INVALID_HANDLE_VALUE)
-      {
-         Error error = LAST_SYSTEM_ERROR();
-         error.addProperty("path", getAbsolutePath());
-         return error;
-      }
-      boost::iostreams::file_descriptor_source fd;
-      fd.open(hFile, boost::iostreams::close_handle);
-      pResult = new boost::iostreams::stream<file_descriptor_source>(fd);
-#else
       pResult = new std::ifstream(getAbsolutePath().c_str(), std::ios_base::in | std::ios_base::binary);
-#endif
 
       // In case we were able to make the stream but it failed to open
       if (!(*pResult))
@@ -1156,6 +1258,8 @@ Error FilePath::openForRead(std::shared_ptr<std::istream>& out_stream) const
    }
    catch(const std::exception& e)
    {
+      delete pResult;
+
       Error error = systemError(boost::system::errc::io_error,
                                 ERROR_LOCATION);
       error.addProperty("what", e.what());
@@ -1169,28 +1273,9 @@ Error FilePath::openForRead(std::shared_ptr<std::istream>& out_stream) const
 
 Error FilePath::openForWrite(std::shared_ptr<std::ostream>& out_stream, bool in_truncate) const
 {
+   std::ostream* pResult = nullptr;
    try
    {
-      std::ostream* pResult = nullptr;
-#ifdef _WIN32
-      using namespace boost::iostreams;
-      HANDLE hFile = ::CreateFileW(m_impl->Path.wstring().c_str(),
-                                   in_truncate ? GENERIC_WRITE : FILE_APPEND_DATA,
-                                   0, // exclusive access
-                                   nullptr,
-                                   in_truncate ? CREATE_ALWAYS : OPEN_ALWAYS,
-                                   0,
-                                   nullptr);
-      if (hFile == INVALID_HANDLE_VALUE)
-      {
-         Error error = LAST_SYSTEM_ERROR();
-         error.addProperty("path", getAbsolutePath());
-         return error;
-      }
-      file_descriptor_sink fd;
-      fd.open(hFile, close_handle);
-      pResult = new boost::iostreams::stream<file_descriptor_sink>(fd);
-#else
       using std::ios_base;
       ios_base::openmode flags = ios_base::out | ios_base::binary;
       if (in_truncate)
@@ -1198,7 +1283,6 @@ Error FilePath::openForWrite(std::shared_ptr<std::ostream>& out_stream, bool in_
       else
          flags |= ios_base::app;
       pResult = new std::ofstream(getAbsolutePath().c_str(), flags);
-#endif
 
       if (!(*pResult))
       {
@@ -1213,6 +1297,7 @@ Error FilePath::openForWrite(std::shared_ptr<std::ostream>& out_stream, bool in_
    }
    catch(const std::exception& e)
    {
+      delete pResult;
       Error error = systemError(boost::system::errc::io_error,
                                 ERROR_LOCATION);
       error.addProperty("what", e.what());
@@ -1235,7 +1320,7 @@ Error FilePath::remove() const
    }
    catch(const boost::filesystem::filesystem_error& e)
    {
-      Error error(e.code(), ERROR_LOCATION);
+      Error error = utils::createErrorFromBoostError(e.code(), ERROR_LOCATION);
       addErrorProperties(m_impl->Path, &error);
       return error;
    }
@@ -1288,6 +1373,39 @@ void FilePath::setLastWriteTime(std::time_t in_time) const
       logError(m_impl->Path, e, ERROR_LOCATION);
       return;
    }
+}
+
+Error FilePath::testWritePermissions() const
+{
+   std::ostream* pStream = nullptr;
+   try
+   {
+      using std::ios_base;
+      ios_base::openmode flags = ios_base::in | ios_base::out | ios_base::binary;
+      pStream = new std::ofstream(getAbsolutePath().c_str(), flags);
+
+      if (!(*pStream))
+      {
+         delete pStream;
+
+         Error error = systemError(boost::system::errc::no_such_file_or_directory, ERROR_LOCATION);
+         error.addProperty("path", getAbsolutePath());
+         return error;
+      }
+   }
+   catch(const std::exception& e)
+   {
+      delete pStream;
+
+      Error error = systemError(boost::system::errc::io_error,
+                                ERROR_LOCATION);
+      error.addProperty("what", e.what());
+      error.addProperty("path", getAbsolutePath());
+      return error;
+   }
+
+   delete pStream;
+   return Success();
 }
 
 // PathScope Classes ===================================================================================================
@@ -1355,11 +1473,7 @@ std::ostream& operator<<(std::ostream& io_stream, const FilePath& in_filePath)
 
 Error fileExistsError(const ErrorLocation& in_location)
 {
-#ifdef _WIN32
-   return systemError(boost::system::windows_error::file_exists, in_location);
-#else
    return systemError(boost::system::errc::file_exists, in_location);
-#endif
 }
 
 Error fileExistsError(const FilePath& in_filePath, const ErrorLocation& in_location)
@@ -1371,20 +1485,12 @@ Error fileExistsError(const FilePath& in_filePath, const ErrorLocation& in_locat
 
 bool isFileNotFoundError(const Error& in_error)
 {
-#ifdef _WIN32
-   return in_error == boost::system::windows_error::file_not_found;
-#else
    return in_error == systemError(boost::system::errc::no_such_file_or_directory, ErrorLocation());
-#endif
 }
 
 Error fileNotFoundError(const ErrorLocation& in_location)
 {
-#ifdef _WIN32
-   return systemError(boost::system::windows_error::file_not_found, in_location);
-#else
    return systemError(boost::system::errc::no_such_file_or_directory, in_location);
-#endif
 }
 
 Error fileNotFoundError(const std::string& in_filePath, const ErrorLocation& in_location)
@@ -1403,20 +1509,12 @@ Error fileNotFoundError(const FilePath& in_filePath, const ErrorLocation& in_loc
 
 bool isPathNotFoundError(const Error& in_error)
 {
-#ifdef _WIN32
-   return in_error == boost::system::windows_error::path_not_found;
-#else
    return in_error == systemError(boost::system::errc::no_such_file_or_directory, ErrorLocation());
-#endif
 }
 
 Error pathNotFoundError(const ErrorLocation& in_location)
 {
-#ifdef _WIN32
-   return systemError(boost::system::windows_error::path_not_found, in_location);
-#else
    return systemError(boost::system::errc::no_such_file_or_directory, in_location);
-#endif
 }
 
 Error pathNotFoundError(const std::string& in_path, const ErrorLocation& in_location)
@@ -1428,12 +1526,7 @@ Error pathNotFoundError(const std::string& in_path, const ErrorLocation& in_loca
 
 bool isNotFoundError(const Error& in_error)
 {
-#ifdef _WIN32
-   return in_error == boost::system::windows_error::file_not_found ||
-          in_error == boost::system::windows_error::path_not_found;
-#else
    return in_error == systemError(boost::system::errc::no_such_file_or_directory, ErrorLocation());
-#endif
 }
 
 } // namespace system

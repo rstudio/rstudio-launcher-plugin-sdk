@@ -23,14 +23,12 @@
 
 #include <ostream>
 
+#include <boost/system/error_code.hpp>
+
 #include <Error.hpp>
 #include <system/FilePath.hpp>
 #include <logging/Logger.hpp>
 #include <SafeConvert.hpp>
-
-#ifdef _WIN32
-#include <boost/system/windows_error.hpp>
-#endif
 
 using namespace rstudio::launcher_plugins::system;
 
@@ -39,8 +37,8 @@ namespace launcher_plugins {
 
 namespace {
 
-const std::string s_errorExpected = "expected";
-const std::string s_errorExpectedValue = "yes";
+constexpr const char* s_errorExpected = "expected";
+constexpr const char* s_errorExpectedValue = "yes";
 
 constexpr const char* s_occurredAt = "OCCURRED AT";
 constexpr const char* s_causedBy = "CAUSED BY";
@@ -192,52 +190,28 @@ Error::Error(const Error& in_other) :
 {
 }
 
-Error::Error(const boost::system::error_code& in_ec, const ErrorLocation& in_location) :
-   m_impl(new Impl(in_ec.value(), in_ec.category().name(), in_ec.message(), in_location))
-{
-}
-
-Error::Error(const boost::system::error_code& in_ec, const Error& in_cause, const ErrorLocation& in_location) :
-   m_impl(new Impl(in_ec.value(), in_ec.category().name(), in_ec.message(), in_cause, in_location))
-{
-}
-
-Error::Error(const boost::system::error_code& in_ec, std::string in_message, const ErrorLocation& in_location) :
-   m_impl(new Impl(in_ec.value(), in_ec.category().name(), std::move(in_message), in_location))
-{
-}
-
-Error::Error(
-   const boost::system::error_code& in_ec,
-   std::string in_message,
-   const Error& in_cause,
-   const ErrorLocation& in_location) :
-      m_impl(new Impl(in_ec.value(), in_ec.category().name(), std::move(in_message), in_cause, in_location))
-{
-}
-
-Error::Error(int in_code, std::string in_name, const ErrorLocation& in_location) :
+Error::Error(std::string in_name, int in_code, const ErrorLocation& in_location) :
    m_impl(new Impl(in_code, std::move(in_name), in_location))
 {
 }
 
-Error::Error(int in_code, std::string in_name, const Error& in_cause, const ErrorLocation& in_location) :
+Error::Error(std::string in_name, int in_code, const Error& in_cause, const ErrorLocation& in_location) :
    m_impl(new Impl(in_code, std::move(in_name), in_cause, in_location))
 {
 }
 
-Error::Error(int in_code, std::string in_name, std::string in_message, const ErrorLocation& in_location) :
+Error::Error(std::string in_name, int in_code, std::string in_message, const ErrorLocation& in_location) :
    m_impl(new Impl(in_code, std::move(in_name), std::move(in_message), in_location))
 {
 }
 
 Error::Error(
-   int in_code,
    std::string in_name,
+   int in_code,
    std::string in_message,
    const Error& in_cause,
    const ErrorLocation& in_location) :
-      m_impl(new Impl(in_code, std::move(in_name), std::move(in_message), in_cause, in_location))
+   m_impl(new Impl(in_code, std::move(in_name), std::move(in_message), in_cause, in_location))
 {
 }
 
@@ -260,21 +234,9 @@ bool Error::operator==(const Error& in_other) const
    return (m_impl->Code == in_other.m_impl->Code) && (m_impl->Name == in_other.m_impl->Name);
 }
 
-bool Error::operator==(const boost::system::error_code& in_ec) const
-{
-   if ((m_impl == nullptr) || (m_impl->Code == 0))
-      return in_ec.value() == 0;
-   return (m_impl->Code == in_ec.value()) && (m_impl->Name == in_ec.category().name());
-}
-
 bool Error::operator!=(const rstudio::launcher_plugins::Error& in_other) const
 {
    return !(*this == in_other);
-}
-
-bool Error::operator!=(const boost::system::error_code& in_ec) const
-{
-   return !(*this == in_ec);
 }
 
 void Error::addOrUpdateProperty(const std::string& in_name, const std::string& in_value)
@@ -374,12 +336,12 @@ const std::string& Error::getName() const
 {
    return impl().Name;
 }
-   
+
 const ErrorProperties& Error::getProperties() const
 {
    return impl().Properties;
 }
-   
+
 std::string Error::getProperty(const std::string& in_name) const
 {
    for (const auto & it : getProperties())
@@ -387,7 +349,7 @@ std::string Error::getProperty(const std::string& in_name) const
       if (it.first == in_name)
          return it.second;
    }
-   
+
    return std::string();
 }
 
@@ -439,16 +401,15 @@ std::ostream& operator<<(std::ostream& io_ostream, const Error& in_error)
 // Common error creation functions =====================================================================================
 Error systemError(int in_value, const ErrorLocation& in_location)
 {
-   using namespace boost::system ;
-   return Error(error_code(in_value, system_category()), in_location);
+   boost::system::error_code ec(in_value, boost::system::system_category());
+   return Error("SystemError", in_value, ec.message(), in_location);
 }
 
 Error systemError(int in_value,
                   const Error& in_cause,
                   const ErrorLocation& in_location)
 {
-   using namespace boost::system ;
-   return Error(error_code(in_value, system_category()), in_cause, in_location);
+   return Error("SystemError", in_value, in_cause, in_location);
 }
 
 Error systemError(int in_value,
@@ -460,11 +421,21 @@ Error systemError(int in_value,
    return error;
 }
 
+Error systemError(int in_value,
+                  const std::string& in_description,
+                  const Error& in_cause,
+                  const ErrorLocation& in_location)
+{
+   Error error = systemError(in_value, in_cause, in_location);
+   error.addProperty("description", in_description);
+   return error;
+}
+
 Error unknownError(const std::string& in_message, const ErrorLocation&  in_location)
 {
    return Error(
-      1,
       "UnknownError",
+      1,
       in_message,
       in_location);
 }
@@ -472,8 +443,8 @@ Error unknownError(const std::string& in_message, const ErrorLocation&  in_locat
 Error unknownError(const std::string& in_message, const Error& in_cause, const ErrorLocation& in_location)
 {
    return Error(
-      1,
       "UnknownError",
+      1,
       in_message,
       in_cause,
       in_location);

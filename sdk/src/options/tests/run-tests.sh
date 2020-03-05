@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #
-# options-tests
+# run-tests
 #
 # Copyright (C) 2019-20 by RStudio, PBC
 #
@@ -27,7 +27,7 @@
 FAILURES=0
 
 # Create the rstudio-server user, if it does not already exist
-cat /etc/passwd | grep rstudio-server >/dev/null
+grep rstudio-server < /etc/passwd >/dev/null
 ADD_USER=$?
 if [[ $ADD_USER -ne 0 ]]; then
   sudo adduser --system rstudio-server
@@ -37,7 +37,7 @@ for test in ./*-tests;
 do
   echo "Running ${test}..."
   ${test}
-  FAILURES=$(expr $FAILURES + $?)
+  FAILURES=$((FAILURES + $?))
 done
 
 # Remove the user if it was added by this script

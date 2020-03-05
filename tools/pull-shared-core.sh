@@ -28,46 +28,87 @@ set -e # exit on failed commands.
 
 # Get the optional branch parameter
 BRANCH="master"
-if [[ ! -z $1 ]]; then
+if [[ -n $1 ]]; then
     BRANCH=$1
 fi
 
-ROOT_DIR='..'
-if [[ ${PWD##*/} == "tools" ]]; then
-    ROOT_DIR="${ROOT_DIR}/.."
-fi
+ROOT_DIR="$(readlink -e "$(dirname "${BASH_SOURCE[0]}")/..")"
 
-SRC_INCLUDE="src/cpp/shared_core/include/shared_core"
-SRC_SRC="src/cpp/shared_core"
+SRC_INCLUDE="temp/rstudio-clone/src/cpp/shared_core/include/shared_core"
+SRC_SRC="temp/rstudio-clone/src/cpp/shared_core"
 DEST_INCLUDE="${ROOT_DIR}/sdk/include"
 DEST_SRC="${ROOT_DIR}/sdk/src"
 
 # Clone the RStudio repo.
-if [[ -d rstudio-clone ]]; then
-    cd rstudio-clone
-    git status
-    if [[ $? -ne 0 ]]; then
-        cd ..
-        git clone --branch $BRANCH --origin origin --progress -v https://github.com/rstudio/rstudio.git rstudio-clone
-        cd rstudio-clone
-    else
-        git checkout $BRANCH
-        git pull
-    fi
+cd "${ROOT_DIR}/.."
+mkdir -p temp/rstudio-clone
+pushd temp/rstudio-clone
+
+if git status; then
+    git checkout "$BRANCH"
+    git pull
 else
-    mkdir rstudio-clone
-    git clone --branch $BRANCH --origin origin --progress -v https://github.com/rstudio/rstudio.git rstudio-clone
-    cd rstudio-clone
+    git clone --branch "$BRANCH" --origin origin --progress -v https://github.com/rstudio/rstudio.git ./
 fi
+
+# leave temp/rstudio-clone
+popd
 
 # Copy the files we want.
 # These arrays need to have the same length and order (e.g. index of source Json.hpp == index of destination Json.hpp). We're not using maps because Bash 3 doesn't support them.
-SRC_INCLUDES=( "Error.hpp" "PImpl.hpp" "json/Json.hpp" "ILogDestination.hpp" "FileLogDestination.hpp" "Logger.hpp" "DateTime.hpp" "FilePath.hpp" "system/User.hpp" )
-DEST_INCLUDES=( "Error.hpp" "PImpl.hpp" "json/Json.hpp" "logging/ILogDestination.hpp" "logging/FileLogDestination.hpp" "logging/Logger.hpp" "system/DateTime.hpp" "system/FilePath.hpp" "system/User.hpp")
+SRC_INCLUDES=(
+  "Error.hpp"                         #  1
+  "PImpl.hpp"                         #  2
+  "json/Json.hpp"                     #  3
+  "ILogDestination.hpp"               #  4
+  "FileLogDestination.hpp"            #  5
+  "Logger.hpp"                        #  6
+  "DateTime.hpp"                      #  7
+  "FilePath.hpp"                      #  8
+  "system/User.hpp"                   #  9
+  "system/PosixSystem.hpp")           # 10
+DEST_INCLUDES=(
+  "Error.hpp"                         #  1
+  "PImpl.hpp"                         #  2
+  "json/Json.hpp"                     #  3
+  "logging/ILogDestination.hpp"       #  4
+  "logging/FileLogDestination.hpp"    #  5
+  "logging/Logger.hpp"                #  6
+  "system/DateTime.hpp"               #  7
+  "system/FilePath.hpp"               #  8
+  "system/User.hpp"                   #  9
+  "system/PosixSystem.hpp")           # 10
 
-SRC_SOURCES=( "Error.cpp" "SafeConvert.hpp" "json/Json.cpp" "FileLogDestination.cpp" "Logger.cpp" "StderrLogDestination.hpp" "StderrLogDestination.cpp" "system/SyslogDestination.hpp" "system/SyslogDestination.cpp" "FilePath.cpp" "ReaderWriterMutex.hpp" "ReaderWriterMutex.cpp" "system/User.cpp" )
-DEST_SOURCES=( "Error.cpp" "SafeConvert.hpp" "json/Json.cpp" "logging/FileLogDestination.cpp" "logging/Logger.cpp" "logging/StderrLogDestination.hpp" "logging/StderrLogDestination.cpp" "logging/SyslogDestination.hpp" "logging/SyslogDestination.cpp" "system/FilePath.cpp" "system/ReaderWriterMutex.hpp" "system/ReaderWriterMutex.cpp" "system/User.cpp" )
-
+SRC_SOURCES=(
+  "Error.cpp"                         #  1
+  "SafeConvert.hpp"                   #  2
+  "json/Json.cpp"                     #  3
+  "FileLogDestination.cpp"            #  4
+  "Logger.cpp"                        #  5
+  "StderrLogDestination.hpp"          #  6
+  "StderrLogDestination.cpp"          #  7
+  "system/SyslogDestination.hpp"      #  8
+  "system/SyslogDestination.cpp"      #  9
+  "FilePath.cpp"                      # 10
+  "ReaderWriterMutex.hpp"             # 11
+  "ReaderWriterMutex.cpp"             # 12
+  "system/User.cpp"                   # 13
+  "system/PosixSystem.cpp")           # 14
+DEST_SOURCES=(
+  "Error.cpp"                         #  1
+  "SafeConvert.hpp"                   #  2
+  "json/Json.cpp"                     #  3
+  "logging/FileLogDestination.cpp"    #  4
+  "logging/Logger.cpp"                #  5
+  "logging/StderrLogDestination.hpp"  #  6
+  "logging/StderrLogDestination.cpp"  #  7
+  "logging/SyslogDestination.hpp"     #  8
+  "logging/SyslogDestination.cpp"     #  9
+  "system/FilePath.cpp"               # 10
+  "system/ReaderWriterMutex.hpp"      # 11
+  "system/ReaderWriterMutex.cpp"      # 12
+  "system/User.cpp"                   # 13
+  "system/PosixSystem.cpp")           # 14
 
 replace()
 {
@@ -84,7 +125,7 @@ replace()
 
     if [[ ! -s "$DEST" ]]; then
         echo "No output written for 'replace $DEST $2 $3'"
-        exit $?
+        exit $ERR
     fi
 }
 
@@ -93,9 +134,8 @@ copyFile()
     local SRC=$1
     local DEST=$2
 
-    cp -f "$SRC" "$DEST"
-
     echo "Copying $SRC to $DEST..."
+    cp -f "$SRC" "$DEST"
 
     # Fix namespaces and header guards
     replace "$DEST" 'namespace\s*core' 'namespace launcher_plugins'
@@ -105,23 +145,31 @@ copyFile()
     replace "$DEST" 'log::' 'logging::'
     replace "$DEST" "RSTUDIO_BOOST_NAMESPACE" "boost"
     replace "$DEST" "thread::" "system::"
+    replace "$DEST" "#include <boost/noncopyable.hpp>" "#include <Noncopyable.hpp>"
+    replace "$DEST" "boost::noncopyable" "Noncopyable"
 
     # Fix includes
-    for I in ${!SRC_INCLUDES[@]}; do
+    for I in "${!SRC_INCLUDES[@]}"; do
         replace "$DEST" "#include <shared_core/${SRC_INCLUDES[$I]}>" "#include <${DEST_INCLUDES[$I]}>"
         replace "$DEST" "#include \"${SRC_INCLUDES[$I]}\"" "#include <${DEST_INCLUDES[$I]}>"
     done
 
     # There are some private headers in SRC_SOURCES.
-    for I in ${!SRC_SOURCES[@]}; do
+    for I in "${!SRC_SOURCES[@]}"; do
         replace "$DEST" "#include <shared_core/${SRC_SOURCES[$I]}>" "#include <${DEST_SOURCES[$I]}>"
         replace "$DEST" "#include \"${SRC_SOURCES[$I]}\"" "#include <${DEST_SOURCES[$I]}>"
     done
 }
 
-for I in ${!SRC_INCLUDES[@]}; do
+for I in "${!SRC_INCLUDES[@]}"; do
     SRC_FILE=${SRC_INCLUDES[$I]}
     DEST_PATH="$DEST_INCLUDE/${DEST_INCLUDES[$I]}"
+
+    # Make DateTime private in the SDK.
+    if [[ "$SRC_FILE" == "DateTime.hpp" || "$SRC_FILE" == "system/PosixSystem.hpp" ]]; then
+      DEST_PATH="$DEST_SRC/${DEST_INCLUDES[$I]}"
+    fi
+
     copyFile "$SRC_INCLUDE/$SRC_FILE" "$DEST_PATH"
 
     # Special cases
@@ -143,9 +191,11 @@ for I in ${!SRC_INCLUDES[@]}; do
         replace "$DEST_PATH" "class\s*FilePath;\n\n" "\nnamespace system \{\n\nclass FilePath;\n\n\} // namespace system\n"
     fi
 
+    # This will give a compile error so functions using boost::optional can be removed in public files.
+    replace "$DEST_PATH" "#include\s*<boost/optional.hpp>\n" ""
 done
 
-for I in ${!SRC_SOURCES[@]}; do
+for I in "${!SRC_SOURCES[@]}"; do
     SRC_FILE="${SRC_SOURCES[$I]}"
     DEST_PATH="$DEST_SRC/${DEST_SOURCES[$I]}"
 
@@ -183,6 +233,7 @@ for I in ${!SRC_SOURCES[@]}; do
     fi
 
     if [[ "$SRC_FILE" == "Logger.cpp" ]]; then
+        replace "$DEST_PATH" "<system/DateTime.hpp>" "\"../system/DateTime.hpp\""
         replace "$DEST_PATH" "<system/ReaderWriterMutex.hpp>" "\"../system/ReaderWriterMutex.hpp\""
     fi
 
@@ -196,10 +247,9 @@ for I in ${!SRC_SOURCES[@]}; do
 done
 
 echo "Copying rapidjson library..."
-if [[ -e ../sdk/src/json/rapidjson ]]; then
-    sudo rm -r ../sdk/src/json/rapidjson
+if [[ -e "${ROOT_DIR}/sdk/src/json/rapidjson" ]]; then
+    sudo rm -r "${ROOT_DIR}/sdk/src/json/rapidjson"
 fi
-cp -r src/cpp/shared_core/include/shared_core/json/rapidjson ../sdk/src/json/rapidjson
+cp -r temp/rstudio-clone/src/cpp/shared_core/include/shared_core/json/rapidjson "${ROOT_DIR}/sdk/src/json/rapidjson"
 
-cd ..
-sudo rm -r rstudio-clone/
+sudo rm -r temp/

@@ -18,7 +18,7 @@
  *
  */
 
-#include "options/Options.hpp"
+#include <options/Options.hpp>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem/operations.hpp>
@@ -27,9 +27,9 @@
 #include <boost/program_options/variables_map.hpp>
 #include <boost/thread.hpp>
 
-#include "logging/Logger.hpp"
-#include "system/FilePath.hpp"
-#include "system/User.hpp"
+#include <logging/Logger.hpp>
+#include <system/FilePath.hpp>
+#include <system/User.hpp>
 
 using namespace boost::program_options;
 
@@ -163,19 +163,19 @@ Error optionsError(OptionsError in_errorCode, const std::string& in_message, Err
    switch(in_errorCode)
    {
       case OptionsError::PARSE_ERROR:
-         return Error(static_cast<int>(in_errorCode), "ParseError", in_message, std::move(in_errorLocation));
+         return Error("ParseError", static_cast<int>(in_errorCode), in_message, std::move(in_errorLocation));
       case OptionsError::UNREGISTERED_OPTION:
-         return Error(static_cast<int>(in_errorCode), "UnregisteredOption", in_message, std::move(in_errorLocation));
+         return Error("UnregisteredOption", static_cast<int>(in_errorCode), in_message, std::move(in_errorLocation));
       case OptionsError::READ_FAILURE:
-         return Error(static_cast<int>(in_errorCode), "OptionReadError", in_message, std::move(in_errorLocation));
+         return Error("OptionReadError", static_cast<int>(in_errorCode), in_message, std::move(in_errorLocation));
       case OptionsError::MISSING_REQUIRED_OPTION:
-         return Error(static_cast<int>(in_errorCode),  "MissingRequiredOption", in_message, std::move(in_errorLocation));
+         return Error("MissingRequiredOption", static_cast<int>(in_errorCode), in_message, std::move(in_errorLocation));
       case OptionsError::SUCCESS:
          return Success();
       default:
       {
          assert(false);
-         return Error(static_cast<int>(in_errorCode), "UnrecognizedError", in_message, std::move(in_errorLocation));
+         return Error("UnrecognizedError", static_cast<int>(in_errorCode), in_message, std::move(in_errorLocation));
       }
    }
 }
@@ -296,6 +296,9 @@ struct Options::Impl
             ("log-level",
                value<logging::LogLevel>(&MaxLogLevel)->default_value(logging::LogLevel::WARN),
                "the maximum level of log messages to write")
+            ("max-message-size",
+               value<size_t>(&MaxMessageSize)->default_value(5242880),
+               "the maximum size of a message which can be sent to or received from the RStudio Launcher")
             ("scratch-path",
                value<system::FilePath>(&ScratchPath)->default_value(
                   system::FilePath("/var/lib/rstudio-launcher/")),
@@ -304,8 +307,8 @@ struct Options::Impl
                value<std::string>(&ServerUser)->default_value("rstudio-server"),
                "user to run the plugin as")
             ("thread-pool-size",
-               value<unsigned int>(&ThreadPoolSize)->default_value(
-                  std::max<unsigned int>(4, boost::thread::hardware_concurrency())),
+               value<size_t>(&ThreadPoolSize)->default_value(
+                  std::max<size_t>(4, boost::thread::hardware_concurrency())),
                "the number of threads in the thread pool");
 
          IsInitialized = true;
@@ -327,9 +330,10 @@ struct Options::Impl
    unsigned int HeartbeatIntervalSeconds;
    system::FilePath LauncherConfigFile;
    logging::LogLevel MaxLogLevel;
+   size_t MaxMessageSize;
    system::FilePath ScratchPath;
    std::string ServerUser;
-   unsigned int ThreadPoolSize;
+   size_t ThreadPoolSize;
 
 };
 
@@ -381,38 +385,33 @@ Error Options::readOptions(int in_argc, const char* const in_argv[], const syste
          ERROR_LOCATION);
    }
 
-   if (!in_location.exists())
-   {
-      return systemError(
-         boost::system::errc::no_such_file_or_directory,
-         "Configuration file does not exist: " + in_location.getAbsolutePath(),
-         ERROR_LOCATION);
-   }
-
    try
    {
-      // The configuration file overrides command line options, so parse the config file first.
       variables_map vm;
-      std::shared_ptr<std::istream> inputStream;
-      Error error = in_location.openForRead(inputStream);
-      if (error)
-         return error;
-
       std::vector<std::string> unrecognizedFileOpts;
-      try
+      if (in_location.exists())
       {
-         parsed_options parsed = parse_config_file(*inputStream, m_impl->OptionsDescription, true);
-         store(parsed, vm);
-         notify(vm);
+         // The configuration file overrides command line options, so parse the config file first.
+         std::shared_ptr<std::istream> inputStream;
+         Error error = in_location.openForRead(inputStream);
+         if (error)
+            return error;
 
-         collectUnrecognizedOptions(vm, parsed, unrecognizedFileOpts);
-      }
-      catch (const std::exception& e)
-      {
-         return optionsError(
-            OptionsError::READ_FAILURE,
-            "Error reading " + in_location.getAbsolutePath() + ": " + std::string(e.what()),
-            ERROR_LOCATION);
+         try
+         {
+            parsed_options parsed = parse_config_file(*inputStream, m_impl->OptionsDescription, true);
+            store(parsed, vm);
+            notify(vm);
+
+            collectUnrecognizedOptions(vm, parsed, unrecognizedFileOpts);
+         }
+         catch (const std::exception& e)
+         {
+            return optionsError(
+               OptionsError::READ_FAILURE,
+               "Error reading " + in_location.getAbsolutePath() + ": " + std::string(e.what()),
+               ERROR_LOCATION);
+         }
       }
 
       // Now read the command line arguments.
@@ -486,6 +485,11 @@ logging::LogLevel Options::getLogLevel() const
       logging::LogLevel::DEBUG);
 }
 
+size_t Options::getMaxMessageSize() const
+{
+   return m_impl->MaxMessageSize;
+}
+
 const system::FilePath& Options::getScratchPath() const
 {
    return m_impl->ScratchPath;
@@ -496,7 +500,7 @@ Error Options::getServerUser(system::User& out_serverUser) const
    return system::User::getUserFromIdentifier(m_impl->ServerUser, out_serverUser);
 }
 
-unsigned int Options::getThreadPoolSize() const
+size_t Options::getThreadPoolSize() const
 {
    return m_impl->ThreadPoolSize;
 }
