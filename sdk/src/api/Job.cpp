@@ -23,10 +23,11 @@
 
 #include <api/Job.hpp>
 
+#include <boost/algorithm/string/trim.hpp>
+
 #include <Error.hpp>
 #include <json/Json.hpp>
 #include <json/JsonUtils.hpp>
-#include <boost/algorithm/string/trim.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -37,21 +38,51 @@ namespace {
 // Job JSON field constants
 
 // Container
-constexpr char const* CONTAINER                       = "container";
 constexpr char const* CONTAINER_IMAGE                 = "image";
 constexpr char const* CONTAINER_RUN_AS_USER_ID        = "runAsUserId";
 constexpr char const* CONTAINER_RUN_AS_GROUP_ID       = "runAsGroupId";
 constexpr char const* CONTAINER_SUPP_GROUP_IDS        = "supplementalGroupIds";
 
 // Exposed Port
-constexpr char const* EXPOSED_PORT                    = "exposedPort";
 constexpr char const* EXPOSED_PORT_TARGET             = "targetPort";
 constexpr char const* EXPOSED_PORT_PUBLISHED          = "publishedPort";
 constexpr char const* EXPOSED_PORT_PROTOCOL           = "protocol";
 constexpr char const* EXPOSED_PORT_PROTOCOL_DEFAULT   = "TCP";
 
-// Job Config
+// Environment
+constexpr char const* ENVIRONMENT_NAME                = "name";
+constexpr char const* ENVIRONMENT_VALUE               = "value";
+
+// Job
+constexpr char const* JOB_ARGUMENTS                   = "args";
+constexpr char const* JOB_CLUSTER                     = "cluster";
+constexpr char const* JOB_COMMAND                     = "command";
 constexpr char const* JOB_CONFIG                      = "config";
+constexpr char const* JOB_CONTAINER                   = "container";
+constexpr char const* JOB_ENVIRONMENT                 = "environment";
+constexpr char const* JOB_EXECUTABLE                  = "exe";
+constexpr char const* JOB_EXIT_CODE                   = "exitCode";
+constexpr char const* JOB_EXPOSED_PORTS               = "exposedPorts";
+constexpr char const* JOB_HOST                        = "host";
+constexpr char const* JOB_ID                          = "id";
+constexpr char const* JOB_LAST_UPDATE_TIME            = "lastUpdateTime";
+constexpr char const* JOB_MOUNTS                      = "mounts";
+constexpr char const* JOB_NAME                        = "name";
+constexpr char const* JOB_PID                         = "pid";
+constexpr char const* JOB_PLACEMENT_CONSTRAINTS       = "placementConstraints";
+constexpr char const* JOB_QUEUES                      = "queues";
+constexpr char const* JOB_RESOURCE_LIMITS             = "resourceLimits";
+constexpr char const* JOB_STANDARD_IN                 = "stdin";
+constexpr char const* JOB_STANDARD_ERROR_FILE         = "stderrFile";
+constexpr char const* JOB_STANDARD_OUTPUT_FILE        = "stdoutFile";
+constexpr char const* JOB_STATUS                      = "status";
+constexpr char const* JOB_STATUS_MESSAGE              = "statusMessage";
+constexpr char const* JOB_SUBMISSION_TIME             = "submissionTime";
+constexpr char const* JOB_TAGS                        = "tags";
+constexpr char const* JOB_USER                        = "user";
+constexpr char const* JOB_WORKING_DIRECTORY           = "workingDirectory";
+
+// Job Config
 constexpr char const* JOB_CONFIG_NAME                 = "name";
 constexpr char const* JOB_CONFIG_VALUE                = "value";
 constexpr char const* JOB_CONFIG_TYPE                 = "valueType";
@@ -60,8 +91,16 @@ constexpr char const* JOB_CONFIG_TYPE_FLOAT           = "float";
 constexpr char const* JOB_CONFIG_TYPE_INT             = "int";
 constexpr char const* JOB_CONFIG_TYPE_STRING          = "string";
 
+// Job Status Values
+constexpr const char* JOB_STATUS_CANCELED             = "Canceled";
+constexpr const char* JOB_STATUS_FAILED               = "Failed";
+constexpr const char* JOB_STATUS_FINISHED             = "Finished";
+constexpr const char* JOB_STATUS_KILLED               = "Killed";
+constexpr const char* JOB_STATUS_PENDING              = "Pending";
+constexpr const char* JOB_STATUS_RUNNING              = "Running";
+constexpr const char* JOB_STATUS_SUSPENDED            = "Suspended";
+
 // Mount
-constexpr char const* MOUNT                           = "mount";
 constexpr char const* MOUNT_PATH                      = "mountPath";
 constexpr char const* MOUNT_READ_ONLY                 = "readOnly";
 constexpr char const* MOUNT_SOURCE_HOST               = "hostMount";
@@ -70,12 +109,10 @@ constexpr char const* MOUNT_SOURCE_PATH               = "path";
 constexpr char const* MOUNT_SOURCE_NFS_HOST           = "host";
 
 // Placement Constraint
-constexpr char const* PLACEMENT_CONSTRAINTS           = "placementConstraints";
 constexpr char const* PLACEMENT_CONSTRAINT_NAME       = "name";
 constexpr char const* PLACEMENT_CONSTRAINT_VALUE      = "value";
 
 // Resource Limit
-constexpr char const* RESOURCE_LIMITS                 = "resourceLimits";
 constexpr char const* RESOURCE_LIMIT_DEFAULT          = "defaultValue";
 constexpr char const* RESOURCE_LIMIT_MAX              = "maxValue";
 constexpr char const* RESOURCE_LIMIT_TYPE             = "type";
@@ -84,6 +121,82 @@ constexpr char const* RESOURCE_LIMIT_TYPE_CPU_TIME    = "cpuTime";
 constexpr char const* RESOURCE_LIMIT_TYPE_MEMORY      = "memory";
 constexpr char const* RESOURCE_LIMIT_TYPE_MEMORY_SWAP = "memorySwap";
 constexpr char const* RESOURCE_LIMIT_VALUE            = "value";
+
+Error jobStatusFromString(const std::string& io_statusStr, Job::State& out_state)
+{
+   std::string statusStr = boost::trim_copy(io_statusStr);
+   if (statusStr == JOB_STATUS_CANCELED)
+      out_state = Job::State::CANCELED;
+   else if (statusStr == JOB_STATUS_FAILED)
+      out_state =  Job::State::FAILED;
+   else if (statusStr == JOB_STATUS_FINISHED)
+      out_state =  Job::State::FINISHED;
+   else if (statusStr == JOB_STATUS_KILLED)
+      out_state =  Job::State::KILLED;
+   else if (statusStr == JOB_STATUS_PENDING)
+      out_state =  Job::State::PENDING;
+   else if (statusStr == JOB_STATUS_RUNNING)
+      out_state =  Job::State::RUNNING;
+   else if (statusStr == JOB_STATUS_SUSPENDED)
+      out_state =  Job::State::SUSPENDED;
+   else if (!statusStr.empty())
+      return Error("JobParseError", 1, "Unexpected job status string: " + io_statusStr, ERROR_LOCATION);
+   else
+      out_state = Job::State::UNKNOWN;
+
+   return Success();
+}
+
+template <typename T>
+Error fromJsonArray(const json::Array& in_jsonArray, std::vector<T>& out_array)
+{
+   for (const json::Value& jsonVal: in_jsonArray)
+   {
+      if (!jsonVal.isObject())
+      {
+         Error error("JobParseError", 1, "Invalid array value.", ERROR_LOCATION);
+         error.addProperty("value", jsonVal.write());
+         error.addProperty("array", in_jsonArray.write());
+         return error;
+      }
+
+      T val;
+      Error error = T::fromJson(jsonVal.getObject(), val);
+      if (error)
+         return error;
+
+      out_array.push_back(val);
+   }
+
+   return Success();
+}
+
+template <>
+Error fromJsonArray(const json::Array& in_jsonArray, std::vector<EnvVariable>& out_array)
+{
+   for (const json::Value& jsonVal: in_jsonArray)
+   {
+      if (!jsonVal.isObject())
+      {
+         Error error("JobParseError", 1, "Invalid array value.", ERROR_LOCATION);
+         error.addProperty("value", jsonVal.write());
+         error.addProperty("array", in_jsonArray.write());
+         return error;
+      }
+
+      std::string name, value;
+      Error error = json::readObject(jsonVal.getObject(),
+         ENVIRONMENT_NAME, name,
+         ENVIRONMENT_VALUE, value);
+
+      if (error)
+         return error;
+
+      out_array.push_back(std::make_pair(name, value));
+   }
+
+   return Success();
+}
 
 Error& updateError(const std::string& in_name, const json::Object& in_object, Error& io_error)
 {
@@ -111,13 +224,13 @@ Error Container::fromJson(const json::Object& in_json, Container& out_container)
       CONTAINER_SUPP_GROUP_IDS, supplementalGroupIds);
 
    if (error)
-      return updateError(CONTAINER, in_json, error);
+      return updateError(JOB_CONTAINER, in_json, error);
 
    if (supplementalGroupIds &&
       !supplementalGroupIds.getValueOr(json::Array()).toVectorInt(out_container.SupplementalGroupIds))
    {
      return updateError(
-        CONTAINER,
+        JOB_CONTAINER,
         in_json,
         error = Error("JobParseError", 1, "Invalid type for supplemental group ids", ERROR_LOCATION));
    }
@@ -185,6 +298,133 @@ json::Object HostMountSource::toJson() const
    mountSourceObj[MOUNT_SOURCE_PATH] = Path;
 
    return mountSourceObj;
+}
+
+// Job =================================================================================================================
+Error Job::fromJson(const json::Object& in_json, Job& out_job)
+{
+   // Everything but the name is optional.
+   Job result;
+   Optional<std::vector<std::string> > arguments, queues, tags;
+   Optional<std::string> cluster, command, exe, host, id, lastUpTime, stdIn, stdErr, stdOut, status, statusMessage,
+                         submitTime, user, workingDir;
+   Optional<json::Object> containerObj;
+   Optional<json::Array> config, env, ports, mounts, constraints, limits;
+
+   Error error = json::readObject(in_json,
+                                  JOB_ARGUMENTS, arguments,
+                                  JOB_CLUSTER, cluster,
+                                  JOB_COMMAND, command,
+                                  JOB_CONFIG, config,
+                                  JOB_CONTAINER, containerObj,
+                                  JOB_ENVIRONMENT, env,
+                                  JOB_EXECUTABLE, exe,
+                                  JOB_EXIT_CODE, result.ExitCode,
+                                  JOB_EXPOSED_PORTS, ports,
+                                  JOB_HOST, host,
+                                  JOB_ID, id,
+                                  JOB_LAST_UPDATE_TIME, lastUpTime,
+                                  JOB_MOUNTS, mounts,
+                                  JOB_NAME, result.Name,
+                                  JOB_PID, result.Pid,
+                                  JOB_PLACEMENT_CONSTRAINTS, constraints,
+                                  JOB_QUEUES, queues,
+                                  JOB_RESOURCE_LIMITS, limits,
+                                  JOB_STANDARD_IN, stdIn,
+                                  JOB_STANDARD_ERROR_FILE, stdErr,
+                                  JOB_STANDARD_OUTPUT_FILE, stdOut,
+                                  JOB_STATUS, status,
+                                  JOB_STATUS_MESSAGE, statusMessage,
+                                  JOB_SUBMISSION_TIME, submitTime,
+                                  JOB_TAGS, tags,
+                                  JOB_USER, user,
+                                  JOB_WORKING_DIRECTORY, workingDir);
+
+   if (error)
+      return error;
+
+   if (command && exe)
+   {
+      error = Error("JobParseError", 2, R"(Job has conflicting fields "command" and "exe" set.)", ERROR_LOCATION);
+      error.addProperty("job", in_json.write());
+      return error;
+   }
+
+   result.Arguments = arguments.getValueOr(std::vector<std::string>());
+   result.Cluster = cluster.getValueOr("");
+   result.Command = command.getValueOr("");
+   result.Exe = exe.getValueOr("");
+   result.Host = host.getValueOr("");
+   result.Id = id.getValueOr("");
+   result.Queues = queues.getValueOr(std::vector<std::string>());
+   result.StandardIn = stdIn.getValueOr("");
+   result.StandardErrFile = stdErr.getValueOr("");
+   result.StandardOutFile = stdOut.getValueOr("");
+   result.StatusMessage = statusMessage.getValueOr("");
+   result.User = user.getValueOr("");
+   result.Tags = tags.getValueOr(std::vector<std::string>());
+   result.WorkingDirectory = workingDir.getValueOr("");
+
+   if (containerObj)
+   {
+      Container container;
+      error = Container::fromJson(containerObj.getValueOr(json::Object()), container);
+      if (error)
+         return error;
+
+      result.ContainerDetails = container;
+   }
+
+   error = fromJsonArray(config.getValueOr(json::Array()), result.Config);
+   if (error)
+      return error;
+
+   error = fromJsonArray(env.getValueOr(json::Array()), result.Environment);
+   if (error)
+      return error;
+
+   error = fromJsonArray(ports.getValueOr(json::Array()), result.ExposedPorts);
+   if (error)
+      return error;
+
+   error = fromJsonArray(mounts.getValueOr(json::Array()), result.Mounts);
+   if (error)
+      return error;
+
+   error = fromJsonArray(constraints.getValueOr(json::Array()), result.PlacementConstraints);
+   if (error)
+      return error;
+
+   error = fromJsonArray(limits.getValueOr(json::Array()), result.ResourceLimits);
+   if (error)
+      return error;
+
+   error = jobStatusFromString(status.getValueOr(""), result.Status);
+   if (error)
+      return error;
+
+   if (lastUpTime)
+   {
+      system::DateTime lastUpdateTime;
+      error = system::DateTime::fromString(lastUpTime.getValueOr(""), lastUpdateTime);
+      if (error)
+         return updateError("lastUpdateTime", in_json, error);
+
+      result.LastUpdateTime = lastUpdateTime;
+   }
+
+   if (submitTime)
+   {
+      system::DateTime submissionTime;
+      error = system::DateTime::fromString(submitTime.getValueOr(""), submissionTime);
+      if (error)
+         return updateError("submissionTime", in_json, error);
+
+      result.SubmissionTime = submissionTime;
+   }
+
+   out_job = result;
+   return Success();
 }
 
 // Job Config ==========================================================================================================
@@ -287,25 +527,25 @@ Error Mount::fromJson(const json::Object& in_json, Mount& out_mount)
       MOUNT_READ_ONLY, isReadOnly);
 
    if (error)
-      return updateError(MOUNT, in_json, error);
+      return updateError(JOB_MOUNTS, in_json, error);
 
    if (!hostMountSource && !nfsMountSource)
    {
       // TODO: real error set up.
       error = Error("JobParseError", 1, "No mount source specified", ERROR_LOCATION);
-      return updateError(MOUNT, in_json, error);
+      return updateError(JOB_MOUNTS, in_json, error);
    }
    else if (hostMountSource && nfsMountSource)
       {
          error = Error("JobParseError", 1, "Multiple mount sources specified", ERROR_LOCATION);
-         return updateError(MOUNT, in_json, error);
+         return updateError(JOB_MOUNTS, in_json, error);
       }
       else if (hostMountSource)
          {
             HostMountSource mountSource;
             error = HostMountSource::fromJson(hostMountSource.getValueOr(json::Object()), mountSource);
             if (error)
-               return updateError(MOUNT, in_json, error);
+               return updateError(JOB_MOUNTS, in_json, error);
 
             out_mount.HostSourcePath = mountSource;
          }
@@ -314,7 +554,7 @@ Error Mount::fromJson(const json::Object& in_json, Mount& out_mount)
             NfsMountSource mountSource;
             error = NfsMountSource::fromJson(nfsMountSource.getValueOr(json::Object()), mountSource);
             if (error)
-               return updateError(MOUNT, in_json, error);
+               return updateError(JOB_MOUNTS, in_json, error);
 
             out_mount.NfsSourcePath = mountSource;
          }
@@ -378,7 +618,7 @@ Error PlacementConstraint::fromJson(const json::Object& in_json, PlacementConstr
       PLACEMENT_CONSTRAINT_VALUE, out_placementConstraint.Value);
 
    if (error)
-      return updateError(PLACEMENT_CONSTRAINTS, in_json, error);
+      return updateError(JOB_PLACEMENT_CONSTRAINTS, in_json, error);
 
    return Success();
 }
@@ -408,7 +648,7 @@ Error ResourceLimit::fromJson(const json::Object& in_json, ResourceLimit& out_re
       RESOURCE_LIMIT_VALUE, out_resourceLimit.Value);
 
    if (error)
-      return updateError(RESOURCE_LIMITS, in_json, error);
+      return updateError(JOB_RESOURCE_LIMITS, in_json, error);
 
    boost::trim(strType);
    if (strType == RESOURCE_LIMIT_TYPE_CPU_COUNT)
@@ -421,7 +661,7 @@ Error ResourceLimit::fromJson(const json::Object& in_json, ResourceLimit& out_re
       out_resourceLimit.ResourceType = Type::MEMORY_SWAP;
    else
       return updateError(
-         RESOURCE_LIMITS,
+         JOB_RESOURCE_LIMITS,
          in_json,
          error = Error("JobParseError", 1, "Invalid resource type", ERROR_LOCATION));
 

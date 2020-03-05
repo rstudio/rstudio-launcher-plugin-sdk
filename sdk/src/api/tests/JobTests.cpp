@@ -820,6 +820,619 @@ TEST_CASE("To JSON: Placement Constraint")
    REQUIRE(constraint.toJson() == constraintObj);
 }
 
+// Job =================================================================================================================
+TEST_CASE("From JSON: Job (name only)")
+{
+   json::Object jobObj;
+   jobObj["name"] = "First Job";
+
+   Job job;
+   REQUIRE_FALSE(Job::fromJson(jobObj, job));
+   CHECK(job.Arguments.empty());
+   CHECK(job.Cluster.empty());
+   CHECK(job.Command.empty());
+   CHECK(job.Config.empty());
+   CHECK_FALSE(job.ContainerDetails);
+   CHECK(job.Environment.empty());
+   CHECK(job.Exe.empty());
+   CHECK_FALSE(job.ExitCode);
+   CHECK(job.ExposedPorts.empty());
+   CHECK(job.Host.empty());
+   CHECK(job.Id.empty());
+   CHECK_FALSE(job.LastUpdateTime);
+   CHECK(job.Mounts.empty());
+   CHECK(job.Name  == "First Job");
+   CHECK_FALSE(job.Pid);
+   CHECK(job.PlacementConstraints.empty());
+   CHECK(job.Queues.empty());
+   CHECK(job.ResourceLimits.empty());
+   CHECK(job.StandardIn.empty());
+   CHECK(job.StandardErrFile.empty());
+   CHECK(job.StandardOutFile.empty());
+   CHECK(job.Status == Job::State::UNKNOWN);
+   CHECK(job.StatusMessage.empty());
+   CHECK_FALSE(job.SubmissionTime);
+   CHECK(job.Tags.empty());
+   CHECK(job.User.empty());
+   CHECK(job.WorkingDirectory.empty());
+}
+
+TEST_CASE("From JSON: Job (name and state, canceled)")
+{
+   json::Object jobObj;
+   jobObj["name"] = "Second-Job";
+   jobObj["status"] = "Canceled";
+
+   Job job;
+   REQUIRE_FALSE(Job::fromJson(jobObj, job));
+   CHECK(job.Arguments.empty());
+   CHECK(job.Cluster.empty());
+   CHECK(job.Command.empty());
+   CHECK(job.Config.empty());
+   CHECK_FALSE(job.ContainerDetails);
+   CHECK(job.Environment.empty());
+   CHECK(job.Exe.empty());
+   CHECK_FALSE(job.ExitCode);
+   CHECK(job.ExposedPorts.empty());
+   CHECK(job.Host.empty());
+   CHECK(job.Id.empty());
+   CHECK_FALSE(job.LastUpdateTime);
+   CHECK(job.Mounts.empty());
+   CHECK(job.Name  == "Second-Job");
+   CHECK_FALSE(job.Pid);
+   CHECK(job.PlacementConstraints.empty());
+   CHECK(job.Queues.empty());
+   CHECK(job.ResourceLimits.empty());
+   CHECK(job.StandardIn.empty());
+   CHECK(job.StandardErrFile.empty());
+   CHECK(job.StandardOutFile.empty());
+   CHECK(job.Status == Job::State::CANCELED);
+   CHECK(job.StatusMessage.empty());
+   CHECK_FALSE(job.SubmissionTime);
+   CHECK(job.Tags.empty());
+   CHECK(job.User.empty());
+   CHECK(job.WorkingDirectory.empty());
+}
+
+TEST_CASE("From JSON: Job (name and state, failed)")
+{
+   json::Object jobObj;
+   jobObj["name"] = "3rd_Job";
+   jobObj["status"] = "Failed";
+
+   Job job;
+   REQUIRE_FALSE(Job::fromJson(jobObj, job));
+   CHECK(job.Arguments.empty());
+   CHECK(job.Cluster.empty());
+   CHECK(job.Command.empty());
+   CHECK(job.Config.empty());
+   CHECK_FALSE(job.ContainerDetails);
+   CHECK(job.Environment.empty());
+   CHECK(job.Exe.empty());
+   CHECK_FALSE(job.ExitCode);
+   CHECK(job.ExposedPorts.empty());
+   CHECK(job.Host.empty());
+   CHECK(job.Id.empty());
+   CHECK_FALSE(job.LastUpdateTime);
+   CHECK(job.Mounts.empty());
+   CHECK(job.Name  == "3rd_Job");
+   CHECK_FALSE(job.Pid);
+   CHECK(job.PlacementConstraints.empty());
+   CHECK(job.Queues.empty());
+   CHECK(job.ResourceLimits.empty());
+   CHECK(job.StandardIn.empty());
+   CHECK(job.StandardErrFile.empty());
+   CHECK(job.StandardOutFile.empty());
+   CHECK(job.Status == Job::State::FAILED);
+   CHECK(job.StatusMessage.empty());
+   CHECK_FALSE(job.SubmissionTime);
+   CHECK(job.Tags.empty());
+   CHECK(job.User.empty());
+   CHECK(job.WorkingDirectory.empty());
+}
+
+TEST_CASE("From JSON: Job (name and state, finished)")
+{
+   json::Object jobObj;
+   jobObj["name"] = "another!Job";
+   jobObj["status"] = "Finished";
+
+   Job job;
+   REQUIRE_FALSE(Job::fromJson(jobObj, job));
+   CHECK(job.Arguments.empty());
+   CHECK(job.Cluster.empty());
+   CHECK(job.Command.empty());
+   CHECK(job.Config.empty());
+   CHECK_FALSE(job.ContainerDetails);
+   CHECK(job.Environment.empty());
+   CHECK(job.Exe.empty());
+   CHECK_FALSE(job.ExitCode);
+   CHECK(job.ExposedPorts.empty());
+   CHECK(job.Host.empty());
+   CHECK(job.Id.empty());
+   CHECK_FALSE(job.LastUpdateTime);
+   CHECK(job.Mounts.empty());
+   CHECK(job.Name  == "another!Job");
+   CHECK_FALSE(job.Pid);
+   CHECK(job.PlacementConstraints.empty());
+   CHECK(job.Queues.empty());
+   CHECK(job.ResourceLimits.empty());
+   CHECK(job.StandardIn.empty());
+   CHECK(job.StandardErrFile.empty());
+   CHECK(job.StandardOutFile.empty());
+   CHECK(job.Status == Job::State::FINISHED);
+   CHECK(job.StatusMessage.empty());
+   CHECK_FALSE(job.SubmissionTime);
+   CHECK(job.Tags.empty());
+   CHECK(job.User.empty());
+   CHECK(job.WorkingDirectory.empty());
+}
+
+TEST_CASE("From JSON: Job (name and state, killed)")
+{
+   json::Object jobObj;
+   jobObj["name"] = "some&Job";
+   jobObj["status"] = "Killed";
+
+   Job job;
+   REQUIRE_FALSE(Job::fromJson(jobObj, job));
+   CHECK(job.Arguments.empty());
+   CHECK(job.Cluster.empty());
+   CHECK(job.Command.empty());
+   CHECK(job.Config.empty());
+   CHECK_FALSE(job.ContainerDetails);
+   CHECK(job.Environment.empty());
+   CHECK(job.Exe.empty());
+   CHECK_FALSE(job.ExitCode);
+   CHECK(job.ExposedPorts.empty());
+   CHECK(job.Host.empty());
+   CHECK(job.Id.empty());
+   CHECK_FALSE(job.LastUpdateTime);
+   CHECK(job.Mounts.empty());
+   CHECK(job.Name  == "some&Job");
+   CHECK_FALSE(job.Pid);
+   CHECK(job.PlacementConstraints.empty());
+   CHECK(job.Queues.empty());
+   CHECK(job.ResourceLimits.empty());
+   CHECK(job.StandardIn.empty());
+   CHECK(job.StandardErrFile.empty());
+   CHECK(job.StandardOutFile.empty());
+   CHECK(job.Status == Job::State::KILLED);
+   CHECK(job.StatusMessage.empty());
+   CHECK_FALSE(job.SubmissionTime);
+   CHECK(job.Tags.empty());
+   CHECK(job.User.empty());
+   CHECK(job.WorkingDirectory.empty());
+}
+
+TEST_CASE("From JSON: Job (name and state, pending)")
+{
+   json::Object jobObj;
+   jobObj["name"] = "A really really, really really, really really really long job name";
+   jobObj["status"] = "Pending";
+
+   Job job;
+   REQUIRE_FALSE(Job::fromJson(jobObj, job));
+   CHECK(job.Arguments.empty());
+   CHECK(job.Cluster.empty());
+   CHECK(job.Command.empty());
+   CHECK(job.Config.empty());
+   CHECK_FALSE(job.ContainerDetails);
+   CHECK(job.Environment.empty());
+   CHECK(job.Exe.empty());
+   CHECK_FALSE(job.ExitCode);
+   CHECK(job.ExposedPorts.empty());
+   CHECK(job.Host.empty());
+   CHECK(job.Id.empty());
+   CHECK_FALSE(job.LastUpdateTime);
+   CHECK(job.Mounts.empty());
+   CHECK(job.Name  == "A really really, really really, really really really long job name");
+   CHECK_FALSE(job.Pid);
+   CHECK(job.PlacementConstraints.empty());
+   CHECK(job.Queues.empty());
+   CHECK(job.ResourceLimits.empty());
+   CHECK(job.StandardIn.empty());
+   CHECK(job.StandardErrFile.empty());
+   CHECK(job.StandardOutFile.empty());
+   CHECK(job.Status == Job::State::PENDING);
+   CHECK(job.StatusMessage.empty());
+   CHECK_FALSE(job.SubmissionTime);
+   CHECK(job.Tags.empty());
+   CHECK(job.User.empty());
+   CHECK(job.WorkingDirectory.empty());
+}
+
+TEST_CASE("From JSON: Job (name and state, running)")
+{
+   json::Object jobObj;
+   jobObj["name"] = "First Job";
+   jobObj["status"] = "Running";
+
+   Job job;
+   REQUIRE_FALSE(Job::fromJson(jobObj, job));
+   CHECK(job.Arguments.empty());
+   CHECK(job.Cluster.empty());
+   CHECK(job.Command.empty());
+   CHECK(job.Config.empty());
+   CHECK_FALSE(job.ContainerDetails);
+   CHECK(job.Environment.empty());
+   CHECK(job.Exe.empty());
+   CHECK_FALSE(job.ExitCode);
+   CHECK(job.ExposedPorts.empty());
+   CHECK(job.Host.empty());
+   CHECK(job.Id.empty());
+   CHECK_FALSE(job.LastUpdateTime);
+   CHECK(job.Mounts.empty());
+   CHECK(job.Name  == "First Job");
+   CHECK_FALSE(job.Pid);
+   CHECK(job.PlacementConstraints.empty());
+   CHECK(job.Queues.empty());
+   CHECK(job.ResourceLimits.empty());
+   CHECK(job.StandardIn.empty());
+   CHECK(job.StandardErrFile.empty());
+   CHECK(job.StandardOutFile.empty());
+   CHECK(job.Status == Job::State::RUNNING);
+   CHECK(job.StatusMessage.empty());
+   CHECK_FALSE(job.SubmissionTime);
+   CHECK(job.Tags.empty());
+   CHECK(job.User.empty());
+   CHECK(job.WorkingDirectory.empty());
+}
+
+TEST_CASE("From JSON: Job (name and state, suspended, extra whitespace)")
+{
+   json::Object jobObj;
+   jobObj["name"] = "First Job";
+   jobObj["status"] = "  Suspended  ";
+
+   Job job;
+   REQUIRE_FALSE(Job::fromJson(jobObj, job));
+   CHECK(job.Arguments.empty());
+   CHECK(job.Cluster.empty());
+   CHECK(job.Command.empty());
+   CHECK(job.Config.empty());
+   CHECK_FALSE(job.ContainerDetails);
+   CHECK(job.Environment.empty());
+   CHECK(job.Exe.empty());
+   CHECK_FALSE(job.ExitCode);
+   CHECK(job.ExposedPorts.empty());
+   CHECK(job.Host.empty());
+   CHECK(job.Id.empty());
+   CHECK_FALSE(job.LastUpdateTime);
+   CHECK(job.Mounts.empty());
+   CHECK(job.Name  == "First Job");
+   CHECK_FALSE(job.Pid);
+   CHECK(job.PlacementConstraints.empty());
+   CHECK(job.Queues.empty());
+   CHECK(job.ResourceLimits.empty());
+   CHECK(job.StandardIn.empty());
+   CHECK(job.StandardErrFile.empty());
+   CHECK(job.StandardOutFile.empty());
+   CHECK(job.Status == Job::State::SUSPENDED);
+   CHECK(job.StatusMessage.empty());
+   CHECK_FALSE(job.SubmissionTime);
+   CHECK(job.Tags.empty());
+   CHECK(job.User.empty());
+   CHECK(job.WorkingDirectory.empty());
+}
+
+TEST_CASE("From JSON: Job (invalid status)")
+{
+   json::Object jobObj;
+   jobObj["name"] = "First Job";
+   jobObj["status"] = "Not a job status";
+
+   Job job;
+   REQUIRE(Job::fromJson(jobObj, job));
+}
+
+TEST_CASE("From JSON: Job (all fields, exe)")
+{
+   json::Array argsArr, configArr, envArr, portsArr, mountsArr, placArr, queuesArr, limitsArr, tagsArr;
+   argsArr.push_back("-c");
+   argsArr.push_back("--arg=value");
+   argsArr.push_back("some arg with spaces");
+
+   json::Object confObj1, confObj2, confObj3;
+   confObj1["name"] = "option";
+   confObj1["value"] = "val";
+   confObj2["name"] = "numericalOpt";
+   confObj2["value"] = "4";
+   confObj3["name"] = "lastOpt";
+   confObj3["value"] = "val with spaces";
+
+   configArr.push_back(confObj1);
+   configArr.push_back(confObj2);
+   configArr.push_back(confObj3);
+
+   Container container;
+   container.Image = "Image-Name";
+   container.RunAsUserId = 22;
+   container.SupplementalGroupIds.push_back(130);
+   container.SupplementalGroupIds.push_back(141);
+
+   json::Object envVal1, envVal2;
+   envVal1.insert("name","PATH");
+   envVal1.insert("value", ".;/some/locations;/other/locations");
+   envVal2.insert("name","LD_LIBRARY_PATH");
+   envVal2.insert("value", "/libs;/usr/libs;");
+   envArr.push_back(envVal1);
+   envArr.push_back(envVal2);
+
+   json::Object port1, port2, port3, port4;
+   port1["protocol"] = "HTTP";
+   port1["targetPort"] = 5557;
+   port2["publishedPort"] = 8989;
+   port2["targetPort"] = 5432;
+   port3["publishedPort"] = 1234;
+   port3["protocol"] = "HTTPS";
+   port3["targetPort"] = 4321;
+   port4["targetPort"] = 6767;
+   portsArr.push_back(port1);
+   portsArr.push_back(port2);
+   portsArr.push_back(port3);
+   portsArr.push_back(port4);
+
+   NfsMountSource nfsMountSource;
+   nfsMountSource.Host = "nfsHost:72";
+   nfsMountSource.Path = "/source/path";
+   HostMountSource hostMountSource;
+   hostMountSource.Path = "/read/only/path";
+   json::Object mount1, mount2;
+   mount1["mountPath"] = "/dest/path";
+   mount1["nfsMount"] = nfsMountSource.toJson();
+   mount2["mountPath"] = "/read/only/dest/path";
+   mount2["readOnly"] = true;
+   mount2["hostMount"] = hostMountSource.toJson();
+   mountsArr.push_back(mount1);
+   mountsArr.push_back(mount2);
+
+   placArr.push_back(PlacementConstraint("customConstraint1", "diskType1").toJson());
+   placArr.push_back(PlacementConstraint("otherConstraint", "1029").toJson());
+
+   queuesArr.push_back("possibleQueue1");
+   queuesArr.push_back("queue2");
+   queuesArr.push_back("other-queue");
+   queuesArr.push_back("queue with spaces  ");
+
+   ResourceLimit limit1, limit2, limit3, limit4;
+   limit1.ResourceType = ResourceLimit::Type::CPU_COUNT;
+   limit1.Value = "3";
+   limit2.ResourceType = ResourceLimit::Type::CPU_TIME;
+   limit2.Value = "180";
+   limit3.ResourceType = ResourceLimit::Type::MEMORY;
+   limit3.Value = "150";
+   limit4.ResourceType = ResourceLimit::Type::MEMORY_SWAP;
+   limit4.Value = "2048";
+   limitsArr.push_back(limit1.toJson());
+   limitsArr.push_back(limit2.toJson());
+   limitsArr.push_back(limit3.toJson());
+   limitsArr.push_back(limit4.toJson());
+
+   tagsArr.push_back("tag1");
+   tagsArr.push_back("another tag");
+   tagsArr.push_back("4th_tag");
+
+   json::Object jobObj;
+   jobObj["args"] = argsArr;
+   jobObj["cluster"] = "ClusterName";
+   jobObj["config"] = configArr;
+   jobObj["container"] = container.toJson();
+   jobObj["environment"] = envArr;
+   jobObj["exe"] = "/path/to/exe";
+   jobObj["exitCode"] = 0;
+   jobObj["exposedPorts"] = portsArr;
+   jobObj["host"] = "clusterMachine12";
+   jobObj["id"] = "56";
+   jobObj["lastUpdateTime"] = "2020-01-14T04:22:47.069381Z";
+   jobObj["mounts"] = mountsArr;
+   jobObj["name"] = "Complete_Job#";
+   jobObj["pid"] = 18375;
+   jobObj["placementConstraints"] = placArr;
+   jobObj["queues"] = queuesArr;
+   jobObj["resourceLimits"] = limitsArr;
+   jobObj["stdin"] = "Pass this to the exe on standard in.";
+   jobObj["stderrFile"] = "/path/to/errorFile.txt";
+   jobObj["stdoutFile"] = "/path/to/outputFile.txt";
+   jobObj["status"] = "Finished";
+   jobObj["statusMessage"] = "Exited successfully.";
+   jobObj["submissionTime"] = "2020-01-14T04:20:13Z";
+   jobObj["tags"] = tagsArr;
+   jobObj["user"] = "bobg";
+   jobObj["workingDirectory"] = "/current/dir";
+
+   Job job;
+   REQUIRE_FALSE(Job::fromJson(jobObj, job));
+   REQUIRE(job.Arguments.size() == 3);
+   CHECK(job.Arguments[0] == "-c");
+   CHECK(job.Arguments[1] == "--arg=value");
+   CHECK(job.Arguments[2] == "some arg with spaces");
+   CHECK(job.Cluster == "ClusterName");
+   CHECK(job.Command.empty());
+   REQUIRE(job.Config.size() == 3);
+   CHECK(((job.Config[0].Name == "option") && (job.Config[0].Value == "val") && !job.Config[0].ValueType));
+   CHECK(((job.Config[1].Name == "numericalOpt") && (job.Config[1].Value == "4") && !job.Config[1].ValueType));
+   CHECK(((job.Config[2].Name == "lastOpt") && (job.Config[2].Value == "val with spaces") && !job.Config[2].ValueType));
+   CHECK(job.ContainerDetails);
+   CHECK(job.ContainerDetails.getValueOr(Container()).Image == "Image-Name");
+   CHECK(job.ContainerDetails.getValueOr(Container()).RunAsUserId.getValueOr(0) == 22);
+   CHECK_FALSE(job.ContainerDetails.getValueOr(Container()).RunAsGroupId);
+   REQUIRE(job.ContainerDetails.getValueOr(Container()).SupplementalGroupIds.size() == 2);
+   CHECK(job.ContainerDetails.getValueOr(Container()).SupplementalGroupIds[0] == 130);
+   CHECK(job.ContainerDetails.getValueOr(Container()).SupplementalGroupIds[1] == 141);
+   REQUIRE(job.Environment.size() == 2);
+   CHECK(((job.Environment[0].first == "PATH") && (job.Environment[0].second == ".;/some/locations;/other/locations")));
+   CHECK(((job.Environment[1].first == "LD_LIBRARY_PATH") && (job.Environment[1].second == "/libs;/usr/libs;")));
+   CHECK(job.Exe == "/path/to/exe");
+   CHECK((job.ExitCode && (job.ExitCode.getValueOr(-1) == 0)));
+   REQUIRE(job.ExposedPorts.size() == 4);
+   CHECK(job.ExposedPorts[0].Protocol == "HTTP");
+   CHECK(job.ExposedPorts[0].TargetPort == 5557);
+   CHECK_FALSE(job.ExposedPorts[0].PublishedPort);
+   CHECK(job.ExposedPorts[1].Protocol == "TCP");
+   CHECK(job.ExposedPorts[1].TargetPort == 5432);
+   CHECK(job.ExposedPorts[1].PublishedPort.getValueOr(0) == 8989);
+   CHECK(job.ExposedPorts[2].Protocol == "HTTPS");
+   CHECK(job.ExposedPorts[2].TargetPort == 4321);
+   CHECK(job.ExposedPorts[2].PublishedPort.getValueOr(0) == 1234);
+   CHECK(job.ExposedPorts[3].Protocol == "TCP");
+   CHECK(job.ExposedPorts[3].TargetPort == 6767);
+   CHECK_FALSE(job.ExposedPorts[3].PublishedPort);
+   CHECK(job.Host == "clusterMachine12");
+   CHECK(job.Id  == "56");
+   CHECK((job.LastUpdateTime && job.LastUpdateTime.getValueOr(system::DateTime()).toString() == "2020-01-14T04:22:47.069381Z"));
+   REQUIRE(job.Mounts.size() == 2);
+   CHECK((job.Mounts[0].NfsSourcePath &&
+         !job.Mounts[0].HostSourcePath &&
+         job.Mounts[0].NfsSourcePath.getValueOr(NfsMountSource()).Host == "nfsHost:72" &&
+         job.Mounts[0].NfsSourcePath.getValueOr(NfsMountSource()).Path == "/source/path" &&
+         job.Mounts[0].DestinationPath == "/dest/path" &&
+         !job.Mounts[0].IsReadOnly));
+   CHECK((!job.Mounts[1].NfsSourcePath &&
+          job.Mounts[1].HostSourcePath &&
+          job.Mounts[1].HostSourcePath.getValueOr(HostMountSource()).Path == "/read/only/path" &&
+          job.Mounts[1].DestinationPath == "/read/only/dest/path" &&
+          job.Mounts[1].IsReadOnly));
+   CHECK(job.Name  == "Complete_Job#");
+   CHECK((job.Pid && job.Pid.getValueOr(0) == 18375));
+   REQUIRE(job.PlacementConstraints.size() == 2);
+   CHECK((job.PlacementConstraints[0].Name == "customConstraint1" && job.PlacementConstraints[0].Value == "diskType1"));
+   CHECK((job.PlacementConstraints[1].Name == "otherConstraint" && job.PlacementConstraints[1].Value == "1029"));
+   REQUIRE(job.Queues.size() == 4);
+   CHECK((job.Queues[0] == "possibleQueue1" &&
+          job.Queues[1] == "queue2" &&
+          job.Queues[2] == "other-queue" &&
+          job.Queues[3] == "queue with spaces  "));
+   REQUIRE(job.ResourceLimits.size() == 4);
+   CHECK((job.ResourceLimits[0].ResourceType == ResourceLimit::Type::CPU_COUNT &&
+          job.ResourceLimits[0].Value == "3" &&
+          job.ResourceLimits[0].MaxValue.empty() &&
+          job.ResourceLimits[0].DefaultValue.empty()));
+   CHECK((job.ResourceLimits[1].ResourceType == ResourceLimit::Type::CPU_TIME &&
+          job.ResourceLimits[1].Value == "180" &&
+          job.ResourceLimits[1].MaxValue.empty() &&
+          job.ResourceLimits[1].DefaultValue.empty()));
+   CHECK((job.ResourceLimits[2].ResourceType == ResourceLimit::Type::MEMORY &&
+          job.ResourceLimits[2].Value == "150" &&
+          job.ResourceLimits[2].MaxValue.empty() &&
+          job.ResourceLimits[2].DefaultValue.empty()));
+   CHECK((job.ResourceLimits[3].ResourceType == ResourceLimit::Type::MEMORY_SWAP &&
+          job.ResourceLimits[3].Value == "2048" &&
+          job.ResourceLimits[3].MaxValue.empty() &&
+          job.ResourceLimits[3].DefaultValue.empty()));
+   CHECK(job.StandardIn == "Pass this to the exe on standard in.");
+   CHECK(job.StandardErrFile == "/path/to/errorFile.txt");
+   CHECK(job.StandardOutFile == "/path/to/outputFile.txt");
+   CHECK(job.Status == Job::State::FINISHED);
+   CHECK(job.StatusMessage == "Exited successfully.");
+   CHECK((job.SubmissionTime && job.SubmissionTime.getValueOr(system::DateTime()).toString() == "2020-01-14T04:20:13Z"));
+   REQUIRE(job.Tags.size() == 3);
+   CHECK((job.Tags[0] == "tag1" && job.Tags[1] == "another tag" && job.Tags[2] == "4th_tag"));
+   CHECK(job.User == "bobg");
+   CHECK(job.WorkingDirectory == "/current/dir");
+}
+
+TEST_CASE("From JSON: Job (some fields, command)")
+{
+   json::Array argsArr;
+   argsArr.push_back("-n");
+   argsArr.push_back("Hello!");
+
+   json::Object jobObj;
+   jobObj["name"] = "First Job";
+   jobObj["status"] = "Running";
+   jobObj["command"] = "echo";
+   jobObj["args"] = argsArr;
+
+   Job job;
+
+   REQUIRE_FALSE(Job::fromJson(jobObj, job));
+   REQUIRE(job.Arguments.size() == 2);
+   CHECK((job.Arguments[0] == "-n" && job.Arguments[1] == "Hello!"));
+   CHECK(job.Cluster.empty());
+   CHECK(job.Command == "echo");
+   CHECK(job.Config.empty());
+   CHECK_FALSE(job.ContainerDetails);
+   CHECK(job.Environment.empty());
+   CHECK(job.Exe.empty());
+   CHECK_FALSE(job.ExitCode);
+   CHECK(job.ExposedPorts.empty());
+   CHECK(job.Host.empty());
+   CHECK(job.Id.empty());
+   CHECK_FALSE(job.LastUpdateTime);
+   CHECK(job.Mounts.empty());
+   CHECK(job.Name  == "First Job");
+   CHECK_FALSE(job.Pid);
+   CHECK(job.PlacementConstraints.empty());
+   CHECK(job.Queues.empty());
+   CHECK(job.ResourceLimits.empty());
+   CHECK(job.StandardIn.empty());
+   CHECK(job.StandardErrFile.empty());
+   CHECK(job.StandardOutFile.empty());
+   CHECK(job.Status == Job::State::RUNNING);
+   CHECK(job.StatusMessage.empty());
+   CHECK_FALSE(job.SubmissionTime);
+   CHECK(job.Tags.empty());
+   CHECK(job.User.empty());
+   CHECK(job.WorkingDirectory.empty());
+}
+
+TEST_CASE("From JSON: Job (exe and command)")
+{
+   json::Object jobObj;
+   jobObj["name"] = "First Job";
+   jobObj["exe"] = "/bin/some/exe";
+   jobObj["command"] = "shell-command";
+
+   Job job;
+   REQUIRE(Job::fromJson(jobObj, job));
+}
+
+TEST_CASE("From JSON: Job (no name)")
+{
+   json::Object jobObj;
+   jobObj["id"] ="job-22";
+   jobObj["command"] = "echo";
+
+   Job job;
+   REQUIRE(Job::fromJson(jobObj, job));
+}
+
+TEST_CASE("To JSON: Job (all fields)")
+{
+
+}
+
+TEST_CASE("To JSON: Job (some fields)")
+{
+
+}
+
+TEST_CASE("Get Job Config Value (found)")
+{
+
+}
+
+TEST_CASE("Get Job Config Value (not found)")
+{
+
+}
+
+TEST_CASE("Matches tags (does)")
+{
+
+}
+
+TEST_CASE("Matches tags (doesn't, some)")
+{
+
+}
+
+TEST_CASE("Matches tags (doesn't, none)")
+{
+
+}
+
 } // namespace api
 } // namespace launcher_plugins
 } // namespace rstudio
