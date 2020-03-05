@@ -88,7 +88,7 @@ Error DateTime::fromString(const std::string& in_timeStr, DateTime& out_dateTime
    return Success();
 }
 
-bool DateTime::operator==(const DateTime &in_other) const
+bool DateTime::operator==(const DateTime& in_other) const
 {
    if (this == &in_other)
       return true;
@@ -104,6 +104,11 @@ bool DateTime::operator==(const DateTime &in_other) const
       return true;
 
    return m_impl->Time == in_other.m_impl->Time;
+}
+
+bool DateTime::operator!=(const DateTime& in_other) const
+{
+   return !(*this == in_other);
 }
 
 std::string DateTime::toString() const

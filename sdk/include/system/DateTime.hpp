@@ -93,6 +93,15 @@ public:
    bool operator==(const DateTime& in_other) const;
 
    /**
+    * @brief Inequality operator.
+    *
+    * @param in_other   The DateTime to compare against this.
+    *
+    * @return True if this DateTime and in_other represent the different times; false otherwise.
+    */
+   bool operator!=(const DateTime& in_other) const;
+
+   /**
     * @brief Less than operator.
     *
     * @param in_other   The DateTime to compare against this.
