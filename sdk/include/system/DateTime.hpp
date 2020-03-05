@@ -84,6 +84,15 @@ public:
    static Error fromString(const std::string& in_timeStr, DateTime& out_dateTime);
 
    /**
+    * @brief Assignment operator.
+    *
+    * @param in_other   The DateTime to assign to this.
+    *
+    * @return A reference to this DateTime.
+    */
+   DateTime& operator=(const DateTime& in_other);
+
+   /**
     * @brief Equality operator.
     *
     * @param in_other   The DateTime to compare against this.

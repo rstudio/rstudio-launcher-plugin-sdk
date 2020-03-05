@@ -88,6 +88,16 @@ Error DateTime::fromString(const std::string& in_timeStr, DateTime& out_dateTime
    return Success();
 }
 
+DateTime& DateTime::operator=(const DateTime& in_other)
+{
+   if (in_other.m_impl == nullptr)
+      m_impl.reset();
+   else
+      m_impl->Time = in_other.m_impl->Time;
+
+   return *this;
+}
+
 bool DateTime::operator==(const DateTime& in_other) const
 {
    if (this == &in_other)

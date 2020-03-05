@@ -285,6 +285,55 @@ TEST_CASE("LT/LTE/GT/GTE Comparisons")
    }
 }
 
+TEST_CASE("Assignment")
+{
+   SECTION("Current into current")
+   {
+      DateTime d1;
+      usleep(1200);
+      DateTime d2 = d1; // These won't be equal unless assignment works.
+
+      CHECK(d1 == d2);
+   }
+
+   SECTION("Current into non-current")
+   {
+      DateTime d1, d2;
+
+      REQUIRE_FALSE(DateTime::fromString("2019-02-15T11:23:44.039876Z", d2));
+      d2 = d1;
+
+      CHECK(d1 == d2);
+      CHECK(d1.toString() != "2019-02-15T11:23:44.039876Z");
+      CHECK(d2.toString() != "2019-02-15T11:23:44.039876Z");
+   }
+
+   SECTION("Non-current into current")
+   {
+      DateTime d1, d2;
+
+      REQUIRE_FALSE(DateTime::fromString("2019-02-15T11:23:44.039876Z", d2));
+      d1 = d2;
+
+      CHECK(d1 == d2);
+      CHECK(d1.toString() == "2019-02-15T11:23:44.039876Z");
+      CHECK(d2.toString() == "2019-02-15T11:23:44.039876Z");
+   }
+
+   SECTION("Non-current into non-current")
+   {
+      DateTime d1, d2;
+
+      REQUIRE_FALSE(DateTime::fromString("2020-02-15T11:23:44.039876Z", d1));
+      REQUIRE_FALSE(DateTime::fromString("2019-02-15T11:23:44.039876Z", d2));
+      d2 = d1;
+
+      CHECK(d1 == d2);
+      CHECK(d1.toString() == "2020-02-15T11:23:44.039876Z");
+      CHECK(d2.toString() == "2020-02-15T11:23:44.039876Z");
+   }
+}
+
 } // namespace system
 } // namespace launcher_plugins
 } // namespace rstudio
