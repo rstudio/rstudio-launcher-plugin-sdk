@@ -313,7 +313,6 @@ struct Job
    std::string WorkingDirectory;
 };
 
-
 /**
  * @brief Struct which represents a custom configuration setting for jobs launched with a given Plugin.
  *
