@@ -1859,19 +1859,58 @@ TEST_CASE("Get Job Config Value")
    CHECK_FALSE(val3);
 }
 
-TEST_CASE("Matches tags (does)")
+TEST_CASE("Matches tags")
 {
+   Job job;
+   job.Tags.emplace_back("tag 1");
+   job.Tags.emplace_back("Job Launcher");
+   job.Tags.emplace_back("Session");
+   job.Tags.emplace_back("RStudio Session");
 
-}
+   SECTION("Exactly one match")
+   {
+      CHECK(job.matchesTags({ "tag 1" }));
+   }
 
-TEST_CASE("Matches tags (doesn't, some)")
-{
+   SECTION("No match (str is a prefix)")
+   {
+      CHECK_FALSE(job.matchesTags({ "RStudio" }));
+   }
 
-}
+   SECTION("Multiple matches")
+   {
+      CHECK(job.matchesTags({ "Session", "tag 1" }));
+   }
 
-TEST_CASE("Matches tags (doesn't, none)")
-{
+   SECTION("All match")
+   {
+      CHECK(job.matchesTags({ "Job Launcher", "RStudio Session", "tag 1", "Session" }));
+   }
 
+   SECTION("Duplicate tag")
+   {
+      CHECK(job.matchesTags({ "tag 1", "tag 1", "Job Launcher" }));
+   }
+
+   SECTION("Duplicate tags, more tags than the job has")
+   {
+      CHECK(job.matchesTags({ "Job Launcher", "tag 1", "tag 1", "Session", "Job Launcher", "tag 1" }));
+   }
+
+   SECTION("Some match, some don't")
+   {
+      CHECK_FALSE(job.matchesTags({ "RStudio Session", "tag 1", "tag", "session" }));
+   }
+
+   SECTION("More tags than the job has, no duplicates")
+   {
+      CHECK_FALSE(job.matchesTags({ "Job Launcher", "tag-1", "RStudio Session", "tag 1", "Session", "not a tag" }));
+   }
+
+   SECTION("No tags")
+   {
+      CHECK(job.matchesTags({ }));
+   }
 }
 
 } // namespace api

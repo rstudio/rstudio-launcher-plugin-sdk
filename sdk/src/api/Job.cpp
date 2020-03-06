@@ -556,6 +556,27 @@ Optional<std::string> Job::getJobConfigValue(const std::string& in_name) const
    return value;
 }
 
+bool Job::matchesTags(const std::vector<std::string>& in_tags) const
+{
+   for (const std::string& searchTag: in_tags)
+   {
+      bool match = false;
+      for (const std::string& existingTag: Tags)
+      {
+         if (searchTag == existingTag)
+         {
+            match = true;
+            break;
+         }
+      }
+
+      if (!match)
+         return false;
+   }
+
+   return true;
+}
+
 // Job Config ==========================================================================================================
 JobConfig::JobConfig(const std::string& in_name, Type in_type) :
    Name(in_name),
