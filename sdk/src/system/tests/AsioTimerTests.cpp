@@ -23,13 +23,52 @@
 
 #include <TestMain.hpp>
 
+#include <unistd.h>
+
 #include <system/Asio.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
 namespace system {
 
+struct Init
+{
+   Init()
+   {
+      AsioService::startThreads(1);
+   }
 
+   ~Init()
+   {
+      try
+      {
+         AsioService::stop();
+         AsioService::waitForExit();
+      }
+      catch (...)
+      {
+      }
+   }
+};
+
+TEST_CASE("Timer is invoked")
+{
+   Init init;
+   AsyncTimedEvent timer;
+   int count = 0;
+   auto func = [&count]()
+   {
+      ++count;
+   };
+
+   timer.start(2, func);
+   sleep(3);
+   CHECK(count == 1);
+
+   sleep(6);
+   timer.cancel();
+   CHECK(count == 4);
+}
 
 } // namespace system
 } // namespace launcher_plugins
