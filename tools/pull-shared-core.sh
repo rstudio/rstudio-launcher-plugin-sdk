@@ -3,7 +3,7 @@
 #
 # pull-shared-core
 #
-# Copyright (C) 2019 by RStudio, Inc.
+# Copyright (C) 2019-20 by RStudio, PBC
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -145,6 +145,8 @@ copyFile()
     replace "$DEST" 'log::' 'logging::'
     replace "$DEST" "RSTUDIO_BOOST_NAMESPACE" "boost"
     replace "$DEST" "thread::" "system::"
+    replace "$DEST" "#include <boost/noncopyable.hpp>" "#include <Noncopyable.hpp>"
+    replace "$DEST" "boost::noncopyable" "Noncopyable"
 
     # Fix includes
     for I in "${!SRC_INCLUDES[@]}"; do

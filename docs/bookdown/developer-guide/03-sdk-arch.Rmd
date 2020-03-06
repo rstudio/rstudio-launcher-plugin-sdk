@@ -1,0 +1,120 @@
+# RStudio Launcher Plugin SDK Architecture {#sdkarch}
+
+The RStudio Launcher Plugin SDK is designed to allow the Plugin developer to implement as little code as possible in order to get a working Plugin. Figure \@ref(fig:sdk-arch) describes the architecture of the SDK at a high, component level. The Plugin developer only needs to be concerned with those components which interface directly with the job scheduling system: Job Status Watcher, Job Source, Resource Utilization Stream, and Output Stream. Nevertheless, it can be useful to have a more full understanding of the workings of the SDK when making complex implementation decisions.
+
+```{r sdk-arch, echo=FALSE, eval=TRUE, fig.cap="High Level Architecture"}
+knitr::include_graphics("images/sdk-arch.png")
+```
+
+
+## Launcher Communicator Component {#comms-component}
+
+The Launcher Communicator component is responsible for receiving and interpreting requests from the Launcher, and translating and sending responses to the Launcher. 
+
+The Launcher Communicator listens for data on a background thread. When data is received, the Launcher Communicator component parses and validates the data and converts each request it finds into the appropriate Request object. As parsing a request is an expensive operation, the Launcher Communicator also performs this task on a background thread. The Request object is then passed to the Plugin API component to be fulfilled.
+
+When the Plugin API has the response to a request, it posts the Response object to the Launcher Communicator. The Launcher Communicator then formats the response in a way the Launcher will understand and sends it to the Launcher on a background thread.
+
+This component is fully implemented by the SDK, and requires no action from the Plugin developer.
+
+## Components {#components}
+
+### Plugin API Component {#api-component}
+
+Where the Launcher Communicator is responsible for translating the requests from the Launcher, the Plugin API component is responsible for understanding the meaning of them. Given a particular request, the Plugin API's responsibility is to dispatch the correct action from the Job Source and then convert the output to the appropriate Response object. 
+
+[Chapter 5](#pluginapi) will discuss each API call and how the Plugin API component translates those requests into actionable items for the Job Source or other components.
+
+<!-- TODO: It's possible some thread safety may be handled by the SDK base classes. This should be updated based on specifics when they're available.  -->
+Each Request that is received is processed on its own thread. As a result, classes which are implemented by the Plugin developer need to be thread safe. If the limit of threads for the process is reached, Requests will be queued until a thread is available.
+
+### Job Source Component {#source-component}
+
+The Job Source component is the main point of contact between the job scheduling system and the Plugin. The majority of the implementation work for the Plugin developer will be within this component. There are a few Launcher requests which require streamed responses. These streamed responses are the only ones which aren't covered by the Job Source. 
+
+In the majority of cases, when the Plugin API receives a request from the Launcher, it will invoke one or more methods on the Job Source and then compose a response for the Launcher based on the returned data.
+
+There is only one instance of the Job Source per instance of the Plugin. Because the Launcher can make multiple requests to a single Plugin without receiving their responses, it is possible that the Plugin API will invoke the same method on the Job Source for the same resource concurrently. In that case, the Job Source may perform the requests sequentially, if necessary. There is no requirement that Launcher requests are responded to in any particular order. For the sake of performance, however, it is ideal to perform any tasks concurrently which may be safely performed concurrently.
+
+### Job Repository Component {#job-repo-component}
+
+The Job Repository component maintains a store of jobs. Jobs which have been finished for a configurable period of time will be purged from the system. The Job Repository is mainly managed by SDK implemented classes. To ensure proper job status records, the Plugin developer only needs to be concerned with implementing a Job Status Watcher. 
+
+The Job Status Watcher is responsible for interfacing with the job scheduling system to keep track of job status changes. For the convenience of the Plugin developer, there are two base classes for the Job Status Watcher which may be inherited from: `AbstractJobStatusWatcher` and `AbstractTimedJobStatusWatcher`. 
+
+The `AbstractTimedJobStatusWatcher` has a pure virtual method which is responsible for getting the statuses of all the jobs each time it is invoked. On a configurable timer, the `AbstractTimedJobStatusWatcher` will invoke said method, and then use the results to update the Job Status Notifier component, which will in turn update any components which are interested in hearing about job status changes, such as all open Job Status Streams.
+
+On the other hand, the `AbstractJobStatusWatcher` has a pure virtual method which is responsible for streaming job statuses until the stream is canceled. The Plugin developer may choose to use either base class, depending on whether the job scheduling system has a way to stream job statuses or not.
+
+### Stream Components {#stream-components}
+
+The remaining components described in the figure \@ref(fig:sdk-arch) are all related to streamed responses. There are three types of requests which require streamed responses: Job Status Stream, Job Output Stream, and Job Resource Utilization Stream. 
+
+All three stream components are constructed by the Plugin API upon receiving the same request type, and are expected to be able to stream their respective data until canceled or completed. Each stream component has different requirements of the Plugin developer.
+
+#### Job Status Stream Component {#job-status-component}
+
+The Job Status Stream is completely implemented by the SDK and only requires a working Job Status Watcher implementation on the part of the Plugin developer. Each time a Job Status Stream request comes in from the Launcher, the Plugin API will construct a Job Status Stream object with the appropriate parameters and it will subscribe to the job status notifier and emit job status updates to the Plugin API as necessary.
+
+#### Resource Utilization Stream Component {#resource-util-component}
+
+The Resource Utilization Stream component is responsible for streaming whatever resource utilization details are available from the job scheduling system for a particular job. Upon construction, the Resource Utilization Stream is responsible for streaming resource utilization updates from the job scheduling system and emitting them to the Plugin API as they are available. The stream should continue until it is canceled by the Plugin API. 
+
+<!-- TODO: Update if class name is not exactly that later. -->
+If the job scheduling system does not support streaming resource utilization metrics, the Plugin developer may inherit from `AbstractTimedResourceUtilStream` rather than `AbstractResourceUtilStream`. The difference between the two is the same as the difference between `AbstractTimedJobStatusWatcher` and `AbstractJobStatusWatcher` as described in [section 4.2.3](#job-repo-component).
+
+Not all job scheduling systems may expose the same resource utilization metrics, and so it may not be possible for every Plugin to fulfill this request in the same way. While this feature is useful for server administrators to track the utilization of their server resources, it is not necessary for the main functionality of the Plugin, and may be considered a best-effort feature.
+
+#### Output Stream Component {#output-stream-component}
+
+The Output Stream component is responsible for streaming output data for a particular job, given that the job is either running or finished. Each Output Stream must be able to stream standard output, error output, or both simultaneously.
+
+Like the other streams, the Output Stream should emit the requested job's output data until it is canceled; however, it is also possible for an Output Stream to finish. When a job stops executing, either because it is killed or it finishes, it should no longer write output. In that case, the Output Stream may emit the remainder of output data and then self terminate. That being said, some job scheduling systems may buffer output data and write it shortly after the job enters a finished state. If that happens, the Plugin developer must find a way to determine when job output is truly finished. For example, when implementing the RStudio SLURM Launcher Plugin it was necessary to emit a recognizable but very likely unique string as the last step of each job. This way, the Output Stream for the RStudio SLURM Launcher Plugin could remain open until it read that string. The string itself is filtered from the data which is emitted to the Plugin API.
+
+#### Stream Concurrency {#stream-concurrency}
+
+Because the Plugin API will construct a new Resource Utilization Stream and Output Stream for each request of those types it receives, it is not necessary that the implementation of those classes be thread safe. Each instance should only be operating on a single thread. However, it is necessary that multiple Output Streams can be constructed and concurrently stream job output data for a single job.
+
+## Plugin Startup {#startup}
+
+When the Plugin is first launched it will initialize a number of components before entering its normal operating mode. When implementing advanced features of the SDK, it may be useful for the developer to know the order of operations prior to normal operating mode. The ordered list is below.
+
+1. The program ID is set for the whole process. This is used for logging.
+
+2. A system log destination is created and attached to the process at the INFO log level.
+
+3. A standard error log destination is created and attached at the INFO level to capture any issues with reading options.
+
+4. Default options are initialized.
+
+5. The main process is initialized. Custom options should be initialized here.
+
+6. The options are read and validated.
+
+7. The standard error log is detached.
+
+8. If higher level logging was requested, a file log destination is created in the scratch path location.
+
+9. The Launcher Communicator is constructed.
+
+10. Signal handlers are configured and core dumps are enabled.
+
+11. The Launcher Plugin API is created and initialized.
+
+12. The worker thread pool is created with the configured number of threads.
+
+13. The Launcher Communicator is started.
+
+14. The Plugin enters normal operation mode until it is killed or hits an unrecoverable error.
+
+## Plugin Tear Down {#teardown}
+
+When the Plugin receives a termination signal from the Launcher, sit starts the tear down process, which is described below:
+
+1. The Launcher Communicator is stopped. 
+
+2. The worker thread pool is stopped. This cancels all background thread work, including active streams (such as job status streams or output streams).
+
+3. The Plugin waits for all activity to fully stop.
+
+4. The Plugin exits with exit code 0.

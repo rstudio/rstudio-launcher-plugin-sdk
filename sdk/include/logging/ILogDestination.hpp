@@ -24,7 +24,7 @@
 #ifndef LAUNCHER_PLUGINS_I_LOG_DESTINATION_HPP
 #define LAUNCHER_PLUGINS_I_LOG_DESTINATION_HPP
 
-#include <boost/noncopyable.hpp>
+#include <Noncopyable.hpp>
 
 #include <string>
 
@@ -40,7 +40,7 @@ namespace logging {
  *
  * Log destinations IDs 0 - 100 are reserved for SDK provided log destinations.
  */
-class ILogDestination : boost::noncopyable
+class ILogDestination : Noncopyable
 {
 public:
    /**

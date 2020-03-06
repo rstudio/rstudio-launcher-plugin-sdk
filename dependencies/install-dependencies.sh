@@ -3,7 +3,7 @@
 #
 # install-dependencies
 #
-# Copyright (C) 2019 by RStudio, Inc.
+# Copyright (C) 2019-20 by RStudio, PBC
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -84,4 +84,5 @@ fi
 
 if [[ $INSTALL_TOOLS -eq 1 ]]; then
     "${ROOT_DIR}/install-doxygen.sh"
+    "${ROOT_DIR}/install-bookdown.sh"
 fi

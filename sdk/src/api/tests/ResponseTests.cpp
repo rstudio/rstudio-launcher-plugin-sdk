@@ -1,7 +1,7 @@
 /*
  * ResponseTests.cpp
  *
- * Copyright (C) 2020 by RStudio, Inc.
+ * Copyright (C) 2020 by RStudio, PBC
  *
  * Unless you have received this program directly from RStudio pursuant to the terms of a commercial license agreement
  * with RStudio, then this program is licensed to you under the following terms:
@@ -34,14 +34,14 @@ namespace api {
 TEST_CASE("Create Bootstrap Response")
 {
    json::Object version;
-   version.insert(FIELD_VERSION_MAJOR, json::Value(API_VERSION_MAJOR));
-   version.insert(FIELD_VERSION_MINOR, json::Value(API_VERSION_MINOR));
-   version.insert(FIELD_VERSION_PATCH, json::Value(API_VERSION_PATCH));
+   version.insert(FIELD_VERSION_MAJOR, API_VERSION_MAJOR);
+   version.insert(FIELD_VERSION_MINOR, API_VERSION_MINOR);
+   version.insert(FIELD_VERSION_PATCH, API_VERSION_PATCH);
 
    json::Object expectedResult;
-   expectedResult.insert(FIELD_MESSAGE_TYPE, json::Value(1));
-   expectedResult.insert(FIELD_REQUEST_ID, json::Value(10));
-   expectedResult.insert(FIELD_RESPONSE_ID, json::Value(1));
+   expectedResult.insert(FIELD_MESSAGE_TYPE, 1);
+   expectedResult.insert(FIELD_REQUEST_ID, 10);
+   expectedResult.insert(FIELD_RESPONSE_ID, 0);
    expectedResult.insert(FIELD_VERSION, version);
 
    BootstrapResponse bootstrapResponse(10);

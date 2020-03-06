@@ -1,7 +1,7 @@
 /*
  * QuickStartPluginApi.cpp
  * 
- * Copyright (C) 2019 by RStudio, Inc.
+ * Copyright (C) 2019-20 by RStudio, PBC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
  * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
@@ -21,7 +21,6 @@
 #include <QuickStartPluginApi.hpp>
 
 #include <QuickStartJobSource.hpp>
-#include <QuickStartOptions.hpp>
 
 #include <Error.hpp>
 
@@ -41,7 +40,6 @@ std::shared_ptr<api::IJobSource> QuickStartPluginApi::createJobSource() const
 
 Error QuickStartPluginApi::doInitialize()
 {
-   QuickStartOptions::getInstance().initialize();
    return Success();
 }
 

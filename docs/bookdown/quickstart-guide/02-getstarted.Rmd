@@ -1,0 +1,47 @@
+# Getting Started {#getstarted}
+
+## Prerequisites {#prereq}
+
+### Platform Support
+The RStudio Launcher Plugin SDK supports the following platforms:
+
+<!-- TODO: Table here? Other Platforms? More details? -->
+* Ubuntu 18
+
+### Build Dependencies
+To get started developing an RStudio Launcher Plugin using the RStudio Launcher Plugin SDK, it is necessary to install the development tools and dependencies required for building and running RStudio Launcher Plugins.
+
+The SDK provides utilities for installing many of the required libraries, however these scripts require super user access and install packages globally, so they should be used with discretion. Before running the `dependencies/install-dependencies.sh` script, review it carefully to ensure that the default installation locations will be acceptable. Otherwise, it is possible to install the dependencies manually.
+
+The RStudio Launcher Plugin SDK requires the following tools and libraries:
+
+  Name     Minimum Version          Reference
+--------  -----------------  -----------------------
+gcc/g++   4.8                https://gcc.gnu.org/
+cmake     3.15.5             https://cmake.org/
+Boost     1.70.0             https://www.boost.org/
+
+### RStudio Server Pro
+This version of the RStudio Launcher Plugin SDK is compatible with RStudio Server Pro v1.2.5000 or greater. To properly test the integration between an RStudio Launcher Plugin and RStudio Server Pro, an RStudio Server Pro license with the launcher feature enabled will be required. To acquire a license please contact sales@rstudio.com.
+
+### Job Scheduling System
+Each RStudio Launcher Plugin is intended to interface with a single job scheduling system. In order to test the RStudio Launcher Plugin implementation, access to a test environment with the desired job scheduling system will be required.
+
+## Folder Structure {#folders}
+The following describes the purpose of the files and folders which can be found within the RStudio Launcher Plugin SDK.
+
+* `CMakeGlobals.txt` - Defines global values required for the RStudio Launcher Plugin SDK cmake project.
+* `CMakeLists.txt` - The CMakeLists definition for the entire RStudio Launcher Plugin SDK cmake project. This file may be opened in any IDE which supports cmake projects for a view of the entire SDK, including the SDK itself, and the sample and QuickStart plugins.
+* `dependencies` - This folder contains scripts which may be useful for installing RStudio Launcher Plugin SDK 
+* `docs` - Formal documentation for the RStudio Launcher Plugin SDK, including the QuickStart Guide, the Developer's Guide and the source code Doxygen documentation.
+* `plugins` - The sample Local RStudio Launcher Plugin and the QuickStart RStudio Launcher Plugin.
+   * `Local` - The source code for the Local RStudio Launcher Plugin.
+       * `CMakeLists.txt` - The cmake project definition for the Local RStudio Launcher Plugin. This file may be opened in any IDE which supports cmake projects for a view of only the Local RStudio Launcher Plugin.
+   * `QuickStart` - The source code for the QuickStart RStudio Launcher Plugin.
+       * `CMakeLists.txt` - The cmake project definition for the QuickStart RStudio Launcher Plugin. This file may be opened in any IDE which supports cmake projects for a view of only the QuickStart RStudio Launcher Plugin.
+* `sdk` - The source code for the RStudio Launcher Plugin SDK.
+
+## Development Process {#devproc}
+The RStudio Launcher Plugin SDK provides the QuickStart RStudio Launcher Plugin to help reduce the complexity of developing an RStudio Launcher Plugin using the SDK. The QuickStart Plugin includes a series of `TODO` items. This document will walk the developer through the steps of each `TODO`. At the end of this document, the developer should have a functional RStudio Launcher Plugin. 
+
+If any feature requires a more complex implementation than is possible by following the `TODO` for that feature, please refer to the RStudio Launcher Plugin SDK Developer's Guide.

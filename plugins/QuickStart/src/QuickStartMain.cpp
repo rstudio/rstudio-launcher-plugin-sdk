@@ -1,7 +1,7 @@
 /*
  * QuickStartMain.cpp
  * 
- * Copyright (C) 2019 by RStudio, Inc.
+ * Copyright (C) 2019-20 by RStudio, PBC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
  * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
@@ -20,13 +20,13 @@
 
 #include <AbstractMain.hpp>
 
+#include <QuickStartOptions.hpp>
 #include <QuickStartPluginApi.hpp>
 
-
+// TODO #1: Change the namespaces based on your organization and plugin name.
 namespace rstudio {
 namespace launcher_plugins {
 namespace quickstart {
-// TODO #1: Change the namespaces based on your organization and plugin name.
 
 /**
  * @brief The Main class of the QuickStart Launcher Plugin.
@@ -61,6 +61,17 @@ class QuickStartMain : public AbstractMain
 
    // TODO #4: Optionally override getProgramId() to change the programID from rstudio-<pluginName>-launcher to
    //          myorg-<pluginName>-launcher or something similar.
+
+   /**
+    * @brief Initializes the main process, including custom options.
+    *
+    * @return Success if the process could be initialized; Error otherwise.
+    */
+   Error initialize() override
+   {
+      QuickStartOptions::getInstance().initialize();
+      return Success();
+   }
 };
 
 } // namespace quickstart

@@ -2,4 +2,5 @@
 cpp-build*/
 cmake-build*/
 rstudio-clone/
+*.log
 

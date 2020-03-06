@@ -3,7 +3,7 @@
 #
 # run-all-tests
 #
-# Copyright (C) 2019 by RStudio, Inc.
+# Copyright (C) 2019-20 by RStudio, PBC
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -41,6 +41,7 @@ runTest()
 
 
 # Unit tests first
+runTest "sdk/src/api/tests"
 runTest "sdk/src/comms/tests"
 runTest "sdk/src/options/tests"
 
