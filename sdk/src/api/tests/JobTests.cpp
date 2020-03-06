@@ -1519,12 +1519,324 @@ TEST_CASE("From JSON: Job (invalid types)")
 
 TEST_CASE("To JSON: Job (all fields)")
 {
+   // NOTE: In the toJson side, we don't validate the job.
+   JobConfig config1, config2;
+   config1.Name = "strConfVal";
+   config1.Value = "someVal";
+   config1.ValueType = JobConfig::Type::STRING;
+   config2.Name = "intConfVal";
+   config2.Value = "13";
+   config2.ValueType = JobConfig::Type::INT;
 
+   Container container;
+   container.Image = "some-image-name-123";
+   container.SupplementalGroupIds.push_back(123);
+   container.SupplementalGroupIds.push_back(4039);
+   container.RunAsGroupId = 2222;
+   container.RunAsUserId = 2222;
+
+   ExposedPort port;
+   port.Protocol = "HTTPS";
+   port.TargetPort = 8787;
+   port.PublishedPort = 443;
+
+   system::DateTime last, submitted;
+   REQUIRE_FALSE(system::DateTime::fromString("1987-04-03T13:51:19.000381Z", last));
+   REQUIRE_FALSE(system::DateTime::fromString("1987-04-03T13:21:05.412398Z", submitted));
+
+   NfsMountSource nfsSource;
+   nfsSource.Host = "some.nfs.machine:3321";
+   nfsSource.Path = "/usr/home/username";
+   HostMountSource hostSource1, hostSource2;
+   hostSource1.Path = "/a/location";
+   hostSource2.Path = "/another/loc/ation";
+   Mount mount1, mount2, mount3;
+   mount1.NfsSourcePath = nfsSource;
+   mount1.IsReadOnly = false;
+   mount1.DestinationPath = "/home";
+   mount2.HostSourcePath = hostSource1;
+   mount2.IsReadOnly = true;
+   mount2.DestinationPath = "/a/different/loc";
+   mount3.HostSourcePath = hostSource2;
+   mount3.IsReadOnly = false;
+   mount3.DestinationPath = "/another/diff/loc/ation";
+
+   PlacementConstraint const1, const2;
+   const1.Name = "customConstraint";
+   const1.Value = "57";
+   const2.Name = "otherContraint";
+   const2.Value = " a value- with spaces and--__STUFF";
+
+   ResourceLimit limit1, limit2;
+   limit1.ResourceType = ResourceLimit::Type::MEMORY_SWAP;
+   limit1.Value = "2048";
+   limit2.ResourceType = ResourceLimit::Type::CPU_COUNT;
+   limit2.Value = "6";
+
+   Job job;
+   job.Arguments.emplace_back("-n");
+   job.Arguments.emplace_back("Hello\nWorld!");
+   job.Cluster = "some_-cluster-";
+   job.Command = "echo";
+   job.Config.push_back(config1);
+   job.Config.push_back(config2);
+   job.ContainerDetails = container;
+   job.Environment.emplace_back("PATH", "/A/path;/another/path/;;");
+   job.Environment.emplace_back("SOME_VAR", "TRUE");
+   job.Exe = "/conflicting/exe";
+   job.ExitCode = 1;
+   job.ExposedPorts.push_back(port);
+   job.Host = "computer1.domain.com";
+   job.Id = "cluster-job-357";
+   job.LastUpdateTime = last;
+   job.Mounts.push_back(mount1);
+   job.Mounts.push_back(mount2);
+   job.Mounts.push_back(mount3);
+   job.Name = "RStudio Launcher Job (echo)";
+   job.Pid = 1096;
+   job.PlacementConstraints.push_back(const1);
+   job.PlacementConstraints.push_back(const2);
+   job.Queues.emplace_back("hello");
+   job.Queues.emplace_back("world");
+   job.Queues.emplace_back("keep adding");
+   job.Queues.emplace_back("MORE_QUEUES");
+   job.ResourceLimits.push_back(limit1);
+   job.ResourceLimits.push_back(limit2);
+   job.ResourceLimits.emplace_back(ResourceLimit::Type::MEMORY, "100", "20");
+   job.StandardIn = "Some Standard Input String";
+   job.StandardErrFile = "/home/cluster-job-357.err";
+   job.StandardOutFile = "/home/cluster-job-357.out";
+   job.Status = Job::State::FAILED;
+   job.StatusMessage = "Unrecognized option '-n' for exe.";
+   job.SubmissionTime = submitted;
+   job.Tags.emplace_back("tag 1");
+   job.Tags.emplace_back("tag");
+   job.Tags.emplace_back("1");
+   job.Tags.emplace_back("RStudio");
+   job.Tags.emplace_back("Job Launcher");
+   job.User = "annem";
+   job.WorkingDirectory = "/home";
+
+   json::Object env1, env2;
+   env1["name"] = "PATH";
+   env1["value"] = "/A/path;/another/path/;;";
+   env2["name"] = "SOME_VAR";
+   env2["value"] = "TRUE";
+
+   json::Array args, config, env, ports, mounts, constraints, queues, limits, tags;
+   args.push_back("-n");
+   args.push_back("Hello\nWorld!");
+   config.push_back(config1.toJson());
+   config.push_back(config2.toJson());
+   env.push_back(env1);
+   env.push_back(env2);
+   ports.push_back(port.toJson());
+   mounts.push_back(mount1.toJson());
+   mounts.push_back(mount2.toJson());
+   mounts.push_back(mount3.toJson());
+   constraints.push_back(const1.toJson());
+   constraints.push_back(const2.toJson());
+   queues.push_back("hello");
+   queues.push_back("world");
+   queues.push_back("keep adding");
+   queues.push_back("MORE_QUEUES");
+   limits.push_back(limit1.toJson());
+   limits.push_back(limit2.toJson());
+   limits.push_back(ResourceLimit(ResourceLimit::Type::MEMORY, "100", "20").toJson());
+   tags.push_back("tag 1");
+   tags.push_back("tag");
+   tags.push_back("1");
+   tags.push_back("RStudio");
+   tags.push_back("Job Launcher");
+
+
+   json::Object expected;
+   expected["args"] = args;
+   expected["cluster"] = "some_-cluster-";
+   expected["command"] = "echo";
+   expected["config"] = config;
+   expected["container"] = container.toJson();
+   expected["environment"] = env;
+   expected["exe"] = "/conflicting/exe";
+   expected["exitCode"] = 1;
+   expected["exposedPorts"] = ports;
+   expected["host"] = "computer1.domain.com";
+   expected["id"] = "cluster-job-357";
+   expected["lastUpdateTime"] = "1987-04-03T13:51:19.000381Z";
+   expected["mounts"] = mounts;
+   expected["name"] = "RStudio Launcher Job (echo)";
+   expected["pid"] = 1096;
+   expected["placementConstraints"] = constraints;
+   expected["queues"] = queues;
+   expected["resourceLimits"] = limits;
+   expected["stdin"] = "Some Standard Input String";
+   expected["stderrFile"] = "/home/cluster-job-357.err";
+   expected["stdoutFile"] = "/home/cluster-job-357.out";
+   expected["status"] = "Failed";
+   expected["statusMessage"] = "Unrecognized option '-n' for exe.";
+   expected["submissionTime"] = "1987-04-03T13:21:05.412398Z";
+   expected["tags"] = tags;
+   expected["user"] = "annem";
+   expected["workingDirectory"] = "/home";
+
+   CHECK(job.toJson() == expected);
 }
 
 TEST_CASE("To JSON: Job (some fields)")
 {
+   system::DateTime last, submitted;
+   REQUIRE_FALSE(system::DateTime::fromString("1987-04-03T13:51:19.000381Z", last));
+   REQUIRE_FALSE(system::DateTime::fromString("1987-04-03T13:21:05.412398Z", submitted));
 
+   ResourceLimit limit1, limit2;
+   limit1.ResourceType = ResourceLimit::Type::MEMORY_SWAP;
+   limit1.Value = "2048";
+   limit2.ResourceType = ResourceLimit::Type::CPU_COUNT;
+   limit2.Value = "6";
+
+   Job job;
+   job.Cluster = "some_-cluster-";
+   job.Command = "echo";
+   job.ExitCode = 1;
+   job.Host = "computer1.domain.com";
+   job.Id = "cluster-job-357";
+   job.LastUpdateTime = last;
+   job.Name = "RStudio Launcher Job (echo)";
+   job.Pid = 1096;
+   job.ResourceLimits.push_back(limit1);
+   job.ResourceLimits.push_back(limit2);
+   job.ResourceLimits.emplace_back(ResourceLimit::Type::MEMORY, "100", "20");
+   job.StandardIn = "Some Standard Input String";
+   job.StandardErrFile = "/home/cluster-job-357.err";
+   job.StandardOutFile = "/home/cluster-job-357.out";
+   job.Status = Job::State::RUNNING;
+   job.SubmissionTime = submitted;
+   job.User = "user38";
+   job.WorkingDirectory = "/home/user38";
+
+   json::Array limits;
+   limits.push_back(limit1.toJson());
+   limits.push_back(limit2.toJson());
+   limits.push_back(ResourceLimit(ResourceLimit::Type::MEMORY, "100", "20").toJson());
+
+   json::Object expected;
+   expected["args"] = json::Array();
+   expected["cluster"] = "some_-cluster-";
+   expected["command"] = "echo";
+   expected["config"] = json::Array();
+   expected["environment"] = json::Array();
+   expected["exe"] = "";
+   expected["exposedPorts"] = json::Array();
+   expected["exitCode"] = 1;
+   expected["host"] = "computer1.domain.com";
+   expected["id"] = "cluster-job-357";
+   expected["lastUpdateTime"] = "1987-04-03T13:51:19.000381Z";
+   expected["mounts"] = json::Array();
+   expected["name"] = "RStudio Launcher Job (echo)";
+   expected["pid"] = 1096;
+   expected["placementConstraints"] = json::Array();
+   expected["queues"] = json::Array();
+   expected["resourceLimits"] = limits;
+   expected["stdin"] = "Some Standard Input String";
+   expected["stderrFile"] = "/home/cluster-job-357.err";
+   expected["stdoutFile"] = "/home/cluster-job-357.out";
+   expected["status"] = "Running";
+   expected["submissionTime"] = "1987-04-03T13:21:05.412398Z";
+   expected["tags"] = json::Array();
+   expected["user"] = "user38";
+   expected["workingDirectory"] = "/home/user38";
+
+   CHECK(job.toJson() == expected);
+}
+
+TEST_CASE("To JSON: Job (each state type)")
+{
+   Job job;
+
+   json::Object expected;
+   expected["args"] = json::Array();
+   expected["command"] = "";
+   expected["config"] = json::Array();
+   expected["environment"] = json::Array();
+   expected["exe"] = "";
+   expected["exposedPorts"] = json::Array();
+   expected["host"] = "";
+   expected["id"] = "";
+   expected["mounts"] = json::Array();
+   expected["name"] = "";
+   expected["placementConstraints"] = json::Array();
+   expected["queues"] = json::Array();
+   expected["resourceLimits"] = json::Array();
+   expected["stdin"] = "";
+   expected["stderrFile"] = "";
+   expected["stdoutFile"] = "";
+   expected["tags"] = json::Array();
+   expected["user"] = "";
+   expected["workingDirectory"] = "";
+
+   SECTION("Canceled")
+   {
+      job.Status = Job::State::CANCELED;
+      expected["status"] = "Canceled";
+
+      CHECK(job.toJson() == expected);
+   }
+
+   SECTION("Failed")
+   {
+      job.Status = Job::State::FAILED;
+      expected["status"] = "Failed";
+
+      CHECK(job.toJson() == expected);
+   }
+
+   SECTION("Finished")
+   {
+      job.Status = Job::State::FINISHED;
+      expected["status"] = "Finished";
+
+      CHECK(job.toJson() == expected);
+   }
+
+   SECTION("Killed")
+   {
+      job.Status = Job::State::FINISHED;
+      expected["status"] = "Finished";
+
+      CHECK(job.toJson() == expected);
+   }
+
+   SECTION("Pending")
+   {
+      job.Status = Job::State::PENDING;
+      expected["status"] = "Pending";
+
+      CHECK(job.toJson() == expected);
+   }
+
+   SECTION("Running")
+   {
+      job.Status = Job::State::RUNNING;
+      expected["status"] = "Running";
+
+      CHECK(job.toJson() == expected);
+   }
+
+   SECTION("Suspended")
+   {
+      job.Status = Job::State::SUSPENDED;
+      expected["status"] = "Suspended";
+
+      CHECK(job.toJson() == expected);
+   }
+
+   SECTION("None")
+   {
+      job.Status = Job::State::UNKNOWN;
+      expected["status"] = "";
+
+      CHECK(job.toJson() == expected);
+   }
 }
 
 TEST_CASE("Get Job Config Value (found)")

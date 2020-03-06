@@ -147,6 +147,30 @@ Error jobStatusFromString(const std::string& io_statusStr, Job::State& out_state
    return Success();
 }
 
+std::string jobStatusToString(const Job::State& in_state)
+{
+   switch (in_state)
+   {
+      case Job::State::CANCELED:
+         return JOB_STATUS_CANCELED;
+      case Job::State::FAILED:
+         return JOB_STATUS_FAILED;
+      case Job::State::FINISHED:
+         return JOB_STATUS_FINISHED;
+      case Job::State::KILLED:
+         return JOB_STATUS_KILLED;
+      case Job::State::PENDING:
+         return JOB_STATUS_PENDING;
+      case Job::State::RUNNING:
+         return JOB_STATUS_RUNNING;
+      case Job::State::SUSPENDED:
+         return JOB_STATUS_SUSPENDED;
+      case Job::State::UNKNOWN:
+      default:
+         return "";
+   }
+}
+
 template <typename T>
 Error fromJsonArray(const json::Array& in_jsonArray, std::vector<T>& out_array)
 {
@@ -196,6 +220,33 @@ Error fromJsonArray(const json::Array& in_jsonArray, std::vector<EnvVariable>& o
    }
 
    return Success();
+}
+
+template <typename T>
+json::Array toJsonArray(const std::vector<T>& in_vector)
+{
+   json::Array arr;
+
+   for (const T& val: in_vector)
+      arr.push_back(val.toJson());
+
+   return arr;
+}
+
+template <>
+json::Array toJsonArray(const std::vector<EnvVariable>& in_vector)
+{
+   json::Array arr;
+
+   for (const EnvVariable& val: in_vector)
+   {
+      json::Object envObj;
+      envObj[ENVIRONMENT_NAME] = val.first;
+      envObj[ENVIRONMENT_VALUE] = val.second;
+      arr.push_back(envObj);
+   }
+
+   return arr;
 }
 
 Error& updateError(const std::string& in_name, const json::Object& in_object, Error& io_error)
@@ -432,6 +483,61 @@ Error Job::fromJson(const json::Object& in_json, Job& out_job)
 
    out_job = result;
    return Success();
+}
+
+json::Object Job::toJson() const
+{
+   json::Object jobObj;
+
+   jobObj[JOB_ARGUMENTS] = json::toJsonArray(Arguments);
+
+   if (!Cluster.empty())
+      jobObj[JOB_CLUSTER] = Cluster;
+
+   jobObj[JOB_COMMAND] = Command;
+   jobObj[JOB_CONFIG] = toJsonArray(Config);
+
+   if (ContainerDetails)
+      jobObj[JOB_CONTAINER] = ContainerDetails.getValueOr(Container()).toJson();
+
+   jobObj[JOB_ENVIRONMENT] = toJsonArray(Environment);
+   jobObj[JOB_EXECUTABLE] = Exe;
+   jobObj[JOB_EXPOSED_PORTS] = toJsonArray(ExposedPorts);
+
+   if (ExitCode)
+      jobObj[JOB_EXIT_CODE] = ExitCode.getValueOr(-1);
+
+   jobObj[JOB_HOST] = Host;
+   jobObj[JOB_ID] = Id;
+
+   if (LastUpdateTime)
+      jobObj[JOB_LAST_UPDATE_TIME] = LastUpdateTime.getValueOr(system::DateTime()).toString();
+
+   jobObj[JOB_MOUNTS] = toJsonArray(Mounts);
+   jobObj[JOB_NAME] = Name;
+
+   if (Pid)
+      jobObj[JOB_PID] = Pid.getValueOr(-1);
+
+   jobObj[JOB_PLACEMENT_CONSTRAINTS] = toJsonArray(PlacementConstraints);
+   jobObj[JOB_QUEUES] = json::toJsonArray(Queues);
+   jobObj[JOB_RESOURCE_LIMITS] = toJsonArray(ResourceLimits);
+   jobObj[JOB_STANDARD_IN] = StandardIn;
+   jobObj[JOB_STANDARD_ERROR_FILE] = StandardErrFile;
+   jobObj[JOB_STANDARD_OUTPUT_FILE] = StandardOutFile;
+   jobObj[JOB_STATUS] = jobStatusToString(Status);
+
+   if (!StatusMessage.empty())
+      jobObj[JOB_STATUS_MESSAGE] = StatusMessage;
+
+   if (SubmissionTime)
+      jobObj[JOB_SUBMISSION_TIME] = SubmissionTime.getValueOr(system::DateTime()).toString();
+
+   jobObj[JOB_TAGS] = json::toJsonArray(Tags);
+   jobObj[JOB_USER] = User;
+   jobObj[JOB_WORKING_DIRECTORY] = WorkingDirectory;
+
+   return jobObj;
 }
 
 // Job Config ==========================================================================================================
