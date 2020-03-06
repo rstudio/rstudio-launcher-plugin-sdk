@@ -98,9 +98,7 @@ void AsioService::post(const AsioFunction& in_work)
 void AsioService::setSignalHandler(const OnSignal &in_onSignal)
 {
    std::shared_ptr<Impl> sharedThis = getAsioService().m_impl;
-   try
-   {
-      boost::unique_lock<boost::mutex> lock(sharedThis->Mutex);
+   UNIQUE_LOCK_MUTEX(sharedThis->Mutex)
 
       if (!sharedThis->IsSignalSetInit)
       {
@@ -119,9 +117,8 @@ void AsioService::startThreads(size_t in_numThreads)
 {
    std::shared_ptr<Impl> sharedThis = getAsioService().m_impl;
 
-   try
-   {
-      boost::unique_lock<boost::mutex> lock(sharedThis->Mutex);
+   UNIQUE_LOCK_MUTEX(sharedThis->Mutex)
+
       if (sharedThis->IsRunning)
       {
          for (size_t i = 0; i < in_numThreads; ++i)
@@ -141,9 +138,8 @@ void AsioService::stop()
 {
    std::shared_ptr<Impl> sharedThis = getAsioService().m_impl;
 
-   try
-   {
-      boost::lock_guard<boost::mutex> lock(sharedThis->Mutex);
+   LOCK_MUTEX(sharedThis->Mutex)
+
       if (sharedThis->IsRunning)
       {
          sharedThis->IoService.stop();
@@ -218,9 +214,8 @@ struct AsioStream::Impl : public std::enable_shared_from_this<AsioStream::Impl>
                         "Could not write to stream with descriptor " + std::to_string(instance->StreamDescriptor.native_handle()) + ".",
                         ERROR_LOCATION));
 
-               try
-               {
-                  boost::unique_lock<boost::mutex> lock(instance->Mutex);
+               UNIQUE_LOCK_MUTEX(instance->Mutex)
+
                   if (instance->WriteBuffer.front().size() > in_writtenLength)
                   {
                      // We failed to write all of the bytes.
@@ -240,6 +235,7 @@ struct AsioStream::Impl : public std::enable_shared_from_this<AsioStream::Impl>
                   // If there was no error, pop the first message and start writing over again.
                   instance->WriteBuffer.pop();
                   instance->startWriting(lock, in_onError);
+
                END_LOCK_MUTEX
             }
          };
@@ -301,9 +297,7 @@ void AsioStream::readBytes(const OnReadBytes& in_onReadBytes, const OnError& in_
 
 void AsioStream::writeBytes(const std::string& in_data, const OnError& in_onError)
 {
-   try
-   {
-      boost::unique_lock<boost::mutex> lock(m_impl->Mutex);
+   UNIQUE_LOCK_MUTEX(m_impl->Mutex)
 
       m_impl->WriteBuffer.push(in_data);
       if (m_impl->WriteBuffer.size() == 1)
@@ -391,9 +385,7 @@ void AsyncTimedEvent::start(uint64_t in_intervalSeconds, const AsioFunction& in_
 
 void AsyncTimedEvent::cancel()
 {
-   try
-   {
-      boost::unique_lock<boost::mutex> lock(m_impl->Mutex);
+   UNIQUE_LOCK_MUTEX(m_impl->Mutex)
 
       m_impl->Running = false;
       if (m_impl->Timer)
