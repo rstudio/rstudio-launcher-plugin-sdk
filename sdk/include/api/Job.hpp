@@ -25,6 +25,7 @@
 #define LAUNCHER_PLUGINS_JOB_HPP
 
 #include <ctime>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -207,7 +208,7 @@ struct Job
     *
     * @return True if this job has all of the supplied tags; false otherwise.
     */
-   bool matchesTags(const std::vector<std::string>& in_tags) const;
+   bool matchesTags(const std::set<std::string>& in_tags) const;
 
    /**
     * @brief Converts this Job to a JSON object which represents it.
@@ -304,7 +305,7 @@ struct Job
    Optional<system::DateTime> SubmissionTime;
 
    /** The tags which were set on the job by the user. Can be used for filtering jobs based on tags. */
-   std::vector<std::string> Tags;
+   std::set<std::string> Tags;
 
    /** The user who ran the job. */
    std::string User;

@@ -1343,7 +1343,9 @@ TEST_CASE("From JSON: Job (all fields, exe)")
    CHECK(job.StatusMessage == "Exited successfully.");
    CHECK((job.SubmissionTime && job.SubmissionTime.getValueOr(system::DateTime()).toString() == "2020-01-14T04:20:13Z"));
    REQUIRE(job.Tags.size() == 3);
-   CHECK((job.Tags[0] == "tag1" && job.Tags[1] == "another tag" && job.Tags[2] == "4th_tag"));
+   CHECK((job.Tags.find("tag1") != job.Tags.end() &&
+          job.Tags.find("another tag") != job.Tags.end() &&
+          job.Tags.find("4th_tag") != job.Tags.end()));
    CHECK(job.User == "bobg");
    CHECK(job.WorkingDirectory == "/current/dir");
 }
@@ -1609,11 +1611,11 @@ TEST_CASE("To JSON: Job (all fields)")
    job.Status = Job::State::FAILED;
    job.StatusMessage = "Unrecognized option '-n' for exe.";
    job.SubmissionTime = submitted;
-   job.Tags.emplace_back("tag 1");
-   job.Tags.emplace_back("tag");
-   job.Tags.emplace_back("1");
-   job.Tags.emplace_back("RStudio");
-   job.Tags.emplace_back("Job Launcher");
+   job.Tags.insert("tag 1");
+   job.Tags.insert("tag");
+   job.Tags.insert("1");
+   job.Tags.insert("RStudio");
+   job.Tags.insert("Job Launcher");
    job.User = "annem";
    job.WorkingDirectory = "/home";
 
@@ -1643,12 +1645,13 @@ TEST_CASE("To JSON: Job (all fields)")
    limits.push_back(limit1.toJson());
    limits.push_back(limit2.toJson());
    limits.push_back(ResourceLimit(ResourceLimit::Type::MEMORY, "100", "20").toJson());
-   tags.push_back("tag 1");
-   tags.push_back("tag");
-   tags.push_back("1");
-   tags.push_back("RStudio");
-   tags.push_back("Job Launcher");
 
+   // Tags are a set and will be alphabetized
+   tags.push_back("1");
+   tags.push_back("Job Launcher");
+   tags.push_back("RStudio");
+   tags.push_back("tag");
+   tags.push_back("tag 1");
 
    json::Object expected;
    expected["args"] = args;
@@ -1862,10 +1865,10 @@ TEST_CASE("Get Job Config Value")
 TEST_CASE("Matches tags")
 {
    Job job;
-   job.Tags.emplace_back("tag 1");
-   job.Tags.emplace_back("Job Launcher");
-   job.Tags.emplace_back("Session");
-   job.Tags.emplace_back("RStudio Session");
+   job.Tags.insert("tag 1");
+   job.Tags.insert("Job Launcher");
+   job.Tags.insert("Session");
+   job.Tags.insert("RStudio Session");
 
    SECTION("Exactly one match")
    {

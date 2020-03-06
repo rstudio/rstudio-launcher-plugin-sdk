@@ -356,7 +356,8 @@ Error Job::fromJson(const json::Object& in_json, Job& out_job)
 {
    // Everything but the name is optional.
    Job result;
-   Optional<std::vector<std::string> > arguments, queues, tags;
+   Optional<std::vector<std::string> > arguments, queues;
+   Optional<std::set<std::string> > tags;
    Optional<std::string> cluster, command, exe, host, id, lastUpTime, stdIn, stdErr, stdOut, status, statusMessage,
                          submitTime, user, workingDir;
    Optional<json::Object> containerObj;
@@ -420,7 +421,7 @@ Error Job::fromJson(const json::Object& in_json, Job& out_job)
    result.StandardOutFile = stdOut.getValueOr("");
    result.StatusMessage = statusMessage.getValueOr("");
    result.User = user.getValueOr("");
-   result.Tags = tags.getValueOr(std::vector<std::string>());
+   result.Tags = tags.getValueOr(std::set<std::string>());
    result.WorkingDirectory = workingDir.getValueOr("");
 
    if (containerObj)
@@ -556,23 +557,14 @@ Optional<std::string> Job::getJobConfigValue(const std::string& in_name) const
    return value;
 }
 
-bool Job::matchesTags(const std::vector<std::string>& in_tags) const
+bool Job::matchesTags(const std::set<std::string>& in_tags) const
 {
-   for (const std::string& searchTag: in_tags)
-   {
-      bool match = false;
-      for (const std::string& existingTag: Tags)
-      {
-         if (searchTag == existingTag)
-         {
-            match = true;
-            break;
-         }
-      }
+   if (in_tags.size() > Tags.size())
+      return false;
 
-      if (!match)
+   for (const std::string& searchTag: in_tags)
+      if (Tags.find(searchTag) == Tags.end())
          return false;
-   }
 
    return true;
 }
