@@ -350,6 +350,13 @@ Error Job::fromJson(const json::Object& in_json, Job& out_job)
       return error;
    }
 
+   if (!command && !exe && !containerObj)
+   {
+      error = Error("JobParseError", 2, R"(Job must have one of fields "command", "exe", and "container" set.)", ERROR_LOCATION);
+      error.addProperty("job", in_json.write());
+      return error;
+   }
+
    result.Arguments = arguments.getValueOr(std::vector<std::string>());
    result.Cluster = cluster.getValueOr("");
    result.Command = command.getValueOr("");

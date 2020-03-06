@@ -821,16 +821,17 @@ TEST_CASE("To JSON: Placement Constraint")
 }
 
 // Job =================================================================================================================
-TEST_CASE("From JSON: Job (name only)")
+TEST_CASE("From JSON: Job (name and command only)")
 {
    json::Object jobObj;
+   jobObj["command"] = "run-tests";
    jobObj["name"] = "First Job";
 
    Job job;
    REQUIRE_FALSE(Job::fromJson(jobObj, job));
    CHECK(job.Arguments.empty());
    CHECK(job.Cluster.empty());
-   CHECK(job.Command.empty());
+   CHECK(job.Command == "run-tests");
    CHECK(job.Config.empty());
    CHECK_FALSE(job.ContainerDetails);
    CHECK(job.Environment.empty());
@@ -857,9 +858,10 @@ TEST_CASE("From JSON: Job (name only)")
    CHECK(job.WorkingDirectory.empty());
 }
 
-TEST_CASE("From JSON: Job (name and state, canceled)")
+TEST_CASE("From JSON: Job (name, exe, and state, canceled)")
 {
    json::Object jobObj;
+   jobObj["exe"] = "/bin/my-exe";
    jobObj["name"] = "Second-Job";
    jobObj["status"] = "Canceled";
 
@@ -871,7 +873,7 @@ TEST_CASE("From JSON: Job (name and state, canceled)")
    CHECK(job.Config.empty());
    CHECK_FALSE(job.ContainerDetails);
    CHECK(job.Environment.empty());
-   CHECK(job.Exe.empty());
+   CHECK(job.Exe == "/bin/my-exe");
    CHECK_FALSE(job.ExitCode);
    CHECK(job.ExposedPorts.empty());
    CHECK(job.Host.empty());
@@ -897,6 +899,7 @@ TEST_CASE("From JSON: Job (name and state, canceled)")
 TEST_CASE("From JSON: Job (name and state, failed)")
 {
    json::Object jobObj;
+   jobObj["exe"] = "/bin/my-exe";
    jobObj["name"] = "3rd_Job";
    jobObj["status"] = "Failed";
 
@@ -908,7 +911,7 @@ TEST_CASE("From JSON: Job (name and state, failed)")
    CHECK(job.Config.empty());
    CHECK_FALSE(job.ContainerDetails);
    CHECK(job.Environment.empty());
-   CHECK(job.Exe.empty());
+   CHECK(job.Exe == "/bin/my-exe");
    CHECK_FALSE(job.ExitCode);
    CHECK(job.ExposedPorts.empty());
    CHECK(job.Host.empty());
@@ -933,7 +936,11 @@ TEST_CASE("From JSON: Job (name and state, failed)")
 
 TEST_CASE("From JSON: Job (name and state, finished)")
 {
+   json::Object container;
+   container["image"] = "do-task-container";
+
    json::Object jobObj;
+   jobObj["container"] = container;
    jobObj["name"] = "another!Job";
    jobObj["status"] = "Finished";
 
@@ -943,7 +950,11 @@ TEST_CASE("From JSON: Job (name and state, finished)")
    CHECK(job.Cluster.empty());
    CHECK(job.Command.empty());
    CHECK(job.Config.empty());
-   CHECK_FALSE(job.ContainerDetails);
+   CHECK(((job.ContainerDetails &&
+          job.ContainerDetails.getValueOr(Container()).Image == "do-task-container") &&
+          !job.ContainerDetails.getValueOr(Container()).RunAsUserId &&
+          !job.ContainerDetails.getValueOr(Container()).RunAsGroupId &&
+          job.ContainerDetails.getValueOr(Container()).SupplementalGroupIds.empty()));
    CHECK(job.Environment.empty());
    CHECK(job.Exe.empty());
    CHECK_FALSE(job.ExitCode);
@@ -971,6 +982,7 @@ TEST_CASE("From JSON: Job (name and state, finished)")
 TEST_CASE("From JSON: Job (name and state, killed)")
 {
    json::Object jobObj;
+   jobObj["exe"] = "/bin/my-exe";
    jobObj["name"] = "some&Job";
    jobObj["status"] = "Killed";
 
@@ -982,7 +994,7 @@ TEST_CASE("From JSON: Job (name and state, killed)")
    CHECK(job.Config.empty());
    CHECK_FALSE(job.ContainerDetails);
    CHECK(job.Environment.empty());
-   CHECK(job.Exe.empty());
+   CHECK(job.Exe == "/bin/my-exe");
    CHECK_FALSE(job.ExitCode);
    CHECK(job.ExposedPorts.empty());
    CHECK(job.Host.empty());
@@ -1008,6 +1020,7 @@ TEST_CASE("From JSON: Job (name and state, killed)")
 TEST_CASE("From JSON: Job (name and state, pending)")
 {
    json::Object jobObj;
+   jobObj["exe"] = "/bin/my-exe";
    jobObj["name"] = "A really really, really really, really really really long job name";
    jobObj["status"] = "Pending";
 
@@ -1019,7 +1032,7 @@ TEST_CASE("From JSON: Job (name and state, pending)")
    CHECK(job.Config.empty());
    CHECK_FALSE(job.ContainerDetails);
    CHECK(job.Environment.empty());
-   CHECK(job.Exe.empty());
+   CHECK(job.Exe == "/bin/my-exe");
    CHECK_FALSE(job.ExitCode);
    CHECK(job.ExposedPorts.empty());
    CHECK(job.Host.empty());
@@ -1045,6 +1058,7 @@ TEST_CASE("From JSON: Job (name and state, pending)")
 TEST_CASE("From JSON: Job (name and state, running)")
 {
    json::Object jobObj;
+   jobObj["exe"] = "/bin/my-exe";
    jobObj["name"] = "First Job";
    jobObj["status"] = "Running";
 
@@ -1056,7 +1070,7 @@ TEST_CASE("From JSON: Job (name and state, running)")
    CHECK(job.Config.empty());
    CHECK_FALSE(job.ContainerDetails);
    CHECK(job.Environment.empty());
-   CHECK(job.Exe.empty());
+   CHECK(job.Exe == "/bin/my-exe");
    CHECK_FALSE(job.ExitCode);
    CHECK(job.ExposedPorts.empty());
    CHECK(job.Host.empty());
@@ -1082,6 +1096,7 @@ TEST_CASE("From JSON: Job (name and state, running)")
 TEST_CASE("From JSON: Job (name and state, suspended, extra whitespace)")
 {
    json::Object jobObj;
+   jobObj["exe"] = "/bin/my-exe";
    jobObj["name"] = "First Job";
    jobObj["status"] = "  Suspended  ";
 
@@ -1093,7 +1108,7 @@ TEST_CASE("From JSON: Job (name and state, suspended, extra whitespace)")
    CHECK(job.Config.empty());
    CHECK_FALSE(job.ContainerDetails);
    CHECK(job.Environment.empty());
-   CHECK(job.Exe.empty());
+   CHECK(job.Exe == "/bin/my-exe");
    CHECK_FALSE(job.ExitCode);
    CHECK(job.ExposedPorts.empty());
    CHECK(job.Host.empty());
@@ -1119,6 +1134,7 @@ TEST_CASE("From JSON: Job (name and state, suspended, extra whitespace)")
 TEST_CASE("From JSON: Job (invalid status)")
 {
    json::Object jobObj;
+   jobObj["exe"] = "/bin/my-exe";
    jobObj["name"] = "First Job";
    jobObj["status"] = "Not a job status";
 
