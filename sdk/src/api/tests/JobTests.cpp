@@ -1414,6 +1414,109 @@ TEST_CASE("From JSON: Job (no name)")
    REQUIRE(Job::fromJson(jobObj, job));
 }
 
+TEST_CASE("From JSON: Job (no exe, command, or container)")
+{
+   json::Object jobObj;
+   jobObj["name"] = "job-name";
+
+   Job job;
+   REQUIRE(Job::fromJson(jobObj, job));
+}
+
+TEST_CASE("From JSON: Job (invalid types)")
+{
+   json::Object jobObj;
+   jobObj["command"] = "echo";
+   jobObj["name"] = "Hello World Job";
+
+   SECTION("String array w/ int")
+   {
+      json::Array args;
+      args.push_back(1);
+      args.push_back("2");
+
+      jobObj["args"] = args;
+
+      Job job;
+      CHECK(Job::fromJson(jobObj, job));
+   }
+
+   SECTION("String array w/ obj")
+   {
+      json::Object obj;
+      obj["some"] = "fields";
+      obj["and"] = 10;
+
+      json::Array queues;
+      queues.push_back("a queue");
+      queues.push_back(obj);
+
+      jobObj["queues"] = queues;
+
+      Job job;
+      CHECK(Job::fromJson(jobObj, job));
+   }
+
+   SECTION("Non-obj on Obj array")
+   {
+      ResourceLimit limit(ResourceLimit::Type::MEMORY, "250", "50");
+      json::Array limits;
+      limits.push_back(limit.toJson());
+      limits.push_back("a string");
+
+      jobObj["resourceLimits"] = limits;
+
+      Job job;
+      CHECK(Job::fromJson(jobObj, job));
+   }
+
+   SECTION("Wrong obj in array")
+   {
+      JobConfig conf;
+      conf.Name = "confName";
+      conf.Value = "32";
+      ResourceLimit limit(ResourceLimit::Type::MEMORY, "250", "50");
+      json::Array configs;
+      configs.push_back(limit.toJson());
+      configs.push_back(conf.toJson());
+
+      jobObj["config"] = configs;
+
+      Job job;
+      CHECK(Job::fromJson(jobObj, job));
+   }
+
+   SECTION("Non-obj as object")
+   {
+      jobObj["container"] = false;
+
+      Job job;
+      CHECK(Job::fromJson(jobObj, job));
+   }
+
+   SECTION("Array as object")
+   {
+      json::Array arr;
+      arr.push_back(false);
+      arr.push_back(2);
+      arr.push_back("str");
+      jobObj["container"] = arr;
+
+      Job job;
+      CHECK(Job::fromJson(jobObj, job));
+   }
+
+   SECTION("Array as int")
+   {
+      json::Array arr;
+      jobObj["pid"] = arr;
+
+      Job job;
+      CHECK(Job::fromJson(jobObj, job));
+   }
+}
+
+
 TEST_CASE("To JSON: Job (all fields)")
 {
 
