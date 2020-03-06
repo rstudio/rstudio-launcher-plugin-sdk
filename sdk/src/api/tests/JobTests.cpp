@@ -1839,14 +1839,24 @@ TEST_CASE("To JSON: Job (each state type)")
    }
 }
 
-TEST_CASE("Get Job Config Value (found)")
+TEST_CASE("Get Job Config Value")
 {
+   JobConfig config1, config2;
+   config1.Name = "type1";
+   config1.Value = "some-val";
+   config2.Name = "type2";
+   config2.Value = "4";
 
-}
+   Job job;
+   job.Config.push_back(config1);
+   job.Config.push_back(config2);
 
-TEST_CASE("Get Job Config Value (not found)")
-{
-
+   auto val1 = job.getJobConfigValue("type1");
+   auto val2 = job.getJobConfigValue("type2");
+   auto val3 = job.getJobConfigValue("type3");
+   CHECK((val1 && val1.getValueOr("") == "some-val"));
+   CHECK((val2 && val2.getValueOr("") == "4"));
+   CHECK_FALSE(val3);
 }
 
 TEST_CASE("Matches tags (does)")

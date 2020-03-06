@@ -540,6 +540,22 @@ json::Object Job::toJson() const
    return jobObj;
 }
 
+Optional<std::string> Job::getJobConfigValue(const std::string& in_name) const
+{
+   Optional<std::string> value;
+
+   for (const JobConfig& conf: Config)
+   {
+      if (conf.Name == in_name)
+      {
+         value = conf.Value;
+         break;
+      }
+   }
+
+   return value;
+}
+
 // Job Config ==========================================================================================================
 JobConfig::JobConfig(const std::string& in_name, Type in_type) :
    Name(in_name),
