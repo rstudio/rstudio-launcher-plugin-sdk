@@ -30,7 +30,7 @@ include_directories(
 )
 
 set(RLPS_SYSTEM_TEST_SOURCES
-   AsioTimerTests.cpp
+   AsyncTimerTests.cpp
 )
 
 # Abstract Communicator Tests
