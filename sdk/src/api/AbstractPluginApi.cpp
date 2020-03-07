@@ -98,21 +98,21 @@ struct AbstractPluginApi::Impl
          return LauncherCommunicator->sendResponse(
             ClusterInfoResponse(
                in_clusterInfoRequest->getId(),
+               JobSource->allowUnknownImages(),
+               JobSource->getCustomConfig(),
                JobSource->getContainerImages(),
                JobSource->getDefaultImage(),
-               JobSource->allowUnknownImages(),
-               JobSource->getQueues(),
-               JobSource->getResourceLimits(),
                JobSource->getPlacementConstraints(),
-               JobSource->getCustomConfig()));
+               JobSource->getQueues(),
+               JobSource->getResourceLimits()));
 
       return LauncherCommunicator->sendResponse(
          ClusterInfoResponse(
             in_clusterInfoRequest->getId(),
-            JobSource->getQueues(),
-            JobSource->getResourceLimits(),
+            JobSource->getCustomConfig(),
             JobSource->getPlacementConstraints(),
-            JobSource->getCustomConfig()));
+            JobSource->getQueues(),
+            JobSource->getResourceLimits()));
    }
 
    /**

@@ -77,10 +77,10 @@ TEST_CASE("Create ClusterInfo Response")
 
       ClusterInfoResponse clusterInfoResponse(
          26,
-         { "queue1", "QUEUE-TWO" },
-         { limit1, limit2, limit3 },
          {},
-         {});
+         {},
+         { "queue1", "QUEUE-TWO" },
+         { limit1, limit2, limit3 });
 
       json::Array queues, limits;
       queues.push_back("queue1");
@@ -118,10 +118,10 @@ TEST_CASE("Create ClusterInfo Response")
 
       ClusterInfoResponse clusterInfoResponse(
          26,
-         { "queue1", "QUEUE-TWO", "another queue" },
-         { limit1, limit2, limit3, limit4 },
+         { config1, config2, config3 },
          { constraint1, constraint2, constraint3, constraint4, constraint5 },
-         { config1, config2, config3 });
+         { "queue1", "QUEUE-TWO", "another queue" },
+         { limit1, limit2, limit3, limit4 });
 
       json::Array config, constraints, queues, limits;
       config.push_back(config1.toJson());
@@ -154,7 +154,7 @@ TEST_CASE("Create ClusterInfo Response")
    {
       std::set<std::string> images = { "image-number-1", "Image2", "  image_three_ " };
 
-      ClusterInfoResponse clusterInfoResponse(26, images, "", false, {}, {}, {}, {});
+      ClusterInfoResponse clusterInfoResponse(26, false, {},  images, "",  {}, {}, {});
 
       json::Array imageArr;
       imageArr.push_back("  image_three_ ");
@@ -176,7 +176,7 @@ TEST_CASE("Create ClusterInfo Response")
    {
       std::set<std::string> images = { "image-number-1", "Image2", "  image_three_ " };
 
-      ClusterInfoResponse clusterInfoResponse(26, images, "  image_three_ ", true, {}, {}, {}, {});
+      ClusterInfoResponse clusterInfoResponse(26, true, {}, images, "  image_three_ ", {}, {}, {});
 
       json::Array imageArr;
       imageArr.push_back("  image_three_ ");

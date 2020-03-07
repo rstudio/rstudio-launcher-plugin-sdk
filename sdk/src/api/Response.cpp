@@ -152,10 +152,10 @@ HeartbeatResponse::HeartbeatResponse() :
 struct ClusterInfoResponse::Impl
 {
    Impl(
-      std::vector<std::string> in_queues,
-      std::vector<ResourceLimit> in_resourceLimits,
+      std::vector<JobConfig> in_config,
       std::vector<PlacementConstraint> in_placementConstraints,
-      std::vector<JobConfig> in_config) :
+      std::vector<std::string> in_queues,
+      std::vector<ResourceLimit> in_resourceLimits) :
          AllowUnknownImages(false),
          Config(std::move(in_config)),
          PlacementConstraints(std::move(in_placementConstraints)),
@@ -166,13 +166,13 @@ struct ClusterInfoResponse::Impl
    }
 
    Impl(
+      bool in_allowUnknownImages,
+      std::vector<JobConfig> in_config,
       std::set<std::string> in_containerImages,
       std::string in_defaultImage,
-      bool in_allowUnknownImages,
+      std::vector<PlacementConstraint> in_placementConstraints,
       std::vector<std::string> in_queues,
-      std::vector<ResourceLimit> in_resourceLimits,
-      std::vector<PlacementConstraint> in_placementConstraints ,
-      std::vector<JobConfig> in_config) :
+      std::vector<ResourceLimit> in_resourceLimits) :
          AllowUnknownImages(in_allowUnknownImages),
          Config(std::move(in_config)),
          ContainerImages(std::move(in_containerImages)),
@@ -198,38 +198,38 @@ PRIVATE_IMPL_DELETER_IMPL(ClusterInfoResponse)
 
 ClusterInfoResponse::ClusterInfoResponse(
    uint64_t in_requestId,
-   std::vector<std::string> in_queues,
-   std::vector<ResourceLimit> in_resourceLimits,
+   std::vector<JobConfig> in_config,
    std::vector<PlacementConstraint> in_placementConstraints,
-   std::vector<JobConfig> in_config) :
+   std::vector<std::string> in_queues,
+   std::vector<ResourceLimit> in_resourceLimits) :
       Response(Response::Type::CLUSTER_INFO, in_requestId),
       m_impl(
          new Impl(
-            std::move(in_queues),
-            std::move(in_resourceLimits),
+            std::move(in_config),
             std::move(in_placementConstraints),
-            std::move(in_config)))
+            std::move(in_queues),
+            std::move(in_resourceLimits)))
 {
 }
 
 ClusterInfoResponse::ClusterInfoResponse(
    uint64_t in_requestId,
+   bool in_allowUnknownImages,
+   std::vector<JobConfig> in_config,
    std::set<std::string> in_containerImages,
    std::string in_defaultImage,
-   bool in_allowUnknownImages,
+   std::vector<PlacementConstraint> in_placementConstraints,
    std::vector<std::string> in_queues,
-   std::vector<ResourceLimit> in_resourceLimits,
-   std::vector<PlacementConstraint> in_placementConstraints ,
-   std::vector<JobConfig> in_config) :
+   std::vector<ResourceLimit> in_resourceLimits) :
       Response(Response::Type::CLUSTER_INFO, in_requestId),
       m_impl(new Impl(
+         in_allowUnknownImages,
+         std::move(in_config),
          std::move(in_containerImages),
          std::move(in_defaultImage),
-         in_allowUnknownImages,
-         std::move(in_queues),
-         std::move(in_resourceLimits),
          std::move(in_placementConstraints),
-         std::move(in_config)))
+         std::move(in_queues),
+         std::move(in_resourceLimits)))
 {
 }
 
