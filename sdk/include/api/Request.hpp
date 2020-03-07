@@ -24,6 +24,8 @@
 #ifndef LAUNCHER_PLUGINS_REQUEST_HPP
 #define LAUNCHER_PLUGINS_REQUEST_HPP
 
+#include <Noncopyable.hpp>
+
 #include <PImpl.hpp>
 
 namespace rstudio {
@@ -52,7 +54,7 @@ namespace api {
 /**
  * @brief Base class for all requests which may be received from the Launcher.
  */
-class Request
+class Request : public Noncopyable
 {
 public:
    /**

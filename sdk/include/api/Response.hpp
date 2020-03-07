@@ -25,6 +25,8 @@
 #ifndef LAUNCHER_PLUGINS_RESPONSE_HPP
 #define LAUNCHER_PLUGINS_RESPONSE_HPP
 
+#include <Noncopyable.hpp>
+
 #include <cstdint>
 
 #include <vector>
@@ -49,7 +51,7 @@ namespace api {
 /**
  * @brief Represents the common components of all responses which can be sent the RStudio Launcher.
  */
-class Response
+class Response : public Noncopyable
 {
 public:
    /**
