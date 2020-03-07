@@ -58,7 +58,7 @@ TEST_CASE("Create ClusterInfo Response")
 
    SECTION("No special fields")
    {
-      ClusterInfoResponse clusterInfoResponse(26);
+      ClusterInfoResponse clusterInfoResponse(26, {}, {}, {}, {});
 
       expected[FIELD_RESPONSE_ID] = 1;
       expected[FIELD_CONTAINER_SUPPORT] = false;
@@ -78,7 +78,9 @@ TEST_CASE("Create ClusterInfo Response")
       ClusterInfoResponse clusterInfoResponse(
          26,
          { "queue1", "QUEUE-TWO" },
-         { limit1, limit2, limit3 });
+         { limit1, limit2, limit3 },
+         {},
+         {});
 
       json::Array queues, limits;
       queues.push_back("queue1");
@@ -152,9 +154,7 @@ TEST_CASE("Create ClusterInfo Response")
    {
       std::set<std::string> images = { "image-number-1", "Image2", "  image_three_ " };
 
-      ClusterInfoResponse clusterInfoResponse(
-         26,
-         images);
+      ClusterInfoResponse clusterInfoResponse(26, images, "", false, {}, {}, {}, {});
 
       json::Array imageArr;
       imageArr.push_back("  image_three_ ");
@@ -176,11 +176,7 @@ TEST_CASE("Create ClusterInfo Response")
    {
       std::set<std::string> images = { "image-number-1", "Image2", "  image_three_ " };
 
-      ClusterInfoResponse clusterInfoResponse(
-         26,
-         images,
-         "  image_three_ ",
-         true);
+      ClusterInfoResponse clusterInfoResponse(26, images, "  image_three_ ", true, {}, {}, {}, {});
 
       json::Array imageArr;
       imageArr.push_back("  image_three_ ");
