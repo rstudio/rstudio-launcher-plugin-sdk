@@ -26,6 +26,10 @@
 
 #include <api/IJobSource.hpp>
 
+#include <vector>
+
+#include <api/Job.hpp>
+
 namespace rstudio {
 namespace launcher_plugins {
 namespace local {
@@ -46,6 +50,19 @@ public:
     */
    Error initialize() override;
 
+   /**
+    * @brief Gets the custom configuration values for the Local Plugin.
+    *
+    * This function controls Cluster capabilities.
+    *
+    * The Local Plugin supports two custom configuration values: The PAM Profile, and an encrypted password.
+    *
+    * @param This parameter is not used. The Local Plugin does not support user profiles, and returns the same custom
+    *        configuration values regardless of the request user.
+    *
+    * @return The PAM Profile and encrypted password custom configuration values.
+    */
+   std::vector<api::JobConfig> getCustomConfig(const system::User&) override;
 };
 
 } // namespace local

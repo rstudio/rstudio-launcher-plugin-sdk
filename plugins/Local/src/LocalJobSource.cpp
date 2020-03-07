@@ -36,6 +36,13 @@ Error LocalJobSource::initialize()
    return Success();
 }
 
+std::vector<api::JobConfig> LocalJobSource::getCustomConfig(const system::User &)
+{
+   static const api::JobConfig::Type strType = api::JobConfig::Type::STRING;
+   return { api::JobConfig("pamProfile", strType), api::JobConfig("encryptedPassword", strType) };
+}
+
+
 } // namespace local
 } // namespace launcher_plugins
 } // namespace rstudio
