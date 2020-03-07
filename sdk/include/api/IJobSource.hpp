@@ -58,10 +58,13 @@ public:
     */
    virtual Error initialize() = 0;
 
-private:
    /**
     * @brief If this job source supports containers, returns whether unknown images may be selected by users when
     *        launching jobs.
+    *
+    * This function controls Cluster capabilities.
+    *
+    * NOTE: This should most likely be controllable by Launcher administrators when they configure the Launcher.
     *
     * @return True if unknown images should be allowed; false otherwise.
     */
@@ -71,7 +74,22 @@ private:
    }
 
    /**
+    * @brief If this job source supports containers, returns the default container image to use when a job is launched,
+    *        if any.
+    *
+    * This function controls Cluster capabilities.
+    *
+    * @return The default container image, if any.
+    */
+   virtual std::string getDefaultImage()
+   {
+      return "";
+   }
+
+   /**
     * @brief If this job source supports containers, gets the container images which are available to run jobs.
+    *
+    * This function controls Cluster capabilities.
     *
     * @return The container images on which jobs may be run, if any.
     */
@@ -83,6 +101,8 @@ private:
    /**
     * @brief Gets the custom configuration values which may be set on the jobs, if any.
     *
+    * This function controls Cluster capabilities.
+    *
     * @return The custom configuration values which may be set on the jobs, if any.
     */
    virtual std::vector<JobConfig> getCustomConfig()
@@ -92,6 +112,8 @@ private:
 
    /**
     * @brief Gets the custom placement constraints which may be set on jobs, if any.
+    *
+    * This function controls Cluster capabilities.
     *
     * @return The custom placement constraints which may be set on jobs, if any.
     */
@@ -103,6 +125,8 @@ private:
    /**
     * @brief Gets the resource limit types which can be set for jobs, including default and maximum values, if any.
     *
+    * This function controls Cluster capabilities.
+    *
     * @return The resource limit types which can be set for jobs, including default and maximum values, if any.
     */
    virtual std::vector<ResourceLimit> getResourceLimits()
@@ -112,6 +136,8 @@ private:
 
    /**
     * @brief Gets whether this job source supports containers.
+    *
+    * This function controls Cluster capabilities.
     *
     * @return True if the job source supports containers; false otherwise.
     */
