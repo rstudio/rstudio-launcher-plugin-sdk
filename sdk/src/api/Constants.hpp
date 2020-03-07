@@ -51,8 +51,11 @@ constexpr char const* FIELD_ERROR_CODE = "errorCode";
 constexpr char const* FIELD_ERROR_MESSAGE = "errorMessage";
 
 // ClusterInfo response fields.
+constexpr char const* FIELD_ALLOW_UNKNOWN_IMAGES = "allowUnknownImages";
 constexpr char const* FIELD_CONFIG = "config";
 constexpr char const* FIELD_CONTAINER_SUPPORT = "supportsContainers";
+constexpr char const* FIELD_DEFAULT_IMAGE = "defaultImage";
+constexpr char const* FIELD_IMAGES = "images";
 constexpr char const* FIELD_PLACEMENT_CONSTRAINTS = "placementConstraints";
 constexpr char const* FIELD_QUEUES = "queues";
 constexpr char const* FIELD_RESOURCE_LIMITS = "resourceLimits";

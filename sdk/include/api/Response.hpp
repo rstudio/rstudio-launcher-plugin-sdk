@@ -217,7 +217,6 @@ public:
      * @param in_queues                     The set of available queues on which to run jobs, if any. Default: none.
      * @param in_resourceLimits             The set of resource limits which may be set on jobs, including default and
      *                                      maximum values. Default: none.
-     * @param in_supportsContainers         Whether or not the cluster supports containers. Default: false.
      * @param in_placementConstraints       The set of custom placement constraints which may be set on jobs. Default:
      *                                      none.
      * @param in_config                     The set of custom job configuration settings and their possible values.
@@ -227,10 +226,30 @@ public:
        uint64_t in_requestId,
        std::vector<std::string> in_queues = std::vector<std::string>(),
        std::vector<ResourceLimit> in_resourceLimits = std::vector<ResourceLimit>(),
-       bool in_supportsContainers = false,
        std::vector<PlacementConstraint> in_placementConstraints = std::vector<PlacementConstraint>(),
        std::vector<JobConfig> in_config = std::vector<JobConfig>());
 
+    /**
+     * @brief
+     *
+     * @param in_requestId                  The ID of the request for which this response is being sent.
+     * @param in_queues                     The set of available queues on which to run jobs, if any. Default: none.
+     * @param in_resourceLimits             The set of resource limits which may be set on jobs, including default and
+     *                                      maximum values. Default: none.
+     * @param in_placementConstraints       The set of custom placement constraints which may be set on jobs. Default:
+     *                                      none.
+     * @param in_config                     The set of custom job configuration settings and their possible values.
+     *                                      Default: none.
+     */
+    ClusterInfoResponse(
+       uint64_t in_requestId,
+       std::set<std::string> in_containerImages,
+       std::string in_defaultImage = "",
+       bool in_allowUnknownImages  = false,
+       std::vector<std::string> in_queues = std::vector<std::string>(),
+       std::vector<ResourceLimit> in_resourceLimits = std::vector<ResourceLimit>(),
+       std::vector<PlacementConstraint> in_placementConstraints = std::vector<PlacementConstraint>(),
+       std::vector<JobConfig> in_config = std::vector<JobConfig>());
     /**
      * @brief Converts this cluster info response to a JSON object.
      *
@@ -239,6 +258,7 @@ public:
     json::Object toJson() const override;
 
  private:
+    // The private implementation of ClusterInfoResponse
     PRIVATE_IMPL(m_impl);
  };
 
