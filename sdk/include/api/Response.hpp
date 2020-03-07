@@ -27,7 +27,10 @@
 
 #include <cstdint>
 
+#include <vector>
+
 #include <PImpl.hpp>
+#include <api/Job.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -199,6 +202,45 @@ public:
     */
    HeartbeatResponse();
 };
+
+/**
+ * @brief Class which represents a cluster info response which should be sent to the Launcher in response to a cluster
+ *        info request.
+ */
+ class ClusterInfoResponse : public Response
+ {
+ public:
+    /**
+     * @brief
+     *
+     * @param in_requestId                  The ID of the request for which this response is being sent.
+     * @param in_queues                     The set of available queues on which to run jobs, if any. Default: none.
+     * @param in_resourceLimits             The set of resource limits which may be set on jobs, including default and
+     *                                      maximum values. Default: none.
+     * @param in_supportsContainers         Whether or not the cluster supports containers. Default: false.
+     * @param in_placementConstraints       The set of custom placement constraints which may be set on jobs. Default:
+     *                                      none.
+     * @param in_config                     The set of custom job configuration settings and their possible values.
+     *                                      Default: none.
+     */
+    explicit ClusterInfoResponse(
+       uint64_t in_requestId,
+       std::vector<std::string> in_queues = std::vector<std::string>(),
+       std::vector<ResourceLimit> in_resourceLimits = std::vector<ResourceLimit>(),
+       bool in_supportsContainers = false,
+       std::vector<PlacementConstraint> in_placementConstraints = std::vector<PlacementConstraint>(),
+       std::vector<JobConfig> in_config = std::vector<JobConfig>());
+
+    /**
+     * @brief Converts this cluster info response to a JSON object.
+     *
+     * @return The JSON object which represents this cluster info response.
+     */
+    json::Object toJson() const override;
+
+ private:
+    PRIVATE_IMPL(m_impl);
+ };
 
 } // namespace api
 } // namespace launcher_plugins
