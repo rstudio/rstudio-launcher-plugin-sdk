@@ -60,6 +60,12 @@ TEST_CASE("Create ClusterInfo Response")
    {
       ClusterInfoResponse clusterInfoResponse(26);
 
+      expected[FIELD_RESPONSE_ID] = 1;
+      expected[FIELD_CONTAINER_SUPPORT] = false;
+      expected[FIELD_RESOURCE_LIMITS] = json::Array();
+      expected[FIELD_PLACEMENT_CONSTRAINTS] = json::Array();
+      expected[FIELD_CONFIG] = json::Array();
+
       CHECK(clusterInfoResponse.toJson() == expected);
    }
 
@@ -81,7 +87,8 @@ TEST_CASE("Create ClusterInfo Response")
       limits.push_back(limit2.toJson());
       limits.push_back(limit3.toJson());
 
-      expected[FIELD_RESPONSE_ID] = 1;
+      expected[FIELD_RESPONSE_ID] = 2;
+      expected[FIELD_CONTAINER_SUPPORT] = false;
       expected[FIELD_QUEUES] = queues;
       expected[FIELD_RESOURCE_LIMITS] = limits;
       expected[FIELD_PLACEMENT_CONSTRAINTS] = json::Array();
@@ -110,7 +117,7 @@ TEST_CASE("Create ClusterInfo Response")
       ClusterInfoResponse clusterInfoResponse(
          26,
          { "queue1", "QUEUE-TWO", "another queue" },
-         { limit1, limit2, limit3 },
+         { limit1, limit2, limit3, limit4 },
          { constraint1, constraint2, constraint3, constraint4, constraint5 },
          { config1, config2, config3 });
 
@@ -131,12 +138,12 @@ TEST_CASE("Create ClusterInfo Response")
       limits.push_back(limit3.toJson());
       limits.push_back(limit4.toJson());
 
-      expected[FIELD_RESPONSE_ID] = 2;
+      expected[FIELD_RESPONSE_ID] = 3;
       expected[FIELD_CONTAINER_SUPPORT] = false;
-      expected[FIELD_CONFIG] = config;
-      expected[FIELD_PLACEMENT_CONSTRAINTS] = constraints;
       expected[FIELD_QUEUES] = queues;
+      expected[FIELD_CONFIG] = config;
       expected[FIELD_RESOURCE_LIMITS] = limits;
+      expected[FIELD_PLACEMENT_CONSTRAINTS] = constraints;
 
       CHECK(clusterInfoResponse.toJson() == expected);
    }
@@ -151,10 +158,10 @@ TEST_CASE("Create ClusterInfo Response")
 
       json::Array imageArr;
       imageArr.push_back("  image_three_ ");
-      imageArr.push_back("image-number-1");
       imageArr.push_back("Image2");
+      imageArr.push_back("image-number-1");
 
-      expected[FIELD_RESPONSE_ID] = 3;
+      expected[FIELD_RESPONSE_ID] = 4;
       expected[FIELD_CONTAINER_SUPPORT] = true;
       expected[FIELD_IMAGES] = imageArr;
       expected[FIELD_ALLOW_UNKNOWN_IMAGES] = false;
@@ -163,7 +170,6 @@ TEST_CASE("Create ClusterInfo Response")
       expected[FIELD_CONFIG] = json::Array();
 
       CHECK(clusterInfoResponse.toJson() == expected);
-      CHECK(clusterInfoResponse.toJson().write() == expected.write());
    }
 
    SECTION("Container support, unknown, default")
@@ -178,10 +184,10 @@ TEST_CASE("Create ClusterInfo Response")
 
       json::Array imageArr;
       imageArr.push_back("  image_three_ ");
-      imageArr.push_back("image-number-1");
       imageArr.push_back("Image2");
+      imageArr.push_back("image-number-1");
 
-      expected[FIELD_RESPONSE_ID] = 4;
+      expected[FIELD_RESPONSE_ID] = 5;
       expected[FIELD_CONTAINER_SUPPORT] = true;
       expected[FIELD_IMAGES] = imageArr;
       expected[FIELD_ALLOW_UNKNOWN_IMAGES] = true;
@@ -191,7 +197,6 @@ TEST_CASE("Create ClusterInfo Response")
       expected[FIELD_CONFIG] = json::Array();
 
       CHECK(clusterInfoResponse.toJson() == expected);
-      CHECK(clusterInfoResponse.toJson().write() == expected.write());
    }
 }
 
