@@ -214,13 +214,11 @@ public:
      * @brief
      *
      * @param in_requestId                  The ID of the request for which this response is being sent.
-     * @param in_queues                     The set of available queues on which to run jobs, if any. Default: none.
+     * @param in_queues                     The set of available queues on which to run jobs, if any.
      * @param in_resourceLimits             The set of resource limits which may be set on jobs, including default and
-     *                                      maximum values. Default: none.
-     * @param in_placementConstraints       The set of custom placement constraints which may be set on jobs. Default:
-     *                                      none.
+     *                                      maximum values.
+     * @param in_placementConstraints       The set of custom placement constraints which may be set on jobs.
      * @param in_config                     The set of custom job configuration settings and their possible values.
-     *                                      Default: none.
      */
     ClusterInfoResponse(
        uint64_t in_requestId,
@@ -236,13 +234,11 @@ public:
      * @param in_containerImages            The set of available container images which may be used for launching jobs.
      * @param in_defaultImage               The default container image to use when launching a job.
      * @param in_allowUnknownImages         Whether or not to allow unknown images to be used to launch jobs.
-     * @param in_queues                     The set of available queues on which to run jobs, if any. Default: none.
+     * @param in_queues                     The set of available queues on which to run jobs, if any.
      * @param in_resourceLimits             The set of resource limits which may be set on jobs, including default and
-     *                                      maximum values. Default: none.
-     * @param in_placementConstraints       The set of custom placement constraints which may be set on jobs. Default:
-     *                                      none.
+     *                                      maximum values.
+     * @param in_placementConstraints       The set of custom placement constraints which may be set on jobs.
      * @param in_config                     The set of custom job configuration settings and their possible values.
-     *                                      Default: none.
      */
     ClusterInfoResponse(
        uint64_t in_requestId,
