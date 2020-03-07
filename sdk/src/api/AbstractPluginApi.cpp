@@ -50,6 +50,15 @@ struct AbstractPluginApi::Impl
    }
 
    /**
+    * @brief "Handles" a received heartbeat request by logging a debug message.
+    */
+   static void handleHeartbeat()
+   {
+      // There's really nothing to do here, since if the Launcher dies the plugin will die.
+      logging::logDebugMessage("Received Heartbeat from Launcher.");
+   }
+
+   /**
     * @brief Handles bootstrap requests from the Launcher.
     *
     * @param in_bootstrapRequest    The bootstrap request to handle.
@@ -81,15 +90,6 @@ struct AbstractPluginApi::Impl
       // TODO: pull down existing jobs and put them in the repository.
 
       LauncherCommunicator->sendResponse(BootstrapResponse(in_bootstrapRequest->getId()));
-   }
-
-   /**
-    * @brief "Handles" a received heartbeat request by logging a debug message.
-    */
-   void handleHeartbeat()
-   {
-      // There's really nothing to do here, since if the Launcher dies the plugin will die.
-      logging::logDebugMessage("Received Heartbeat from Launcher.");
    }
 
    /**
