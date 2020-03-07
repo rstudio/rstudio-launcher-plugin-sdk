@@ -186,6 +186,47 @@ private:
 };
 
 /**
+ * @brief Base class which should be used by the class of requests which require a username.
+ */
+class UserRequest : public Request
+{
+public:
+   /**
+    * @brief Gets the user who initiated this request.
+    *
+    * If an admin user made this request, this object may represent all users (check by calling User::isAllUsers()). In
+    * that case, information for all users should be returned.
+    *
+    * @return The user who initiated this request.
+    */
+   const system::User& getUser() const;
+
+   /**
+    * @brief Gets the actual username that was used when the request was submitted.
+    *
+    * This value is only useful for auditing purposes and should not be required by most plugins.
+    *
+    * @return The actual username that was used when the request was submitted.
+    */
+   const std::string& getRequestUsername() const;
+
+protected:
+   /**
+    * @brief Constructor.
+    *
+    * @param in_type            The type of the user request.
+    * @param in_requestJson     The JSON Object which represents the user request.
+    */
+   explicit UserRequest(Request::Type in_type, const json::Object& in_requestJson);
+
+private:
+   // The private implementation of UserRequest.
+   PRIVATE_IMPL(m_userImpl);
+
+   friend class Request;
+};
+
+/**
  * @brief Converts a Request::Type to string and adds it to the specified stream.
  *
  * @param in_ostream    The stream to which to add the string version of the type.

@@ -27,6 +27,8 @@
 #include <json/Json.hpp>
 #include <json/JsonUtils.hpp>
 #include <logging/Logger.hpp>
+#include <system/User.hpp>
+#include <boost/algorithm/string/trim.hpp>
 
 #include "Constants.hpp"
 
@@ -41,6 +43,7 @@ enum class RequestError
    SUCCESS = 0,
    INVALID_REQUEST_TYPE = 1,
    INVALID_REQUEST = 2,
+   INVALID_USER = 3,
 };
 
 Error requestError(
@@ -61,6 +64,11 @@ Error requestError(
       case RequestError::INVALID_REQUEST:
       {
          message.append("Invalid request received from launcher");
+         break;
+      }
+      case RequestError::INVALID_USER:
+      {
+         message.append("Details of request user could not be found");
          break;
       }
       case RequestError::SUCCESS:
@@ -133,6 +141,15 @@ Error Request::fromJson(const json::Object& in_requestJson, std::shared_ptr<Requ
       case Type::BOOTSTRAP:
       {
          out_request.reset(new BootstrapRequest(in_requestJson));
+         break;
+      }
+      case Type::GET_CLUSTER_INFO:
+      {
+         std::shared_ptr<UserRequest> userRequest(new UserRequest(Type::GET_CLUSTER_INFO, in_requestJson));
+         if (userRequest->getUser().isEmpty())
+            return requestError(RequestError::INVALID_USER, in_requestJson.writeFormatted(), ERROR_LOCATION);
+
+         out_request = userRequest;
          break;
       }
       default:
@@ -304,6 +321,62 @@ std::ostream& operator<<(std::ostream& in_ostream, Request::Type in_type)
    }
 
    return in_ostream;
+}
+
+// User ================================================================================================================
+struct UserRequest::Impl
+{
+   /** The real user for whom the request should be performed. */
+   system::User RealUser;
+
+   /** The actual user who submitted the request. */
+   std::string RequestUsername;
+};
+
+PRIVATE_IMPL_DELETER_IMPL(UserRequest);
+
+const system::User & UserRequest::getUser() const
+{
+   return m_userImpl->RealUser;
+}
+
+const std::string& UserRequest::getRequestUsername() const
+{
+   return m_userImpl->RequestUsername;
+}
+
+UserRequest::UserRequest(Request::Type in_type, const json::Object& in_requestJson) :
+   Request(in_type, in_requestJson),
+   m_userImpl(new Impl())
+{
+   std::string realUsername;
+   Optional<std::string> requestUsername;
+   Error error = json::readObject(in_requestJson,
+      FIELD_REAL_USER, realUsername,
+      FIELD_REQUEST_USERNAME, requestUsername);
+
+   if (error)
+   {
+      logging::logError(error);
+      m_baseImpl->IsValid = false;
+      return;
+   }
+
+   boost::trim(realUsername);
+   if (realUsername != "*")
+   {
+      error = system::User::getUserFromIdentifier(realUsername, m_userImpl->RealUser);
+
+      if (error)
+      {
+         logging::logError(error);
+         m_userImpl->RealUser = system::User(true);
+         m_baseImpl->IsValid = false;
+         return;
+      }
+   }
+
+   m_userImpl->RequestUsername = requestUsername.getValueOr("");
 }
 
 } // namespace api

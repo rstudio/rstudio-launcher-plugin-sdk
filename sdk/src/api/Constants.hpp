@@ -40,6 +40,10 @@ constexpr char const* FIELD_REQUEST_ID = "requestId";
 // Common fields for all responses.
 constexpr char const* FIELD_RESPONSE_ID = "responseId";
 
+// Common fields for requests which require a username.
+constexpr char const* FIELD_REAL_USER = "username";
+constexpr char const* FIELD_REQUEST_USERNAME = "requestUsername";
+
 // Bootstrap request and response fields.
 constexpr char const* FIELD_VERSION = "version";
 constexpr char const* FIELD_VERSION_MAJOR = "major";
