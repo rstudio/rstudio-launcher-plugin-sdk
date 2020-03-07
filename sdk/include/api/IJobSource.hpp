@@ -25,6 +25,9 @@
 #ifndef LAUNCHER_PLUGINS_IJOBSOURCE_HPP
 #define LAUNCHER_PLUGINS_IJOBSOURCE_HPP
 
+#include <set>
+#include "Job.hpp"
+
 namespace rstudio {
 namespace launcher_plugins {
 
@@ -54,6 +57,68 @@ public:
     * @return Success if the job source could be initialized; Error otherwise.
     */
    virtual Error initialize() = 0;
+
+private:
+   /**
+    * @brief If this job source supports containers, returns whether unknown images may be selected by users when
+    *        launching jobs.
+    *
+    * @return True if unknown images should be allowed; false otherwise.
+    */
+   virtual bool allowUnknownImages()
+   {
+      return false;
+   }
+
+   /**
+    * @brief If this job source supports containers, gets the container images which are available to run jobs.
+    *
+    * @return The container images on which jobs may be run, if any.
+    */
+   virtual std::set<std::string> getContainerImages()
+   {
+      return {};
+   }
+
+   /**
+    * @brief Gets the custom configuration values which may be set on the jobs, if any.
+    *
+    * @return The custom configuration values which may be set on the jobs, if any.
+    */
+   virtual std::vector<JobConfig> getCustomConfig()
+   {
+      return {};
+   }
+
+   /**
+    * @brief Gets the custom placement constraints which may be set on jobs, if any.
+    *
+    * @return The custom placement constraints which may be set on jobs, if any.
+    */
+   virtual std::vector<PlacementConstraint> getPlacementConstraints()
+   {
+      return {};
+   }
+
+   /**
+    * @brief Gets the resource limit types which can be set for jobs, including default and maximum values, if any.
+    *
+    * @return The resource limit types which can be set for jobs, including default and maximum values, if any.
+    */
+   virtual std::vector<ResourceLimit> getResourceLimits()
+   {
+      return {};
+   }
+
+   /**
+    * @brief Gets whether this job source supports containers.
+    *
+    * @return True if the job source supports containers; false otherwise.
+    */
+   virtual bool supportsContainers()
+   {
+      return false;
+   }
 };
 
 } // namespace api
