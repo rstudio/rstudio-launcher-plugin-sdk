@@ -59,7 +59,7 @@ public:
     *
     * @return The JSON object which represents this response.
     */
-   virtual json::Object asJson() const;
+   virtual json::Object toJson() const;
 
 protected:
    /**
@@ -116,8 +116,8 @@ private:
 };
 
 /**
- * @brief Class which represents a bootstrap response which can be sent to the RStudio Launcher in response to a
- *        bootstrap request.
+ * @brief Class which represents a bootstrap response which can be sent to the Launcher in response to a bootstrap
+ *        request.
  */
 class BootstrapResponse : public Response
 {
@@ -134,11 +134,11 @@ public:
     *
     * @return The JSON object which represents this bootstrap response.
     */
-   json::Object asJson() const override;
+   json::Object toJson() const override;
 };
 
 /**
- * @brief Class which represents an error response which can be sent to the RStudio Launcher in response to any request.
+ * @brief Class which represents an error response which can be sent to the Launcher in response to any request.
  */
 class ErrorResponse : public Response
 {
@@ -180,7 +180,7 @@ public:
     *
     * @return The JSON object which represents this error response.
     */
-   json::Object asJson() const override;
+   json::Object toJson() const override;
 
 private:
    // The private implementation of ErrorResponse.
@@ -188,7 +188,7 @@ private:
 };
 
 /**
- * @brief Class which represents a heartbeat response which should be sent to the server every configured
+ * @brief Class which represents a heartbeat response which should be sent to the Launcher every configured
  * heartbeat-interval-seconds.
  */
 class HeartbeatResponse : public Response

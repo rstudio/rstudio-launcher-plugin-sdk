@@ -45,7 +45,7 @@ TEST_CASE("Create Bootstrap Response")
    expectedResult.insert(FIELD_VERSION, version);
 
    BootstrapResponse bootstrapResponse(10);
-   json::Object bootstrapObject = bootstrapResponse.asJson();
+   json::Object bootstrapObject = bootstrapResponse.toJson();
 
    CHECK(bootstrapObject == expectedResult);
 }

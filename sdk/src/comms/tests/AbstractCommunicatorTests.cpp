@@ -100,7 +100,7 @@ TEST_CASE("Send a simple response")
    logging::MockLogPtr mockLog = logging::getMockLogDest();
 
    api::BootstrapResponse response(4);
-   std::string strResponse = response.asJson().write();
+   std::string strResponse = response.toJson().write();
    std::string expectedResult = convertHeader(strResponse.size()).append(strResponse);
 
    CommsPtr comms(new MockCommunicator());
@@ -179,7 +179,7 @@ TEST_CASE("Receive a request for a type that doesn't have a handler")
    std::string expectedMessage = api::ErrorResponse(
       33,
       api::ErrorResponse::Type::REQUEST_NOT_SUPPORTED,
-      "Request not supported").asJson().write();
+      "Request not supported").toJson().write();
 
    REQUIRE(comms->SentMessages.size() == 1);
    CHECK(comms->SentMessages.front() == convertHeader(expectedMessage.size()).append(expectedMessage));
