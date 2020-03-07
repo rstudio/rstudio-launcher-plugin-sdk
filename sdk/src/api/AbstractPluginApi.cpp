@@ -92,6 +92,29 @@ struct AbstractPluginApi::Impl
       LauncherCommunicator->sendResponse(BootstrapResponse(in_bootstrapRequest->getId()));
    }
 
+   void handleGetClusterInfo(const std::shared_ptr<Request>& in_clusterInfoRequest)
+   {
+      if (JobSource->supportsContainers())
+         return LauncherCommunicator->sendResponse(
+            ClusterInfoResponse(
+               in_clusterInfoRequest->getId(),
+               JobSource->getContainerImages(),
+               JobSource->getDefaultImage(),
+               JobSource->allowUnknownImages(),
+               JobSource->getQueues(),
+               JobSource->getResourceLimits(),
+               JobSource->getPlacementConstraints(),
+               JobSource->getCustomConfig()));
+
+      return LauncherCommunicator->sendResponse(
+         ClusterInfoResponse(
+            in_clusterInfoRequest->getId(),
+            JobSource->getQueues(),
+            JobSource->getResourceLimits(),
+            JobSource->getPlacementConstraints(),
+            JobSource->getCustomConfig()));
+   }
+
    /**
     * @brief Handles a request from the Launcher.
     *
@@ -108,12 +131,25 @@ struct AbstractPluginApi::Impl
                ErrorResponse::Type::UNKNOWN,
                "Internal Request Handling Error."));
 
+
+      if (!JobSource)
+      {
+         logging::logErrorMessage("Request received before JobSource was initialized.", ERROR_LOCATION);
+         return LauncherCommunicator->sendResponse(
+            ErrorResponse(
+               in_request->getId(),
+               ErrorResponse::Type::UNKNOWN,
+               "Internal Request Handling Error."));
+      }
+
       switch (in_handlerType)
       {
          case Request::Type::HEARTBEAT:
             return handleHeartbeat();
          case Request::Type::BOOTSTRAP:
             return handleBootstrap(std::static_pointer_cast<BootstrapRequest>(in_request));
+         case Request::Type::GET_CLUSTER_INFO:
+            return handleGetClusterInfo(in_request);
          default:
             return LauncherCommunicator->sendResponse(
                ErrorResponse(
@@ -150,6 +186,9 @@ Error AbstractPluginApi::initialize()
    comms->registerRequestHandler(
       Request::Type::HEARTBEAT,
       std::bind(&Impl::handleRequest, m_abstractPluginImpl.get(), Request::Type::HEARTBEAT, _1));
+   comms->registerRequestHandler(
+      Request::Type::GET_CLUSTER_INFO,
+      std::bind(&Impl::handleRequest, m_abstractPluginImpl.get(), Request::Type::GET_CLUSTER_INFO, _1));
 
    // Make the heartbeat event.
    WeakThis weakThis = shared_from_this();
