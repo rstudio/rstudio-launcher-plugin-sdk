@@ -1,5 +1,5 @@
 # TODO Items {#todos}
-This section will walk the developer through each of the QuickStart `TODO` items. As each `TODO` is completed, it is recommended to remove it from the code.
+This section will walk the developer through each of the QuickStart `TODO` items. As each `TODO` is completed, it is recommended to remove it from the code. Throughout this chapter, an example Plugin Developer who is part of the "Orchid Organization" and developing a Launcher Plugin for the "Mars" job scheduling system will be used.
 
 ## TODO #1: Change Namespaces
  
@@ -7,7 +7,11 @@ TODO Location        Impact
 -------------------  -----------------
 QuickStartMain.cpp   All source files
 
-The classes in the QuickStart RStudio Launcher Plugin are all in the `rstudio::launcher_plugins::quickstart` namespace. As desired, these namespaces may be changed. For example, if the developer of the Plugin is part of the "Orchid Organization" and is developing a plugin for the "Tiger Lily" job scheduling system, they may change the following namespace definitions
+The classes in the QuickStart RStudio Launcher Plugin are all in the `rstudio::launcher_plugins::quickstart` namespace. As desired, these namespaces may be changed. 
+
+### Example
+
+The Plugin Developer may change the following namespace definitions
 
 ```{c, echo=TRUE, eval=FALSE}
 namespace rstudio {
@@ -19,14 +23,15 @@ namespace quickstart {
 } // namespace rstudio
 ```
 
-to this:
+to
 ```{c, echo=TRUE, eval=FALSE}
 namespace orchid {
-namespace tiger_lily {
+namespace mars {
   ...
-} // namespace tiger_lily
+} // namespace mars
 } // namespace orchid
 ```
+
 
 ## TODO #2: Rename Classes
  
@@ -34,7 +39,9 @@ TODO Location        Impact
 -------------------  -----------------
 QuickStartMain.cpp   All source files
 
-Continuing with the previous example, the developer may now wish to rename all the classes from `QuickStart*` to `TigerLily*`. For example, `QuickStartMain` would become `TigerLilyMain`.
+### Example
+
+The developer may now wish to rename all the classes from `QuickStart*` to `Mars*`. For example, `QuickStartMain` would become `MarsMain`.
 
 In addition, the developer may also wish to modify the include guards to match their new namespace and class names. For example,
 
@@ -46,11 +53,12 @@ In addition, the developer may also wish to modify the include guards to match t
 might become
 
 ```{c, echo=TRUE, eval=FALSE}
-#ifndef TIGERLILY_TIGER_LILY_PLUGIN_API
-#define TIGERLILY_TIGER_LILY_PLUGIN_API
+#ifndef ORCHID_MARS_PLUGIN_API
+#define ORCHID_MARS_PLUGIN_API
 ```
 
 The naming schemes described here are only recommendations. The exact naming scheme is completely at the discretion of the developer.
+
 
 ## TODO #3: Change the Plugin Name
  
@@ -59,7 +67,11 @@ TODO Location        Impact
 QuickStartMain.cpp   QuickStartMain.cpp
 
 
-The plugin name is used to generate the program ID, which will be used for logging, and the configuration file name. By default, the program ID will be `"rstudio-" + getPluginName() + "-launcher"`. The configuration file name will be `"launcher." + getPluginName() + ".conf"` and must be located in `/etc/rstudio`. Continuing the previous example, the "Orchid" organization developer might change
+The plugin name is used to generate the program ID, which will be used for logging, and the configuration file name. By default, the program ID will be `"rstudio-" + getPluginName() + "-launcher"`. The configuration file name will be `"launcher." + getPluginName() + ".conf"` and must be located in `/etc/rstudio`.
+
+### Example
+
+The developer might now change
 
 ```{c, eval=FALSE}
 std::string getPluginName() const override
@@ -74,7 +86,7 @@ to
 ```{c, eval=FALSE}
 std::string getPluginName() const override
 {
-  return "tigerlily";
+  return "mars";
 }
 ```
 
@@ -85,13 +97,17 @@ TODO Location        Impact
 QuickStartMain.cpp   QuickStartMain.cpp
 
 
-The program ID will be used to uniquely identify logs from the plugin that are sent to the system log. By default, the value will be `"rstudio-" + getPluginName() + "-launcher"`, however it is possible to override `AbstractMain::getProgramID()` to set a custom program ID. Continuing with the previous example, the Orchid organization developer might add 
+The program ID will be used to uniquely identify logs from the plugin that are sent to the system log. By default, the value will be `"rstudio-" + getPluginName() + "-launcher"`, however it is possible to override `AbstractMain::getProgramID()` to set a custom program ID.
+
+### Example
+
+The developer might add 
 
 ```{c, eval=FALSE}
 std::string getProgramId() const override
 {
-  return "orchid-" + getProgramName() + "-launcher"
+  return "orchid-" + getProgramName() + "-launcher";
 }
 ```
 
-to `TigerLilyMain.cpp`.
+to `MarsMain.cpp`.
