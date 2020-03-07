@@ -50,6 +50,13 @@ constexpr char const* FIELD_VERSION_PATCH = "patch";
 constexpr char const* FIELD_ERROR_CODE = "errorCode";
 constexpr char const* FIELD_ERROR_MESSAGE = "errorMessage";
 
+// ClusterInfo response fields.
+constexpr char const* FIELD_CONFIG = "config";
+constexpr char const* FIELD_CONTAINER_SUPPORT = "supportsContainers";
+constexpr char const* FIELD_PLACEMENT_CONSTRAINTS = "placementConstraints";
+constexpr char const* FIELD_QUEUES = "queues";
+constexpr char const* FIELD_RESOURCE_LIMITS = "resourceLimits";
+
 } // namespace api
 } // namespace launcher_plugins
 } // namespace rstudio
