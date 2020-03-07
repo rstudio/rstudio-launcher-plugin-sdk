@@ -123,6 +123,18 @@ public:
    }
 
    /**
+    * @brief Gets the queues which are available to run jobs, if any.
+    *
+    * This function controls Cluster capabilities.
+    *
+    * @return The queues which are available to run jobs, if any.
+    */
+   virtual std::vector<std::string> getQueues()
+   {
+      return {};
+   }
+
+   /**
     * @brief Gets the resource limit types which can be set for jobs, including default and maximum values, if any.
     *
     * This function controls Cluster capabilities.
