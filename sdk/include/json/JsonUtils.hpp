@@ -108,7 +108,7 @@ Error readObject(const Object& in_object, const std::string& in_name, T& out_val
 }
 
 /**
- * @brief Reads a member from an object.
+ * @brief Reads an optional member from an object.
  *
  * @tparam T            The type of the member.
  *
@@ -116,7 +116,7 @@ Error readObject(const Object& in_object, const std::string& in_name, T& out_val
  * @param in_name       The name of the member to read.
  * @param out_value     The value of the member, if no error occurs.
  *
- * @return Success if the member could be found and is of type T; Error otherwise.
+ * @return Success if the member could be found and is of type T, or the member could not be found; Error otherwise.
  */
 template <typename T>
 Error readObject(const Object& in_object, const std::string& in_name, Optional<T>& out_value)
@@ -138,6 +138,103 @@ Error readObject(const Object& in_object, const std::string& in_name, Optional<T
    }
 
    out_value = (*itr).getValue().getValue<T>();
+   return Success();
+}
+
+/**
+ * @brief Reads an optional array member from an object.
+ *
+ * @tparam T            The type of the array member's values.
+ *
+ * @param in_object     The object from which the member should be read.
+ * @param in_name       The name of the member to read.
+ * @param out_values    The value of the member, if no error occurs.
+ *
+ * @return Success if the member could be found and all elements were of type T, or the member could not be found; Error
+ *         otherwise.
+ */
+template <typename T>
+Error readObject(const Object& in_object, const std::string& in_name, Optional<std::vector<T> >& out_values)
+{
+   // If the value is optional, no need to report that it's missing.
+   Object::Iterator itr = in_object.find(in_name);
+   if (itr == in_object.end())
+      return Success();
+
+   if (!(*itr).getValue().isArray())
+      return jsonReadError(JsonReadError::INVALID_TYPE,
+                           "Member " + in_name + " is not an array.",
+                           ERROR_LOCATION);
+
+
+   std::vector<T> values;
+   Array array = (*itr).getValue().getArray();
+   for (size_t i = 0, n = array.getSize(); i < n; ++i)
+   {
+      const Value& value = array[i];
+      if (!isType<T>(value))
+      {
+         std::ostringstream msgStream;
+         msgStream << "Element " << i << " of member " + in_name << " is of type " <<  value.getType() <<
+                   " which is not compatible with the requested type " << typeid(T).name() << ".";
+         return jsonReadError(
+            JsonReadError::INVALID_TYPE,
+            msgStream.str(),
+            ERROR_LOCATION);
+      }
+
+      values.push_back(value.getValue<T>());
+   }
+
+   out_values = values;
+   return Success();
+}
+
+/**
+ * @brief Reads an optional array member from an object.
+ *
+ * @tparam T            The type of the array member's values.
+ *
+ * @param in_object     The object from which the member should be read.
+ * @param in_name       The name of the member to read.
+ * @param out_values    The value of the member, if no error occurs.
+ *
+ * @return Success if the member could be found and all elements were of type T, or the member could not be found; Error
+ *         otherwise.
+ */
+template <typename T>
+Error readObject(const Object& in_object, const std::string& in_name, Optional<std::set<T> >& out_values)
+{
+   // If the value is optional, no need to report that it's missing.
+   Object::Iterator itr = in_object.find(in_name);
+   if (itr == in_object.end())
+      return Success();
+
+   if (!(*itr).getValue().isArray())
+      return jsonReadError(JsonReadError::INVALID_TYPE,
+                           "Member " + in_name + " is not an array.",
+                           ERROR_LOCATION);
+
+   std::set<T> values;
+   Array array = (*itr).getValue().getArray();
+   for (size_t i = 0, n = array.getSize(); i < n; ++i)
+   {
+      const Value& value = array[i];
+      if (!isType<T>(value))
+      {
+         std::ostringstream msgStream;
+         msgStream << "Element " << i << " of member " + in_name << " is of type " <<  value.getType() <<
+                   " which is not compatible with the requested type " << typeid(T).name() << ".";
+         return jsonReadError(
+            JsonReadError::INVALID_TYPE,
+            msgStream.str(),
+            ERROR_LOCATION);
+      }
+
+      values.insert(value.getValue<T>());
+   }
+
+   out_values = values;
    return Success();
 }
 
@@ -184,6 +281,54 @@ Error readObject(const Object& in_object, const std::string& in_name, std::vecto
       }
 
       out_values.push_back(value.getValue<T>());
+   }
+
+   return Success();
+}
+
+/**
+ * @brief Reads an array member from an object.
+ *
+ * @tparam T            The type of values of the array member.
+ *
+ * @param in_object     The object from which the member should be read.
+ * @param in_name       The name of the member to read.
+ * @param out_values    The values of the array member, if no error occurs.
+ *
+ * @return Success if the member could be found and its values are of type T; Error otherwise.
+ */
+template <typename T>
+Error readObject(const Object& in_object, const std::string& in_name, std::set<T>& out_values)
+{
+   Object::Iterator itr = in_object.find(in_name);
+   if (itr == in_object.end())
+      return jsonReadError(
+         JsonReadError::MISSING_MEMBER,
+         "Member " + in_name + " does not exist in the specified JSON object.",
+         ERROR_LOCATION);
+
+   if (!(*itr).getValue().isArray())
+      return jsonReadError(JsonReadError::INVALID_TYPE,
+                           "Member " + in_name + " is not an array.",
+                           ERROR_LOCATION);
+
+
+   Array array = (*itr).getValue().getArray();
+   for (size_t i = 0, n = array.getSize(); i < n; ++i)
+   {
+      const Value& value = array[i];
+      if (!isType<T>(value))
+      {
+         std::ostringstream msgStream;
+         msgStream << "Element " << i << " of member " + in_name << " is of type " <<  value.getType() <<
+                   " which is not compatible with the requested type " << typeid(T).name() << ".";
+         return jsonReadError(
+            JsonReadError::INVALID_TYPE,
+            msgStream.str(),
+            ERROR_LOCATION);
+      }
+
+      out_values.insert(value.getValue<T>());
    }
 
    return Success();
@@ -250,6 +395,60 @@ Error readObject(const Object& in_object, const std::string& in_name, Optional<T
  */
 template <typename T, typename... Args>
 Error readObject(const Object& in_object, const std::string& in_name, std::vector<T>& out_values, Args&... io_args)
+{
+   Error error = readObject(in_object, in_name, out_values);
+   if (error)
+      return error;
+
+   return readObject(in_object, io_args...);
+}
+
+/**
+ * @brief Reads multiple members from an object.
+ *
+ * @tparam T            The type of the first member to read.
+ * @tparam Args         The template parameter pack for the remaining members.
+ *
+ * @param in_object     The object from which to read the members.
+ * @param in_name       The name of the first member to be read.
+ * @param out_value     The value of the first member to be read, if no error occurs.
+ * @param io_args       The parameter pack of the remaining members to be read.
+ *
+ * @return Success if all the members exist and have valid types; Error otherwise.
+ */
+template <typename T, typename... Args>
+Error readObject(
+   const Object& in_object,
+   const std::string& in_name,
+   Optional<std::vector<T> >& out_values,
+   Args&... io_args)
+{
+   Error error = readObject(in_object, in_name, out_values);
+   if (error)
+      return error;
+
+   return readObject(in_object, io_args...);
+}
+
+/**
+ * @brief Reads multiple members from an object.
+ *
+ * @tparam T            The type of the first member to read.
+ * @tparam Args         The template parameter pack for the remaining members.
+ *
+ * @param in_object     The object from which to read the members.
+ * @param in_name       The name of the first member to be read.
+ * @param out_value     The value of the first member to be read, if no error occurs.
+ * @param io_args       The parameter pack of the remaining members to be read.
+ *
+ * @return Success if all the members exist and have valid types; Error otherwise.
+ */
+template <typename T, typename... Args>
+Error readObject(
+   const Object& in_object,
+   const std::string& in_name,
+   Optional<std::set<T> >& out_values,
+   Args&... io_args)
 {
    Error error = readObject(in_object, in_name, out_values);
    if (error)
