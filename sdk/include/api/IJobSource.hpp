@@ -33,6 +33,11 @@ namespace launcher_plugins {
 
 class Error;
 
+namespace system {
+
+class User;
+
+} // namespace system
 } // namespace launcher_plugins
 } // namespace rstudio
 
@@ -66,9 +71,12 @@ public:
     *
     * NOTE: This should most likely be controllable by Launcher administrators when they configure the Launcher.
     *
+    * @param in_user    The user who made the request to see the capabilities of the Cluster. This may be used to return
+    *                   different capabilities based on the configured user profiles.
+    *
     * @return True if unknown images should be allowed; false otherwise.
     */
-   virtual bool allowUnknownImages()
+   virtual bool allowUnknownImages(const system::User& in_user)
    {
       return false;
    }
@@ -79,9 +87,12 @@ public:
     *
     * This function controls Cluster capabilities.
     *
+    * @param in_user    The user who made the request to see the capabilities of the Cluster. This may be used to return
+    *                   different capabilities based on the configured user profiles.
+    *
     * @return The default container image, if any.
     */
-   virtual std::string getDefaultImage()
+   virtual std::string getDefaultImage(const system::User& in_user)
    {
       return "";
    }
@@ -91,9 +102,12 @@ public:
     *
     * This function controls Cluster capabilities.
     *
+    * @param in_user    The user who made the request to see the capabilities of the Cluster. This may be used to return
+    *                   different capabilities based on the configured user profiles.
+    *
     * @return The container images on which jobs may be run, if any.
     */
-   virtual std::set<std::string> getContainerImages()
+   virtual std::set<std::string> getContainerImages(const system::User& in_user)
    {
       return {};
    }
@@ -103,9 +117,12 @@ public:
     *
     * This function controls Cluster capabilities.
     *
+    * @param in_user    The user who made the request to see the capabilities of the Cluster. This may be used to return
+    *                   different capabilities based on the configured user profiles.
+    *
     * @return The custom configuration values which may be set on the jobs, if any.
     */
-   virtual std::vector<JobConfig> getCustomConfig()
+   virtual std::vector<JobConfig> getCustomConfig(const system::User& in_user)
    {
       return {};
    }
@@ -115,9 +132,12 @@ public:
     *
     * This function controls Cluster capabilities.
     *
+    * @param in_user    The user who made the request to see the capabilities of the Cluster. This may be used to return
+    *                   different capabilities based on the configured user profiles.
+    *
     * @return The custom placement constraints which may be set on jobs, if any.
     */
-   virtual std::vector<PlacementConstraint> getPlacementConstraints()
+   virtual std::vector<PlacementConstraint> getPlacementConstraints(const system::User& in_user)
    {
       return {};
    }
@@ -127,9 +147,12 @@ public:
     *
     * This function controls Cluster capabilities.
     *
+    * @param in_user    The user who made the request to see the capabilities of the Cluster. This may be used to return
+    *                   different capabilities based on the configured user profiles.
+    *
     * @return The queues which are available to run jobs, if any.
     */
-   virtual std::vector<std::string> getQueues()
+   virtual std::vector<std::string> getQueues(const system::User& in_user)
    {
       return {};
    }
@@ -139,9 +162,12 @@ public:
     *
     * This function controls Cluster capabilities.
     *
+    * @param in_user    The user who made the request to see the capabilities of the Cluster. This may be used to return
+    *                   different capabilities based on the configured user profiles.
+    *
     * @return The resource limit types which can be set for jobs, including default and maximum values, if any.
     */
-   virtual std::vector<ResourceLimit> getResourceLimits()
+   virtual std::vector<ResourceLimit> getResourceLimits(const system::User& in_user)
    {
       return {};
    }

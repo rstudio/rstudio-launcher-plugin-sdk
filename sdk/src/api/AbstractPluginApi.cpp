@@ -92,27 +92,28 @@ struct AbstractPluginApi::Impl
       LauncherCommunicator->sendResponse(BootstrapResponse(in_bootstrapRequest->getId()));
    }
 
-   void handleGetClusterInfo(const std::shared_ptr<Request>& in_clusterInfoRequest)
+   void handleGetClusterInfo(const std::shared_ptr<UserRequest>& in_clusterInfoRequest)
    {
+      const system::User& requestUser = in_clusterInfoRequest->getUser();
       if (JobSource->supportsContainers())
          return LauncherCommunicator->sendResponse(
             ClusterInfoResponse(
                in_clusterInfoRequest->getId(),
-               JobSource->allowUnknownImages(),
-               JobSource->getCustomConfig(),
-               JobSource->getContainerImages(),
-               JobSource->getDefaultImage(),
-               JobSource->getPlacementConstraints(),
-               JobSource->getQueues(),
-               JobSource->getResourceLimits()));
+               JobSource->allowUnknownImages(requestUser),
+               JobSource->getCustomConfig(requestUser),
+               JobSource->getContainerImages(requestUser),
+               JobSource->getDefaultImage(requestUser),
+               JobSource->getPlacementConstraints(requestUser),
+               JobSource->getQueues(requestUser),
+               JobSource->getResourceLimits(requestUser)));
 
       return LauncherCommunicator->sendResponse(
          ClusterInfoResponse(
             in_clusterInfoRequest->getId(),
-            JobSource->getCustomConfig(),
-            JobSource->getPlacementConstraints(),
-            JobSource->getQueues(),
-            JobSource->getResourceLimits()));
+            JobSource->getCustomConfig(requestUser),
+            JobSource->getPlacementConstraints(requestUser),
+            JobSource->getQueues(requestUser),
+            JobSource->getResourceLimits(requestUser)));
    }
 
    /**
@@ -149,7 +150,7 @@ struct AbstractPluginApi::Impl
          case Request::Type::BOOTSTRAP:
             return handleBootstrap(std::static_pointer_cast<BootstrapRequest>(in_request));
          case Request::Type::GET_CLUSTER_INFO:
-            return handleGetClusterInfo(in_request);
+            return handleGetClusterInfo(std::static_pointer_cast<UserRequest>(in_request));
          default:
             return LauncherCommunicator->sendResponse(
                ErrorResponse(
