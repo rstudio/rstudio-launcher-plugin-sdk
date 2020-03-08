@@ -1315,10 +1315,10 @@ TEST_CASE("From JSON: Job (all fields, exe)")
    CHECK((job.PlacementConstraints[0].Name == "customConstraint1" && job.PlacementConstraints[0].Value == "diskType1"));
    CHECK((job.PlacementConstraints[1].Name == "otherConstraint" && job.PlacementConstraints[1].Value == "1029"));
    REQUIRE(job.Queues.size() == 4);
-   CHECK((job.Queues[0] == "possibleQueue1" &&
-          job.Queues[1] == "queue2" &&
-          job.Queues[2] == "other-queue" &&
-          job.Queues[3] == "queue with spaces  "));
+   CHECK((job.Queues.find("possibleQueue1") != job.Queues.end() &&
+          job.Queues.find("queue2") != job.Queues.end() &&
+          job.Queues.find("other-queue") != job.Queues.end() &&
+          job.Queues.find("queue with spaces  ") != job.Queues.end()));
    REQUIRE(job.ResourceLimits.size() == 4);
    CHECK((job.ResourceLimits[0].ResourceType == ResourceLimit::Type::CPU_COUNT &&
           job.ResourceLimits[0].Value == "3" &&
@@ -1598,10 +1598,10 @@ TEST_CASE("To JSON: Job (all fields)")
    job.Pid = 1096;
    job.PlacementConstraints.push_back(const1);
    job.PlacementConstraints.push_back(const2);
-   job.Queues.emplace_back("hello");
-   job.Queues.emplace_back("world");
-   job.Queues.emplace_back("keep adding");
-   job.Queues.emplace_back("MORE_QUEUES");
+   job.Queues.insert("hello");
+   job.Queues.insert("world");
+   job.Queues.insert("keep adding");
+   job.Queues.insert("MORE_QUEUES");
    job.ResourceLimits.push_back(limit1);
    job.ResourceLimits.push_back(limit2);
    job.ResourceLimits.emplace_back(ResourceLimit::Type::MEMORY, "100", "20");
@@ -1638,10 +1638,10 @@ TEST_CASE("To JSON: Job (all fields)")
    mounts.push_back(mount3.toJson());
    constraints.push_back(const1.toJson());
    constraints.push_back(const2.toJson());
-   queues.push_back("hello");
-   queues.push_back("world");
-   queues.push_back("keep adding");
    queues.push_back("MORE_QUEUES");
+   queues.push_back("hello");
+   queues.push_back("keep adding");
+   queues.push_back("world");
    limits.push_back(limit1.toJson());
    limits.push_back(limit2.toJson());
    limits.push_back(ResourceLimit(ResourceLimit::Type::MEMORY, "100", "20").toJson());

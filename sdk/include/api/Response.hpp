@@ -226,7 +226,7 @@ public:
        uint64_t in_requestId,
        std::vector<JobConfig> in_config,
        std::vector<PlacementConstraint> in_placementConstraints,
-       std::vector<std::string> in_queues,
+       std::set<std::string> in_queues,
        std::vector<ResourceLimit> in_resourceLimits);
 
     /**
@@ -249,7 +249,7 @@ public:
        std::set<std::string> in_containerImages,
        std::string in_defaultImage,
        std::vector<PlacementConstraint> in_placementConstraints,
-       std::vector<std::string> in_queues,
+       std::set<std::string> in_queues,
        std::vector<ResourceLimit> in_resourceLimits);
     /**
      * @brief Converts this cluster info response to a JSON object.

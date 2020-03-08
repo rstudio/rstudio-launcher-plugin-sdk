@@ -356,8 +356,8 @@ Error Job::fromJson(const json::Object& in_json, Job& out_job)
 {
    // Everything but the name is optional.
    Job result;
-   Optional<std::vector<std::string> > arguments, queues;
-   Optional<std::set<std::string> > tags;
+   Optional<std::vector<std::string> > arguments;
+   Optional<std::set<std::string> > queues, tags;
    Optional<std::string> cluster, command, exe, host, id, lastUpTime, stdIn, stdErr, stdOut, status, statusMessage,
                          submitTime, user, workingDir;
    Optional<json::Object> containerObj;
@@ -409,19 +409,19 @@ Error Job::fromJson(const json::Object& in_json, Job& out_job)
       return error;
    }
 
-   result.Arguments = arguments.getValueOr(std::vector<std::string>());
+   result.Arguments = arguments.getValueOr({});
    result.Cluster = cluster.getValueOr("");
    result.Command = command.getValueOr("");
    result.Exe = exe.getValueOr("");
    result.Host = host.getValueOr("");
    result.Id = id.getValueOr("");
-   result.Queues = queues.getValueOr(std::vector<std::string>());
+   result.Queues = queues.getValueOr({});
    result.StandardIn = stdIn.getValueOr("");
    result.StandardErrFile = stdErr.getValueOr("");
    result.StandardOutFile = stdOut.getValueOr("");
    result.StatusMessage = statusMessage.getValueOr("");
    result.User = user.getValueOr("");
-   result.Tags = tags.getValueOr(std::set<std::string>());
+   result.Tags = tags.getValueOr({});
    result.WorkingDirectory = workingDir.getValueOr("");
 
    if (containerObj)

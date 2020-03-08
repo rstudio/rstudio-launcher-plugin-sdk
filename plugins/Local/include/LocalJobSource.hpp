@@ -57,12 +57,14 @@ public:
     *
     * The Local Plugin supports two custom configuration values: The PAM Profile, and an encrypted password.
     *
-    * @param This parameter is not used. The Local Plugin does not support user profiles, and returns the same custom
-    *        configuration values regardless of the request user.
+    * The system::User parameter is not used. The Local Plugin does not support user profiles, and returns the same
+    * custom configuration values regardless of the request user.
+    *
+    * @param out_customConfig       The custom configuration settings available to set on jobs.
     *
     * @return The PAM Profile and encrypted password custom configuration values.
     */
-   std::vector<api::JobConfig> getCustomConfig(const system::User&) override;
+    Error getCustomConfig(const system::User&, std::vector<api::JobConfig>& out_customConfig) const override;
 };
 
 } // namespace local

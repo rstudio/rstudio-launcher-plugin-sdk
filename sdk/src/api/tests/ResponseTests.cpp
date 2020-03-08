@@ -83,8 +83,8 @@ TEST_CASE("Create ClusterInfo Response")
          { limit1, limit2, limit3 });
 
       json::Array queues, limits;
-      queues.push_back("queue1");
       queues.push_back("QUEUE-TWO");
+      queues.push_back("queue1");
       limits.push_back(limit1.toJson());
       limits.push_back(limit2.toJson());
       limits.push_back(limit3.toJson());
@@ -132,9 +132,9 @@ TEST_CASE("Create ClusterInfo Response")
       constraints.push_back(constraint3.toJson());
       constraints.push_back(constraint4.toJson());
       constraints.push_back(constraint5.toJson());
-      queues.push_back("queue1");
       queues.push_back("QUEUE-TWO");
       queues.push_back("another queue");
+      queues.push_back("queue1");
       limits.push_back(limit1.toJson());
       limits.push_back(limit2.toJson());
       limits.push_back(limit3.toJson());

@@ -154,7 +154,7 @@ struct ClusterInfoResponse::Impl
    Impl(
       std::vector<JobConfig> in_config,
       std::vector<PlacementConstraint> in_placementConstraints,
-      std::vector<std::string> in_queues,
+      std::set<std::string> in_queues,
       std::vector<ResourceLimit> in_resourceLimits) :
          AllowUnknownImages(false),
          Config(std::move(in_config)),
@@ -171,7 +171,7 @@ struct ClusterInfoResponse::Impl
       std::set<std::string> in_containerImages,
       std::string in_defaultImage,
       std::vector<PlacementConstraint> in_placementConstraints,
-      std::vector<std::string> in_queues,
+      std::set<std::string> in_queues,
       std::vector<ResourceLimit> in_resourceLimits) :
          AllowUnknownImages(in_allowUnknownImages),
          Config(std::move(in_config)),
@@ -189,7 +189,7 @@ struct ClusterInfoResponse::Impl
    std::set<std::string> ContainerImages;
    std::string DefaultImage;
    std::vector<PlacementConstraint> PlacementConstraints;
-   std::vector<std::string> Queues;
+   std::set<std::string> Queues;
    std::vector<ResourceLimit> ResourceLimits;
    bool SupportsContainers;
 };
@@ -200,7 +200,7 @@ ClusterInfoResponse::ClusterInfoResponse(
    uint64_t in_requestId,
    std::vector<JobConfig> in_config,
    std::vector<PlacementConstraint> in_placementConstraints,
-   std::vector<std::string> in_queues,
+   std::set<std::string> in_queues,
    std::vector<ResourceLimit> in_resourceLimits) :
       Response(Response::Type::CLUSTER_INFO, in_requestId),
       m_impl(
@@ -219,7 +219,7 @@ ClusterInfoResponse::ClusterInfoResponse(
    std::set<std::string> in_containerImages,
    std::string in_defaultImage,
    std::vector<PlacementConstraint> in_placementConstraints,
-   std::vector<std::string> in_queues,
+   std::set<std::string> in_queues,
    std::vector<ResourceLimit> in_resourceLimits) :
       Response(Response::Type::CLUSTER_INFO, in_requestId),
       m_impl(new Impl(

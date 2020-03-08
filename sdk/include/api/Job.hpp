@@ -281,7 +281,7 @@ struct Job
    std::vector<PlacementConstraint> PlacementConstraints;
 
    /** The set of queues on which this job may be run, or the queue which ran the job. */
-   std::vector<std::string> Queues;
+   std::set<std::string> Queues;
 
    /** The resource limits that were set by the user for this job. */
    std::vector<ResourceLimit> ResourceLimits;

@@ -50,6 +50,22 @@ struct AbstractPluginApi::Impl
    }
 
    /**
+    * @brief Sends an error response to the Launcher.
+    *
+    * @param in_requestId   The ID of the request for which an error occurred.
+    * @param in_type        The type of error which occurred.
+    * @param in_error       The error which occurred.
+    */
+   void sendErrorResponse(uint64_t in_requestId, ErrorResponse::Type in_type, const Error& in_error)
+   {
+      LauncherCommunicator->sendResponse(
+         ErrorResponse(
+            in_requestId,
+            ErrorResponse::Type::UNKNOWN,
+            in_error.asString()));
+   }
+
+   /**
     * @brief "Handles" a received heartbeat request by logging a debug message.
     */
    static void handleHeartbeat()
@@ -81,11 +97,7 @@ struct AbstractPluginApi::Impl
 
       Error error = JobSource->initialize();
       if (error)
-         return LauncherCommunicator->sendResponse(
-            ErrorResponse(
-               in_bootstrapRequest->getId(),
-               ErrorResponse::Type::UNKNOWN,
-               error.asString()));
+         return sendErrorResponse(in_bootstrapRequest->getId(), ErrorResponse::Type::UNKNOWN, error);
 
       // TODO: pull down existing jobs and put them in the repository.
 
@@ -95,25 +107,66 @@ struct AbstractPluginApi::Impl
    void handleGetClusterInfo(const std::shared_ptr<UserRequest>& in_clusterInfoRequest)
    {
       const system::User& requestUser = in_clusterInfoRequest->getUser();
+      uint64_t requestId = in_clusterInfoRequest->getId();
+
+      std::vector<api::JobConfig> config;
+      std::vector<api::PlacementConstraint> constraints;
+      std::set<std::string> queues;
+      std::vector<api::ResourceLimit> limits;
+
+      Error error = JobSource->getCustomConfig(requestUser, config);
+      if (error)
+         return sendErrorResponse(requestId, ErrorResponse::Type::UNKNOWN, error);
+
+      error = JobSource->getPlacementConstraints(requestUser, constraints);
+      if (error)
+         return sendErrorResponse(requestId, ErrorResponse::Type::UNKNOWN, error);
+
+      error = JobSource->getQueues(requestUser, queues);
+      if (error)
+         return sendErrorResponse(requestId, ErrorResponse::Type::UNKNOWN, error);
+
+      error  = JobSource->getResourceLimits(requestUser, limits);
+      if (error)
+         return sendErrorResponse(requestId, ErrorResponse::Type::UNKNOWN, error);
+
       if (JobSource->supportsContainers())
+      {
+         bool allowUnknownImages = false;
+         std::set<std::string> images;
+         std::string defaultImage;
+
+         error = JobSource->allowUnknownImages(requestUser, allowUnknownImages);
+         if (error)
+            return sendErrorResponse(requestId, ErrorResponse::Type::UNKNOWN, error);
+
+         error = JobSource->getContainerImages(requestUser, images);
+         if (error)
+            return sendErrorResponse(requestId, ErrorResponse::Type::UNKNOWN, error);
+
+         error = JobSource->getDefaultImage(requestUser, defaultImage);
+         if (error)
+            return sendErrorResponse(requestId, ErrorResponse::Type::UNKNOWN, error);
+
          return LauncherCommunicator->sendResponse(
             ClusterInfoResponse(
                in_clusterInfoRequest->getId(),
-               JobSource->allowUnknownImages(requestUser),
-               JobSource->getCustomConfig(requestUser),
-               JobSource->getContainerImages(requestUser),
-               JobSource->getDefaultImage(requestUser),
-               JobSource->getPlacementConstraints(requestUser),
-               JobSource->getQueues(requestUser),
-               JobSource->getResourceLimits(requestUser)));
+               allowUnknownImages,
+               config,
+               images,
+               defaultImage,
+               constraints,
+               queues,
+               limits));
+      }
 
       return LauncherCommunicator->sendResponse(
          ClusterInfoResponse(
             in_clusterInfoRequest->getId(),
-            JobSource->getCustomConfig(requestUser),
-            JobSource->getPlacementConstraints(requestUser),
-            JobSource->getQueues(requestUser),
-            JobSource->getResourceLimits(requestUser)));
+            config,
+            constraints,
+            queues,
+            limits));
    }
 
    /**
