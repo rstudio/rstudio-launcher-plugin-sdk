@@ -1,7 +1,7 @@
 /*
  * LocalPluginApi.cpp
  * 
- * Copyright (C) 2019 by RStudio, Inc.
+ * Copyright (C) 2019-20 by RStudio, PBC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
  * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
@@ -21,7 +21,6 @@
 #include <LocalPluginApi.hpp>
 
 #include <LocalJobSource.hpp>
-#include <LocalOptions.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -39,9 +38,6 @@ std::shared_ptr<api::IJobSource> LocalPluginApi::createJobSource() const
 
 Error LocalPluginApi::doInitialize()
 {
-   // Make sure LocalOptions have been initialized.
-   LocalOptions::getInstance().initialize();
-
    return Success();
 }
 

@@ -1,7 +1,7 @@
 /*
  * LocalPluginApi.hpp
  * 
- * Copyright (C) 2019 by RStudio, Inc.
+ * Copyright (C) 2019-20 by RStudio, PBC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
  * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
@@ -61,8 +61,7 @@ private:
 
    /**
     * @brief This method is responsible for initializing all components necessary to communicate with the job launching
-    *        system supported by this Plugin, such as initializing Plugin specific options or the communication method
-    *        (e.g. a TCP socket).
+    *        system supported by this Plugin, such as initializing the communication method (e.g. a TCP socket).
     *
     * @return Success if all components of the Plugin API could be initialized; Error otherwise.
     */

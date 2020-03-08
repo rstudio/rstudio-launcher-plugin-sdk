@@ -1,7 +1,7 @@
 /*
- * JsonUtils.cpp
+ * AsyncTimerTests.cpp
  *
- * Copyright (C) 2020 by RStudio, Inc.
+ * Copyright (C) 2020 by RStudio, PBC
  *
  * Unless you have received this program directly from RStudio pursuant to the terms of a commercial license agreement
  * with RStudio, then this program is licensed to you under the following terms:
@@ -21,28 +21,55 @@
  *
  */
 
-#include <json/JsonUtils.hpp>
+#include <TestMain.hpp>
 
-#include <Error.hpp>
+#include <unistd.h>
+
+#include <system/Asio.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
-namespace json {
+namespace system {
 
-Error jsonReadError(JsonReadError in_errorCode, const std::string& in_message, const ErrorLocation& in_errorLocation)
+struct Init
 {
-   if (in_errorCode == JsonReadError::SUCCESS)
-      return Success();
+   Init()
+   {
+      AsioService::startThreads(1);
+   }
 
-   return Error("JsonReadError", static_cast<int>(in_errorCode), in_message, in_errorLocation);
+   ~Init()
+   {
+      try
+      {
+         AsioService::stop();
+         AsioService::waitForExit();
+      }
+      catch (...)
+      {
+      }
+   }
+};
+
+TEST_CASE("Timer is invoked")
+{
+   Init init;
+   AsyncTimedEvent timer;
+   int count = 0;
+   auto func = [&count]()
+   {
+      ++count;
+   };
+
+   timer.start(2, func);
+   sleep(3);
+   CHECK(count == 1);
+
+   sleep(6);
+   timer.cancel();
+   CHECK(count == 4);
 }
 
-bool isMissingMemberError(const Error& in_error)
-{
-   return ((in_error.getName() == "JsonReadError") &&
-      (static_cast<JsonReadError>(in_error.getCode()) == JsonReadError::MISSING_MEMBER));
-}
-
-} // namespace json
+} // namespace system
 } // namespace launcher_plugins
 } // namespace rstudio

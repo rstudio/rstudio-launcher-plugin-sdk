@@ -1,7 +1,7 @@
 /*
  * AbstractMain.cpp
  *
- * Copyright (C) 2019 by RStudio, Inc.
+ * Copyright (C) 2019-20 by RStudio, PBC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
  * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
@@ -35,25 +35,12 @@
 #include <options/Options.hpp>
 #include <system/PosixSystem.hpp>
 #include <system/User.hpp>
-#include <utils/ErrorUtils.hpp>
 #include <system/Asio.hpp>
+#include <utils/ErrorUtils.hpp>
+#include <utils/MutexUtils.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
-
-#define UNIQUE_LOCK_MUTEX(in_mutex)                   \
-try {                                                 \
-   boost::unique_lock<boost::mutex> lock(in_mutex);   \
-
-
-#define END_UNIQUE_LOCK_MUTEX                                                                   \
-}                                                                                               \
-catch (const boost::lock_error& e)                                                              \
-{                                                                                               \
-   logging::logError(utils::createErrorFromBoostError(e.code(), e.what(), ERROR_LOCATION));     \
-}                                                                                               \
-CATCH_UNEXPECTED_EXCEPTION                                                                      \
-
 
 #define CHECK_ERROR_1(in_error, in_msg)   \
 if (in_error)                             \
@@ -101,7 +88,7 @@ int configureScratchPath(const system::FilePath& in_scratchPath, const system::U
             ".")
 
       // Drop privileges to the server  user.
-      error = system::posix::temporarilyDropPriv(in_serverUser);
+      error = system::posix::temporarilyDropPrivileges(in_serverUser);
       CHECK_ERROR(error, "Could not lower privilege to server user: " + in_serverUser.getUsername() + ".")
    }
 
@@ -176,7 +163,7 @@ struct AbstractMain::Impl
       UNIQUE_LOCK_MUTEX(m_mutex)
       if (!m_exitProcess)
          m_exitConditionVar.wait(lock, [&]{ return m_exitProcess; });
-      END_UNIQUE_LOCK_MUTEX
+      END_UNIQUE_LOCK_MUTEX;
    }
 
 private:
@@ -207,14 +194,17 @@ int AbstractMain::run(int in_argc, char** in_argv)
    std::shared_ptr<ILogDestination> stderrLogDest(new StderrLogDestination(LogLevel::INFO));
    addLogDestination(stderrLogDest);
 
-   // Read the options.
+   // Initialize the default options. This must be done before the custom options are initialized.
    options::Options& options = options::Options::getInstance();
-   Error error = options.readOptions(in_argc, in_argv, getConfigFile());
-   if (error)
-   {
-      logError(error);
-      return error.getCode();
-   }
+
+   // Initialize Main. This should initialize the plugin-specific options, and any other plugin specific elements needed
+   // (e.g it could add a custom logging destination).
+   Error error = initialize();
+   CHECK_ERROR(error)
+
+   // Read the options.
+   error = options.readOptions(in_argc, in_argv, getConfigFile());
+   CHECK_ERROR(error)
 
    // Ensure the server user exists.
    system::User serverUser;

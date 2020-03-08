@@ -1,7 +1,7 @@
 /*
  * LocalMain.cpp
  * 
- * Copyright (C) 2019 by RStudio, Inc.
+ * Copyright (C) 2019-20 by RStudio, PBC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
  * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
@@ -20,6 +20,7 @@
 
 #include <AbstractMain.hpp>
 
+#include <LocalOptions.hpp>
 #include <LocalPluginApi.hpp>
 
 namespace rstudio {
@@ -54,6 +55,18 @@ private:
     std::string getPluginName() const override
     {
        return "local";
+    }
+
+   /**
+    * @brief Initializes the main process, including custom options.
+    *
+    * @return Success if the process could be initialized; Error otherwise.
+    */
+    Error initialize() override
+    {
+       // Ensure Local specific options are initialized.
+       LocalOptions::getInstance().initialize();
+       return Success();
     }
 };
 

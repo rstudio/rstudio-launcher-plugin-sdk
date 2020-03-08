@@ -3,7 +3,7 @@
 #
 # CMakeLists.txt
 #
-# Copyright (C) 2020 by RStudio, Inc.
+# Copyright (C) 2020 by RStudio, PBC
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
@@ -19,7 +19,7 @@
 # OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-set(RLPS_SYS_TEST_MAIN ../../tests/TestMain.cpp)
+set(RLPS_SYSTEM_TEST_MAIN ../../tests/TestMain.cpp)
 
 # Copy the test runner that runs all options tests.
 configure_file(run-tests.sh run-tests.sh COPYONLY)
@@ -29,14 +29,15 @@ include_directories(
    ../../tests
 )
 
-set(RLPS_SYS_TEST_SOURCE_FILES
+set(RLPS_SYSTEM_TEST_SOURCES
+   AsyncTimerTests.cpp
    DateTimeTests.cpp
 )
 
-# Message Handler Tests
+# Abstract Communicator Tests
 add_executable(rlps-system-tests
-   ${RLPS_SYS_TEST_MAIN}
-   ${RLPS_SYS_TEST_SOURCE_FILES}
+   ${RLPS_SYSTEM_TEST_MAIN}
+   ${RLPS_SYSTEM_TEST_SOURCES}
    ${RLPS_HEADER_FILES}
 )
 

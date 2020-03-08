@@ -1,7 +1,7 @@
 /*
  * Request.cpp
  *
- * Copyright (C) 2019 by RStudio, Inc.
+ * Copyright (C) 2019-20 by RStudio, PBC
  *
  * Unless you have received this program directly from RStudio pursuant to the terms of a commercial license agreement
  * with RStudio, then this program is licensed to you under the following terms:
@@ -25,7 +25,6 @@
 
 #include <Error.hpp>
 #include <json/Json.hpp>
-#include <json/JsonUtils.hpp>
 #include <logging/Logger.hpp>
 #include <system/User.hpp>
 #include <boost/algorithm/string/trim.hpp>

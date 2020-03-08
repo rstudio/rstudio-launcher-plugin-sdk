@@ -3,7 +3,7 @@
 #
 # CMakeLists.txt
 #
-# Copyright (C) 2019 by RStudio, Inc.
+# Copyright (C) 2019-20 by RStudio, PBC
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
@@ -40,7 +40,6 @@ set(RLPS_SOURCE_FILES
    src/comms/MessageHandler.cpp
    src/comms/StdIOLauncherCommunicator.cpp
    src/json/Json.cpp
-   src/json/JsonUtils.cpp
    src/logging/FileLogDestination.cpp
    src/logging/Logger.cpp
    src/logging/StderrLogDestination.cpp

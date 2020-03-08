@@ -23,7 +23,7 @@
 
 #include <logging/Logger.hpp>
 
-#include <boost/noncopyable.hpp>
+#include <Noncopyable.hpp>
 #include <boost/optional.hpp>
 #include <boost/algorithm/string.hpp>
 
@@ -128,7 +128,7 @@ std::string formatLogMessage(
  * Multiple destinations may be added to this logger in order to write the same message to each destination.
  * The default log level is ERROR.
  */
-struct Logger : boost::noncopyable
+struct Logger : Noncopyable
 {
 public:
    /**

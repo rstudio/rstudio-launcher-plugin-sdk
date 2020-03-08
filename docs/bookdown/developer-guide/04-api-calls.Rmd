@@ -1,3 +1,141 @@
-# Plugin API {#pluginapi}
+# Launcher Plugin API {#pluginapi}
 
-Talk about the Plugin API in detail.
+The Launcher Plugin API is a set of requests and responses which may be sent from the Launcher to the Plugin (requests) or from the Plugin to the Launcher (responses). This section describes the API calls supported by this version of the RStudio Launcher Plugin SDK. Documentation for the latest version the Launcher Plugin API may be found [here](https://docs.rstudio.com/job-launcher/latest/).
+
+For each API call, this section will go into detail on how the request corresponds to methods on the `IJobSource` interface, or on other components of the SDK.
+
+The following fields are common to all requests and responses:
+
+&nbsp;
+
+**Request**
+
+|  Field Name  |                                                   Description
+| ------------ | -------------------------------------------------------------------------------------------------------------------
+| messageType  | The type ID of the message. The ID for a given message type can be found in the section for the given message.
+| requestId    | The monotonically increasing request ID for this request. This should be saved by the plugin for use in responses.
+
+&nbsp;
+
+**Response**
+
+|  Field Name  |                                                   Description
+| ------------ | -------------------------------------------------------------------------------------------------------------------
+| messageType  | The type ID of the message. The ID for a given message type can be found in the section for the given message.
+| requestId    | The ID of the request that this response is answering. This is used by the Launcher to determine which response belongs to which request.
+| responseId   | The monotonically increasing response ID for this response. The first response ID must be 0.
+
+&nbsp;
+
+The SDK manages all of these fields for each request and response, so the Plugin developer does not need to worry about them.
+
+In addition, many requests may also include `username` and `requestUsername` fields, described  in the table below. These fields are passed to the appropriate `IJobSource` method as they impact the behaviour of the Plugin.
+
+&nbsp;
+
+|    Field Name   |                                                   Description
+| --------------- | -------------------------------------------------------------------------------------------------------------------
+| username        | The username of the user that initiated the request. Used for auditing/security purposes. Some requests have the ability to specify * for this value, indicating all users’ information should be returned. This can occur if a super user (admin user) makes a request, or if authorization is disabled.
+| requestUsername | The actual username used when the request was submitted. This should be ignored in most plugins, and the username value above should be used. This field is provided for additional information if needed.
+
+## Requests and Responses {#req-and-resp}
+
+### Error {#error}
+
+For any request, the Plugin may return an Error response. To return an Error response to the server, the `IJobSource` implementation should return an `Error`. The Plugin API component will generally construct the appropriate Error response based on the `Error` returned by the `IJobSource` call. For the most part, the Plugin developer does not need to be concerned with Error responses.
+
+&nbsp;
+
+**Error Response**
+
+|  Field Name  |                               Description                                   |  Value
+| ------------ | --------------------------------------------------------------------------- | -------
+| messageType  | See above.                                                                  | -1
+| requestId    | See above.                                                                  | Int
+| responseId   | See above.                                                                  | Int
+| errorCode    | The error code. More details in the [Error Codes](#error-codes) section.    | Int
+| errorMessage | The error message. More details in the [Error Codes](#error-codes) section. | Int
+
+
+#### Error Codes {#error-codes}
+
+The code of the Error response must be one of the error codes supported by the Launcher Plugin API. The message can be an arbitrary string which provides more context for the Launcher user.
+
+|      Code Name      |                                                                                             Description                                                                                      |  Value
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------
+| UnknownError        | The request failed for an undetermined reason. Used when the Plugin cannot determine an appropriate error code for the error.                                                                | 0
+| RequestNotSupported | The request is not supported by the Plugin. The Plugin API component may return this if the Launcher sends a request that is not part of the Plugin's supported Launcher Plugin API version. | 1
+| InvalidRequest      | The request is malformed. The Plugin API component may return this if it receives an unexpected message from the Launcher.                                                                   | 2
+| JobNotFound         | The job does not exist in the scheduling system. The Plugin should return this if the user specified job ID does not exist.                                                                  | 3
+| PluignRestarted     | The request could not be completed because the Plugin had to restart.                                                                                                                        | 4
+| Timeout             | The request timed out while waiting for a response from the job scheduling system.                                                                                                           | 5
+| JobNotRunning       | The job exists in the job scheduling system but is not in the running state.                                                                                                                 | 6
+| JobOutputNotFound   | The job does not have output.                                                                                                                                                                | 7
+| InvalidJobState     | The job has an invalid job state for the requested action.                                                                                                                                   | 8
+| JobControlFailure   | The job control action failed.                                                                                                                                                               | 9
+| UnsupportedVersion  | The Launcher is using a Launcher Plugin API version that is not supported by the Plugin.                                                                                                     | 10
+
+
+### Heartbeat {#heartbeat}
+
+When the Launcher starts the Plugin, it provides the configured `heartbeat-interval-seconds` value to the Plugin. If the Plugin does not send the Heartbeat Response every configured amount of time, the Launcher will restart the Plugin. This request is completely handled by the SDK and doesn't require any action on the part of the Plugin developer. However, when debugging issues in the Plugin, it can become problematic if the Launcher restarts the Plugin while getting the debugger set up. To avoid this, `heartbeat-interval-seconds` can be set to `0` in `/etc/rstudio/launcher.conf`, which will disable heartbeating. This is not a recommended configuration for production because unresponsive Plugins will not be handled correctly.
+
+Despite the fact that there will be many heartbeats sent to and from the Launcher, every Heartbeat Request and Response will have request ID and response IDs of 0. This is because it is Heartbeat Response do not strictly respond to a particular request -- they must merely be sent to the Launcher every configured time interval.
+
+&nbsp;
+
+**Heartbeat Request**
+
+|  Field Name  |                               Description                                   |  Value
+| ------------ | --------------------------------------------------------------------------- | -------
+| messageType  | See above.                                                                  | 0
+| requestId    | See above.                                                                  | 0
+
+&nbsp;
+
+**Heartbeat Response**
+
+|  Field Name  |                               Description                                   |  Value
+| ------------ | --------------------------------------------------------------------------- | -------
+| messageType  | See above.                                                                  | 0
+| requestId    | See above.                                                                  | 0
+| responseId   | See above.                                                                  | 0
+
+### Bootstrap {#bootstrap}
+
+This request is sent to the Plugin once, immediately after the Plugin is launched. During this request, the SDK will verify version compatibility with the Launcher and then trigger the population of existing jobs by invoking `IJobSource::getJobs`.
+
+&nbsp;
+
+**Bootstrap Request**
+
+|  Field Name  |                               Description                                   |  Value
+| ------------ | --------------------------------------------------------------------------- | -------
+| messageType  | See above.                                                                  | 1
+| requestId    | See above.                                                                  | 0
+| version      | The Launcher Plugin API version in use by the Launcher.                     | [Version](#api-ver)
+
+&nbsp;
+
+**Bootstrap Response**
+
+|  Field Name  |                               Description                                   |  Value
+| ------------ | --------------------------------------------------------------------------- | -------
+| messageType  | See above.                                                                  | 1
+| requestId    | See above.                                                                  | 0
+| responseId   | See above.                                                                  | 0
+| version      | The Launcher Plugin API version in use by the Plugin.                       | [Version](#api-ver)
+
+
+## Complex API Types {#complex-types}
+
+This section describes the details of API types which are not simple types like String or Int.
+
+### Version {#api-ver}
+
+|  Field Name  |                               Description                                   |  Value
+| ------------ | --------------------------------------------------------------------------- | -------
+| major        | The major component of the supported version.                               | Int
+| minor        | The minor component of the supported version.                               | Int
+| patch        | The patch component of the supported version.                               | Int
+

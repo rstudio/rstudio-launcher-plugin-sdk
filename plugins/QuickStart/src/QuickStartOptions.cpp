@@ -42,7 +42,7 @@ bool QuickStartOptions::getSampleOption() const
 
 void QuickStartOptions::initialize()
 {
-   // TODO #5: Add options as necessary.
+   // TODO #5: Add options, as necessary.
    using namespace rstudio::launcher_plugins::options;
    Options& options = Options::getInstance();
    options.registerOptions()

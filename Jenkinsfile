@@ -1,9 +1,9 @@
-#!groovy
+#!dgroovy
 
 //
 // JenkinsFile
 //
-// Copyright (C) 2019 by RStudio Launcher Plugin SDK, Inc.
+// Copyright (C) 2019-20 by RStudio, PBC
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal

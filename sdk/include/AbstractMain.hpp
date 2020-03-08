@@ -1,7 +1,7 @@
 /*
  * AbstractMain.hpp
  *
- * Copyright (C) 2019 by RStudio, Inc.
+ * Copyright (C) 2019-20 by RStudio, PBC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
  * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
@@ -42,13 +42,6 @@ public:
     * @brief Default destructor.
     */
    virtual ~AbstractMain() = default;
-
-   /**
-    * @brief Initializes the process in preparation to run.
-    *
-    * @return Success if the process could be initialized; Error otherwise.
-    */
-   Error initialize();
 
    /**
     * @brief Runs the plugin.
@@ -98,6 +91,13 @@ private:
     * @return The unique program ID for this plugin.
     */
     virtual std::string getProgramId() const;
+
+    /**
+     * @brief Initializes the main process, including custom options.
+     *
+     * @return Success if the process could be initialized; Error otherwise.
+     */
+    virtual Error initialize() = 0;
 
     // Private implementation of abstract main.
     PRIVATE_IMPL_SHARED(m_abstractMainImpl);
