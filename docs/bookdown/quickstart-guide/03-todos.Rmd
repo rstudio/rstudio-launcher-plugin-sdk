@@ -1,5 +1,7 @@
 # TODO Items {#todos}
-This section will walk the developer through each of the QuickStart `TODO` items. As each `TODO` is completed, it is recommended to remove it from the code. Throughout this chapter, an example Plugin Developer who is part of the "Orchid Organization" and developing a Launcher Plugin for the "Mars" job scheduling system will be used.
+This section will walk the developer through each of the QuickStart `TODO` items. As each `TODO` is completed, it is recommended to remove it from the code.
+
+Throughout this chapter, an example Plugin Developer who is part of the "Orchid Organization" and developing a Launcher Plugin for the "Mars" job scheduling system will be used. The theoretical Mars job scheduling provides a C/C++ interface, which will be referred to as the `mars_api`. It provides a set of free functions which allow the caller to get details from the Mars job scheduling system. `mars_api` calls may throw `mars_exceptions` which need to be handled.
 
 ## TODO #1: Change Namespaces
  
@@ -111,3 +113,153 @@ std::string getProgramId() const override
 ```
 
 to `MarsMain.cpp`.
+
+## TODO #7: Define Cluster Capabilities
+ 
+TODO Location             Impact
+------------------------  ----------------------------------------------------
+QuickStartJobSource.hpp   QuickStartJobSource.hpp and QuickStartJobSource.cpp
+
+
+RStudio applications which make use of the Launcher can determine the capabilities of each job scheduling system by submitting a cluster info request to the Launcher. Each Plugin is responsible for returning a complete and correct list of capabilities of the job scheduling system with which it integrates. For more information about the cluster info request, see the RStudio Launcher Plugin SDK Developer Guide.
+
+Some aspects of the capabilities may be independent of the end user or the Launcher, and others may differ by user. If any capabilities should differ based on the end user, it is likely that these rules should be configurable by the system admin. For the convenience of the Plugin Developer, an `AbstractUserProfiles` class has been provided to facilitate the implementation of User Profiles. For more details about implementing this feature, please refer to the "User Profiles" section of RStudio Launcher Plugin SDK Developer Guide.
+
+This section will describe the questions which need to be answered to correctly define the capabilities of a job scheduling system, and the method or methods which must be overridden to provide those answers to the Launcher.
+
+* Does the job scheduling system support or require containers (such as Docker or Singularity containers)? If yes:
+    + override the `IJobSource::supportsContainers` method to return `true`.
+    + decide how the list of available container images should be determined. Override the `IJobSource::getContainerImages` method to return the list of available container images.
+    + decide how the default container image should be determined, if any. The default container image is not required. Override the `IJobSource::getDefaultImage` method to return the default container image.
+    * decide whether unknown images should be allowed. Override the `IJobSource::allowUnknownImages` method to return whether unknown images should be allowed or not.
+    
+    &nbsp;
+    
+    > Info: The RStudio Kubernetes Launcher Plugin allows system administrators to control the list of available container images, the default image, and whether unknown images should be allowed on a per-user or per-group basis through the User Profiles feature. For an example of what that configuration looks like, see the sample `launcher.kubernetes.profiles.conf` file in the [Job Launcher Plugin Configuration section of the RStudio Job Launcher Administrator's Guide](https://docs.rstudio.com/job-launcher/index.html#job-launcher-plugin-configuration).
+
+* Does the job scheduling system support job queues? A job queue is a subset of machines within the job scheduling system. When a job is submitted to the job scheduling system, a specific queue may be requested and the job should be run on one or more of the machines in the requested queue. In some job scheduling systems, this may also be known as a "partition". If yes:
+    + override the `IJobSource::getQueues` method to pull down the list of queues from the job scheduling system.
+* Does the job scheduling system support setting resource limits on a job?
+    + determine the type of resource limits that are supported by the job scheduling system. The SDK allows the following resource types: Cpu Count, Cpu Time, Memory, and Memory Swap. Override the `IJobSource::getResourceLimits` method. For each supported type add a `ResourceLimit` object of that type to the list of resource limits that will be returned, optionally setting the maximum and default values of that resource limit type.
+
+    &nbsp;
+
+    > Info: The existing RStudio Launcher Plugins allow system administrators to configure the maximum and default values for each resource type on a per-user or per-group basis through the User Profiles feature. From an exampleof what that looks like, see a sample `launcher.<plugin name>.profiles.conf` [Job Launcher Plugin Configuration section of the RStudio Job Launcher Administrator's Guide](https://docs.rstudio.com/job-launcher/index.html#job-launcher-plugin-configuration).
+
+* Does the job scheduling system support other placement constraints that are important to surface? It is not necessary to surface every placement constraint supported by the job scheduling system; however if any constraints are commonly used or otherwise important to the end user, they may be surfaced through this feature. Examples of such constraints may be other types of resource limits (e.g. disk space, GPU count, GPU time, etc.), or other types of constraints entirely (e.g. disk type, region of a cloud service, etc.). If yes:
+    + override the `IJobSource::getPlacementConstraints` method to return the list of custom placement constraints. For each placement constraint type, one `PlacementConstraint` object should be added to the list for each possible value of that constraint.
+
+* Does the job scheduling system require any custom configuration settings that differ from job to job? These settings are not surfaced in the RStudio Server Pro UI. As such, end users will not be able to set their value and they should be used sparingly. If there is another way to get these values, either through the Options or the User Profiles, that method should be used instead. If there are any settings which cannot be supported in any other way:
+    + override the `IJobSource::getCustomConfig` method to return the list of custom configuration settings. For each required custom configuration setting, add a `JobConfig` value to the list that defines the name and type of the configuration setting. The supported types are String, Int, Float, and Enum.
+
+> Important: Whether or not to use the `system::User` parameter provided to each of the capabilities methods is at the discretion of the Plugin Developer. If the Plugin Developer does not wish to support User Profiles and does not have another method to determine per-user or per-group rules, the `system::User` parameter may simply be ignored.
+
+### Example
+
+Assume that the Mars scheduling system has the following capabilities:
+
+* container support
+* a way to list available container images that are available to a given user
+* a way to set a limit on the number of CPUs, the amount of Memory, and the number of GPUs, and a way to check the maximum possible values that can be requested.
+* job queues
+
+
+```{c, eval=FALSE}
+  Error getContainerImages(
+    const system::User& in_user,
+    std::set<std::string>& out_images) const override;
+
+  Error getPlacementConstraints(
+    const system::User&,
+    std::vector<api::PlacementConstraint>& out_constraints) const override;
+
+  Error getQueues(
+    const system::User&,
+    std::vector<std::string>& out_queues) const override;
+
+  Error getResourceLimits(
+    const system::User&,
+    std::vector<api::ResourceLimit>& out_limits) const override;
+```
+
+to the `MarsJobSource` class definition in `MarsJobSource.hpp`, and
+
+```{c, eval=FALSE}
+Error MarsJobSource::getContainerImages(
+  const system::User& in_user,
+  std::set<std::string>& out_images) const
+{
+  try
+  {
+    std::vector<std::string> images = mars_api::get_images(in_user.getUsername());
+  }
+  catch (const mars_exception& e)
+  {
+    return Error("MarsApiError", e.code(), e.what(), ERROR_LOCATION);
+  }
+  
+
+  out_images.insert(images.begin(), images.end());
+  return Success();
+}
+
+Error MarsJobSource::getPlacementConstraints(
+  const system::User&,
+  std::vector<api::PlacementConstraint>& out_constraints) const
+{
+  int maxGpuCount = 0;
+  try
+  {
+    maxGpuCount = mars_api::get_total_gpus();
+  }
+  catch (const mars_expcetion& e)
+  {
+    return Error("MarsApiError", e.code(), e.what(), ERROR_LOCATION);
+  }
+  
+  for (int i = 0; i <= maxCpuCount; ++i)
+    out_constraints.emplace_back("gpu_count", std::toString(i));
+  
+  return Success();
+}
+
+Error MarsJobSource::getQueues(
+  const system::User&,
+  std::vector<std::string>& out_queues) const
+{
+  try
+  {
+    out_queues  = mars_api::get_queues());
+  }
+  catch (const mars_expcetion& e)
+  {
+    return Error("MarsApiError", e.code(), e.what(), ERROR_LOCATION);
+  }
+  
+  return Success();
+}
+
+Error MarsJobSource::getResourceLimits(
+  const system::User&,
+  std::vector<api::ResourceLimits>& out_limits) const
+{
+  int maxCpuCount = 0, maxMemoryMB = 0;
+  try
+  {
+    maxCpuCount =  m_marsApi.get_total_cpus();
+    maxMemoryMB = m_marsApi.get_max_memory();
+  }
+  catch (const mars_expcetion& e)
+  {
+    return Error("MarsApiError", e.code(), e.what(), ERROR_LOCATION);
+  }
+  
+  out_limits.emplace_back(api::ResourceLimit::Type::CPU_COUNT, std::toString(maxCpuCount));
+  out_limits.emplace_back(api::ResourceLimit::Type::MEMORY, std::toString((double)maxMemoryMB));
+  
+  return Success();
+}
+```
+
+to `MarsJobSource.cpp`.
+  
