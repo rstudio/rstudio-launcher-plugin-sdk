@@ -44,6 +44,8 @@ public:
     * @return Success if the job source could be initialized; Error otherwise.
     */
    Error initialize() override;
+
+   // TODO #7: Define cluster capabilities.
 };
 
 } // namespace quickstart
