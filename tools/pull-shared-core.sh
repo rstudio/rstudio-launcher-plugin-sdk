@@ -148,6 +148,7 @@ copyFile()
     replace "$DEST" "#include <boost/optional.hpp>" "#include <Optional.hpp>"
     replace "$DEST" "boost::optional" "Optional"
     replace "$DEST" "get_value_or" "getValueOr"
+    replace "$DEST" "#include <shared_core/DateTime.hpp>" "#include <system/DateTime.hpp>"
 
     # Fix includes
     for I in "${!SRC_INCLUDES[@]}"; do

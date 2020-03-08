@@ -24,7 +24,6 @@
 #include <logging/Logger.hpp>
 
 #include <Noncopyable.hpp>
-#include <boost/optional.hpp>
 #include <boost/algorithm/string.hpp>
 
 #include <sstream>
