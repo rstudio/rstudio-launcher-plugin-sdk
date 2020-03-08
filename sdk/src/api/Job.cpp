@@ -27,7 +27,6 @@
 
 #include <Error.hpp>
 #include <json/Json.hpp>
-#include <json/JsonUtils.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
