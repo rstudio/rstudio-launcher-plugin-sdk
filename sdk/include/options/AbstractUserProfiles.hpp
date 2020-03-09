@@ -39,6 +39,7 @@ class Error;
 
 namespace system {
 
+class FilePath;
 class User;
 
 } // namespace system
@@ -169,15 +170,15 @@ protected:
 
 private:
    /**
-    * @brief Gets the name, without extension, of the user profiles configuration file. The default implementation will
-    *        return "launcher.<in_pluginName>.profiles".
+    * @brief Gets the absolute path of the user profiles configuration file. The default implementation will return
+    *       "/etc/rstudio/launcher.<in_pluginName>.profiles.conf".
     *
     * NOTE: The inheriting class should only rely on the default implementation of this method if it uses the
     * AbstractUserProfiles(const std::string& in_pluginName) constructor.
     *
-    * @return The name, without extension, of the user profiles configuration file/
+    * @return The absolute path of the user profiles configuration file.
     */
-   virtual std::string getConfigurationFileName() const;
+   virtual const system::FilePath& getConfigurationFile() const;
 
    /**
     * @brief Gets the set of fields which may be set under any section of the user profiles configuration file.

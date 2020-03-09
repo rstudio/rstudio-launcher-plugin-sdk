@@ -334,8 +334,8 @@ struct AbstractUserProfiles::Impl
    /** The parsed sections of the ini file. */
    std::vector<LevelValue> LevelValues;
 
-   /** The name of the plugin, for the configuration file name. */
-   std::string PluginName;
+   /** The configuration file. */
+   system::FilePath ConfigurationFile;
 };
 
 bool AbstractUserProfiles::Impl::getValueForUser(
@@ -534,11 +534,8 @@ Error AbstractUserProfiles::Impl::populateGroups(const std::set<std::string>& in
 // AbstractUserProfiles ================================================================================================
 Error AbstractUserProfiles::initialize()
 {
-   system::FilePath confFile = system::FilePath("/etc/rstudio/").completeChildPath(
-      getConfigurationFileName() + ".conf");
-
    std::shared_ptr<std::istream> inputStream;
-   Error error = confFile.openForRead(inputStream);
+   Error error = getConfigurationFile().openForRead(inputStream);
    if (error)
    {
       error = userProfileError(
@@ -546,7 +543,7 @@ Error AbstractUserProfiles::initialize()
          "Could not open configuration file for read.",
          error,
          ERROR_LOCATION);
-      error.addProperty("file", confFile.getAbsolutePath());
+      error.addProperty("file", getConfigurationFile().getAbsolutePath());
       return error;
    }
 
@@ -563,7 +560,7 @@ Error AbstractUserProfiles::initialize()
    {
       error = userProfileError(UserProfileError::CONF_PARSE_ERROR, "Failed to read configuration file.", ERROR_LOCATION);
       error.addProperty("description", e.what());
-      error.addProperty("file", confFile.getAbsolutePath());
+      error.addProperty("file", getConfigurationFile().getAbsolutePath());
       return error;
    }
 
@@ -582,7 +579,8 @@ AbstractUserProfiles::AbstractUserProfiles() :
 AbstractUserProfiles::AbstractUserProfiles(const std::string& in_pluginName) :
    m_impl(new Impl())
 {
-   m_impl->PluginName = in_pluginName;
+   m_impl->ConfigurationFile =
+      system::FilePath("/etc/rstudio/").completeChildPath("launcher." + in_pluginName + ".profiles.conf");
 }
 
 template<typename T>
@@ -633,16 +631,16 @@ Error AbstractUserProfiles::validateValue(
    if (error)
       return userProfileError(
          UserProfileError::CONF_PARSE_ERROR,
-         "Invalid value(s) in /etc/rstudio/" + getConfigurationFileName() + ".conf",
+         "Invalid value(s) in " + getConfigurationFile().getAbsolutePath(),
          error,
          ERROR_LOCATION);
 
    return Success();
 }
 
-std::string AbstractUserProfiles::getConfigurationFileName() const
+const system::FilePath& AbstractUserProfiles::getConfigurationFile() const
 {
-   return "launcher." + m_impl->PluginName + ".profiles";
+   return m_impl->ConfigurationFile;
 }
 
 // Template Instantiations =============================================================================================
