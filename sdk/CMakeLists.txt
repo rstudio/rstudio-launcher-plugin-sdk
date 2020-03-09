@@ -44,6 +44,7 @@ set(RLPS_SOURCE_FILES
    src/logging/Logger.cpp
    src/logging/StderrLogDestination.cpp
    src/logging/SyslogDestination.cpp
+   src/options/AbstractUserProfiles.cpp
    src/options/Options.cpp
    src/system/Asio.cpp
    src/system/DateTime.cpp
