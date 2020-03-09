@@ -50,7 +50,8 @@ enum class UserProfileError
    SUCCESS = 0,
    CONF_PARSE_ERROR = 1,
    VALUE_NOT_FOUND_ERROR = 2,
-   VALUE_PARSE_ERROR = 3
+   VALUE_PARSE_ERROR = 3,
+   INVALID_VALUE_ERROR = 4,
 };
 
 Error userProfileError(
@@ -77,6 +78,11 @@ Error userProfileError(
       case UserProfileError::VALUE_PARSE_ERROR:
       {
          message = "The specified value could not be parsed as the requested type: ";
+         break;
+      }
+      case UserProfileError::INVALID_VALUE_ERROR:
+      {
+         message = "Invalid value requested: ";
          break;
       }
       default:
@@ -226,19 +232,35 @@ Error parseValue(const std::string& in_value, std::map<U, V>& out_parsedValues)
 
 } // anonymous namespace
 
+/**
+ * @brief Enum which represents the level of specificity of a section.
+ */
 enum class LevelType
 {
+   // NONE is used for comparisons. No section should have LevelType::NONE.
    NONE     = -1,
+   // The least specific level - all users.
    ALL      = 0,
+   // The middle level - any user in a specific group.
    GROUP    = 1,
+   // The most specific level - a particular user.
    USER     = 2,
 };
 
+/**
+ * @brief Represents a section (or level) of the ini file.
+ */
 struct Level
 {
+   /**
+    * @brief Default constructor.
+    */
    Level() : Type(LevelType::NONE) {}
 
+   /** The type of the section. */
    LevelType Type;
+
+   /** The name of the section. */
    std::string Name;
 };
 
@@ -253,18 +275,66 @@ typedef std::pair<Level, ValueMap> LevelValue;
 // Impl Struct =========================================================================================================
 struct AbstractUserProfiles::Impl
 {
+   /**
+    * @brief Gets the most specific instance of a value for the given user.
+    *
+    * @param in_valueName       The name of the value to retrieve.
+    * @param in_userName        The name of the user for whom to retrieve the value.
+    * @param out_value          The value, if any was found.
+    *
+    * @return True if a value was found with the given name for the user; Error otherwise.
+    */
    bool getValueForUser(const std::string& in_valueName, const std::string& in_userName, std::string& out_value) const;
 
+   /**
+    * @brief Checks whether the specified user is in the specified group.
+    *
+    * @param in_userName        The user.
+    * @param in_groupName       The group.
+    *
+    * @return True if the user is in the group; false otherwise.
+    */
    bool isInGroup(const std::string& in_userName, const std::string& in_groupName) const;
 
+   /**
+    * @brief Iterates all sections of the ini and applies the in_onValueFound function to any values that were found.
+    *
+    * @param in_valueName       The value to be validated.
+    * @param in_onValueFound    The function to be invoked for each occurrence of in_valueName.
+    *
+    * @return Success if every invocation of in_onValueFound returns Success; the Error that occurred otherwise.
+    */
+   Error iterateValues(
+      const std::string& in_valueName,
+      const std::function<Error(const std::string&)>& in_onValueFound) const;
+
+   /**
+    * @brief Parses the sections from ini file data. Also gathers group information for any groups specified in the
+    *        file.
+    *
+    * @param in_levelData       The string data from the ini file.
+    * @param in_fieldNames      The names of valid fields.
+    *
+    * @return True if the ini file could be parsed and there were no unexpected fields or groups; Error otherwise.
+    */
    Error parseLevels(const std::string& in_levelData, const std::set<std::string>& in_fieldNames);
 
+   /**
+    * @brief Populates the Groups member with unix group information from the list of requested group names.
+    *
+    * @param in_groupNames      The list of group names for which to retrieve group information.
+    *
+    * @return Success if all the group information could be populated; Error otherwise.
+    */
    Error populateGroups(const std::set<std::string>& in_groupNames);
 
+   /** Cached unix group information so we don't need to get it each time. */
    GroupLookupMap Groups;
 
+   /** The parsed sections of the ini file. */
    std::vector<LevelValue> LevelValues;
 
+   /** The name of the plugin, for the configuration file name. */
    std::string PluginName;
 };
 
@@ -304,7 +374,7 @@ bool AbstractUserProfiles::Impl::getValueForUser(
    return true;
 }
 
-bool AbstractUserProfiles::Impl::isInGroup(const std::string &in_userName, const std::string &in_groupName) const
+bool AbstractUserProfiles::Impl::isInGroup(const std::string& in_userName, const std::string& in_groupName) const
 {
    auto itr = Groups.find(in_groupName);
 
@@ -315,6 +385,27 @@ bool AbstractUserProfiles::Impl::isInGroup(const std::string &in_userName, const
       return false;
 
    return itr->second.find(in_userName) == itr->second.end();
+}
+
+Error AbstractUserProfiles::Impl::iterateValues(
+   const std::string& in_valueName,
+   const std::function<Error (const std::string&)>& in_onValueFound) const
+{
+   for (const LevelValue& levelValue: LevelValues)
+   {
+      const auto itr = levelValue.second.find(in_valueName);
+      if (itr != levelValue.second.end())
+      {
+         Error error = in_onValueFound(itr->second);
+         if (error)
+         {
+            error.addProperty("section-name", levelValue.first.Name);
+            return error;
+         }
+      }
+   }
+
+   return Success();
 }
 
 Error AbstractUserProfiles::Impl::parseLevels(
@@ -476,7 +567,11 @@ Error AbstractUserProfiles::initialize()
       return error;
    }
 
-   return m_impl->parseLevels(oStrStream.str(), getValidFieldNames());
+   error = m_impl->parseLevels(oStrStream.str(), getValidFieldNames());
+   if (error)
+      return error;
+
+   return validateValues();
 }
 
 AbstractUserProfiles::AbstractUserProfiles() :
@@ -496,6 +591,13 @@ Error AbstractUserProfiles::getValueForUser(
    const system::User& in_user,
    T& out_value) const
 {
+   const std::set<std::string>& validValueNames = getValidFieldNames();
+   if (validValueNames.find(in_valueName) == validValueNames.end())
+      return userProfileError(
+         UserProfileError::INVALID_VALUE_ERROR,
+         "The requested value \"" + in_valueName + "\" is not supported.",
+         ERROR_LOCATION);
+
    std::string strValue;
    if (!m_impl->getValueForUser(in_valueName, in_user.getUsername(), strValue))
       return userProfileError(
@@ -511,12 +613,39 @@ bool AbstractUserProfiles::isValueNotFoundError(const Error& in_error)
    return (in_error == userProfileError(UserProfileError::VALUE_NOT_FOUND_ERROR, "", ErrorLocation()));
 }
 
+template <typename T>
+Error AbstractUserProfiles::validateValue(const std::string& in_valueName) const
+{
+   return validateValue(
+      in_valueName,
+      [](const std::string& in_value)
+      {
+         T parsedVal;
+         return parseValue(in_value, parsedVal);
+      });
+}
+
+Error AbstractUserProfiles::validateValue(
+   const std::string& in_valueName,
+   const CustomValueValidator& in_validator) const
+{
+   Error error = m_impl->iterateValues(in_valueName, in_validator);
+   if (error)
+      return userProfileError(
+         UserProfileError::CONF_PARSE_ERROR,
+         "Invalid value(s) in /etc/rstudio/" + getConfigurationFileName() + ".conf",
+         error,
+         ERROR_LOCATION);
+
+   return Success();
+}
+
 std::string AbstractUserProfiles::getConfigurationFileName() const
 {
    return "launcher." + m_impl->PluginName + ".profiles";
 }
 
-// Template Insantiations ==============================================================================================
+// Template Instantiations =============================================================================================
 #define INSTANTIATE_GET_VALUE_TEMPLATE(in_type)                               \
 template <>                                                                   \
 Error AbstractUserProfiles::getValueForUser<in_type>(                         \

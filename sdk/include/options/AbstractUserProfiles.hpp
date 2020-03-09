@@ -50,6 +50,15 @@ namespace launcher_plugins {
 namespace options {
 
 /**
+ * @brief A function which may be passed to validateValue to provide custom validation for a non-standard value type.
+ *
+ * @param in_value      The value to be validated.
+ *
+ * @return Success if the value could be parsed correctly; Error otherwise.
+ */
+typedef std::function<Error(const std::string& in_value)> CustomValueValidator;
+
+/**
  * @brief Base class which reads an ini-based user profiles file.
  */
 class AbstractUserProfiles : Noncopyable
@@ -85,6 +94,7 @@ protected:
     * @param in_pluginName      The lower-case name of the plugin, to be used to set the configuration file name.
     */
    explicit AbstractUserProfiles(const std::string& in_pluginName);
+
    /**
     * @brief Gets the value with the specified name for the given user, based on the profiles configuration file.
     *
@@ -118,10 +128,44 @@ protected:
 
    /**
     * @brief Checks whether the error indicates that the configuration value was not found.
-    * @param in_error
-    * @return
+    *
+    * This method may be used to handle missing values differently than invalid values. For example, the Plugin
+    * developer may choose to use a default value if none was specified in the configuration file.
+    *
+    * @param in_error       The error to check.
+    *
+    * @return True if this error is a value-not-found error; false otherwise.
     */
    static bool isValueNotFoundError(const Error& in_error);
+
+   /**
+    * @brief Parses all occurrences of the configuration setting with name in_valueName to validate it is correctly
+    *       formatted.
+    *
+    * @tparam T     The type of the value. This is a precompiled templated function. Possible types are described in the
+    *               documentation of getValueForUser.
+    *
+    * @param in_valueName       The name of the value to validate.
+    *
+    * @return Success if all occurrences of in_valueName within the profiles configuration file could be parsed;
+    *         Error otherwise.
+    */
+   template <typename T>
+   Error validateValue(const std::string& in_valueName) const;
+
+   /**
+    * @brief Validates all occurrences of a value which has a non-standard type.
+    *
+    * @param in_valueName       The name of the value to validate.
+    * @param in_validator       The custom validation function. This should return success if the value could be parsed
+    *                           correctly and an error otherwise.
+    *
+    * @return Success if all occurrences of in_valueName within the profiles configuration file could be parsed;
+    *         Error otherwise.
+    */
+   Error validateValue(
+      const std::string& in_valueName,
+      const CustomValueValidator& in_validator) const;
 
 private:
    /**
@@ -142,8 +186,23 @@ private:
     *
     * @return The set of fields which may be set under any section of the user profiles configuration file.
     */
-   virtual std::set<std::string> getValidFieldNames() const = 0;
+   virtual const std::set<std::string>& getValidFieldNames() const = 0;
 
+   /**
+    * @brief Validates all the values within the user profiles configuration file.
+    *
+    * This method should call one of the AbstractUserProfiles::validateValue methods with an appropriate type for each
+    * of the valid field names returned by AbstractUserProfiles::getValidFieldNames. It will be invoked in
+    * AbstractUserProfiles::initialize.
+    *
+    * The correct implementation of this function will allow the plugin to immediately report any configuration errors
+    * to the system administrator, rather than waiting until each value is used.
+    *
+    * @return Success if all values were successfully validated; the Error that occuurred otherwise.
+    */
+   virtual Error validateValues() const = 0;
+
+   // The private implementation of AbstractUserProfiles.
    PRIVATE_IMPL(m_impl);
 };
 
