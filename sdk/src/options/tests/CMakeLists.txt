@@ -42,9 +42,19 @@ set(CONF_INPUT_FILES
     conf-files/LogLevelConflict3.conf
     conf-files/MissingOptional.conf
 )
+
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/conf-files/)
 foreach(INP_FILE ${CONF_INPUT_FILES})
     configure_file(${INP_FILE} conf-files/ COPYONLY)
+endforeach()
+
+set(PROFILE_INPUT_FILES
+   profile-files/simple.profiles.conf
+   )
+
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/profile-files/)
+foreach(INP_FILE ${PROFILE_INPUT_FILES})
+   configure_file(${INP_FILE} profile-files/ COPYONLY)
 endforeach()
 
 # Basic options all set
@@ -200,6 +210,18 @@ add_executable(rlps-missing-req-options-tests
 )
 
 target_link_libraries(rlps-missing-req-options-tests
+   rstudio-launcher-plugin-sdk-lib
+   ${RLPS_BOOST_LIBS}
+)
+
+# User profiles tests
+add_executable(rlps-user-profile-tests
+   ${RLPS_OPTIONS_TEST_MAIN}
+   UserProfileTests.cpp
+   ${RLPS_HEADER_FILES}
+)
+
+target_link_libraries(rlps-user-profile-tests
    rstudio-launcher-plugin-sdk-lib
    ${RLPS_BOOST_LIBS}
 )

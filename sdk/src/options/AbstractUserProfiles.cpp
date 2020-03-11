@@ -183,13 +183,13 @@ Error parseValue(const std::string& in_value, std::map<U, V>& out_parsedValues)
    while (itr != end)
    {
       std::vector<std::string> keyValStrs;
-      boost::split(keyValStrs, *itr, boost::is_any_of("="));
+      boost::split(keyValStrs, *itr, boost::is_any_of(":"));
 
       if (keyValStrs.size() < 2)
       {
          Error error = userProfileError(
             UserProfileError::VALUE_PARSE_ERROR,
-            "Map value \"" + *itr + R"(" does not contain "=" delimiter. Expected exactly 1)",
+            "Map value \"" + *itr + R"(" does not contain ":" delimiter. Expected exactly 1)",
             ERROR_LOCATION);
          error.addOrUpdateProperty("full-value", in_value);
          return error;
@@ -199,7 +199,7 @@ Error parseValue(const std::string& in_value, std::map<U, V>& out_parsedValues)
          Error error = userProfileError(
             UserProfileError::VALUE_PARSE_ERROR,
             "Map value \"" + *itr + "\" contains " +
-               std::to_string(keyValStrs.size() - 1) + " \"=\" delimiters. Expected exactly 1.",
+               std::to_string(keyValStrs.size() - 1) + " \":\" delimiters. Expected exactly 1.",
             ERROR_LOCATION);
          error.addOrUpdateProperty("full-value", in_value);
          return error;
@@ -337,6 +337,8 @@ struct AbstractUserProfiles::Impl
    /** The configuration file. */
    system::FilePath ConfigurationFile;
 };
+
+PRIVATE_IMPL_DELETER_IMPL(AbstractUserProfiles)
 
 bool AbstractUserProfiles::Impl::getValueForUser(
    const std::string& in_valueName,
@@ -645,66 +647,66 @@ const system::FilePath& AbstractUserProfiles::getConfigurationFile() const
 
 // Template Instantiations =============================================================================================
 #define INSTANTIATE_GET_VALUE_TEMPLATE(in_type)                               \
-template <>                                                                   \
+template                                                                      \
 Error AbstractUserProfiles::getValueForUser<in_type>(                         \
    const std::string&,                                                        \
    const system::User&,                                                       \
    in_type&) const;                                                           \
-template <>                                                                   \
+template                                                                      \
 Error AbstractUserProfiles::validateValue<in_type>(                           \
    const std::string&) const;                                                 \
-template <>                                                                   \
+template                                                                      \
 Error AbstractUserProfiles::getValueForUser<std::set<in_type> >(              \
    const std::string&,                                                        \
    const system::User&,                                                       \
    std::set<in_type>&) const;                                                 \
-template <>                                                                   \
+template                                                                      \
 Error AbstractUserProfiles::validateValue<std::set<in_type> >(                \
    const std::string&) const;                                                 \
-template <>                                                                   \
+template                                                                      \
 Error AbstractUserProfiles::getValueForUser<std::vector<in_type> >(           \
    const std::string&,                                                        \
    const system::User&,                                                       \
    std::vector<in_type>&) const;                                              \
-template <>                                                                   \
+template                                                                      \
 Error AbstractUserProfiles::validateValue<std::vector<in_type> >(             \
    const std::string&) const;                                                 \
 
 
 #define INSTANTIATE_GET_VALUE_TEMPLATE_MAPS(in_kType, in_vType)               \
 /* U -> V map */                                                              \
-template <>                                                                   \
+template                                                                      \
 Error AbstractUserProfiles::getValueForUser<std::map<in_kType, in_vType> >(   \
    const std::string&,                                                        \
    const system::User&,                                                       \
    std::map<in_kType, in_vType>&) const;                                      \
-template <>                                                                   \
+template                                                                      \
 Error AbstractUserProfiles::validateValue<std::map<in_kType, in_vType> >(     \
    const std::string&) const;                                                 \
 /* set<U> -> V map */                                                         \
-template <>                                                                   \
+template                                                                      \
 Error AbstractUserProfiles::getValueForUser<                                  \
    std::map<std::set<in_kType>, in_vType> >(                                  \
    const std::string&,                                                        \
    const system::User&,                                                       \
    std::map<std::set<in_kType>, in_vType>&) const;                            \
-template <>                                                                   \
+template                                                                      \
 Error AbstractUserProfiles::validateValue<                                    \
    std::map<std::set<in_kType>, in_vType> >(                                  \
    const std::string&) const;                                                 \
 /* U -> set<V> map */                                                         \
-template <>                                                                   \
+template                                                                      \
 Error AbstractUserProfiles::getValueForUser<                                  \
    std::map<in_kType, std::set<in_vType> > >(                                 \
    const std::string&,                                                        \
    const system::User&,                                                       \
    std::map<in_kType, std::set<in_vType> >&) const;                           \
-template <>                                                                   \
+template                                                                      \
 Error AbstractUserProfiles::validateValue<                                    \
    std::map<in_kType, std::set<in_vType> > >(                                 \
    const std::string&) const;                                                 \
 /* set<U> -> set<V> map */                                                    \
-template <>                                                                   \
+template                                                                      \
 Error AbstractUserProfiles::getValueForUser<                                  \
    std::map<std::set<in_kType>, std::set<in_vType> > >(                       \
    const std::string&,                                                        \
@@ -715,29 +717,29 @@ Error AbstractUserProfiles::validateValue<                                    \
    std::map<std::set<in_kType>, std::set<in_vType> > >(                       \
    const std::string&) const;                                                 \
 /* vector<U> -> V map */                                                      \
-template <>                                                                   \
+template                                                                      \
 Error AbstractUserProfiles::getValueForUser<                                  \
    std::map<std::vector<in_kType>, in_vType> >(                               \
    const std::string&,                                                        \
    const system::User&,                                                       \
    std::map<std::vector<in_kType>, in_vType>&) const;                         \
-template <>                                                                   \
+template                                                                      \
 Error AbstractUserProfiles::validateValue<                                    \
    std::map<std::vector<in_kType>, in_vType> >(                               \
    const std::string&) const;                                                 \
 /* U -> vector<V> map */                                                      \
-template <>                                                                   \
+template                                                                      \
 Error AbstractUserProfiles::getValueForUser<                                  \
    std::map<in_kType, std::vector<in_vType> > >(                              \
    const std::string&,                                                        \
    const system::User&,                                                       \
    std::map<in_kType, std::vector<in_vType> >&) const;                        \
-template <>                                                                   \
+template                                                                      \
 Error AbstractUserProfiles::validateValue<                                    \
    std::map<in_kType, std::vector<in_vType> > >(                              \
    const std::string&) const;                                                 \
 /* vector<U> -> vector<V> map */                                              \
-template <>                                                                   \
+template                                                                      \
 Error AbstractUserProfiles::getValueForUser<                                  \
    std::map<std::vector<in_kType>, std::vector<in_vType> > >(                 \
    const std::string&,                                                        \
@@ -748,24 +750,24 @@ Error AbstractUserProfiles::validateValue<                                    \
    std::map<std::vector<in_kType>, std::vector<in_vType> > >(                 \
    const std::string&) const;                                                 \
 /* set<U> -> vector<V> map */                                                 \
-template <>                                                                   \
+template                                                                      \
 Error AbstractUserProfiles::getValueForUser<                                  \
    std::map<std::set<in_kType>, std::vector<in_vType> > >(                    \
    const std::string&,                                                        \
    const system::User&,                                                       \
    std::map<std::set<in_kType>, std::vector<in_vType> >&) const;              \
-template <>                                                                   \
+template                                                                      \
 Error AbstractUserProfiles::validateValue<                                    \
    std::map<std::set<in_kType>, std::vector<in_vType> > >(                    \
    const std::string&) const;                                                 \
 /* vector<U> -> set<V> map */                                                 \
-template <>                                                                   \
+template                                                                      \
 Error AbstractUserProfiles::getValueForUser<                                  \
    std::map<std::vector<in_kType>, std::set<in_vType> > >(                    \
    const std::string&,                                                        \
    const system::User&,                                                       \
    std::map<std::vector<in_kType>, std::set<in_vType> >&) const;              \
-template <>                                                                   \
+template                                                                      \
 Error AbstractUserProfiles::validateValue<                                    \
    std::map<std::vector<in_kType>, std::set<in_vType> > >(                    \
    const std::string&) const;                                                 \

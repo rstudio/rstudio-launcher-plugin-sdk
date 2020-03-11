@@ -33,10 +33,31 @@ if [[ $ADD_USER -ne 0 ]]; then
   sudo adduser --system rstudio-server
 fi
 
+# Add test users for UserProfileTests
+
+sudo addgroup "rlpstestgrpone"
+sudo addgroup "rlpstestgrptwo"
+sudo addgroup "rlpstestgrpthree"
+sudo adduser --disabled-password --ingroup "rlpstestgrpone" --gecos "" "rlpstestusrone"
+sudo adduser --disabled-password --ingroup "rlpstestgrpone" --gecos "" "rlpstestusrtwo"
+sudo adduser --disabled-password --ingroup "rlpstestgrptwo" --gecos "" "rlpstestusrthree"
+sudo adduser --disabled-password --ingroup "rlpstestgrptwo" --gecos "" "rlpstestusrfour"
+sudo adduser --disabled-password --ingroup "rlpstestgrpone" --gecos "" "rlpstestusrfive"
+
+sudo adduser "rlpstestusrtwo" "rlpstestgrpone"  # Two is in all groups.
+sudo adduser "rlpstestusrtwo" "rlpstestgrpthree"
+sudo adduser "rlpstestusrfour" "rlpstestgrpthree"
+
 for test in ./*-tests;
 do
   echo "Running ${test}..."
-  ${test}
+
+  if [[ ${test} == "./rlps-user-profile-tests" ]]; then
+    sudo "${test}"
+  else
+    ${test}
+  fi
+
   FAILURES=$((FAILURES + $?))
 done
 
@@ -44,5 +65,14 @@ done
 if [[ $ADD_USER -ne 0 ]]; then
   sudo userdel rstudio-server
 fi
+
+sudo deluser --remove-home "rlpstestusrone"
+sudo deluser --remove-home "rlpstestusrtwo"
+sudo deluser --remove-home "rlpstestusrthree"
+sudo deluser --remove-home "rlpstestusrfour"
+sudo deluser --remove-home "rlpstestusrfive"
+sudo delgroup "rlpstestgrpone"
+sudo delgroup "rlpstestgrptwo"
+sudo delgroup "rlpstestgrpthree"
 
 exit $FAILURES

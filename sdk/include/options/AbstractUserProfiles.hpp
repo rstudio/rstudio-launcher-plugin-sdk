@@ -99,14 +99,13 @@ protected:
    /**
     * @brief Gets the value with the specified name for the given user, based on the profiles configuration file.
     *
-    * This template method is precompiled for all supported types. Valid types:
+    * This template method is instantiated in the CPP for a fixed set of types. Supported types:
     *   std::string
     *   int32_t
     *   uint32_t
     *   int64_t
     *   uint64_t
     *   float
-    *   double
     *   bool
     *   std::set<U>, where U is one of the types above
     *   std::vector<U>, where U is one of the types above (except std::set)
