@@ -195,7 +195,7 @@ Error fromJsonArray(const json::Array& in_jsonArray, std::vector<T>& out_array)
 }
 
 template <>
-Error fromJsonArray(const json::Array& in_jsonArray, std::vector<EnvVariable>& out_array)
+Error fromJsonArray(const json::Array& in_jsonArray, EnvironmentList& out_array)
 {
    for (const json::Value& jsonVal: in_jsonArray)
    {
@@ -233,7 +233,7 @@ json::Array toJsonArray(const std::vector<T>& in_vector)
 }
 
 template <>
-json::Array toJsonArray(const std::vector<EnvVariable>& in_vector)
+json::Array toJsonArray(const EnvironmentList& in_vector)
 {
    json::Array arr;
 
@@ -569,8 +569,8 @@ bool Job::matchesTags(const std::set<std::string>& in_tags) const
 }
 
 // Job Config ==========================================================================================================
-JobConfig::JobConfig(const std::string& in_name, Type in_type) :
-   Name(in_name),
+JobConfig::JobConfig(std::string in_name, Type in_type) :
+   Name(std::move(in_name)),
    ValueType(in_type)
 {
 }
@@ -677,28 +677,28 @@ Error Mount::fromJson(const json::Object& in_json, Mount& out_mount)
       return updateError(JOB_MOUNTS, in_json, error);
    }
    else if (hostMountSource && nfsMountSource)
-      {
-         error = Error("JobParseError", 1, "Multiple mount sources specified", ERROR_LOCATION);
+   {
+      error = Error("JobParseError", 1, "Multiple mount sources specified", ERROR_LOCATION);
+      return updateError(JOB_MOUNTS, in_json, error);
+   }
+   else if (hostMountSource)
+   {
+      HostMountSource mountSource;
+      error = HostMountSource::fromJson(hostMountSource.getValueOr(json::Object()), mountSource);
+      if (error)
          return updateError(JOB_MOUNTS, in_json, error);
-      }
-      else if (hostMountSource)
-         {
-            HostMountSource mountSource;
-            error = HostMountSource::fromJson(hostMountSource.getValueOr(json::Object()), mountSource);
-            if (error)
-               return updateError(JOB_MOUNTS, in_json, error);
 
-            out_mount.HostSourcePath = mountSource;
-         }
-         else
-         {
-            NfsMountSource mountSource;
-            error = NfsMountSource::fromJson(nfsMountSource.getValueOr(json::Object()), mountSource);
-            if (error)
-               return updateError(JOB_MOUNTS, in_json, error);
+      out_mount.HostSourcePath = mountSource;
+   }
+   else
+   {
+      NfsMountSource mountSource;
+      error = NfsMountSource::fromJson(nfsMountSource.getValueOr(json::Object()), mountSource);
+      if (error)
+         return updateError(JOB_MOUNTS, in_json, error);
 
-            out_mount.NfsSourcePath = mountSource;
-         }
+      out_mount.NfsSourcePath = mountSource;
+   }
 
    out_mount.IsReadOnly = isReadOnly.getValueOr(false);
 

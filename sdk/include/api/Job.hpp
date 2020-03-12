@@ -50,15 +50,27 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace api {
 
-/** Convenience typedef for an Environment Variable. */
-typedef std::pair<std::string, std::string> EnvVariable;
 
 // Forward Declarations
+struct Container;
+struct ExposedPort;
+struct HostMountSource;
+struct Job;
 struct JobConfig;
 struct Mount;
 struct NfsMountSource;
 struct ResourceLimit;
 struct PlacementConstraint;
+
+// Convenience Typedefs
+typedef std::pair<std::string, std::string> EnvVariable;
+typedef std::vector<EnvVariable> EnvironmentList;
+typedef std::vector<ExposedPort> ExposedPortList;
+typedef std::vector<JobConfig> JobConfigList;
+typedef std::vector<Job> JobList;
+typedef std::vector<Mount> MountList;
+typedef std::vector<PlacementConstraint> PlacementConstraintList;
+typedef std::vector<ResourceLimit> ResourceLimitList;
 
 /** @brief Struct which represents the container to use when launching a containerized job. */
 struct Container
@@ -234,13 +246,13 @@ struct Job
    std::string Command;
 
    /** The custom job scheduling specific configuration options that were set by the user for this job. */
-   std::vector<JobConfig> Config;
+   JobConfigList Config;
 
    /** The container to run the job in. Only used for containerized jobs. */
    Optional<Container> ContainerDetails;
 
    /** Environment variables to set on the job's run environment. */
-   std::vector<EnvVariable> Environment;
+   EnvironmentList Environment;
 
    /**
     * @brief The executable to run.
@@ -257,7 +269,7 @@ struct Job
    Optional<int> ExitCode;
 
    /** The ports which were exposed for this job. Only used with containerized jobs. */
-   std::vector<ExposedPort> ExposedPorts;
+   ExposedPortList ExposedPorts;
 
    /** The host on which the job was or is being run. */
    std::string Host;
@@ -269,7 +281,7 @@ struct Job
    Optional<system::DateTime> LastUpdateTime;
 
    /** The file system mounts to set when launching this job. */
-   std::vector<Mount> Mounts;
+   MountList Mounts;
 
    /** The name of the job. */
    std::string Name;
@@ -278,13 +290,13 @@ struct Job
    Optional<pid_t> Pid;
 
    /** Custom placement constraints for the job scheduling system that were set by the user for this job. */
-   std::vector<PlacementConstraint> PlacementConstraints;
+   PlacementConstraintList PlacementConstraints;
 
    /** The set of queues on which this job may be run, or the queue which ran the job. */
    std::set<std::string> Queues;
 
    /** The resource limits that were set by the user for this job. */
-   std::vector<ResourceLimit> ResourceLimits;
+   ResourceLimitList ResourceLimits;
 
    /** Data which should be supplied to the job via standard in. */
    std::string StandardIn;
@@ -353,7 +365,7 @@ struct JobConfig
     * @param in_name    The name of the custom job configuration value.
     * @param in_type    The type of the custom job configuration value.
     */
-   JobConfig(const std::string& in_name, Type in_type);
+   JobConfig(std::string in_name, Type in_type);
 
    /**
     * @brief Constructs a JobConfig from a JSON object which represents the job config.
@@ -563,6 +575,7 @@ struct ResourceLimit
    /** The default value that will be set for this type of resource. */
    std::string DefaultValue;
 };
+
 
 } // namespace api
 } // namespace launcher_plugins
