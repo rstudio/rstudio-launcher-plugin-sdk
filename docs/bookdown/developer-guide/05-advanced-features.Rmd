@@ -4,9 +4,146 @@ This section describes optional, advanced features of the SDK which are not cove
 
 ## User Profiles {#user-profiles}
 
-<!-- TODO: describe after abstract class is available -->
+It may be useful to allow system administrators to set default or maximum values for certain features on a per-user or per-group basis. For example, if a job scheduling system supports requesting an amount of memory for a job, system administrators may wish to give different memory levels to different groups of users. For more examples, see the sample `/etc/rstudio/launcher.kubernetes.profiles.conf` in the [Job Launcher Plugin Configuration section of the RStudio Job Launcher Guide](https://docs.rstudio.com/job-launcher/latest/index.html#job-launcher-plugin-configuration).
 
-## Job Config Capability {#job-config}
+For the convenience of the Plugin Developer, the `AbstractUserProfiles` class may be overridden to quickly implement support for user profiles.
+
+`AbstractUserProfiles` contains protected templated functions for getting a value by name. The templates are defined in the CPP file, and are declared for the following types:
+
+* `std::string`
+* `uint32_t`
+* `int32_t`
+* `uint64_t`
+* `int64_t`
+* `double`
+* `bool`
+* `std::set<U>`, where `U` is one of the above types.
+* `std::vector<U>`, where `U` is one of the above types, except `std::set`.
+* `std::map<U, V>`, where `U` and `V` are any pair of the above types.
+
+If a custom type is needed, retrieve the value as a string and then parse it as needed. For an example, see the `TestUserProfiles` class in `sdk/src/options/tests/UserProfilesTests.cpp`.
+
+### Example
+
+This example continues the examples started in the RStudio Launcher Plugin SDK QuickStart Guide. Assume that the Mars job scheduling system supports requesting a CPU count and an amount of memory, in MB.
+
+```{c, eval=FALSE}
+#include <options/AbstractUserProfiles.hpp>
+
+#include <Error.hpp>
+#include <system/User.hpp>
+
+namespace orchid {
+namespace mars {
+namespace options {
+  
+using namespace rstudio::launcher_plugins;
+  
+class MarsUserProfiles : public options::AbstractUserProfiles
+{
+  public:
+    MarsUserProfiles() :
+      AbstractUserProfiles("mars")
+    {
+      m_validFieldNames.insert("max-cpus");
+      m_validFieldNames.insert("default-cpus");
+      m_validFieldNames.insert("max-mem-mb");
+      m_validFieldNames.insert("default-mem-mb");
+    }
+
+    uint32_t getDefaultCpus(const system::User& in_user)
+    {
+      // Default value is 1.
+      uint32_t defaultCpus = 1;
+      Error error = getValueForUser("default-cpus", in_user, defaultCpus);
+      
+      // It shouldn't be possible to get any Error except a not-found error here because of
+      // validateValues. If it somehow occurred in release, just return the default value.
+      assert(!error || isValueNotFoundError(error));
+      
+      return defaultCpus;
+    }
+  
+    uint32_t getMaxCpus(const system::User& in_user)
+    {
+      // Default value is 1.
+      uint32_t maxCpus = 1;
+      Error error = getValueForUser("max-cpus", in_user, maxCpus);
+      
+      // It shouldn't be possible to get any Error except a not-found error here because of
+      // validateValues. If it somehow occurred in release, just return the default value.
+      assert(!error || isValueNotFoundError(error));
+      
+      return maxCpus;
+    }
+  
+    uint32_t getMaxMemory(const system::User& in_user)
+    {
+      // Default value is 10 MB.
+      uint32_t maxMemory = 10;
+      Error error = getValueForUser("max-memory-mb", in_user, maxMemory);
+      
+      // It shouldn't be possible to get any Error except a not-found error here because of
+      // validateValues. If it somehow occurred in release, just return the default value.
+      assert(!error || isValueNotFoundError(error));
+      
+      return maxMemory;
+    }
+  
+    uint32_t getDefaultCpus(const system::User& in_user)
+    {
+      // Default value is 5 MB.
+      uint32_t defaultMemory = 5;
+      Error error = getValueForUser("default-memory-mb", in_user, defaultMemory);
+      
+      // It shouldn't be possible to get any Error except a not-found error here because of
+      // validateValues. If it somehow occurred in release, just return the default value.
+      assert(!error || isValueNotFoundError(error));
+      
+      return defaultMemory;
+    }
+  
+  
+  private:
+    const std::set<std::string>& getValidFieldNames() const override
+    {
+      return m_validFieldNames;
+    }
+  
+    Error validateValues() const override
+    {
+      // For supported types, validateValue will attempt to parse every occurrence of the field as
+      // specified type. If a custom type is desired, use
+      // AbstractValidateValue::validateValue(
+      //    const std::string& in_value,
+      //    const CustomValueValidator& in_validator) const;
+      // method to supply a custom validator instead. in_validator should parse the value it is
+      // supplied and return an error if parsing fails.
+      Error error = validateValue<uint32_t>("default-cpus");
+      if (error)
+        return error;
+      
+      error = validateValue<uint32_t>("max-cpus");
+      if (error)
+        return error;
+      
+      error = validateValue<uint32_t>("default-memory-mb");
+      if (error)
+        return error;
+      
+      return validateValue<uint32_t>("max-cpus");
+    }
+    
+    std::set<std::string> m_validFieldNames;
+}
+
+} // namespace options
+} // namespace mars
+} // namespace orchid
+
+```
+
+## Job Config Capability {#job-config-feature}
 
 > Important: This feature is not exposed through the RStudio Server Pro job launching UI. The use of this feature will require a feature request to the RStudio IDE project. This feature should only be used when there are no other alternatives.
 
