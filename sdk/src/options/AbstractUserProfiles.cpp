@@ -30,6 +30,7 @@
 
 #include <boost/regex.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string_regex.hpp>
 #include <boost/iostreams/copy.hpp>
 #include <boost/property_tree/ini_parser.hpp>
 
@@ -134,7 +135,7 @@ Error parseValue(const std::string& in_value, std::set<U>& out_parsedValues)
    boost::sregex_token_iterator itr(in_value.begin(), in_value.end(), splitExpr, -1);
    boost::sregex_token_iterator end;
 
-   while (itr != end)
+   for (; itr != end; ++itr)
    {
       U value;
       Error error = parseValue(*itr, value);
@@ -157,7 +158,7 @@ Error parseValue(const std::string& in_value, std::vector<U>& out_parsedValues)
    boost::sregex_token_iterator itr(in_value.begin(), in_value.end(), splitExpr, -1);
    boost::sregex_token_iterator end;
 
-   while (itr != end)
+   for (; itr != end; ++itr)
    {
       U value;
       Error error = parseValue(*itr, value);
@@ -176,14 +177,15 @@ Error parseValue(const std::string& in_value, std::vector<U>& out_parsedValues)
 template <typename U, typename V>
 Error parseValue(const std::string& in_value, std::map<U, V>& out_parsedValues)
 {
-   const boost::regex splitExpr("\\s*;\\s*");
+   const boost::regex splitExpr("\\s*\\\\;\\s*");
    boost::sregex_token_iterator itr(in_value.begin(), in_value.end(), splitExpr, -1);
    boost::sregex_token_iterator end;
 
-   while (itr != end)
+   for (; itr != end; ++itr)
    {
+      std::string currVal(itr->first, itr->second);
       std::vector<std::string> keyValStrs;
-      boost::split(keyValStrs, *itr, boost::is_any_of(":"));
+      boost::algorithm::split_regex(keyValStrs, currVal, boost::regex("\\\\="));
 
       if (keyValStrs.size() < 2)
       {
@@ -215,7 +217,7 @@ Error parseValue(const std::string& in_value, std::map<U, V>& out_parsedValues)
       }
 
       V value;
-      error = parseValue(keyValStrs[1], key);
+      error = parseValue(keyValStrs[1], value);
       if (error)
       {
          error.addOrUpdateProperty("full-value", in_value);
@@ -264,9 +266,28 @@ struct Level
    std::string Name;
 };
 
+struct Group
+{
+   explicit Group(std::string in_name) : Name(std::move(in_name)) {};
+   Group(system::GidType in_id, std::string in_name) : Id(in_id), Name(std::move(in_name)) {};
+
+   system::GidType Id;
+   std::string Name;
+
+   bool operator==(const Group& in_other) const
+   {
+      return Name == in_other.Name;
+   }
+
+   bool operator<(const Group& in_other) const
+   {
+      return Name < in_other.Name;
+   }
+};
+
 // Group Typedefs
 typedef std::set<std::string> GroupMembers;
-typedef std::map<std::string, GroupMembers> GroupLookupMap;
+typedef std::map<Group, GroupMembers> GroupLookupMap;
 
 // Level Typedefs
 typedef std::map<std::string, std::string> ValueMap;
@@ -279,22 +300,22 @@ struct AbstractUserProfiles::Impl
     * @brief Gets the most specific instance of a value for the given user.
     *
     * @param in_valueName       The name of the value to retrieve.
-    * @param in_userName        The name of the user for whom to retrieve the value.
+    * @param in_user            The user for whom to retrieve the value.
     * @param out_value          The value, if any was found.
     *
     * @return True if a value was found with the given name for the user; Error otherwise.
     */
-   bool getValueForUser(const std::string& in_valueName, const std::string& in_userName, std::string& out_value) const;
+   bool getValueForUser(const std::string& in_valueName, const system::User& in_user, std::string& out_value) const;
 
    /**
     * @brief Checks whether the specified user is in the specified group.
     *
-    * @param in_userName        The user.
+    * @param in_user            The user.
     * @param in_groupName       The group.
     *
     * @return True if the user is in the group; false otherwise.
     */
-   bool isInGroup(const std::string& in_userName, const std::string& in_groupName) const;
+   bool isInGroup(const system::User& in_user, const std::string& in_groupName) const;
 
    /**
     * @brief Iterates all sections of the ini and applies the in_onValueFound function to any values that were found.
@@ -342,7 +363,7 @@ PRIVATE_IMPL_DELETER_IMPL(AbstractUserProfiles)
 
 bool AbstractUserProfiles::Impl::getValueForUser(
    const std::string& in_valueName,
-   const std::string& in_userName,
+   const system::User& in_user,
    std::string& out_value) const
 {
    LevelType specificity = LevelType::NONE;
@@ -356,12 +377,14 @@ bool AbstractUserProfiles::Impl::getValueForUser(
          continue;
 
       // If the level is a group level and the user isn't in the group, skip this entry.
-      if ((levelValue.first.Type == LevelType::GROUP) && !isInGroup(in_userName, levelValue.first.Name))
+      if ((levelValue.first.Type == LevelType::GROUP) && !isInGroup(in_user, levelValue.first.Name))
          continue;
 
       // If the level is a user level and it's not for this user, skip this entry.
-      if ((levelValue.first.Type == LevelType::USER) && (levelValue.first.Name != in_userName))
+      if ((levelValue.first.Type == LevelType::USER) && (levelValue.first.Name != in_user.getUsername()))
          continue;
+
+      specificity = levelValue.first.Type;
 
       // Otherwise this level applies to the user. Try to find the value
       const auto itr = levelValue.second.find(in_valueName);
@@ -376,9 +399,10 @@ bool AbstractUserProfiles::Impl::getValueForUser(
    return true;
 }
 
-bool AbstractUserProfiles::Impl::isInGroup(const std::string& in_userName, const std::string& in_groupName) const
+bool AbstractUserProfiles::Impl::isInGroup(const system::User& in_user, const std::string& in_groupName) const
 {
-   auto itr = Groups.find(in_groupName);
+   Group group(in_groupName);
+   auto itr = Groups.find(group);
 
    // Some how there's a group in the conf file that wasn't populated and there wasn't an error earlier? Should be
    // impossible, but return false for posterity.
@@ -386,7 +410,7 @@ bool AbstractUserProfiles::Impl::isInGroup(const std::string& in_userName, const
    if (itr == Groups.end())
       return false;
 
-   return itr->second.find(in_userName) == itr->second.end();
+   return ((itr->second.find(in_user.getUsername()) != itr->second.end()) || (itr->first.Id == in_user.getGroupId()));
 }
 
 Error AbstractUserProfiles::Impl::iterateValues(
@@ -419,7 +443,8 @@ Error AbstractUserProfiles::Impl::parseLevels(
    ptree profileTree;
    try
    {
-      ini_parser::read_ini(in_levelData, profileTree);
+      std::istringstream iStrStream { in_levelData };
+      ini_parser::read_ini(iStrStream, profileTree);
    }
    catch (const ini_parser_error& e)
    {
@@ -440,6 +465,7 @@ Error AbstractUserProfiles::Impl::parseLevels(
       if (sectionNode.first == "*")
       {
          section.Type = LevelType::ALL;
+         section.Name = "*";
       }
       else if (boost::starts_with(sectionNode.first, "@"))
       {
@@ -523,10 +549,12 @@ Error AbstractUserProfiles::Impl::populateGroups(const std::set<std::string>& in
       }
 
       // Success! Create an entry in the look-up map, and iterate through the members to add them to the set.
+      Group grpStruct(grp.gr_gid, groupName);
+      Groups[grpStruct] = std::set<std::string>();
       char** usersItr = grp.gr_mem;
       while(*usersItr)
       {
-         Groups[groupName].insert(*(usersItr++));
+         Groups[grpStruct].insert(*(usersItr++));
       }
    }
 
@@ -599,13 +627,13 @@ Error AbstractUserProfiles::getValueForUser(
          ERROR_LOCATION);
 
    std::string strValue;
-   if (!m_impl->getValueForUser(in_valueName, in_user.getUsername(), strValue))
+   if (!m_impl->getValueForUser(in_valueName, in_user, strValue))
       return userProfileError(
          UserProfileError::VALUE_NOT_FOUND_ERROR,
          "The value \"" + in_valueName + "\" could not be found for the user \"" + in_user.getUsername() + "\".",
          ERROR_LOCATION);
 
-   return parseValue(in_valueName, out_value);
+   return parseValue(strValue, out_value);
 }
 
 bool AbstractUserProfiles::isValueNotFoundError(const Error& in_error)

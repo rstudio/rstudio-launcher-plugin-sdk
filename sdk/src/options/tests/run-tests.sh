@@ -35,29 +35,24 @@ fi
 
 # Add test users for UserProfileTests
 
-sudo addgroup "rlpstestgrpone"
-sudo addgroup "rlpstestgrptwo"
-sudo addgroup "rlpstestgrpthree"
-sudo adduser --disabled-password --ingroup "rlpstestgrpone" --gecos "" "rlpstestusrone"
-sudo adduser --disabled-password --ingroup "rlpstestgrpone" --gecos "" "rlpstestusrtwo"
-sudo adduser --disabled-password --ingroup "rlpstestgrptwo" --gecos "" "rlpstestusrthree"
-sudo adduser --disabled-password --ingroup "rlpstestgrptwo" --gecos "" "rlpstestusrfour"
-sudo adduser --disabled-password --ingroup "rlpstestgrpone" --gecos "" "rlpstestusrfive"
+sudo addgroup "rlpstestgrpone" >/dev/null
+sudo addgroup "rlpstestgrptwo" >/dev/null
+sudo addgroup "rlpstestgrpthree" >/dev/null
+sudo adduser --disabled-password --ingroup "rlpstestgrpone" --gecos "" "rlpstestusrone" >/dev/null
+sudo adduser --disabled-password --ingroup "rlpstestgrpone" --gecos "" "rlpstestusrtwo" >/dev/null
+sudo adduser --disabled-password --ingroup "rlpstestgrptwo" --gecos "" "rlpstestusrthree" >/dev/null
+sudo adduser --disabled-password --ingroup "rlpstestgrptwo" --gecos "" "rlpstestusrfour" >/dev/null
+sudo adduser --disabled-password --ingroup "rlpstestgrpone" --gecos "" "rlpstestusrfive" >/dev/null
 
-sudo adduser "rlpstestusrtwo" "rlpstestgrpone"  # Two is in all groups.
-sudo adduser "rlpstestusrtwo" "rlpstestgrpthree"
-sudo adduser "rlpstestusrfour" "rlpstestgrpthree"
+sudo usermod -a -G "rlpstestgrptwo" "rlpstestusrtwo"  # Two is in all groups.
+sudo usermod -a -G "rlpstestgrpthree" "rlpstestusrtwo"
+sudo usermod -a -G "rlpstestgrpthree" "rlpstestusrfour"
+sudo usermod -a -G "rlpstestgrpthree" "rlpstestusrfive"
 
 for test in ./*-tests;
 do
   echo "Running ${test}..."
-
-  if [[ ${test} == "./rlps-user-profile-tests" ]]; then
-    sudo "${test}"
-  else
-    ${test}
-  fi
-
+  ${test}
   FAILURES=$((FAILURES + $?))
 done
 
@@ -66,13 +61,13 @@ if [[ $ADD_USER -ne 0 ]]; then
   sudo userdel rstudio-server
 fi
 
-sudo deluser --remove-home "rlpstestusrone"
-sudo deluser --remove-home "rlpstestusrtwo"
-sudo deluser --remove-home "rlpstestusrthree"
-sudo deluser --remove-home "rlpstestusrfour"
-sudo deluser --remove-home "rlpstestusrfive"
-sudo delgroup "rlpstestgrpone"
-sudo delgroup "rlpstestgrptwo"
-sudo delgroup "rlpstestgrpthree"
+sudo deluser --remove-home "rlpstestusrone" >/dev/null
+sudo deluser --remove-home "rlpstestusrtwo" >/dev/null
+sudo deluser --remove-home "rlpstestusrthree" >/dev/null
+sudo deluser --remove-home "rlpstestusrfour" >/dev/null
+sudo deluser --remove-home "rlpstestusrfive" >/dev/null
+sudo delgroup "rlpstestgrpone" >/dev/null
+sudo delgroup "rlpstestgrptwo" >/dev/null
+sudo delgroup "rlpstestgrpthree" >/dev/null
 
 exit $FAILURES

@@ -50,7 +50,12 @@ endforeach()
 
 set(PROFILE_INPUT_FILES
    profile-files/simple.profiles.conf
-   )
+   profile-files/badGroup.profiles.conf
+   profile-files/badList.profiles.conf
+   profile-files/badInt.profiles.conf
+   profile-files/badMap.profiles.conf
+   profile-files/complex.profiles.conf
+)
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/profile-files/)
 foreach(INP_FILE ${PROFILE_INPUT_FILES})
