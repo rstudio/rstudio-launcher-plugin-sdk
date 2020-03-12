@@ -324,7 +324,6 @@ TEST_CASE("Simple case")
 
    checkMap(profiles.getMapField(user), expectedMap);
 
-
    CHECK((!profiles.getCustomField(user, day) && day == Weekday::TUESDAY));
 
    // Validate proper handling of mistakes
