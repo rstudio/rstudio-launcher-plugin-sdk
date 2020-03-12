@@ -35,19 +35,14 @@ fi
 
 # Add test users for UserProfileTests
 
-sudo addgroup "rlpstestgrpone" >/dev/null
-sudo addgroup "rlpstestgrptwo" >/dev/null
-sudo addgroup "rlpstestgrpthree" >/dev/null
-sudo adduser --disabled-password --ingroup "rlpstestgrpone" --gecos "" "rlpstestusrone" >/dev/null
-sudo adduser --disabled-password --ingroup "rlpstestgrpone" --gecos "" "rlpstestusrtwo" >/dev/null
-sudo adduser --disabled-password --ingroup "rlpstestgrptwo" --gecos "" "rlpstestusrthree" >/dev/null
-sudo adduser --disabled-password --ingroup "rlpstestgrptwo" --gecos "" "rlpstestusrfour" >/dev/null
-sudo adduser --disabled-password --ingroup "rlpstestgrpone" --gecos "" "rlpstestusrfive" >/dev/null
-
-sudo usermod -a -G "rlpstestgrptwo" "rlpstestusrtwo"  # Two is in all groups.
-sudo usermod -a -G "rlpstestgrpthree" "rlpstestusrtwo"
-sudo usermod -a -G "rlpstestgrpthree" "rlpstestusrfour"
-sudo usermod -a -G "rlpstestgrpthree" "rlpstestusrfive"
+sudo groupadd "rlpstestgrpone" >/dev/null
+sudo groupadd "rlpstestgrptwo" >/dev/null
+sudo groupadd "rlpstestgrpthree" >/dev/null
+sudo useradd -p "" -g "rlpstestgrpone" "rlpstestusrone" >/dev/null
+sudo useradd -p "" -g "rlpstestgrpone" -G "rlpstestgrptwo,rlpstestgrpthree" "rlpstestusrtwo" >/dev/null
+sudo useradd -p "" -g "rlpstestgrptwo" "rlpstestusrthree" >/dev/null
+sudo useradd -p "" -g "rlpstestgrptwo" -G "rlpstestgrpthree" "rlpstestusrfour" >/dev/null
+sudo useradd -p "" -g "rlpstestgrpone" -G "rlpstestgrpthree" "rlpstestusrfive" >/dev/null
 
 for test in ./*-tests;
 do
@@ -61,11 +56,11 @@ if [[ $ADD_USER -ne 0 ]]; then
   sudo userdel rstudio-server
 fi
 
-sudo deluser --remove-home "rlpstestusrone" >/dev/null
-sudo deluser --remove-home "rlpstestusrtwo" >/dev/null
-sudo deluser --remove-home "rlpstestusrthree" >/dev/null
-sudo deluser --remove-home "rlpstestusrfour" >/dev/null
-sudo deluser --remove-home "rlpstestusrfive" >/dev/null
+sudo userdel --remove "rlpstestusrone" >/dev/null 2>&1
+sudo userdel --remove "rlpstestusrtwo" >/dev/null 2>&1
+sudo userdel --remove "rlpstestusrthree" >/dev/null 2>&1
+sudo userdel --remove "rlpstestusrfour" >/dev/null 2>&1
+sudo userdel --remove "rlpstestusrfive" >/dev/null 2>&1
 sudo delgroup "rlpstestgrpone" >/dev/null
 sudo delgroup "rlpstestgrptwo" >/dev/null
 sudo delgroup "rlpstestgrpthree" >/dev/null
