@@ -5,3 +5,16 @@ This section describes optional, advanced features of the SDK which are not cove
 ## User Profiles {#user-profiles}
 
 <!-- TODO: describe after abstract class is available -->
+
+## Job Config Capability {#job-config}
+
+> Important: This feature is not exposed through the RStudio Server Pro job launching UI. The use of this feature will require a feature request to the RStudio IDE project. This feature should only be used when there are no other alternatives.
+
+The [Cluster Info Response](#cluster-info) is used to report the capabilities of the Plugin. The RStudio Launcher Plugin SDK QuickStart Guide describes how the Plugin Developer may declare support for various types of resource limits, containers, custom job placement constraints, and job queues. In the event that there is some job configuration setting that is not covered by one of those built-in job settings, the Job Config feature may used.
+
+A `JobConfig` value consists of the name of the configuration setting, its type, and optionally its value. It may have one of four types: `string`, `int`, `enum`, or `float`. 
+
+To declare support for a custom job configuration value, override `IJobSource::getCustomConfig` to populate `out_customConfig` with a `JobConfig` object containing the configuration value's name and type. This may be repeated for each required custom job configuration value.
+
+When a job is submitted, any custom configuration values that were set on the job can be found on `Job::Config`.
+

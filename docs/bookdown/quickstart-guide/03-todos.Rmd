@@ -1,4 +1,5 @@
 # TODO Items {#todos}
+
 This section will walk the developer through each of the QuickStart `TODO` items. As each `TODO` is completed, it is recommended to remove it from the code.
 
 Throughout this chapter, an example Plugin Developer who is part of the "Orchid Organization" and developing a Launcher Plugin for the "Mars" job scheduling system will be used. The theoretical Mars job scheduling provides a C/C++ interface, which will be referred to as the `mars_api`. It provides a set of free functions which allow the caller to get details from the Mars job scheduling system. `mars_api` calls may throw `mars_exceptions` which need to be handled.
@@ -279,10 +280,9 @@ This section will describe the questions which need to be answered to correctly 
 * Does the job scheduling system support other placement constraints that are important to surface? It is not necessary to surface every placement constraint supported by the job scheduling system; however if any constraints are commonly used or otherwise important to the end user, they may be surfaced through this feature. Examples of such constraints may be other types of resource limits (e.g. disk space, GPU count, GPU time, etc.), or other types of constraints entirely (e.g. disk type, region of a cloud service, etc.). If yes:
     + override the `IJobSource::getPlacementConstraints` method to return the list of custom placement constraints. For each placement constraint type, one `PlacementConstraint` object should be added to the list for each possible value of that constraint.
 
-* Does the job scheduling system require any custom configuration settings that differ from job to job? These settings are not surfaced in the RStudio Server Pro UI. As such, end users will not be able to set their value and they should be used sparingly. If there is another way to get these values, either through the Options or the User Profiles, that method should be used instead. If there are any settings which cannot be supported in any other way:
-    + override the `IJobSource::getCustomConfig` method to return the list of custom configuration settings. For each required custom configuration setting, add a `JobConfig` value to the list that defines the name and type of the configuration setting. The supported types are String, Int, Float, and Enum.
-
 > Important: Whether or not to use the `system::User` parameter provided to each of the capabilities methods is at the discretion of the Plugin Developer. If the Plugin Developer does not wish to support User Profiles and does not have another method to determine per-user or per-group rules, the `system::User` parameter may simply be ignored.
+
+If there are any job configuration values which cannot be covered by one of the above categories, refer to the Job Config Capability section of the Advanced Features chapter of the RStudio Launcher Plugin SDK Developer's Guide.
 
 ### Example
 
