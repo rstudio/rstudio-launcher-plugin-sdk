@@ -22,7 +22,7 @@
 set(RLPS_SYSTEM_TEST_MAIN ../../tests/TestMain.cpp)
 
 # Copy the test runner that runs all options tests.
-configure_file(run-tests.sh run-tests.sh COPYONLY)
+configure_file(../../tests/run-tests.sh run-tests.sh COPYONLY)
 
 # Allow files in the tests folder to be included
 include_directories(
