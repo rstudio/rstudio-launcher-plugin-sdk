@@ -121,15 +121,16 @@ TODO Location           Impact
 ----------------------  ---------------------------------------------
 QuickStartOptions.cpp   QuickStartOptions.cpp, QuickStartOptions.hpp
 
-
-
 The QuickStartOptions class demonstrates how to add job scheduling specific options to the Plugin. It may not be immediately obvious what options will be required for the Plugin, but when it does become clear that an option is needed it can be added here.
 
-Continuing the previous example, suppose that the Tiger Lily job scheduling system can be controlled using an HTTP API, and it can be set up at a custom URL and port. The Orchid developer might then add a required option for the URL, an optional option for whether SSL should be used, and an optional option for the port. In that case, the developer might modify QuickStartOptions.hpp and QuickStartOptions.cpp in the following way:
+### Example
+
+Suppose that the Mars job scheduling system can be controlled using an HTTP API, and it can be set up at a custom URL and port. The Orchid developer might then add a required option for the URL, an optional option for whether SSL should be used, and an optional option for the port. In that case, the developer might modify QuickStartOptions.hpp and QuickStartOptions.cpp in the following way:
 
 
-```{c,eval=FALSE}
-// QuickStartOptions.hpp =========================
+**QuickStartOptions.hpp**
+
+```{Rcpp,eval=FALSE}
 class QuickStartOptions : public Noncopyable
 {
 public:
@@ -146,8 +147,9 @@ private:
 }
 ```
 
-```{c,eval=FALSE}
-// QuickStartOptions.cpp =========================
+**QuickStartOptions.cpp**
+
+```{Rcpp,eval=FALSE}
 bool QuickStartOptions::getSampleOption() const 
 {
   return m_sampleOption;
@@ -166,9 +168,14 @@ void QuickStartOptions::initialize()
 
 ```
 
-```{c,eval=FALSE}
-// TigerLilyOptions.hpp ==========================
-class TigerLilyOptions : public Noncopyable
+**MarsOptions.hpp**
+
+```{Rcpp,eval=FALSE}
+namespace orchid {
+namespace mars {
+namespace options {
+
+class MarsOptions : public Noncopyable
 {
 public:
 // ...
@@ -190,16 +197,29 @@ private:
   
   bool m_useSsl;
 }
+
+} // namespace options
+} // namespace mars
+} // namespace orchid
 ```
 
-```{c,eval=FALSE}
-// TigerLilyOptions.cpp ==========================
-const std::string& TigerLilyOptions::getHost() const 
+**MarsOptions.cpp**
+
+```{Rcpp,eval=FALSE}
+#include "options/MarsOptions.hpp"
+
+#include <options/Options.hpp>
+
+namespace orchid {
+namespace mars {
+namespace options {
+
+const std::string& MarsOptions::getHost() const 
 {
   return m_host;
 }
 
-unsigned int TigerLilyOptions::getPort() const 
+unsigned int MarsOptions::getPort() const 
 {
   if (m_port != 0)
     return m_port;
@@ -210,12 +230,12 @@ unsigned int TigerLilyOptions::getPort() const
   return 80;
 }
 
-bool TigerLilyOptions::getUseSsl() const 
+bool MarsOptions::getUseSsl() const 
 {
   return m_useSsl;
 }
 
-void TigerLilyOptions::initialize()
+void MarsOptions::initialize()
 {
    // TODO #5: Add options, as necessary.
    using namespace rstudio::launcher_plugins::options;
@@ -232,6 +252,9 @@ void TigerLilyOptions::initialize()
        "whether to use HTTPS (true) or HTTP (false, default) when connecting to the Tiger Lily server");
 }
 
+} // namespace options
+} // namespace mars
+} // namespace orchid
 ```
 
 ## TODO #6: Initilaize Communication
@@ -244,6 +267,63 @@ QuickStartJobSource.cpp   QuickStartJobSource.cpp
 The next step is to initialize communication with the job scheduling system. This might involve opening a TCP connection to the job scheduling system which will remain open for the duration of the Plugin's lifetime, or it might involve testing that it is possible to connect to the job scheduling system. In the case of the sample Local Plugin, provided with this SDK, no communication test is necessary since jobs will be run on the local machine.
 
 Any other tasks which need to be completed before the Plugin is ready to launch jobs must be completed here. For example, in the RStudio SLURM Launcher Plugin it was also necessary to check which timezone the SLURM cluster is using, since job timestamps need to be compared later on. If the Plugin implementation will be tied to a specific version, or set of versions, of the job scheduling system, that should be validated here as well.
+
+### Example
+
+The Plugin Developer may now change
+
+
+```{rcpp,eval=FALSE}
+#include <QuickStartJobSource.hpp>
+
+#include <Error.hpp>
+
+namespace rstudio {
+namespace launcher_plugins {
+namespace quickstart {
+
+Error QuickStartJobSource::initialize()
+{
+   // TODO #6: Initialize communication with the job scheduling system. If communication fails, return an error.
+   return Success();
+}
+
+} // namespace quickstart
+} // namespace launcher_plugins
+} // namespace rstudio
+```
+
+in `QuickStartJobSource.cpp` to
+
+
+```{rcpp,eval=FALSE}
+#include "MarsJobSource.hpp"
+
+#include <Error.hpp>
+#include "options/MarsOptions.hpp"
+
+namespace orchid {
+namespace mars {
+
+Error MarsJobSource::initialize()
+{
+  const options::MarsOptions& opts = options::MarsOptions::getInstance();
+  
+  try
+  {
+    mars_api::init(opts.host(), opts.port(), opts.useSsl());
+  }
+  catch (const mars_expcetion& e)
+  {
+    return Error("MarsApiError", e.code(), e.what(), ERROR_LOCATION);
+  }
+  
+  return Success();
+}
+
+} // namespace mars
+} // namespace orchid
+```
 
 ## TODO #7: Define Cluster Capabilities
  
@@ -294,7 +374,9 @@ Assume that the Mars scheduling system has the following capabilities:
 * job queues
 
 
-```{c, eval=FALSE}
+The Plugin developer can report this support by adding
+
+```{Rcpp, eval=FALSE}
   Error getContainerImages(
     const system::User& in_user,
     std::set<std::string>& out_images) const override;
@@ -314,7 +396,7 @@ Assume that the Mars scheduling system has the following capabilities:
 
 to the `MarsJobSource` class definition in `MarsJobSource.hpp`, and
 
-```{c, eval=FALSE}
+```{Rcpp, eval=FALSE}
 Error MarsJobSource::getContainerImages(
   const system::User& in_user,
   std::set<std::string>& out_images) const

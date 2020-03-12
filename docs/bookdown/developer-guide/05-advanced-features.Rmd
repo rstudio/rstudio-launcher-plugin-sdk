@@ -23,11 +23,22 @@ For the convenience of the Plugin Developer, the `AbstractUserProfiles` class ma
 
 If a custom type is needed, retrieve the value as a string and then parse it as needed. For an example, see the `TestUserProfiles` class in `sdk/src/options/tests/UserProfilesTests.cpp`.
 
+The minimum requirements to implement `AbstractUserProfiles` are:
+
+* A public constructor which sets the plugin name via the `AbstractUserProfiles(const std::string& in_pluginName)` constructor. Alternately, a private constructor with a public static `getInstance` method may be used to implement the singleton pattern. This will prevent the need to read the configuration file multiple times.
+* An implementation of `AbstractUserProfiles::getValidFieldNames` which returns a set of all supported values that may be set via the user profiles configuration file.
+* An implementation of `AbstractUserProfiles::validateValues` which calls one of the two protected `AbstractUserProfiles::validateValue` methods for each valid field, with the appropriate template parameter.
+
+If the above criteria are met, the expected location of the user profiles configuration file will be `/etc/rstudio/launcher.<plugin name>.profiles.conf`. 
+
+The `AbstractUserProfiles::validateValues` method is called by `AbstractUserProfiles::initialize` after the user profiles configuration file has been read and parsed to ensure that any configuration mistakes within the file will be caught early. The `AbstractUserProfiles::initialize` method should be called from the `IJobSource::initialize` method to ensure that the user profiles configuration file has been read into memory and parsed before the Plugin enters normal operation mode. If the user profiles `initialize` method returns an error, the `IJobSource::initialize` method should also return an error.
+
 ### Example
 
-This example continues the examples started in the RStudio Launcher Plugin SDK QuickStart Guide. Assume that the Mars job scheduling system supports requesting a CPU count and an amount of memory, in MB.
+This example continues the examples started in the RStudio Launcher Plugin SDK QuickStart Guide. Assume that the Mars job scheduling system supports requesting a CPU count and an amount of memory, in MB. For simplicity, this examples implements the `MarsUserProfiles` class completely within the `hpp` file.
 
-```{c, eval=FALSE}
+**MarsUserProfiles.hpp**
+```{Rcpp, eval=FALSE}
 #include <options/AbstractUserProfiles.hpp>
 
 #include <Error.hpp>
@@ -42,16 +53,13 @@ using namespace rstudio::launcher_plugins;
 class MarsUserProfiles : public options::AbstractUserProfiles
 {
   public:
-    MarsUserProfiles() :
-      AbstractUserProfiles("mars")
+    static MarsUserProfiles& getInstance()
     {
-      m_validFieldNames.insert("max-cpus");
-      m_validFieldNames.insert("default-cpus");
-      m_validFieldNames.insert("max-mem-mb");
-      m_validFieldNames.insert("default-mem-mb");
+      static MarsUserProfiles userProfiles;
+      return userProfiles;
     }
 
-    uint32_t getDefaultCpus(const system::User& in_user)
+    uint32_t getDefaultCpus(const system::User& in_user) const
     {
       // Default value is 1.
       uint32_t defaultCpus = 1;
@@ -64,7 +72,7 @@ class MarsUserProfiles : public options::AbstractUserProfiles
       return defaultCpus;
     }
   
-    uint32_t getMaxCpus(const system::User& in_user)
+    uint32_t getMaxCpus(const system::User& in_user) const
     {
       // Default value is 1.
       uint32_t maxCpus = 1;
@@ -77,7 +85,7 @@ class MarsUserProfiles : public options::AbstractUserProfiles
       return maxCpus;
     }
   
-    uint32_t getMaxMemory(const system::User& in_user)
+    uint32_t getMaxMemory(const system::User& in_user) const
     {
       // Default value is 10 MB.
       uint32_t maxMemory = 10;
@@ -90,7 +98,7 @@ class MarsUserProfiles : public options::AbstractUserProfiles
       return maxMemory;
     }
   
-    uint32_t getDefaultCpus(const system::User& in_user)
+    uint32_t getDefaultCpus(const system::User& in_user) const
     {
       // Default value is 5 MB.
       uint32_t defaultMemory = 5;
@@ -103,8 +111,16 @@ class MarsUserProfiles : public options::AbstractUserProfiles
       return defaultMemory;
     }
   
-  
   private:
+    MarsUserProfiles() :
+      AbstractUserProfiles("mars")
+    {
+      m_validFieldNames.insert("max-cpus");
+      m_validFieldNames.insert("default-cpus");
+      m_validFieldNames.insert("max-mem-mb");
+      m_validFieldNames.insert("default-mem-mb");
+    }
+    
     const std::set<std::string>& getValidFieldNames() const override
     {
       return m_validFieldNames;
@@ -142,6 +158,39 @@ class MarsUserProfiles : public options::AbstractUserProfiles
 } // namespace orchid
 
 ```
+
+**MarsJobSource.cpp**
+
+```{Rcpp,eval=FALSE}
+
+// Other includes...
+
+#include <options/MarsOptions.hpp>
+#include <options/MarsUserProfiles.hpp>
+
+// Other methods...
+
+Error MarsJobSource::initialize()
+{
+  const options::MarsOptions& opts = options::MarsOptions::getInstance();
+  
+  try
+  {
+    mars_api::init(opts.host(), opts.port(), opts.useSsl());
+  }
+  catch (const mars_expcetion& e)
+  {
+    return Error("MarsApiError", e.code(), e.what(), ERROR_LOCATION);
+  }
+  
+  const options::MarsUserProfiles& userProfiles = options::MarsUserProfiles::getInstance();
+  return userProfiles.initialize();
+}
+
+// Other methods..
+
+```
+
 
 ## Job Config Capability {#job-config-feature}
 
