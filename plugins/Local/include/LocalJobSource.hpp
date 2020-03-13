@@ -65,6 +65,15 @@ public:
     * @return The PAM Profile and encrypted password custom configuration values.
     */
     Error getCustomConfig(const system::User&, std::vector<api::JobConfig>& out_customConfig) const override;
+
+   /**
+    * @brief Gets all RStudio jobs currently in the job scheduling system.
+    *
+    * @param out_jobs   All RStudio jobs currently in the job scheduling system.
+    *
+    * @return Success if all jobs could be retrieved; Error otherwise.
+    */
+    Error getJobs(api::JobList& out_jobs) const override;
 };
 
 } // namespace local

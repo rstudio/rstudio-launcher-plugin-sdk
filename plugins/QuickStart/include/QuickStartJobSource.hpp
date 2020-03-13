@@ -46,6 +46,15 @@ public:
    Error initialize() override;
 
    // TODO #7: Define cluster capabilities.
+
+   /**
+    * @brief Gets all RStudio jobs currently in the job scheduling system.
+    *
+    * @param out_jobs   All RStudio jobs currently in the job scheduling system.
+    *
+    * @return Success if all jobs could be retrieved; Error otherwise.
+    */
+   Error getJobs(api::JobList& out_jobs) const override;
 };
 
 } // namespace quickstart

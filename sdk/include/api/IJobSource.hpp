@@ -140,6 +140,15 @@ public:
    }
 
    /**
+    * @brief Gets all RStudio jobs currently in the job scheduling system.
+    *
+    * @param out_jobs   All RStudio jobs currently in the job scheduling system.
+    *
+    * @return Success if all jobs could be retrieved; Error otherwise.
+    */
+   virtual Error getJobs(JobList& out_jobs) const = 0;
+
+   /**
     * @brief Gets the custom placement constraints which may be set on jobs, if any.
     *
     * This function controls Cluster capabilities.

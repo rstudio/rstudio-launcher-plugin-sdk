@@ -38,7 +38,6 @@ Error LocalJobSource::initialize()
 
 Error LocalJobSource::getCustomConfig(const system::User &, std::vector<api::JobConfig>& out_customConfig) const
 {
-
    static const api::JobConfig::Type strType = api::JobConfig::Type::STRING;
    out_customConfig = {
       api::JobConfig("pamProfile", strType),
@@ -48,6 +47,10 @@ Error LocalJobSource::getCustomConfig(const system::User &, std::vector<api::Job
    return Success();
 }
 
+Error LocalJobSource::getJobs(api::JobList& out_jobs) const
+{
+   return Success();
+}
 
 } // namespace local
 } // namespace launcher_plugins

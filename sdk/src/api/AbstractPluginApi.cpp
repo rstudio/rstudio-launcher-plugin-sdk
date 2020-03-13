@@ -99,7 +99,12 @@ struct AbstractPluginApi::Impl
       if (error)
          return sendErrorResponse(in_bootstrapRequest->getId(), ErrorResponse::Type::UNKNOWN, error);
 
-      // TODO: pull down existing jobs and put them in the repository.
+      JobList jobs;
+      error = JobSource->getJobs(jobs);
+      if (error)
+         return sendErrorResponse(in_bootstrapRequest->getId(), ErrorResponse::Type::UNKNOWN, error);
+
+      // TODO: update the job repository.
 
       LauncherCommunicator->sendResponse(BootstrapResponse(in_bootstrapRequest->getId()));
    }

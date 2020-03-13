@@ -227,7 +227,7 @@ int AbstractMain::run(int in_argc, char** in_argv)
                3,
                options.getLogLevel(),
                getProgramId(),
-               options.getScratchPath().completeChildPath(getPluginName()))));
+               options.getScratchPath())));
    }
 
    // Create the launcher communicator. For now this is always an StdIO communicator. Later, it could be dependant on
