@@ -78,6 +78,8 @@ Error enableCoreDumps()
    int res = ::prctl(PR_SET_DUMPABLE, 1);
    if (res == -1)
       return systemError(errno, ERROR_LOCATION);
+
+   return Success();
 }
 
 Error ignoreSignal(int in_signal)
