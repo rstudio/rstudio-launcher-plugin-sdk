@@ -20,11 +20,10 @@
 
 #include <AbstractMain.hpp>
 
+#include <condition_variable>
 #include <csignal>
 #include <iostream>
-
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/condition_variable.hpp>
+#include <mutex>
 
 #include <Error.hpp>
 #include <comms/StdIOLauncherCommunicator.hpp>
@@ -125,7 +124,7 @@ struct AbstractMain::Impl
       UNIQUE_LOCK_MUTEX(m_mutex)
       m_exitProcess = true;
       m_exitConditionVar.notify_all();
-      END_UNIQUE_LOCK_MUTEX
+      END_LOCK_MUTEX
    }
 
    /**
@@ -163,7 +162,7 @@ struct AbstractMain::Impl
       UNIQUE_LOCK_MUTEX(m_mutex)
       if (!m_exitProcess)
          m_exitConditionVar.wait(lock, [&]{ return m_exitProcess; });
-      END_UNIQUE_LOCK_MUTEX;
+      END_LOCK_MUTEX
    }
 
 private:
@@ -171,10 +170,10 @@ private:
    bool m_exitProcess;
 
    /** Mutex to protect the exit process boolean value. */
-   boost::mutex m_mutex;
+   std::mutex m_mutex;
 
    /** Condition variable to use to wait for or send a shutdown signal. */
-   boost::condition_variable m_exitConditionVar;
+   std::condition_variable m_exitConditionVar;
 };
 
 int AbstractMain::run(int in_argc, char** in_argv)

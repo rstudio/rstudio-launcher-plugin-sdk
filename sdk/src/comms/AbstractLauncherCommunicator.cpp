@@ -72,7 +72,7 @@ struct AbstractLauncherCommunicator::Impl
    const OnError OnErrorFunc;
 
    /** Mutex to protect members during threaded operations. */
-   boost::mutex Mutex;
+   std::mutex Mutex;
 };
 
 PRIVATE_IMPL_DELETER_IMPL(AbstractLauncherCommunicator)

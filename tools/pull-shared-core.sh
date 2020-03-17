@@ -149,6 +149,14 @@ copyFile()
     replace "$DEST" "boost::optional" "Optional"
     replace "$DEST" "get_value_or" "getValueOr"
     replace "$DEST" "#include <shared_core/DateTime.hpp>" "#include <system/DateTime.hpp>"
+    replace "$DEST" "boost::mutex" "std::mutex"
+    replace "$DEST" "boost::recursive_mutex" "std::recursive_mutex"
+    replace "$DEST" "boost::unique_lock" "std::unique_lock"
+    replace "$DEST" "boost::lock_guard" "std::lock_guard"
+    replace "$DEST" "boost::condition_variable" "std::condition_variable"
+    replace "$DEST" "#include <boost/thread/mutex.hpp>" "#include <mutex>"
+    replace "$DEST" "#include <boost/thread/recursive_mutex.hpp>" "#include <mutex>"
+    replace "$DEST" "#include <boost/thread/condition_variable.hpp>" "#include <condition_variable>"
 
     # Fix includes
     for I in "${!SRC_INCLUDES[@]}"; do

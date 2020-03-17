@@ -23,14 +23,14 @@
 
 #include <system/Asio.hpp>
 
-#include <thread>
+#include <mutex>
 #include <queue>
+#include <thread>
 
 #include <boost/asio.hpp>
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/lock_guard.hpp>
 
 #include <Error.hpp>
+#include <utils/ErrorUtils.hpp>
 #include <utils/MutexUtils.hpp>
 
 namespace rstudio {
@@ -87,7 +87,7 @@ struct AsioService::Impl
    boost::asio::signal_set SignalSet;
 
    /** The mutex to protect the ASIO service. */
-   boost::mutex Mutex;
+   std::mutex Mutex;
 };
 
 void AsioService::post(const AsioFunction& in_work)
@@ -185,7 +185,7 @@ struct AsioStream::Impl : public std::enable_shared_from_this<AsioStream::Impl>
    }
 
 
-   void startWriting(const boost::unique_lock<boost::mutex>& in_lock, const OnError& in_onError)
+   void startWriting(const std::unique_lock<std::mutex>& in_lock, const OnError& in_onError)
    {
       BOOST_ASSERT(in_lock.owns_lock());
 
@@ -256,7 +256,7 @@ struct AsioStream::Impl : public std::enable_shared_from_this<AsioStream::Impl>
    std::queue<std::string> WriteBuffer;
 
    /** Mutex which ensures only one block of data will be written at a time. */
-   boost::mutex Mutex;
+   std::mutex Mutex;
 };
 
 AsioStream::AsioStream(int in_streamHandle) :
@@ -335,9 +335,7 @@ struct AsyncTimedEvent::Impl
       if (!sharedThis)
          return;
 
-      try
-      {
-         boost::unique_lock<boost::mutex> lock(sharedThis->Mutex);
+      UNIQUE_LOCK_MUTEX(sharedThis->Mutex)
 
          // If this is no longer running, there's nothing to do.
          if (!sharedThis->Running)
@@ -353,7 +351,7 @@ struct AsyncTimedEvent::Impl
    }
 
    /** Mutex to protect the running status. */
-   boost::mutex Mutex;
+   std::mutex Mutex;
 
    /** Whether the timed event is currently running. */
    bool Running;

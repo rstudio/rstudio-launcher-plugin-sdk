@@ -253,7 +253,7 @@ TEST_CASE("Received message is too large")
    CHECK(error.getName() == "SystemError");
    CHECK(error.getMessage() == "Protocol error");
    CHECK(messages.empty());
-   REQUIRE(error.getProperties().size() == 1);
+   REQUIRE(error.getProperties().size() == 2);
    CHECK(error.getProperty("description") == expectedErrorDesc);
 }
 

@@ -23,7 +23,7 @@
 
 #include <logging/FileLogDestination.hpp>
 
-#include <boost/thread.hpp>
+#include <mutex>
 
 #include <vector>
 
@@ -168,7 +168,7 @@ struct FileLogDestination::Impl
    FilePath LogFile;
    std::string LogName;
    std::string RotatedLogName;
-   boost::mutex Mutex;
+   std::mutex Mutex;
    unsigned int Id;
    std::shared_ptr<std::ostream> LogOutputStream;
 };
@@ -201,7 +201,7 @@ void FileLogDestination::writeLog(LogLevel in_logLevel, const std::string& in_me
       return;
 
    // Lock the mutex before attempting to write.
-   boost::unique_lock<boost::mutex> lock(m_impl->Mutex);
+   std::unique_lock<std::mutex> lock(m_impl->Mutex);
 
    // Open the log file if it's not open. If it fails to open, log nothing.
    if (!m_impl->LogOutputStream && !m_impl->openLogFile())
