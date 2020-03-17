@@ -28,7 +28,7 @@ if [ -z "${CMAKE_BUILD_TYPE}" ]; then
     CMAKE_BUILD_TYPE=Release
 fi
 
-cd $(dirname ${BASH_SOURCE[0]})/../..
+cd "$(dirname ${BASH_SOURCE[0]})/../.."
 
 BUILD_DIR=$(readlink -f "cmake-build-${CMAKE_BUILD_TYPE}")
 
