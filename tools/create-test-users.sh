@@ -24,17 +24,19 @@
 # SOFTWARE.
 #
 
-set -e # exit on failed commands
-
 echo "Adding users..."
 
 # Create the RStudio Server User, if it does not already exist
 grep rstudio-server < /etc/passwd >/dev/null
 export ADD_USER=$?
+
+set -e # exit on failed commands
+
 if [[ $ADD_USER -ne 0 ]]; then
   echo "Adding rstudio-server user..."
   sudo useradd --system "rstudio-server"
 fi
+
 
 echo "Adding rlpstestgrpone group..."
 sudo groupadd "rlpstestgrpone" >/dev/null
