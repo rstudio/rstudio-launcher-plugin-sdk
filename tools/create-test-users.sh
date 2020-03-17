@@ -26,6 +26,13 @@
 
 set -e # exit on failed commands
 
+# Create the RStudio Server User, if it does not already exist
+grep rstudio-server < /etc/passwd >/dev/null
+ADD_USER=$?
+if [[ $ADD_USER -ne 0 ]]; then
+  sudo adduser --system rstudio-server
+fi
+
 sudo groupadd "rlpstestgrpone" >/dev/null
 sudo groupadd "rlpstestgrptwo" >/dev/null
 sudo groupadd "rlpstestgrpthree" >/dev/null
