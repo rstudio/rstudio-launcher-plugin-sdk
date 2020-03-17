@@ -23,6 +23,8 @@
 
 #include <api/Job.hpp>
 
+#include <mutex>
+
 #include <boost/algorithm/string/trim.hpp>
 
 #include <Error.hpp>
@@ -351,6 +353,82 @@ json::Object HostMountSource::toJson() const
 }
 
 // Job =================================================================================================================
+struct Job::Impl
+{
+   std::mutex Mutex;
+};
+
+PRIVATE_IMPL_DELETER_IMPL(Job)
+
+Job::Job() :
+   m_impl(new Impl())
+{
+}
+
+Job::Job(const Job& in_other) :
+   m_impl(new Impl()), // Don't copy the mutex.
+   Arguments(in_other.Arguments),
+   Cluster(in_other.Cluster),
+   Command(in_other.Command),
+   Config(in_other.Config),
+   ContainerDetails(in_other.ContainerDetails),
+   Environment(in_other.Environment),
+   Exe(in_other.Exe),
+   ExitCode(in_other.ExitCode),
+   ExposedPorts(in_other.ExposedPorts),
+   Host(in_other.Host),
+   Id(in_other.Id),
+   LastUpdateTime(in_other.LastUpdateTime),
+   Mounts(in_other.Mounts),
+   Name(in_other.Name),
+   Pid(in_other.Pid),
+   PlacementConstraints(in_other.PlacementConstraints),
+   Queues(in_other.Queues),
+   ResourceLimits(in_other.ResourceLimits),
+   StandardIn(in_other.StandardIn),
+   StandardErrFile(in_other.StandardErrFile),
+   StandardOutFile(in_other.StandardOutFile),
+   Status(in_other.Status),
+   StatusMessage(in_other.StatusMessage),
+   SubmissionTime(in_other.SubmissionTime),
+   Tags(in_other.Tags),
+   User(in_other.User),
+   WorkingDirectory(in_other.WorkingDirectory)
+{
+}
+
+Job::Job(Job&& in_other) noexcept :
+   m_impl(std::move(in_other.m_impl)), // Don't copy the mutex.
+   Arguments(std::move(in_other.Arguments)),
+   Cluster(std::move(in_other.Cluster)),
+   Command(std::move(in_other.Command)),
+   Config(std::move(in_other.Config)),
+   ContainerDetails(std::move(in_other.ContainerDetails)),
+   Environment(std::move(in_other.Environment)),
+   Exe(std::move(in_other.Exe)),
+   ExitCode(std::move(in_other.ExitCode)),
+   ExposedPorts(std::move(in_other.ExposedPorts)),
+   Host(std::move(in_other.Host)),
+   Id(std::move(in_other.Id)),
+   LastUpdateTime(std::move(in_other.LastUpdateTime)),
+   Mounts(std::move(in_other.Mounts)),
+   Name(std::move(in_other.Name)),
+   Pid(std::move(in_other.Pid)),
+   PlacementConstraints(std::move(in_other.PlacementConstraints)),
+   Queues(std::move(in_other.Queues)),
+   ResourceLimits(std::move(in_other.ResourceLimits)),
+   StandardIn(std::move(in_other.StandardIn)),
+   StandardErrFile(std::move(in_other.StandardErrFile)),
+   StandardOutFile(std::move(in_other.StandardOutFile)),
+   Status(in_other.Status),
+   StatusMessage(std::move(in_other.StatusMessage)),
+   SubmissionTime(std::move(in_other.SubmissionTime)),
+   Tags(std::move(in_other.Tags)),
+   User(std::move(in_other.User)),
+   WorkingDirectory(std::move(in_other.WorkingDirectory))
+{
+}
+
 Error Job::fromJson(const json::Object& in_json, Job& out_job)
 {
    // Everything but the name is optional.
@@ -485,6 +563,101 @@ Error Job::fromJson(const json::Object& in_json, Job& out_job)
    return Success();
 }
 
+Job& Job::operator=(const Job& in_other)
+{
+   this->Arguments = in_other.Arguments;
+   this->Cluster = in_other.Cluster;
+   this->Command = in_other.Command;
+   this->Config = in_other.Config;
+   this->ContainerDetails = in_other.ContainerDetails;
+   this->Environment = in_other.Environment;
+   this->ExitCode = in_other.ExitCode;
+   this->Exe = in_other.Exe;
+   this->ExposedPorts = in_other.ExposedPorts;
+   this->Host = in_other.Host;
+   this->Id = in_other.Id;
+   this->LastUpdateTime = in_other.LastUpdateTime;
+   this->Mounts = in_other.Mounts;
+   this->Name = in_other.Name;
+   this->Pid = in_other.Pid;
+   this->PlacementConstraints = in_other.PlacementConstraints;
+   this->Queues = in_other.Queues;
+   this->ResourceLimits = in_other.ResourceLimits;
+   this->StandardIn = in_other.StandardIn;
+   this->StandardErrFile = in_other.StandardErrFile;
+   this->StandardOutFile = in_other.StandardOutFile;
+   this->Status = in_other.Status;
+   this->StatusMessage = in_other.StatusMessage;
+   this->SubmissionTime = in_other.SubmissionTime;
+   this->Tags = in_other.Tags;
+   this->User = in_other.User;
+   this->WorkingDirectory = in_other.WorkingDirectory;
+   return *this;
+}
+
+Job& Job::operator=(Job&& in_other) noexcept
+{
+   this->m_impl.reset();
+   this->m_impl.swap(in_other.m_impl);
+
+   this->Arguments = std::move(in_other.Arguments);
+   this->Cluster = std::move(in_other.Cluster);
+   this->Command = std::move(in_other.Command);
+   this->Config = std::move(in_other.Config);
+   this->ContainerDetails = std::move(in_other.ContainerDetails);
+   this->Environment = std::move(in_other.Environment);
+   this->ExitCode = std::move(in_other.ExitCode);
+   this->Exe = std::move(in_other.Exe);
+   this->ExposedPorts = std::move(in_other.ExposedPorts);
+   this->Host = std::move(in_other.Host);
+   this->Id = std::move(in_other.Id);
+   this->LastUpdateTime = std::move(in_other.LastUpdateTime);
+   this->Mounts = std::move(in_other.Mounts);
+   this->Name = std::move(in_other.Name);
+   this->Pid = std::move(in_other.Pid);
+   this->PlacementConstraints = std::move(in_other.PlacementConstraints);
+   this->Queues = std::move(in_other.Queues);
+   this->ResourceLimits = std::move(in_other.ResourceLimits);
+   this->StandardIn = std::move(in_other.StandardIn);
+   this->StandardErrFile = std::move(in_other.StandardErrFile);
+   this->StandardOutFile = std::move(in_other.StandardOutFile);
+   this->Status = in_other.Status;
+   this->StatusMessage = std::move(in_other.StatusMessage);
+   this->SubmissionTime = std::move(in_other.SubmissionTime);
+   this->Tags = std::move(in_other.Tags);
+   this->User = std::move(in_other.User);
+   this->WorkingDirectory = std::move(in_other.WorkingDirectory);
+   return *this;
+}
+
+Optional<std::string> Job::getJobConfigValue(const std::string& in_name) const
+{
+   Optional<std::string> value;
+
+   for (const JobConfig& conf: Config)
+   {
+      if (conf.Name == in_name)
+      {
+         value = conf.Value;
+         break;
+      }
+   }
+
+   return value;
+}
+
+bool Job::matchesTags(const std::set<std::string>& in_tags) const
+{
+   if (in_tags.size() > Tags.size())
+      return false;
+
+   for (const std::string& searchTag: in_tags)
+      if (Tags.find(searchTag) == Tags.end())
+         return false;
+
+   return true;
+}
+
 json::Object Job::toJson() const
 {
    json::Object jobObj;
@@ -538,34 +711,6 @@ json::Object Job::toJson() const
    jobObj[JOB_WORKING_DIRECTORY] = WorkingDirectory;
 
    return jobObj;
-}
-
-Optional<std::string> Job::getJobConfigValue(const std::string& in_name) const
-{
-   Optional<std::string> value;
-
-   for (const JobConfig& conf: Config)
-   {
-      if (conf.Name == in_name)
-      {
-         value = conf.Value;
-         break;
-      }
-   }
-
-   return value;
-}
-
-bool Job::matchesTags(const std::set<std::string>& in_tags) const
-{
-   if (in_tags.size() > Tags.size())
-      return false;
-
-   for (const std::string& searchTag: in_tags)
-      if (Tags.find(searchTag) == Tags.end())
-         return false;
-
-   return true;
 }
 
 // Job Config ==========================================================================================================
@@ -654,6 +799,24 @@ json::Object JobConfig::toJson() const
       confObj[JOB_CONFIG_VALUE] = Value;
 
    return confObj;
+}
+
+// JobLock =============================================================================================================
+struct JobLock::Impl
+{
+   Impl(std::mutex& in_mutex) :
+      Lock(in_mutex)
+   {
+   }
+
+   std::lock_guard<std::mutex> Lock;
+};
+
+PRIVATE_IMPL_DELETER_IMPL(JobLock)
+
+JobLock::JobLock(JobPtr in_job) :
+   m_impl(new Impl(in_job->m_impl->Mutex))
+{
 }
 
 // Mount ===============================================================================================================
