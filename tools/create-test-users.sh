@@ -26,18 +26,38 @@
 
 set -e # exit on failed commands
 
+echo "Adding users..."
+
 # Create the RStudio Server User, if it does not already exist
 grep rstudio-server < /etc/passwd >/dev/null
-ADD_USER=$?
+export ADD_USER=$?
 if [[ $ADD_USER -ne 0 ]]; then
-  sudo adduser --system rstudio-server
+  echo "Adding rstudio-server user..."
+  sudo useradd --system "rstudio-server"
 fi
 
+echo "Adding rlpstestgrpone group..."
 sudo groupadd "rlpstestgrpone" >/dev/null
+
+echo "Adding rlpstestgrptwo group..."
 sudo groupadd "rlpstestgrptwo" >/dev/null
+
+echo "Adding rlpstestgrpthree group..."
 sudo groupadd "rlpstestgrpthree" >/dev/null
+
+echo "Adding rlpstestusrone user..."
 sudo useradd -p "" -g "rlpstestgrpone" "rlpstestusrone" >/dev/null
+
+echo "Adding rlpstestusrtwo user..."
 sudo useradd -p "" -g "rlpstestgrpone" -G "rlpstestgrptwo,rlpstestgrpthree" "rlpstestusrtwo" >/dev/null
+
+echo "Adding rlpstestusrthree user..."
 sudo useradd -p "" -g "rlpstestgrptwo" "rlpstestusrthree" >/dev/null
+
+echo "Adding rlpstestusrfour user..."
 sudo useradd -p "" -g "rlpstestgrptwo" -G "rlpstestgrpthree" "rlpstestusrfour" >/dev/null
+
+echo "Adding rlpstestusrfive user..."
 sudo useradd -p "" -g "rlpstestgrpone" -G "rlpstestgrpthree" "rlpstestusrfive" >/dev/null
+
+echo "Succesfully added test users."

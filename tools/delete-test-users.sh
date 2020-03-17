@@ -24,6 +24,10 @@
 # SOFTWARE.
 #
 
+if [[ $ADD_USER -ne 0 ]]; then
+  sudo userdel "rstudio-server"
+fi
+
 sudo userdel --remove "rlpstestusrone" >/dev/null 2>&1
 sudo userdel --remove "rlpstestusrtwo" >/dev/null 2>&1
 sudo userdel --remove "rlpstestusrthree" >/dev/null 2>&1
