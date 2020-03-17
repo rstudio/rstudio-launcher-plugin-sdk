@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 #
-# run-all-tests
+# create-test-users.sh
 #
-# Copyright (C) 2019-20 by RStudio, PBC
+# Copyright (C) 2020 by RStudio, PBC
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,36 +24,13 @@
 # SOFTWARE.
 #
 
-# Get the build dir
-BUILD_DIR=$1
+set -e # exit on failed commands
 
-FAILURES=0
-runTest()
-{
-    CURR_DIR=$(pwd)
-    cd "${BUILD_DIR}/${1}" || return $?
-    ./run-tests.sh
-
-    FAILURES=$(expr $FAILURES + $?)
-
-    cd "${CURR_DIR}" || exit $?
-}
-
-# Create users for test cases
-tools/create-test-users.sh
-
-# Unit tests first
-runTest "sdk/src/tests"
-runTest "sdk/src/api/tests"
-runTest "sdk/src/comms/tests"
-runTest "sdk/src/options/tests"
-runTest "sdk/src/system/tests"
-
-# TODO: Integration tests
-
-# Remove test users
-tools/delete-test-users.sh
-
-# Exit
-echo "Test failures: $FAILURES"
-exit $FAILURES
+sudo groupadd "rlpstestgrpone" >/dev/null
+sudo groupadd "rlpstestgrptwo" >/dev/null
+sudo groupadd "rlpstestgrpthree" >/dev/null
+sudo useradd -p "" -g "rlpstestgrpone" "rlpstestusrone" >/dev/null
+sudo useradd -p "" -g "rlpstestgrpone" -G "rlpstestgrptwo,rlpstestgrpthree" "rlpstestusrtwo" >/dev/null
+sudo useradd -p "" -g "rlpstestgrptwo" "rlpstestusrthree" >/dev/null
+sudo useradd -p "" -g "rlpstestgrptwo" -G "rlpstestgrpthree" "rlpstestusrfour" >/dev/null
+sudo useradd -p "" -g "rlpstestgrpone" -G "rlpstestgrpthree" "rlpstestusrfive" >/dev/null

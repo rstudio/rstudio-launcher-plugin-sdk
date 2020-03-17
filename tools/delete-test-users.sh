@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 #
-# run-tests
+# delete-test-users.sh
 #
-# Copyright (C) 2019-20 by RStudio, PBC
+# Copyright (C) 2020 by RStudio, PBC
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,45 +24,11 @@
 # SOFTWARE.
 #
 
-FAILURES=0
-
-# Create the rstudio-server user, if it does not already exist
-grep rstudio-server < /etc/passwd >/dev/null
-ADD_USER=$?
-if [[ $ADD_USER -ne 0 ]]; then
-  sudo adduser --system rstudio-server
-fi
-
-# Add test users for UserProfileTests
-
-sudo groupadd "rlpstestgrpone" >/dev/null
-sudo groupadd "rlpstestgrptwo" >/dev/null
-sudo groupadd "rlpstestgrpthree" >/dev/null
-sudo useradd -p "" -g "rlpstestgrpone" "rlpstestusrone" >/dev/null
-sudo useradd -p "" -g "rlpstestgrpone" -G "rlpstestgrptwo,rlpstestgrpthree" "rlpstestusrtwo" >/dev/null
-sudo useradd -p "" -g "rlpstestgrptwo" "rlpstestusrthree" >/dev/null
-sudo useradd -p "" -g "rlpstestgrptwo" -G "rlpstestgrpthree" "rlpstestusrfour" >/dev/null
-sudo useradd -p "" -g "rlpstestgrpone" -G "rlpstestgrpthree" "rlpstestusrfive" >/dev/null
-
-for test in ./*-tests;
-do
-  echo "Running ${test}..."
-  ${test}
-  FAILURES=$((FAILURES + $?))
-done
-
-# Remove the user if it was added by this script
-if [[ $ADD_USER -ne 0 ]]; then
-  sudo userdel rstudio-server
-fi
-
 sudo userdel --remove "rlpstestusrone" >/dev/null 2>&1
 sudo userdel --remove "rlpstestusrtwo" >/dev/null 2>&1
 sudo userdel --remove "rlpstestusrthree" >/dev/null 2>&1
 sudo userdel --remove "rlpstestusrfour" >/dev/null 2>&1
 sudo userdel --remove "rlpstestusrfive" >/dev/null 2>&1
-sudo delgroup "rlpstestgrpone" >/dev/null
-sudo delgroup "rlpstestgrptwo" >/dev/null
-sudo delgroup "rlpstestgrpthree" >/dev/null
-
-exit $FAILURES
+sudo groupdel "rlpstestgrpone" >/dev/null
+sudo groupdel "rlpstestgrptwo" >/dev/null
+sudo groupdel "rlpstestgrpthree" >/dev/null
