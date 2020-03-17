@@ -41,6 +41,11 @@ runTest()
 
 # Create users for test cases
 tools/create-test-users.sh
+RET=$?
+if [[ $RET -ne 0 ]]; then
+  echo "Failed to create test users."
+  exit $RET
+fi
 
 # Unit tests first
 runTest "sdk/src/tests"
