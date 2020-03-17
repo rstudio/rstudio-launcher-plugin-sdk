@@ -804,7 +804,7 @@ json::Object JobConfig::toJson() const
 // JobLock =============================================================================================================
 struct JobLock::Impl
 {
-   Impl(std::mutex& in_mutex) :
+   explicit Impl(std::mutex& in_mutex) :
       Lock(in_mutex)
    {
    }

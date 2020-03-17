@@ -453,7 +453,7 @@ public:
     *
     * @param in_job     The job to lock.
     */
-   JobLock(JobPtr in_job);
+   explicit JobLock(JobPtr in_job);
 
 private:
    // The private implementation of JobLock.
