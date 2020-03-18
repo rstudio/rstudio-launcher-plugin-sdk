@@ -29,10 +29,13 @@
 #include <api/Request.hpp>
 #include <json/Json.hpp>
 #include <logging/Logger.hpp>
+#include <system/User.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
 namespace api {
+
+constexpr const char* USER = "rlpstestusrtwo";
 
 using namespace logging;
 
@@ -163,6 +166,60 @@ TEST_CASE("Parse heartbeat request")
    REQUIRE_FALSE(error);
    CHECK(request->getType() == Request::Type::HEARTBEAT);
    CHECK(request->getId() == 0);
+   CHECK(logDest->getSize() == 0);
+}
+
+TEST_CASE("Parse cluster info request")
+{
+   MockLogPtr logDest = getMockLogDest();
+   json::Object requestObj;
+   requestObj[FIELD_MESSAGE_TYPE] = static_cast<int>(Request::Type::GET_CLUSTER_INFO);
+   requestObj[FIELD_REQUEST_ID] = 6;
+   requestObj[FIELD_REAL_USER] = USER;
+
+   std::shared_ptr<Request> request;
+
+   system::User user;
+   REQUIRE_FALSE(system::User::getUserFromIdentifier(USER, user));
+   REQUIRE_FALSE(Request::fromJson(requestObj, request));
+   CHECK(request->getType() == Request::Type::GET_CLUSTER_INFO);
+   CHECK(request->getId() == 6);
+   CHECK(std::static_pointer_cast<UserRequest>(request)->getUser() == user);
+   CHECK(std::static_pointer_cast<UserRequest>(request)->getRequestUsername().empty());
+   CHECK(logDest->getSize() == 0);
+}
+
+TEST_CASE("Parse cluster info request (admin user)")
+{
+   MockLogPtr logDest = getMockLogDest();
+   json::Object requestObj;
+   requestObj[FIELD_MESSAGE_TYPE] = static_cast<int>(Request::Type::GET_CLUSTER_INFO);
+   requestObj[FIELD_REQUEST_ID] = 14;
+   requestObj[FIELD_REAL_USER] = "*";
+   requestObj[FIELD_REQUEST_USERNAME] = USER;
+
+   std::shared_ptr<Request> request;
+
+   system::User user;
+   REQUIRE_FALSE(system::User::getUserFromIdentifier(USER, user));
+   REQUIRE_FALSE(Request::fromJson(requestObj, request));
+   CHECK(request->getType() == Request::Type::GET_CLUSTER_INFO);
+   CHECK(request->getId() == 14);
+   CHECK(std::static_pointer_cast<UserRequest>(request)->getUser().isAllUsers());
+   CHECK(std::static_pointer_cast<UserRequest>(request)->getRequestUsername() == USER);
+   CHECK(logDest->getSize() == 0);
+}
+
+TEST_CASE("Parse invalid cluster info request")
+{
+   json::Object requestObj;
+   requestObj[FIELD_MESSAGE_TYPE] = static_cast<int>(Request::Type::GET_CLUSTER_INFO);
+   requestObj[FIELD_REQUEST_ID] = 6;
+   requestObj[FIELD_REAL_USER] = "notauser";
+
+   std::shared_ptr<Request> request;
+
+   REQUIRE(Request::fromJson(requestObj, request));
 }
 
 } // namespace api
