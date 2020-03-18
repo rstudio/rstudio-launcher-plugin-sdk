@@ -26,7 +26,7 @@
 
 #include <PImpl.hpp>
 
-#include <boost/thread/exceptions.hpp>
+#include <system_error>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -155,11 +155,10 @@ private:
 
 #define RW_LOCK_END(tryLog)                                                                  \
    }                                                                                         \
-   catch (const boost::thread_resource_error& e)                                             \
+   catch (const std::system_error& e)                                                        \
    {                                                                                         \
       if (tryLog)                                                                            \
-         logging::logErrorMessage("Failed to acquire lock: thread resource error",           \
-                                  ERROR_LOCATION);                                           \
+         logging::logError(systemError(e, ERROR_LOCATION));                                  \
    }                                                                                         \
    catch (const std::exception& e)                                                           \
    {                                                                                         \
