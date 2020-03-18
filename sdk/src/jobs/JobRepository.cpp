@@ -21,12 +21,101 @@
  *
  */
 
-
 #include <jobs/JobRepository.hpp>
+
+#include <map>
+
+#include <Error.hpp>
+#include "../system/ReaderWriterMutex.hpp"
+
+using namespace rstudio::launcher_plugins::api;
 
 namespace rstudio {
 namespace launcher_plugins {
 namespace jobs {
+
+struct JobRepository::Impl
+{
+   system::ReaderWriterMutex Mutex;
+   std::map<std::string, JobPtr> JobMap;
+};
+
+PRIVATE_IMPL_DELETER_IMPL(JobRepository)
+
+JobRepository::JobRepository() :
+   m_impl(new Impl())
+{
+}
+
+void JobRepository::addJob(JobPtr in_job)
+{
+   WRITE_LOCK_BEGIN(m_impl->Mutex)
+
+   auto itr = m_impl->JobMap.find(in_job->Id);
+   if (itr == m_impl->JobMap.end())
+      m_impl->JobMap[in_job->Id] = in_job;
+
+   RW_LOCK_END(true)
+}
+
+JobPtr JobRepository::getJob(const std::string& in_jobId, const system::User& in_user) const
+{
+   READ_LOCK_BEGIN(m_impl->Mutex)
+
+   auto itr = m_impl->JobMap.find(in_jobId);
+   if ((itr != m_impl->JobMap.end()) &&
+      (in_user.isAllUsers() || (itr->second->User == in_user)))
+      return itr->second;
+
+   RW_LOCK_END(true)
+
+   return JobPtr();
+}
+
+JobList JobRepository::getJobs(const system::User& in_user) const
+{
+   JobList jobs;
+
+   READ_LOCK_BEGIN(m_impl->Mutex)
+
+   // Get all values if this request has admin privileges.
+   const auto end = m_impl->JobMap.end();
+   if (in_user.isAllUsers())
+      for (auto itr = m_impl->JobMap.begin(); itr != end; ++itr)
+         jobs.push_back(itr->second);
+   else
+   {
+      for (auto itr = m_impl->JobMap.begin(); itr != end; ++itr)
+      {
+         if (itr->second->User == in_user)
+            jobs.push_back(itr->second);
+      }
+   }
+
+   RW_LOCK_END(true)
+
+   return jobs;
+}
+
+void JobRepository::removeJob(const std::string& in_jobId)
+{
+   WRITE_LOCK_BEGIN(m_impl->Mutex)
+
+   auto itr = m_impl->JobMap.find(in_jobId);
+   if (itr != m_impl->JobMap.end())
+   {
+      // Keep the lock while invoking the inheriting class impl.
+      onJobRemoved(itr->second);
+      m_impl->JobMap.erase(itr);
+   }
+
+   RW_LOCK_END(true)
+}
+
+void JobRepository::onJobRemoved(JobPtr)
+{
+   // Do nothing.
+}
 
 } // namespace jobs
 } // namespace launcher_plugins

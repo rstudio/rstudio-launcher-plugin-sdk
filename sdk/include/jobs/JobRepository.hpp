@@ -57,7 +57,7 @@ public:
    /**
     * @brief Virtual Destructor, to allow for inheritance, if necessary.
     */
-   virtual ~JobRepository();
+   virtual ~JobRepository() = default;
 
    /**
     * @brief Adds the job to the repository.
@@ -79,7 +79,7 @@ public:
     *
     * @return The Job, if it could be found; an empty pointer otherwise.
     */
-   api::JobPtr getJob(const std::string& in_jobId, const system::User& in_user);
+   api::JobPtr getJob(const std::string& in_jobId, const system::User& in_user) const;
 
    /**
     * @brief Gets all jobs belonging to the specified user.
@@ -90,7 +90,7 @@ public:
     *
     * @return All of the jobs belonging to the specified user.
     */
-   api::JobList getJobs(const system::User& in_user);
+   api::JobList getJobs(const system::User& in_user) const;
 
    /**
     * @brief Removes a job from the repository.
@@ -99,16 +99,9 @@ public:
     *
     * @param in_jobId   The ID of the job to remove.
     */
-   virtual void removeJob(const std::string& in_jobId);
+   void removeJob(const std::string& in_jobId);
 
 private:
-   /**
-    * @brief Allows inheriting classes to perform custom actions when a job is added to the repository.
-    *
-    * @param in_job     The job that was added to the repository.
-    */
-   virtual void onJobAdded(api::JobPtr in_job);
-
    /**
     * @brief Allows inheriting classes to perform custom actions when a job is removed from the repository.
     *
