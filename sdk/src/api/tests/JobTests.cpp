@@ -31,6 +31,8 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace api {
 
+constexpr const char* USER = "rlpstestusrone";
+
 // Exposed Port ========================================================================================================
 TEST_CASE("From JSON: Exposed port with only target port")
 {
@@ -826,6 +828,7 @@ TEST_CASE("From JSON: Job (name and command only)")
    json::Object jobObj;
    jobObj["command"] = "run-tests";
    jobObj["name"] = "First Job";
+   jobObj["user"] = USER;
 
    Job job;
    REQUIRE_FALSE(Job::fromJson(jobObj, job));
@@ -854,7 +857,7 @@ TEST_CASE("From JSON: Job (name and command only)")
    CHECK(job.StatusMessage.empty());
    CHECK_FALSE(job.SubmissionTime);
    CHECK(job.Tags.empty());
-   CHECK(job.User.empty());
+   CHECK((!job.User.isEmpty() && job.User.getUsername() == USER));
    CHECK(job.WorkingDirectory.empty());
 }
 
@@ -864,6 +867,7 @@ TEST_CASE("From JSON: Job (name, exe, and state, canceled)")
    jobObj["exe"] = "/bin/my-exe";
    jobObj["name"] = "Second-Job";
    jobObj["status"] = "Canceled";
+   jobObj["user"] = USER;
 
    Job job;
    REQUIRE_FALSE(Job::fromJson(jobObj, job));
@@ -892,7 +896,7 @@ TEST_CASE("From JSON: Job (name, exe, and state, canceled)")
    CHECK(job.StatusMessage.empty());
    CHECK_FALSE(job.SubmissionTime);
    CHECK(job.Tags.empty());
-   CHECK(job.User.empty());
+   CHECK((!job.User.isEmpty() && job.User.getUsername() == USER));
    CHECK(job.WorkingDirectory.empty());
 }
 
@@ -902,6 +906,7 @@ TEST_CASE("From JSON: Job (name and state, failed)")
    jobObj["exe"] = "/bin/my-exe";
    jobObj["name"] = "3rd_Job";
    jobObj["status"] = "Failed";
+   jobObj["user"] = USER;
 
    Job job;
    REQUIRE_FALSE(Job::fromJson(jobObj, job));
@@ -930,7 +935,7 @@ TEST_CASE("From JSON: Job (name and state, failed)")
    CHECK(job.StatusMessage.empty());
    CHECK_FALSE(job.SubmissionTime);
    CHECK(job.Tags.empty());
-   CHECK(job.User.empty());
+   CHECK((!job.User.isEmpty() && job.User.getUsername() == USER));
    CHECK(job.WorkingDirectory.empty());
 }
 
@@ -943,6 +948,7 @@ TEST_CASE("From JSON: Job (name and state, finished)")
    jobObj["container"] = container;
    jobObj["name"] = "another!Job";
    jobObj["status"] = "Finished";
+   jobObj["user"] = USER;
 
    Job job;
    REQUIRE_FALSE(Job::fromJson(jobObj, job));
@@ -975,7 +981,7 @@ TEST_CASE("From JSON: Job (name and state, finished)")
    CHECK(job.StatusMessage.empty());
    CHECK_FALSE(job.SubmissionTime);
    CHECK(job.Tags.empty());
-   CHECK(job.User.empty());
+   CHECK((!job.User.isEmpty() && job.User.getUsername() == USER));
    CHECK(job.WorkingDirectory.empty());
 }
 
@@ -985,6 +991,7 @@ TEST_CASE("From JSON: Job (name and state, killed)")
    jobObj["exe"] = "/bin/my-exe";
    jobObj["name"] = "some&Job";
    jobObj["status"] = "Killed";
+   jobObj["user"] = USER;
 
    Job job;
    REQUIRE_FALSE(Job::fromJson(jobObj, job));
@@ -1013,7 +1020,7 @@ TEST_CASE("From JSON: Job (name and state, killed)")
    CHECK(job.StatusMessage.empty());
    CHECK_FALSE(job.SubmissionTime);
    CHECK(job.Tags.empty());
-   CHECK(job.User.empty());
+   CHECK((!job.User.isEmpty() && job.User.getUsername() == USER));
    CHECK(job.WorkingDirectory.empty());
 }
 
@@ -1023,6 +1030,7 @@ TEST_CASE("From JSON: Job (name and state, pending)")
    jobObj["exe"] = "/bin/my-exe";
    jobObj["name"] = "A really really, really really, really really really long job name";
    jobObj["status"] = "Pending";
+   jobObj["user"] = USER;
 
    Job job;
    REQUIRE_FALSE(Job::fromJson(jobObj, job));
@@ -1051,7 +1059,7 @@ TEST_CASE("From JSON: Job (name and state, pending)")
    CHECK(job.StatusMessage.empty());
    CHECK_FALSE(job.SubmissionTime);
    CHECK(job.Tags.empty());
-   CHECK(job.User.empty());
+   CHECK((!job.User.isEmpty() && job.User.getUsername() == USER));
    CHECK(job.WorkingDirectory.empty());
 }
 
@@ -1061,6 +1069,7 @@ TEST_CASE("From JSON: Job (name and state, running)")
    jobObj["exe"] = "/bin/my-exe";
    jobObj["name"] = "First Job";
    jobObj["status"] = "Running";
+   jobObj["user"] = USER;
 
    Job job;
    REQUIRE_FALSE(Job::fromJson(jobObj, job));
@@ -1089,7 +1098,7 @@ TEST_CASE("From JSON: Job (name and state, running)")
    CHECK(job.StatusMessage.empty());
    CHECK_FALSE(job.SubmissionTime);
    CHECK(job.Tags.empty());
-   CHECK(job.User.empty());
+   CHECK((!job.User.isEmpty() && job.User.getUsername() == USER));
    CHECK(job.WorkingDirectory.empty());
 }
 
@@ -1099,6 +1108,7 @@ TEST_CASE("From JSON: Job (name and state, suspended, extra whitespace)")
    jobObj["exe"] = "/bin/my-exe";
    jobObj["name"] = "First Job";
    jobObj["status"] = "  Suspended  ";
+   jobObj["user"] = USER;
 
    Job job;
    REQUIRE_FALSE(Job::fromJson(jobObj, job));
@@ -1127,7 +1137,7 @@ TEST_CASE("From JSON: Job (name and state, suspended, extra whitespace)")
    CHECK(job.StatusMessage.empty());
    CHECK_FALSE(job.SubmissionTime);
    CHECK(job.Tags.empty());
-   CHECK(job.User.empty());
+   CHECK((!job.User.isEmpty() && job.User.getUsername() == USER));
    CHECK(job.WorkingDirectory.empty());
 }
 
@@ -1254,7 +1264,7 @@ TEST_CASE("From JSON: Job (all fields, exe)")
    jobObj["statusMessage"] = "Exited successfully.";
    jobObj["submissionTime"] = "2020-01-14T04:20:13Z";
    jobObj["tags"] = tagsArr;
-   jobObj["user"] = "bobg";
+   jobObj["user"] = USER;
    jobObj["workingDirectory"] = "/current/dir";
 
    Job job;
@@ -1346,7 +1356,7 @@ TEST_CASE("From JSON: Job (all fields, exe)")
    CHECK((job.Tags.find("tag1") != job.Tags.end() &&
           job.Tags.find("another tag") != job.Tags.end() &&
           job.Tags.find("4th_tag") != job.Tags.end()));
-   CHECK(job.User == "bobg");
+   CHECK((!job.User.isEmpty() && job.User.getUsername() == USER));
    CHECK(job.WorkingDirectory == "/current/dir");
 }
 
@@ -1361,6 +1371,7 @@ TEST_CASE("From JSON: Job (some fields, command)")
    jobObj["status"] = "Running";
    jobObj["command"] = "echo";
    jobObj["args"] = argsArr;
+   jobObj["user"] = "*";
 
    Job job;
 
@@ -1391,7 +1402,7 @@ TEST_CASE("From JSON: Job (some fields, command)")
    CHECK(job.StatusMessage.empty());
    CHECK_FALSE(job.SubmissionTime);
    CHECK(job.Tags.empty());
-   CHECK(job.User.empty());
+   CHECK(job.User.isAllUsers());
    CHECK(job.WorkingDirectory.empty());
 }
 
@@ -1401,6 +1412,7 @@ TEST_CASE("From JSON: Job (exe and command)")
    jobObj["name"] = "First Job";
    jobObj["exe"] = "/bin/some/exe";
    jobObj["command"] = "shell-command";
+   jobObj["user"] = USER;
 
    Job job;
    REQUIRE(Job::fromJson(jobObj, job));
@@ -1410,7 +1422,7 @@ TEST_CASE("From JSON: Job (no name)")
 {
    json::Object jobObj;
    jobObj["id"] ="job-22";
-   jobObj["command"] = "echo";
+   jobObj["user"] = USER;
 
    Job job;
    REQUIRE(Job::fromJson(jobObj, job));
@@ -1420,6 +1432,28 @@ TEST_CASE("From JSON: Job (no exe, command, or container)")
 {
    json::Object jobObj;
    jobObj["name"] = "job-name";
+   jobObj["user"] = USER;
+
+   Job job;
+   REQUIRE(Job::fromJson(jobObj, job));
+}
+
+TEST_CASE("From JSON: Job (no user)")
+{
+   json::Object jobObj;
+   jobObj["name"] = "job-name";
+   jobObj["command"] = "echo";
+
+   Job job;
+   REQUIRE(Job::fromJson(jobObj, job));
+}
+
+TEST_CASE("From JSON: Job (invalid user)")
+{
+   json::Object jobObj;
+   jobObj["name"] = "job-name";
+   jobObj["command"] = "echo";
+   jobObj["user"] = "notauser";
 
    Job job;
    REQUIRE(Job::fromJson(jobObj, job));
@@ -1430,6 +1464,7 @@ TEST_CASE("From JSON: Job (invalid types)")
    json::Object jobObj;
    jobObj["command"] = "echo";
    jobObj["name"] = "Hello World Job";
+   jobObj["user"] = USER;
 
    SECTION("String array w/ int")
    {
@@ -1616,8 +1651,9 @@ TEST_CASE("To JSON: Job (all fields)")
    job.Tags.insert("1");
    job.Tags.insert("RStudio");
    job.Tags.insert("Job Launcher");
-   job.User = "annem";
    job.WorkingDirectory = "/home";
+
+   REQUIRE_FALSE(system::User::getUserFromIdentifier(USER, job.User));
 
    json::Object env1, env2;
    env1["name"] = "PATH";
@@ -1679,7 +1715,7 @@ TEST_CASE("To JSON: Job (all fields)")
    expected["statusMessage"] = "Unrecognized option '-n' for exe.";
    expected["submissionTime"] = "1987-04-03T13:21:05.412398Z";
    expected["tags"] = tags;
-   expected["user"] = "annem";
+   expected["user"] = USER;
    expected["workingDirectory"] = "/home";
 
    CHECK(job.toJson() == expected);
@@ -1714,7 +1750,7 @@ TEST_CASE("To JSON: Job (some fields)")
    job.StandardOutFile = "/home/cluster-job-357.out";
    job.Status = Job::State::RUNNING;
    job.SubmissionTime = submitted;
-   job.User = "user38";
+   job.User = system::User(false);
    job.WorkingDirectory = "/home/user38";
 
    json::Array limits;
@@ -1746,7 +1782,7 @@ TEST_CASE("To JSON: Job (some fields)")
    expected["status"] = "Running";
    expected["submissionTime"] = "1987-04-03T13:21:05.412398Z";
    expected["tags"] = json::Array();
-   expected["user"] = "user38";
+   expected["user"] = "*";
    expected["workingDirectory"] = "/home/user38";
 
    CHECK(job.toJson() == expected);

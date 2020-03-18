@@ -427,7 +427,8 @@ struct Job::Impl
 PRIVATE_IMPL_DELETER_IMPL(Job)
 
 Job::Job() :
-   m_impl(new Impl())
+   m_impl(new Impl()),
+   User(true) // Create with an empty user.
 {
 }
 
@@ -563,6 +564,8 @@ Error Job::fromJson(const json::Object& in_json, Job& out_job)
    {
       return jobParseError(JobParseError::MISSING_VALUE, JOB_USER, "job", in_json, ERROR_LOCATION);
    }
+   else if (user.getValueOr("") == "*")
+      result.User = system::User(); // Default user is all users.
    else
    {
       error = system::User::getUserFromIdentifier(user.getValueOr(""), result.User);
