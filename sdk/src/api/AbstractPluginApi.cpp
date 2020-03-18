@@ -104,7 +104,8 @@ struct AbstractPluginApi::Impl
       if (error)
          return sendErrorResponse(in_bootstrapRequest->getId(), ErrorResponse::Type::UNKNOWN, error);
 
-      // TODO: update the job repository.
+      for (const JobPtr& job: jobs)
+         JobRepo->addJob(job);
 
       LauncherCommunicator->sendResponse(BootstrapResponse(in_bootstrapRequest->getId()));
    }
@@ -221,6 +222,9 @@ struct AbstractPluginApi::Impl
    /** The job source which communicates with the job scheduling system. */
    std::shared_ptr<IJobSource> JobSource;
 
+   /** The job repository */
+   std::shared_ptr<jobs::JobRepository> JobRepo;
+
    /** The communicator that will be used to send and receive messages from the RStudio Launcher. */
    std::shared_ptr<comms::AbstractLauncherCommunicator> LauncherCommunicator;
 
@@ -234,6 +238,9 @@ Error AbstractPluginApi::initialize()
 {
    // Create the job source.
    m_abstractPluginImpl->JobSource = createJobSource();
+
+   // Create the job repository.
+   m_abstractPluginImpl->JobRepo = createJobRepository();
 
    // Register all the request handlers.
    std::shared_ptr<comms::AbstractLauncherCommunicator>& comms = m_abstractPluginImpl->LauncherCommunicator;
@@ -273,6 +280,11 @@ Error AbstractPluginApi::initialize()
 AbstractPluginApi::AbstractPluginApi(std::shared_ptr<comms::AbstractLauncherCommunicator> in_launcherCommunicator) :
    m_abstractPluginImpl(new Impl(std::move(in_launcherCommunicator)))
 {
+}
+
+std::shared_ptr<jobs::JobRepository> AbstractPluginApi::createJobRepository() const
+{
+   return std::make_shared<jobs::JobRepository>();
 }
 
 } // namespace api

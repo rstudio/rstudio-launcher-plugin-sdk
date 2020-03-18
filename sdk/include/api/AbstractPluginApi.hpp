@@ -25,6 +25,7 @@
 
 #include <PImpl.hpp>
 #include <comms/AbstractLauncherCommunicator.hpp>
+#include <jobs/JobRepository.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -71,6 +72,15 @@ protected:
    explicit AbstractPluginApi(std::shared_ptr<comms::AbstractLauncherCommunicator> in_launcherCommunicator);
 
 private:
+   /**
+    * @brief Creates the job repository which stores any RStudio Launcher jobs currently in the job scheduling system.
+    *
+    * This may be overridden if the Plugin implementation requires
+    *
+    * @return The job repository.
+    */
+    virtual std::shared_ptr<jobs::JobRepository> createJobRepository() const;
+
    /**
     * @brief Creates the job source which can communicate with this Plugin's job scheduling system.
     *
