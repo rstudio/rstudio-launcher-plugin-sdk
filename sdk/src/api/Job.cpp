@@ -123,7 +123,74 @@ constexpr char const* RESOURCE_LIMIT_TYPE_MEMORY      = "memory";
 constexpr char const* RESOURCE_LIMIT_TYPE_MEMORY_SWAP = "memorySwap";
 constexpr char const* RESOURCE_LIMIT_VALUE            = "value";
 
-Error jobStatusFromString(const std::string& io_statusStr, Job::State& out_state)
+enum class JobParseError
+{
+   SUCCESS = 0,
+   INVALID_VALUE = 1,
+   MISSING_VALUE = 2,
+   CONFLICTING_VALUES = 3
+};
+
+Error jobParseError(
+   JobParseError in_code,
+   const std::string& in_details,
+   const std::string& in_objName,
+   const json::Value& in_json,
+   const Error& in_cause,
+   const ErrorLocation& in_errorLocation)
+{
+   std::string message;
+   switch (in_code)
+   {
+      case JobParseError::SUCCESS:
+         return Success();
+      case JobParseError::INVALID_VALUE:
+      {
+         message = "Invalid value: ";
+         break;
+      }
+      case JobParseError::MISSING_VALUE:
+      {
+         message = "Required value was not set: ";
+         break;
+      }
+      case JobParseError::CONFLICTING_VALUES:
+      {
+         message = "Multiple conflicting values set: ";
+         break;
+      }
+   }
+   Error error;
+   if (in_cause)
+      error = Error("JobParseError", static_cast<int>(in_code), message + in_details, in_cause, in_errorLocation);
+   else
+      error = Error("JobParseError", static_cast<int>(in_code), message + in_details, in_errorLocation);
+
+   error.addProperty(in_objName, in_json.write());
+   return error;
+}
+
+Error jobParseError(
+   JobParseError in_code,
+   const std::string& in_details,
+   const std::string& in_objName,
+   const json::Value& in_json,
+   const ErrorLocation& in_errorLocation)
+{
+   return jobParseError(in_code, in_details, in_objName, in_json, Success(), in_errorLocation);
+}
+
+inline std::string quoteStr(const char* in_str)
+{
+   return std::string("\"").append(in_str).append("\"");
+}
+
+inline std::string quoteStr(const std::string& in_str)
+{
+   return quoteStr(in_str.c_str());
+}
+
+bool jobStatusFromString(const std::string& io_statusStr, Job::State& out_state)
 {
    std::string statusStr = boost::trim_copy(io_statusStr);
    if (statusStr == JOB_STATUS_CANCELED)
@@ -141,11 +208,11 @@ Error jobStatusFromString(const std::string& io_statusStr, Job::State& out_state
    else if (statusStr == JOB_STATUS_SUSPENDED)
       out_state =  Job::State::SUSPENDED;
    else if (!statusStr.empty())
-      return Error("JobParseError", 1, "Unexpected job status string: " + io_statusStr, ERROR_LOCATION);
+      return false;
    else
       out_state = Job::State::UNKNOWN;
 
-   return Success();
+   return true;
 }
 
 std::string jobStatusToString(const Job::State& in_state)
@@ -173,17 +240,17 @@ std::string jobStatusToString(const Job::State& in_state)
 }
 
 template <typename T>
-Error fromJsonArray(const json::Array& in_jsonArray, std::vector<T>& out_array)
+Error fromJsonArray(const std::string& in_arrayName, const json::Array& in_jsonArray, std::vector<T>& out_array)
 {
    for (const json::Value& jsonVal: in_jsonArray)
    {
       if (!jsonVal.isObject())
-      {
-         Error error("JobParseError", 1, "Invalid array value.", ERROR_LOCATION);
-         error.addProperty("value", jsonVal.write());
-         error.addProperty("array", in_jsonArray.write());
-         return error;
-      }
+         return jobParseError(
+            JobParseError::INVALID_VALUE,
+            "value " + quoteStr(jsonVal.write()) + " has an invalid type",
+            in_arrayName,
+            in_jsonArray,
+            ERROR_LOCATION);
 
       T val;
       Error error = T::fromJson(jsonVal.getObject(), val);
@@ -197,17 +264,17 @@ Error fromJsonArray(const json::Array& in_jsonArray, std::vector<T>& out_array)
 }
 
 template <>
-Error fromJsonArray(const json::Array& in_jsonArray, EnvironmentList& out_array)
+Error fromJsonArray(const std::string& in_arrayName, const json::Array& in_jsonArray, EnvironmentList& out_array)
 {
    for (const json::Value& jsonVal: in_jsonArray)
    {
       if (!jsonVal.isObject())
-      {
-         Error error("JobParseError", 1, "Invalid array value.", ERROR_LOCATION);
-         error.addProperty("value", jsonVal.write());
-         error.addProperty("array", in_jsonArray.write());
-         return error;
-      }
+         return jobParseError(
+            JobParseError::INVALID_VALUE,
+            "value " + quoteStr(jsonVal.write()) + " has an invalid type",
+            in_arrayName,
+            in_jsonArray,
+            ERROR_LOCATION);
 
       std::string name, value;
       Error error = json::readObject(jsonVal.getObject(),
@@ -280,13 +347,12 @@ Error Container::fromJson(const json::Object& in_json, Container& out_container)
 
    if (supplementalGroupIds &&
       !supplementalGroupIds.getValueOr(json::Array()).toVectorInt(out_container.SupplementalGroupIds))
-   {
-     return updateError(
-        JOB_CONTAINER,
-        in_json,
-        error = Error("JobParseError", 1, "Invalid type for supplemental group ids", ERROR_LOCATION));
-   }
-
+      return jobParseError(
+         JobParseError::INVALID_VALUE,
+         quoteStr(CONTAINER_SUPP_GROUP_IDS) + " contains a value with an invalid type.",
+         JOB_CONTAINER,
+         in_json,
+         ERROR_LOCATION);
    return Success();
 }
 
@@ -473,17 +539,41 @@ Error Job::fromJson(const json::Object& in_json, Job& out_job)
       return error;
 
    if (command && exe)
-   {
-      error = Error("JobParseError", 2, R"(Job has conflicting fields "command" and "exe" set.)", ERROR_LOCATION);
-      error.addProperty("job", in_json.write());
-      return error;
-   }
+      return jobParseError(
+         JobParseError::CONFLICTING_VALUES,
+         quoteStr(JOB_COMMAND) + " and " + quoteStr(JOB_EXECUTABLE),
+         "job",
+         in_json,
+         ERROR_LOCATION);
 
    if (!command && !exe && !containerObj)
+      return jobParseError(
+         JobParseError::MISSING_VALUE,
+         "one of " +
+            quoteStr(JOB_CONTAINER) +
+            " and/or one of " +
+            quoteStr(JOB_COMMAND) +
+            " and " +
+            quoteStr(JOB_EXECUTABLE),
+         "job",
+         in_json,
+         ERROR_LOCATION);
+
+   if (!user || user.getValueOr("").empty())
    {
-      error = Error("JobParseError", 2, R"(Job must have one of fields "command", "exe", and "container" set.)", ERROR_LOCATION);
-      error.addProperty("job", in_json.write());
-      return error;
+      return jobParseError(JobParseError::MISSING_VALUE, JOB_USER, "job", in_json, ERROR_LOCATION);
+   }
+   else
+   {
+      error = system::User::getUserFromIdentifier(user.getValueOr(""), result.User);
+      if (error)
+         return jobParseError(
+            JobParseError::INVALID_VALUE,
+            quoteStr(user.getValueOr("")) + " is not a valid user.",
+            "job",
+            in_json,
+            error,
+            ERROR_LOCATION);
    }
 
    result.Arguments = arguments.getValueOr({});
@@ -497,7 +587,6 @@ Error Job::fromJson(const json::Object& in_json, Job& out_job)
    result.StandardErrFile = stdErr.getValueOr("");
    result.StandardOutFile = stdOut.getValueOr("");
    result.StatusMessage = statusMessage.getValueOr("");
-   result.User = user.getValueOr("");
    result.Tags = tags.getValueOr({});
    result.WorkingDirectory = workingDir.getValueOr("");
 
@@ -511,33 +600,38 @@ Error Job::fromJson(const json::Object& in_json, Job& out_job)
       result.ContainerDetails = container;
    }
 
-   error = fromJsonArray(config.getValueOr(json::Array()), result.Config);
+   error = fromJsonArray(JOB_CONFIG, config.getValueOr(json::Array()), result.Config);
    if (error)
       return error;
 
-   error = fromJsonArray(env.getValueOr(json::Array()), result.Environment);
+   error = fromJsonArray(JOB_ENVIRONMENT, env.getValueOr(json::Array()), result.Environment);
    if (error)
       return error;
 
-   error = fromJsonArray(ports.getValueOr(json::Array()), result.ExposedPorts);
+   error = fromJsonArray(JOB_EXPOSED_PORTS, ports.getValueOr(json::Array()), result.ExposedPorts);
    if (error)
       return error;
 
-   error = fromJsonArray(mounts.getValueOr(json::Array()), result.Mounts);
+   error = fromJsonArray(JOB_MOUNTS, mounts.getValueOr(json::Array()), result.Mounts);
    if (error)
       return error;
 
-   error = fromJsonArray(constraints.getValueOr(json::Array()), result.PlacementConstraints);
+   error = fromJsonArray(JOB_PLACEMENT_CONSTRAINTS, constraints.getValueOr(json::Array()), result.PlacementConstraints);
    if (error)
       return error;
 
-   error = fromJsonArray(limits.getValueOr(json::Array()), result.ResourceLimits);
+   error = fromJsonArray(JOB_RESOURCE_LIMITS, limits.getValueOr(json::Array()), result.ResourceLimits);
    if (error)
       return error;
 
-   error = jobStatusFromString(status.getValueOr(""), result.Status);
-   if (error)
-      return error;
+   if (!jobStatusFromString(status.getValueOr(""), result.Status))
+      return jobParseError(
+         JobParseError::INVALID_VALUE,
+         quoteStr(status.getValueOr("")) + " is not a valid job status",
+         "job",
+         in_json,
+         ERROR_LOCATION);
+
 
    if (lastUpTime)
    {
@@ -565,6 +659,9 @@ Error Job::fromJson(const json::Object& in_json, Job& out_job)
 
 Job& Job::operator=(const Job& in_other)
 {
+   if (this == &in_other)
+      return *this;
+
    this->Arguments = in_other.Arguments;
    this->Cluster = in_other.Cluster;
    this->Command = in_other.Command;
@@ -597,6 +694,9 @@ Job& Job::operator=(const Job& in_other)
 
 Job& Job::operator=(Job&& in_other) noexcept
 {
+   if (this == &in_other)
+      return *this;
+
    this->m_impl.reset();
    this->m_impl.swap(in_other.m_impl);
 
@@ -707,7 +807,7 @@ json::Object Job::toJson() const
       jobObj[JOB_SUBMISSION_TIME] = SubmissionTime.getValueOr(system::DateTime()).toString();
 
    jobObj[JOB_TAGS] = json::toJsonArray(Tags);
-   jobObj[JOB_USER] = User;
+   jobObj[JOB_USER] = User.getUsername();
    jobObj[JOB_WORKING_DIRECTORY] = WorkingDirectory;
 
    return jobObj;
@@ -834,16 +934,19 @@ Error Mount::fromJson(const json::Object& in_json, Mount& out_mount)
       return updateError(JOB_MOUNTS, in_json, error);
 
    if (!hostMountSource && !nfsMountSource)
-   {
-      // TODO: real error set up.
-      error = Error("JobParseError", 1, "No mount source specified", ERROR_LOCATION);
-      return updateError(JOB_MOUNTS, in_json, error);
-   }
+      return jobParseError(
+         JobParseError::MISSING_VALUE,
+         "one of " + quoteStr(MOUNT_SOURCE_HOST) + " and " + quoteStr(MOUNT_SOURCE_NFS),
+         JOB_MOUNTS,
+         in_json,
+         ERROR_LOCATION);
    else if (hostMountSource && nfsMountSource)
-   {
-      error = Error("JobParseError", 1, "Multiple mount sources specified", ERROR_LOCATION);
-      return updateError(JOB_MOUNTS, in_json, error);
-   }
+      return jobParseError(
+         JobParseError::CONFLICTING_VALUES,
+         quoteStr(MOUNT_SOURCE_HOST) + " and " + quoteStr(MOUNT_SOURCE_NFS),
+         JOB_MOUNTS,
+         in_json,
+         ERROR_LOCATION);
    else if (hostMountSource)
    {
       HostMountSource mountSource;
@@ -964,10 +1067,12 @@ Error ResourceLimit::fromJson(const json::Object& in_json, ResourceLimit& out_re
    else if (strType == RESOURCE_LIMIT_TYPE_MEMORY_SWAP)
       out_resourceLimit.ResourceType = Type::MEMORY_SWAP;
    else
-      return updateError(
+      return jobParseError(
+         JobParseError::INVALID_VALUE,
+         quoteStr(RESOURCE_LIMIT_TYPE) + " " + quoteStr(strType) + " is not supported",
          JOB_RESOURCE_LIMITS,
          in_json,
-         error = Error("JobParseError", 1, "Invalid resource type", ERROR_LOCATION));
+         ERROR_LOCATION);
 
    return Success();
 }

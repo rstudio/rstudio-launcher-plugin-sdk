@@ -362,7 +362,7 @@ struct Job
    std::set<std::string> Tags;
 
    /** The user who ran the job. */
-   std::string User;
+   system::User User;
 
    /** The working directory from which to run the job. */
    std::string WorkingDirectory;
