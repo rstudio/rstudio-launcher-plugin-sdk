@@ -151,6 +151,13 @@ Error Request::fromJson(const json::Object& in_requestJson, std::shared_ptr<Requ
          out_request = userRequest;
          break;
       }
+      case Type::GET_JOB:
+      {
+         std::shared_ptr<JobIdRequest> jobIdRequest(new JobIdRequest(Type::GET_JOB, in_requestJson));
+
+         out_request = jobIdRequest;
+         break;
+      }
       default:
       {
          std::ostringstream osstream;
@@ -192,6 +199,99 @@ Request::Request(Type in_requestType, const json::Object& in_requestJson) :
       logging::logError(error);
       m_baseImpl->IsValid = false;
       return;
+   }
+}
+
+// User ================================================================================================================
+struct UserRequest::Impl
+{
+   /** The real user for whom the request should be performed. */
+   system::User RealUser;
+
+   /** The actual user who submitted the request. */
+   std::string RequestUsername;
+};
+
+PRIVATE_IMPL_DELETER_IMPL(UserRequest);
+
+const system::User & UserRequest::getUser() const
+{
+   return m_userImpl->RealUser;
+}
+
+const std::string& UserRequest::getRequestUsername() const
+{
+   return m_userImpl->RequestUsername;
+}
+
+UserRequest::UserRequest(Request::Type in_type, const json::Object& in_requestJson) :
+   Request(in_type, in_requestJson),
+   m_userImpl(new Impl())
+{
+   std::string realUsername;
+   Optional<std::string> requestUsername;
+   Error error = json::readObject(in_requestJson,
+                                  FIELD_REAL_USER, realUsername,
+                                  FIELD_REQUEST_USERNAME, requestUsername);
+
+   if (error)
+   {
+      logging::logError(error);
+      m_baseImpl->IsValid = false;
+      return;
+   }
+
+   boost::trim(realUsername);
+   if (realUsername != "*")
+   {
+      error = system::User::getUserFromIdentifier(realUsername, m_userImpl->RealUser);
+
+      if (error)
+      {
+         logging::logError(error);
+         m_userImpl->RealUser = system::User(true);
+         m_baseImpl->IsValid = false;
+         return;
+      }
+   }
+
+   m_userImpl->RequestUsername = requestUsername.getValueOr("");
+}
+
+// JobId ===============================================================================================================
+struct JobIdRequest::Impl
+{
+   std::string JobId;
+   std::string EncodedJobId;
+};
+
+PRIVATE_IMPL_DELETER_IMPL(JobIdRequest)
+
+const std::string& JobIdRequest::getJobId() const
+{
+   return m_jobIdImpl->JobId;
+}
+
+const std::string& JobIdRequest::getEncodedJobId() const
+{
+   return m_jobIdImpl->EncodedJobId;
+}
+
+JobIdRequest::JobIdRequest(Request::Type in_type, const json::Object& in_requestJson) :
+   UserRequest(in_type, in_requestJson),
+   m_jobIdImpl(new Impl())
+{
+   Optional<std::string> encodedId;
+   Error error = json::readObject(in_requestJson,
+      FIELD_JOB_ID, m_jobIdImpl->JobId,
+      FIELD_ENCODED_JOB_ID, encodedId);
+
+   m_jobIdImpl->EncodedJobId = encodedId.getValueOr("");
+
+   if (error)
+   {
+      logging::logError(error);
+      m_baseImpl->IsValid = false;
    }
 }
 
@@ -320,62 +420,6 @@ std::ostream& operator<<(std::ostream& in_ostream, Request::Type in_type)
    }
 
    return in_ostream;
-}
-
-// User ================================================================================================================
-struct UserRequest::Impl
-{
-   /** The real user for whom the request should be performed. */
-   system::User RealUser;
-
-   /** The actual user who submitted the request. */
-   std::string RequestUsername;
-};
-
-PRIVATE_IMPL_DELETER_IMPL(UserRequest);
-
-const system::User & UserRequest::getUser() const
-{
-   return m_userImpl->RealUser;
-}
-
-const std::string& UserRequest::getRequestUsername() const
-{
-   return m_userImpl->RequestUsername;
-}
-
-UserRequest::UserRequest(Request::Type in_type, const json::Object& in_requestJson) :
-   Request(in_type, in_requestJson),
-   m_userImpl(new Impl())
-{
-   std::string realUsername;
-   Optional<std::string> requestUsername;
-   Error error = json::readObject(in_requestJson,
-      FIELD_REAL_USER, realUsername,
-      FIELD_REQUEST_USERNAME, requestUsername);
-
-   if (error)
-   {
-      logging::logError(error);
-      m_baseImpl->IsValid = false;
-      return;
-   }
-
-   boost::trim(realUsername);
-   if (realUsername != "*")
-   {
-      error = system::User::getUserFromIdentifier(realUsername, m_userImpl->RealUser);
-
-      if (error)
-      {
-         logging::logError(error);
-         m_userImpl->RealUser = system::User(true);
-         m_baseImpl->IsValid = false;
-         return;
-      }
-   }
-
-   m_userImpl->RequestUsername = requestUsername.getValueOr("");
 }
 
 } // namespace api

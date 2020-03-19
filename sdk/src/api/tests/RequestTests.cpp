@@ -200,8 +200,6 @@ TEST_CASE("Parse cluster info request (admin user)")
 
    std::shared_ptr<Request> request;
 
-   system::User user;
-   REQUIRE_FALSE(system::User::getUserFromIdentifier(USER, user));
    REQUIRE_FALSE(Request::fromJson(requestObj, request));
    CHECK(request->getType() == Request::Type::GET_CLUSTER_INFO);
    CHECK(request->getId() == 14);
@@ -216,6 +214,69 @@ TEST_CASE("Parse invalid cluster info request")
    requestObj[FIELD_MESSAGE_TYPE] = static_cast<int>(Request::Type::GET_CLUSTER_INFO);
    requestObj[FIELD_REQUEST_ID] = 6;
    requestObj[FIELD_REAL_USER] = "notauser";
+
+   std::shared_ptr<Request> request;
+
+   REQUIRE(Request::fromJson(requestObj, request));
+}
+
+TEST_CASE("Parse get job request")
+{
+   MockLogPtr logDest = getMockLogDest();
+
+   json::Object requestObj;
+   requestObj[FIELD_MESSAGE_TYPE] = static_cast<int>(Request::Type::GET_JOB);
+   requestObj[FIELD_REQUEST_ID] = 657;
+   requestObj[FIELD_REAL_USER] = "*";
+   requestObj[FIELD_REQUEST_USERNAME] = USER;
+   requestObj[FIELD_JOB_ID] = "2588";
+
+   std::shared_ptr<Request> request;
+
+   REQUIRE_FALSE(Request::fromJson(requestObj, request));
+   CHECK(request->getType() == Request::Type::GET_JOB);
+   CHECK(request->getId() == 657);
+   CHECK(std::static_pointer_cast<JobIdRequest>(request)->getUser().isAllUsers());
+   CHECK(std::static_pointer_cast<JobIdRequest>(request)->getRequestUsername() == USER);
+   CHECK(std::static_pointer_cast<JobIdRequest>(request)->getJobId() == "2588");
+   CHECK(std::static_pointer_cast<JobIdRequest>(request)->getEncodedJobId() == "");
+   CHECK(logDest->getSize() == 0);
+}
+
+TEST_CASE("Parse get job request w/ encoded ID")
+{
+   MockLogPtr logDest = getMockLogDest();
+
+   json::Object requestObj;
+   requestObj[FIELD_MESSAGE_TYPE] = static_cast<int>(Request::Type::GET_JOB);
+   requestObj[FIELD_REQUEST_ID] = 91;
+   requestObj[FIELD_REAL_USER] = USER;
+   requestObj[FIELD_REQUEST_USERNAME] = USER;
+   requestObj[FIELD_JOB_ID] = "142";
+   requestObj[FIELD_ENCODED_JOB_ID] = "Y2x1c3Rlci0xNDIK";
+
+   std::shared_ptr<Request> request;
+
+   system::User user;
+   REQUIRE_FALSE(system::User::getUserFromIdentifier(USER, user));
+   REQUIRE_FALSE(Request::fromJson(requestObj, request));
+   CHECK(request->getType() == Request::Type::GET_JOB);
+   CHECK(request->getId() == 91);
+   CHECK(std::static_pointer_cast<JobIdRequest>(request)->getUser() == user);
+   CHECK(std::static_pointer_cast<JobIdRequest>(request)->getRequestUsername() == USER);
+   CHECK(std::static_pointer_cast<JobIdRequest>(request)->getJobId() == "142");
+   CHECK(std::static_pointer_cast<JobIdRequest>(request)->getEncodedJobId() == "Y2x1c3Rlci0xNDIK");
+   CHECK(logDest->getSize() == 0);
+}
+
+TEST_CASE("Parse invalid get job request")
+{
+   json::Object requestObj;
+   requestObj[FIELD_MESSAGE_TYPE] = static_cast<int>(Request::Type::GET_JOB);
+   requestObj[FIELD_REQUEST_ID] = 91;
+   requestObj[FIELD_REAL_USER] = USER;
+   requestObj[FIELD_REQUEST_USERNAME] = USER;
+   requestObj[FIELD_ENCODED_JOB_ID] = "Y2x1c3Rlci0xNDIK";
 
    std::shared_ptr<Request> request;
 

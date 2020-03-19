@@ -44,6 +44,10 @@ constexpr char const* FIELD_RESPONSE_ID = "responseId";
 constexpr char const* FIELD_REAL_USER = "username";
 constexpr char const* FIELD_REQUEST_USERNAME = "requestUsername";
 
+// Common fields for requests which require a job ID.
+constexpr char const* FIELD_JOB_ID = "jobId";
+constexpr char const* FIELD_ENCODED_JOB_ID = "encodedJobId";
+
 // Bootstrap request and response fields.
 constexpr char const* FIELD_VERSION = "version";
 constexpr char const* FIELD_VERSION_MAJOR = "major";

@@ -145,47 +145,6 @@ protected:
 };
 
 /**
- * @brief Represents a bootstrap request received from the Launcher.
- */
-class BootstrapRequest: public Request
-{
-public:
-   /**
-    * @brief Gets the major version of the RStudio Launcher that sent this bootstrap request.
-    *
-    * @return The major version of the RStudio Launcher.
-    */
-   int getMajorVersion() const;
-
-   /**
-    * @brief Gets the minor version of the RStudio Launcher that sent this bootstrap request.
-    *
-    * @return The minor version of the RStudio Launcher.
-    */
-   int getMinorVersion() const;
-
-   /**
-    * @brief Gets the patch number of the RStudio Launcher that sent this bootstrap request.
-    *
-    * @return The patch number of the RStudio Launcher.
-    */
-   int getPatchNumber() const;
-
-private:
-   /**
-    * @brief Constructor.
-    *
-    * @param in_requestJson     The JSON Object which represents the bootstrap request.
-    */
-   explicit BootstrapRequest(const json::Object& in_requestJson);
-
-   // The private implementation of BootstrapRequest.
-   PRIVATE_IMPL(m_impl);
-
-   friend class Request;
-};
-
-/**
  * @brief Base class which should be used by the class of requests which require a username.
  */
 class UserRequest : public Request
@@ -222,6 +181,79 @@ protected:
 private:
    // The private implementation of UserRequest.
    PRIVATE_IMPL(m_userImpl);
+
+   friend class Request;
+};
+
+class JobIdRequest : public UserRequest
+{
+public:
+   /**
+    * @brief Gets the ID of the job for which this request was made.
+    *
+    * @return The ID of the job for which this request was made.
+    */
+   const std::string& getJobId() const;
+   /**
+    * @brief Gets the ID of the job for which this request was made.
+    *
+    * @return The ID of the job for which this request was made.
+    */
+   const std::string& getEncodedJobId() const;
+
+protected:
+   /**
+    * @brief Constructor.
+    *
+    * @param in_type            The type of the user request.
+    * @param in_requestJson     The JSON Object which represents the job ID request.
+    */
+   JobIdRequest(Request::Type in_type, const json::Object& in_requestJson);
+
+private:
+   // The private implementation of JobIdRequest.
+   PRIVATE_IMPL(m_jobIdImpl);
+
+   friend class Request;
+};
+
+/**
+ * @brief Represents a bootstrap request received from the Launcher.
+ */
+class BootstrapRequest: public Request
+{
+public:
+   /**
+    * @brief Gets the major version of the RStudio Launcher that sent this bootstrap request.
+    *
+    * @return The major version of the RStudio Launcher.
+    */
+   int getMajorVersion() const;
+
+   /**
+    * @brief Gets the minor version of the RStudio Launcher that sent this bootstrap request.
+    *
+    * @return The minor version of the RStudio Launcher.
+    */
+   int getMinorVersion() const;
+
+   /**
+    * @brief Gets the patch number of the RStudio Launcher that sent this bootstrap request.
+    *
+    * @return The patch number of the RStudio Launcher.
+    */
+   int getPatchNumber() const;
+
+private:
+   /**
+    * @brief Constructor.
+    *
+    * @param in_requestJson     The JSON Object which represents the bootstrap request.
+    */
+   explicit BootstrapRequest(const json::Object& in_requestJson);
+
+   // The private implementation of BootstrapRequest.
+   PRIVATE_IMPL(m_impl);
 
    friend class Request;
 };
