@@ -125,6 +125,11 @@ Error Request::fromJson(const json::Object& in_requestJson, std::shared_ptr<Requ
    Type messageType = static_cast<Type>(messageTypeVal);
    switch (messageType)
    {
+      case Type::HEARTBEAT:
+      {
+         out_request.reset(new Request(Request::Type::HEARTBEAT, in_requestJson));
+         break;
+      }
       case Type::BOOTSTRAP:
       {
          out_request.reset(new BootstrapRequest(in_requestJson));

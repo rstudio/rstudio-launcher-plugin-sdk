@@ -41,14 +41,14 @@ TEST_CASE("Parse valid bootstrap request")
    MockLogPtr logDest = getMockLogDest();
 
    json::Object versionObj;
-   versionObj.insert(FIELD_VERSION_MAJOR, json::Value(2));
-   versionObj.insert(FIELD_VERSION_MINOR, json::Value(11));
-   versionObj.insert(FIELD_VERSION_PATCH, json::Value(375));
+   versionObj.insert(FIELD_VERSION_MAJOR, 2);
+   versionObj.insert(FIELD_VERSION_MINOR, 11);
+   versionObj.insert(FIELD_VERSION_PATCH, 375);
 
    json::Object requestObj;
    requestObj.insert(FIELD_VERSION, versionObj);
-   requestObj.insert(FIELD_MESSAGE_TYPE, json::Value(static_cast<int>(Request::Type::BOOTSTRAP)));
-   requestObj.insert(FIELD_REQUEST_ID, json::Value(6));
+   requestObj.insert(FIELD_MESSAGE_TYPE, static_cast<int>(Request::Type::BOOTSTRAP));
+   requestObj.insert(FIELD_REQUEST_ID, 6);
 
    std::shared_ptr<Request> request;
    Error error = Request::fromJson(requestObj, request);
@@ -71,13 +71,13 @@ TEST_CASE("Parse invalid bootstrap request")
    MockLogPtr logDest = getMockLogDest();
 
    json::Object versionObj;
-   versionObj.insert(FIELD_VERSION_MAJOR, json::Value(2));
-   versionObj.insert(FIELD_VERSION_PATCH, json::Value(375));
+   versionObj.insert(FIELD_VERSION_MAJOR, 2);
+   versionObj.insert(FIELD_VERSION_PATCH, 375);
 
    json::Object requestObj;
    requestObj.insert(FIELD_VERSION, versionObj);
-   requestObj.insert(FIELD_MESSAGE_TYPE, json::Value(static_cast<int>(Request::Type::BOOTSTRAP)));
-   requestObj.insert(FIELD_REQUEST_ID, json::Value(6));
+   requestObj.insert(FIELD_MESSAGE_TYPE, static_cast<int>(Request::Type::BOOTSTRAP));
+   requestObj.insert(FIELD_REQUEST_ID, 6);
 
    std::shared_ptr<Request> request;
    Error error = Request::fromJson(requestObj, request);
@@ -92,7 +92,7 @@ TEST_CASE("Parse invalid bootstrap request")
 TEST_CASE("Parse invalid request - missing message type")
 {
    json::Object requestObj;
-   requestObj.insert(FIELD_REQUEST_ID, json::Value(6));
+   requestObj.insert(FIELD_REQUEST_ID, 6);
 
    std::shared_ptr<Request> request;
    Error error = Request::fromJson(requestObj, request);
@@ -105,7 +105,7 @@ TEST_CASE("Parse invalid request - missing request request ID")
 {
    MockLogPtr logDest = getMockLogDest();
    json::Object requestObj;
-   requestObj.insert(FIELD_MESSAGE_TYPE, json::Value(static_cast<int>(Request::Type::BOOTSTRAP)));
+   requestObj.insert(FIELD_MESSAGE_TYPE, static_cast<int>(Request::Type::BOOTSTRAP));
 
 
    std::shared_ptr<Request> request;
@@ -124,8 +124,8 @@ TEST_CASE("Parse invalid request - negative message type")
 {
    MockLogPtr logDest = getMockLogDest();
    json::Object requestObj;
-   requestObj.insert(FIELD_MESSAGE_TYPE, json::Value(-4));
-   requestObj.insert(FIELD_REQUEST_ID, json::Value(6));
+   requestObj.insert(FIELD_MESSAGE_TYPE, -4);
+   requestObj.insert(FIELD_REQUEST_ID, 6);
 
    std::shared_ptr<Request> request;
    Error error = Request::fromJson(requestObj, request);
@@ -139,8 +139,8 @@ TEST_CASE("Parse invalid request - message type too large")
 {
    MockLogPtr logDest = getMockLogDest();
    json::Object requestObj;
-   requestObj.insert(FIELD_MESSAGE_TYPE, json::Value(568));
-   requestObj.insert(FIELD_REQUEST_ID, json::Value(6));
+   requestObj.insert(FIELD_MESSAGE_TYPE, 568);
+   requestObj.insert(FIELD_REQUEST_ID, 6);
 
    std::shared_ptr<Request> request;
    Error error = Request::fromJson(requestObj, request);
@@ -148,6 +148,21 @@ TEST_CASE("Parse invalid request - message type too large")
    REQUIRE(error);
    REQUIRE(error.getMessage().find("568") != std::string::npos);
    CHECK(logDest->getSize() == 0);
+}
+
+TEST_CASE("Parse heartbeat request")
+{
+   MockLogPtr logDest = getMockLogDest();
+   json::Object requestObj;
+   requestObj.insert(FIELD_MESSAGE_TYPE, static_cast<int>(Request::Type::HEARTBEAT));
+   requestObj.insert(FIELD_REQUEST_ID, 0);
+
+   std::shared_ptr<Request> request;
+   Error error = Request::fromJson(requestObj, request);
+
+   REQUIRE_FALSE(error);
+   CHECK(request->getType() == Request::Type::HEARTBEAT);
+   CHECK(request->getId() == 0);
 }
 
 } // namespace api

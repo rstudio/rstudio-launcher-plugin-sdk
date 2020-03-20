@@ -98,9 +98,7 @@ void AsioService::post(const AsioFunction& in_work)
 void AsioService::setSignalHandler(const OnSignal &in_onSignal)
 {
    std::shared_ptr<Impl> sharedThis = getAsioService().m_impl;
-   try
-   {
-      boost::unique_lock<boost::mutex> lock(sharedThis->Mutex);
+   UNIQUE_LOCK_MUTEX(sharedThis->Mutex)
 
       if (!sharedThis->IsSignalSetInit)
       {
@@ -119,9 +117,8 @@ void AsioService::startThreads(size_t in_numThreads)
 {
    std::shared_ptr<Impl> sharedThis = getAsioService().m_impl;
 
-   try
-   {
-      boost::unique_lock<boost::mutex> lock(sharedThis->Mutex);
+   UNIQUE_LOCK_MUTEX(sharedThis->Mutex)
+
       if (sharedThis->IsRunning)
       {
          for (size_t i = 0; i < in_numThreads; ++i)
@@ -141,9 +138,8 @@ void AsioService::stop()
 {
    std::shared_ptr<Impl> sharedThis = getAsioService().m_impl;
 
-   try
-   {
-      boost::lock_guard<boost::mutex> lock(sharedThis->Mutex);
+   LOCK_MUTEX(sharedThis->Mutex)
+
       if (sharedThis->IsRunning)
       {
          sharedThis->IoService.stop();
@@ -218,9 +214,8 @@ struct AsioStream::Impl : public std::enable_shared_from_this<AsioStream::Impl>
                         "Could not write to stream with descriptor " + std::to_string(instance->StreamDescriptor.native_handle()) + ".",
                         ERROR_LOCATION));
 
-               try
-               {
-                  boost::unique_lock<boost::mutex> lock(instance->Mutex);
+               UNIQUE_LOCK_MUTEX(instance->Mutex)
+
                   if (instance->WriteBuffer.front().size() > in_writtenLength)
                   {
                      // We failed to write all of the bytes.
@@ -240,6 +235,7 @@ struct AsioStream::Impl : public std::enable_shared_from_this<AsioStream::Impl>
                   // If there was no error, pop the first message and start writing over again.
                   instance->WriteBuffer.pop();
                   instance->startWriting(lock, in_onError);
+
                END_LOCK_MUTEX
             }
          };
@@ -301,15 +297,107 @@ void AsioStream::readBytes(const OnReadBytes& in_onReadBytes, const OnError& in_
 
 void AsioStream::writeBytes(const std::string& in_data, const OnError& in_onError)
 {
-   try
-   {
-      boost::unique_lock<boost::mutex> lock(m_impl->Mutex);
+   UNIQUE_LOCK_MUTEX(m_impl->Mutex)
 
       m_impl->WriteBuffer.push(in_data);
       if (m_impl->WriteBuffer.size() == 1)
          m_impl->startWriting(lock, in_onError);
 
    END_LOCK_MUTEX
+}
+
+// AsyncTimedEvent =====================================================================================================
+struct AsyncTimedEvent::Impl
+{
+   typedef std::shared_ptr<AsyncTimedEvent::Impl> SharedImpl;
+   typedef std::weak_ptr<AsyncTimedEvent::Impl> WeakImpl;
+
+   Impl() :
+      Running(true)
+   {
+   }
+
+   static void runEvent(
+      const WeakImpl& in_weakThis,
+      const boost::posix_time::time_duration& in_intervalSeconds,
+      const AsioFunction& in_event,
+      const boost::system::error_code& in_ec)
+   {
+      // If the operation was canceled, there's nothing to do.
+      if (in_ec == boost::asio::error::operation_aborted)
+         return;
+      // If another error occurred, log it and exit.
+      else if (in_ec.value() != 0)
+         return logging::logError(utils::createErrorFromBoostError(in_ec, ERROR_LOCATION));
+
+      // If this has been deleted, there's nothing to do.
+      SharedImpl sharedThis = in_weakThis.lock();
+      if (!sharedThis)
+         return;
+
+      try
+      {
+         boost::unique_lock<boost::mutex> lock(sharedThis->Mutex);
+
+         // If this is no longer running, there's nothing to do.
+         if (!sharedThis->Running)
+            return;
+
+         // Otherwise, perform the action and restart the timer.
+         in_event();
+         sharedThis->Timer->expires_from_now(in_intervalSeconds);
+         sharedThis->Timer->async_wait(
+            std::bind(runEvent, in_weakThis, in_intervalSeconds, in_event, std::placeholders::_1));
+
+      END_LOCK_MUTEX
+   }
+
+   /** Mutex to protect the running status. */
+   boost::mutex Mutex;
+
+   /** Whether the timed event is currently running. */
+   bool Running;
+
+   /** The timer that will invoke the callback function. */
+   std::shared_ptr<boost::asio::deadline_timer> Timer;
+
+};
+
+AsyncTimedEvent::AsyncTimedEvent() :
+   m_impl(new Impl())
+{
+}
+
+void AsyncTimedEvent::start(uint64_t in_intervalSeconds, const AsioFunction& in_event)
+{
+   // If the interval is 0 there is nothing to do.
+   if (in_intervalSeconds == 0)
+      return;
+
+   boost::posix_time::time_duration intervalSeconds = boost::posix_time::seconds(in_intervalSeconds);
+
+   m_impl->Timer.reset(
+      new boost::asio::deadline_timer(getIoService(), intervalSeconds));
+
+   Impl::WeakImpl weakImpl = m_impl;
+   m_impl->Timer->async_wait(std::bind(&Impl::runEvent, m_impl, intervalSeconds, in_event, std::placeholders::_1));
+}
+
+void AsyncTimedEvent::cancel()
+{
+   UNIQUE_LOCK_MUTEX(m_impl->Mutex)
+
+      m_impl->Running = false;
+      if (m_impl->Timer)
+         m_impl->Timer->cancel();
+
+   END_LOCK_MUTEX
+}
+
+void AsyncTimedEvent::reportError(const Error &in_error)
+{
+   logging::logError(in_error);
+   cancel();
 }
 
 } // namespace system

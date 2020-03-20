@@ -46,7 +46,7 @@ namespace api {
 /**
  * @brief Base class for the Launcher Plugin API.
  */
-class AbstractPluginApi : public Noncopyable
+class AbstractPluginApi : public Noncopyable, public std::enable_shared_from_this<AbstractPluginApi>
 {
 public:
    /**

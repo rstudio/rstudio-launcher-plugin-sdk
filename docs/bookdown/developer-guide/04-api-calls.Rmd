@@ -78,7 +78,28 @@ The code of the Error response must be one of the error codes supported by the L
 
 ### Heartbeat {#heartbeat}
 
-<!-- TODO: next PR -->
+When the Launcher starts the Plugin, it provides the configured `heartbeat-interval-seconds` value to the Plugin. If the Plugin does not send the Heartbeat Response every configured amount of time, the Launcher will restart the Plugin. This request is completely handled by the SDK and doesn't require any action on the part of the Plugin developer. However, when debugging issues in the Plugin, it can become problematic if the Launcher restarts the Plugin while getting the debugger set up. To avoid this, `heartbeat-interval-seconds` can be set to `0` in `/etc/rstudio/launcher.conf`, which will disable heartbeating. This is not a recommended configuration for production because unresponsive Plugins will not be handled correctly.
+
+Despite the fact that there will be many heartbeats sent to and from the Launcher, every Heartbeat Request and Response will have request ID and response IDs of 0. This is because it is Heartbeat Response do not strictly respond to a particular request -- they must merely be sent to the Launcher every configured time interval.
+
+&nbsp;
+
+**Heartbeat Request**
+
+|  Field Name  |                               Description                                   |  Value
+| ------------ | --------------------------------------------------------------------------- | -------
+| messageType  | See above.                                                                  | 0
+| requestId    | See above.                                                                  | 0
+
+&nbsp;
+
+**Heartbeat Response**
+
+|  Field Name  |                               Description                                   |  Value
+| ------------ | --------------------------------------------------------------------------- | -------
+| messageType  | See above.                                                                  | 0
+| requestId    | See above.                                                                  | 0
+| responseId   | See above.                                                                  | 0
 
 ### Bootstrap {#bootstrap}
 

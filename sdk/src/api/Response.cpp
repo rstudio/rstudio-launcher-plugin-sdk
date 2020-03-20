@@ -142,6 +142,12 @@ json::Object ErrorResponse::asJson() const
    return responseObject;
 }
 
+// Heartbeat Response ==================================================================================================
+HeartbeatResponse::HeartbeatResponse() :
+   Response(Response::Type::HEARTBEAT, 0)
+{
+}
+
 } // namespace api
 } // namespace launcher_plugins
 } // namespace rstudio
