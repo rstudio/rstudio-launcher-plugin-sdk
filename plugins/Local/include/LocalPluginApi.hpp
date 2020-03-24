@@ -73,7 +73,8 @@ private:
     */
    Error doInitialize() override;
 
-   job_store::LocalJobStorage m_jobStorage;
+   /** The hostname of the machine running this instance of the Local Plugin. */
+   std::string m_hostname;
 };
 
 } // namespace local

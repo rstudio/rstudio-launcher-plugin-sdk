@@ -30,18 +30,18 @@ LocalPluginApi::LocalPluginApi(
    std::string in_hostname,
    std::shared_ptr<comms::AbstractLauncherCommunicator> in_launcherCommunicator) :
    AbstractPluginApi(std::move(in_launcherCommunicator)),
-   m_jobStorage(std::move(in_hostname))
+   m_hostname(std::move(in_hostname))
 {
 }
 
 std::shared_ptr<api::IJobSource> LocalPluginApi::createJobSource() const
 {
-   return std::shared_ptr<api::IJobSource>(new LocalJobSource());
+   return std::shared_ptr<api::IJobSource>(new LocalJobSource(m_hostname));
 }
 
 Error LocalPluginApi::doInitialize()
 {
-   return m_jobStorage.initialize();
+   return Success();
 }
 
 } // namespace local

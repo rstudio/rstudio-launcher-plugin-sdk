@@ -29,18 +29,23 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace local {
 
+LocalJobSource::LocalJobSource(std::string in_hostname) :
+   m_jobStorage(std::move(in_hostname))
+{
+}
+
 Error LocalJobSource::initialize()
 {
    // TODO: Initialize communications with the other local plugins, if any, and make sure we can read and write to the
    //       file that will store job information.
-   return Success();
+   return m_jobStorage.initialize();
 }
 
 Error LocalJobSource::getCustomConfig(const system::User &, std::vector<api::JobConfig>& out_customConfig) const
 {
    static const api::JobConfig::Type strType = api::JobConfig::Type::STRING;
    out_customConfig = {
-      api::JobConfig("pamProfile", strType),
+      api::JobConfig("p\amProfile", strType),
       api::JobConfig("encryptedPassword", strType)
    };
 
@@ -49,7 +54,7 @@ Error LocalJobSource::getCustomConfig(const system::User &, std::vector<api::Job
 
 Error LocalJobSource::getJobs(api::JobList& out_jobs) const
 {
-   return Success();
+   return m_jobStorage.loadJobs(out_jobs);
 }
 
 } // namespace local
