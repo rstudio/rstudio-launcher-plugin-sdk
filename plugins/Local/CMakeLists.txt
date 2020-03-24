@@ -31,7 +31,9 @@ file(GLOB_RECURSE LOCAL_HEADER_FILES "*.h*")
 set(LOCAL_SOURCE_FILES
    src/LocalJobSource.cpp
    src/LocalOptions.cpp
-   src/LocalPluginApi.cpp)
+   src/LocalPluginApi.cpp
+   src/job_store/LocalJobStorage.cpp
+)
 
 # include directories
 include_directories(
