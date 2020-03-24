@@ -20,12 +20,38 @@
 
 #include <AbstractMain.hpp>
 
+#include <unistd.h>
+#include <zconf.h>
+
 #include <LocalOptions.hpp>
 #include <LocalPluginApi.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
 namespace local {
+
+namespace {
+
+/**
+ * @brief Gets the hostname of the machine running this process.
+ *
+ * @param out_hostname      The hostname of this machine.
+ *
+ * @return Success if the hostname could be retrieved; Error otherwise.
+ */
+Error getHostname(std::string& out_hostname)
+{
+   char hostname[HOST_NAME_MAX + 1];
+
+   int result = gethostname(hostname, HOST_NAME_MAX + 1);
+   if (result != 0)
+      return systemError(errno, ERROR_LOCATION);
+
+   out_hostname = hostname;
+   return Success();
+}
+
+} // anonymous namespace
 
 /**
  * @brief Main class for the Local Plugin.
@@ -46,7 +72,12 @@ private:
       std::shared_ptr<comms::AbstractLauncherCommunicator> in_launcherCommunicator,
       std::shared_ptr<api::AbstractPluginApi>& out_pluginApi) const override
    {
-      out_pluginApi.reset(new LocalPluginApi(in_launcherCommunicator));
+      std::string hostname;
+      Error error = getHostname(hostname);
+      if (error)
+         return error;
+
+      out_pluginApi.reset(new LocalPluginApi(hostname, in_launcherCommunicator));
       return Success();
    }
 

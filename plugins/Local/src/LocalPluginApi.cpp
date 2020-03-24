@@ -26,8 +26,11 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace local {
 
-LocalPluginApi::LocalPluginApi(std::shared_ptr<comms::AbstractLauncherCommunicator> in_launcherCommunicator) :
-   AbstractPluginApi(std::move(in_launcherCommunicator))
+LocalPluginApi::LocalPluginApi(
+   std::string in_hostname,
+   std::shared_ptr<comms::AbstractLauncherCommunicator> in_launcherCommunicator) :
+   AbstractPluginApi(std::move(in_launcherCommunicator)),
+   m_jobStorage(std::move(in_hostname))
 {
 }
 
@@ -38,7 +41,7 @@ std::shared_ptr<api::IJobSource> LocalPluginApi::createJobSource() const
 
 Error LocalPluginApi::doInitialize()
 {
-   return Success();
+   return m_jobStorage.initialize();
 }
 
 } // namespace local
