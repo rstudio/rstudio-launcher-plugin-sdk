@@ -31,12 +31,12 @@
 #include <boost/regex.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string_regex.hpp>
-#include <boost/iostreams/copy.hpp>
 #include <boost/property_tree/ini_parser.hpp>
 
 #include <Error.hpp>
 #include <system/User.hpp>
 #include <system/FilePath.hpp>
+#include <utils/FileUtils.hpp>
 #include "../SafeConvert.hpp"
 
 namespace rstudio {
@@ -564,37 +564,19 @@ Error AbstractUserProfiles::Impl::populateGroups(const std::set<std::string>& in
 // AbstractUserProfiles ================================================================================================
 Error AbstractUserProfiles::initialize()
 {
-   std::shared_ptr<std::istream> inputStream;
-   Error error = getConfigurationFile().openForRead(inputStream);
+   std::string iniFileContents;
+   Error error = utils::readFileToString(getConfigurationFile(),iniFileContents);
    if (error)
    {
       error = userProfileError(
          UserProfileError::CONF_PARSE_ERROR,
-         "Could not open configuration file for read.",
+         "Failed to read configuration file.",
          error,
          ERROR_LOCATION);
-      error.addProperty("file", getConfigurationFile().getAbsolutePath());
       return error;
    }
 
-   // Read the whole file into a string stream.
-   std::ostringstream oStrStream;
-   try
-   {
-      // Ensure an exception will be thrown if the failbit or badbit is set.
-      inputStream->exceptions(std::istream::failbit | std::istream::badbit);
-
-      boost::iostreams::copy(*inputStream, oStrStream);
-   }
-   catch (std::exception& e)
-   {
-      error = userProfileError(UserProfileError::CONF_PARSE_ERROR, "Failed to read configuration file.", ERROR_LOCATION);
-      error.addProperty("description", e.what());
-      error.addProperty("file", getConfigurationFile().getAbsolutePath());
-      return error;
-   }
-
-   error = m_impl->parseLevels(oStrStream.str(), getValidFieldNames());
+   error = m_impl->parseLevels(iniFileContents, getValidFieldNames());
    if (error)
       return error;
 

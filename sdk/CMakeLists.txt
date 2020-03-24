@@ -54,6 +54,7 @@ set(RLPS_SOURCE_FILES
    src/system/ReaderWriterMutex.cpp
    src/system/User.cpp
    src/utils/ErrorUtils.cpp
+   src/utils/FileUtils.cpp
 )
 
 # include directory
