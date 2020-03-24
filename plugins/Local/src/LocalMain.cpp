@@ -38,13 +38,16 @@ private:
     *
     * @param in_launcherCommunicator    The communicator that will be used to send and receive messages from the RStudio
     *                                   Launcher.
+    * @param out_pluginApi              The Plugin specific Launcher Plugin API.
     *
-    * @return The Plugin specific Launcher Plugin API.
+    * @return Success if the plugin API could be created; Error otherwise.
     */
-   std::shared_ptr<api::AbstractPluginApi> createLauncherPluginApi(
-      std::shared_ptr<comms::AbstractLauncherCommunicator> in_launcherCommunicator) const override
+   Error createLauncherPluginApi(
+      std::shared_ptr<comms::AbstractLauncherCommunicator> in_launcherCommunicator,
+      std::shared_ptr<api::AbstractPluginApi>& out_pluginApi) const override
    {
-      return std::shared_ptr<api::AbstractPluginApi>(new LocalPluginApi(in_launcherCommunicator));
+      out_pluginApi.reset(new LocalPluginApi(in_launcherCommunicator));
+      return Success();
    }
 
    /**
