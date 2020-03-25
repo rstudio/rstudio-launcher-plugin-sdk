@@ -121,28 +121,6 @@ private:
 };
 
 /**
- * @brief Class which represents a bootstrap response which can be sent to the Launcher in response to a bootstrap
- *        request.
- */
-class BootstrapResponse : public Response
-{
-public:
-   /**
-    * @brief Constructor.
-    *
-    * @param in_requestId       The ID of the bootstrap request for which this bootstrap response is being sent.
-    */
-   explicit BootstrapResponse(uint64_t in_requestId);
-
-   /**
-    * @brief Converts this bootstrap response to a JSON object.
-    *
-    * @return The JSON object which represents this bootstrap response.
-    */
-   json::Object toJson() const override;
-};
-
-/**
  * @brief Class which represents an error response which can be sent to the Launcher in response to any request.
  */
 class ErrorResponse : public Response
@@ -206,6 +184,63 @@ public:
 };
 
 /**
+ * @brief Class which represents a bootstrap response which can be sent to the Launcher in response to a bootstrap
+ *        request.
+ */
+class BootstrapResponse : public Response
+{
+public:
+   /**
+    * @brief Constructor.
+    *
+    * @param in_requestId       The ID of the bootstrap request for which this bootstrap response is being sent.
+    */
+   explicit BootstrapResponse(uint64_t in_requestId);
+
+   /**
+    * @brief Converts this bootstrap response to a JSON object.
+    *
+    * @return The JSON object which represents this bootstrap response.
+    */
+   json::Object toJson() const override;
+};
+
+/**
+ * @brief Class which represents a job state response which can be sent to the Launcher in response to a get or submit
+ *        job request.
+ */
+class JobStateResponse : public Response
+{
+public:
+   /**
+    * @brief Constructor.
+    *
+    * @param in_requestId   The ID of the request for which this job state response is being sent.
+    * @param in_job         The job to be returned to the Launcher.
+    */
+   JobStateResponse(uint64_t in_requestId, JobPtr in_job);
+
+   /**
+    * @brief Constructor.
+    *
+    * @param in_requestId   The ID of the request for which this job state response is being sent.
+    * @param in_jobs        The jobs to be returned to the Launcher.
+    */
+   JobStateResponse(uint64_t in_requestId, const JobList& in_jobs);
+
+   /**
+    * @brief Converts this job state response to a JSON object.
+    *
+    * @return The JSON object which represents this job state response.
+    */
+   json::Object toJson() const override;
+
+private:
+   // The private implementation of ClusterInfoResponse
+   PRIVATE_IMPL(m_impl);
+};
+
+/**
  * @brief Class which represents a cluster info response which should be sent to the Launcher in response to a cluster
  *        info request.
  */
@@ -261,7 +296,7 @@ public:
  private:
     // The private implementation of ClusterInfoResponse
     PRIVATE_IMPL(m_impl);
- };
+};
 
 } // namespace api
 } // namespace launcher_plugins
