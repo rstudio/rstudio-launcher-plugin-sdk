@@ -23,4 +23,14 @@
 
 #include "catch/catch.hpp"
 
+constexpr const char* USER_ONE      = "rlpstestusrone";
+constexpr const char* USER_TWO      = "rlpstestusrtwo";
+constexpr const char* USER_THREE    = "rlpstestusrthree";
+constexpr const char* USER_FOUR     = "rlpstestusrfour";
+constexpr const char* USER_FIVE     = "rlpstestusrfive";
+
+constexpr const char* GROUP_ONE     = "rlpstestgrpone";
+constexpr const char* GROUP_TWO     = "rlpstestgrptwo";
+constexpr const char* GROUP_THREE   = "rlpstestgrpthree";
+
 #endif

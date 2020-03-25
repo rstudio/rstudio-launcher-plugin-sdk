@@ -33,9 +33,6 @@ namespace jobs {
 
 namespace {
 
-constexpr const char* USER_ONE = "rlpstestusrone";
-constexpr const char* USER_TWO = "rlpstestusrtwo";
-
 inline bool isEqual(const api::JobPtr& in_lhs, const api::JobPtr& in_rhs)
 {
    if (in_lhs == in_rhs)

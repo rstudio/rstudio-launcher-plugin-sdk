@@ -35,8 +35,6 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace api {
 
-constexpr const char* USER = "rlpstestusrtwo";
-
 using namespace logging;
 
 TEST_CASE("Parse valid bootstrap request")
@@ -175,12 +173,12 @@ TEST_CASE("Parse cluster info request")
    json::Object requestObj;
    requestObj[FIELD_MESSAGE_TYPE] = static_cast<int>(Request::Type::GET_CLUSTER_INFO);
    requestObj[FIELD_REQUEST_ID] = 6;
-   requestObj[FIELD_REAL_USER] = USER;
+   requestObj[FIELD_REAL_USER] = USER_TWO;
 
    std::shared_ptr<Request> request;
 
    system::User user;
-   REQUIRE_FALSE(system::User::getUserFromIdentifier(USER, user));
+   REQUIRE_FALSE(system::User::getUserFromIdentifier(USER_TWO, user));
    REQUIRE_FALSE(Request::fromJson(requestObj, request));
    CHECK(request->getType() == Request::Type::GET_CLUSTER_INFO);
    CHECK(request->getId() == 6);
@@ -196,7 +194,7 @@ TEST_CASE("Parse cluster info request (admin user)")
    requestObj[FIELD_MESSAGE_TYPE] = static_cast<int>(Request::Type::GET_CLUSTER_INFO);
    requestObj[FIELD_REQUEST_ID] = 14;
    requestObj[FIELD_REAL_USER] = "*";
-   requestObj[FIELD_REQUEST_USERNAME] = USER;
+   requestObj[FIELD_REQUEST_USERNAME] = USER_TWO;
 
    std::shared_ptr<Request> request;
 
@@ -204,7 +202,7 @@ TEST_CASE("Parse cluster info request (admin user)")
    CHECK(request->getType() == Request::Type::GET_CLUSTER_INFO);
    CHECK(request->getId() == 14);
    CHECK(std::static_pointer_cast<UserRequest>(request)->getUser().isAllUsers());
-   CHECK(std::static_pointer_cast<UserRequest>(request)->getRequestUsername() == USER);
+   CHECK(std::static_pointer_cast<UserRequest>(request)->getRequestUsername() == USER_TWO);
    CHECK(logDest->getSize() == 0);
 }
 
@@ -228,7 +226,7 @@ TEST_CASE("Parse get job request")
    requestObj[FIELD_MESSAGE_TYPE] = static_cast<int>(Request::Type::GET_JOB);
    requestObj[FIELD_REQUEST_ID] = 657;
    requestObj[FIELD_REAL_USER] = "*";
-   requestObj[FIELD_REQUEST_USERNAME] = USER;
+   requestObj[FIELD_REQUEST_USERNAME] = USER_TWO;
    requestObj[FIELD_JOB_ID] = "2588";
 
    std::shared_ptr<Request> request;
@@ -237,7 +235,7 @@ TEST_CASE("Parse get job request")
    CHECK(request->getType() == Request::Type::GET_JOB);
    CHECK(request->getId() == 657);
    CHECK(std::static_pointer_cast<JobIdRequest>(request)->getUser().isAllUsers());
-   CHECK(std::static_pointer_cast<JobIdRequest>(request)->getRequestUsername() == USER);
+   CHECK(std::static_pointer_cast<JobIdRequest>(request)->getRequestUsername() == USER_TWO);
    CHECK(std::static_pointer_cast<JobIdRequest>(request)->getJobId() == "2588");
    CHECK(std::static_pointer_cast<JobIdRequest>(request)->getEncodedJobId() == "");
    CHECK(logDest->getSize() == 0);
@@ -250,20 +248,20 @@ TEST_CASE("Parse get job request w/ encoded ID")
    json::Object requestObj;
    requestObj[FIELD_MESSAGE_TYPE] = static_cast<int>(Request::Type::GET_JOB);
    requestObj[FIELD_REQUEST_ID] = 91;
-   requestObj[FIELD_REAL_USER] = USER;
-   requestObj[FIELD_REQUEST_USERNAME] = USER;
+   requestObj[FIELD_REAL_USER] = USER_TWO;
+   requestObj[FIELD_REQUEST_USERNAME] = USER_TWO;
    requestObj[FIELD_JOB_ID] = "142";
    requestObj[FIELD_ENCODED_JOB_ID] = "Y2x1c3Rlci0xNDIK";
 
    std::shared_ptr<Request> request;
 
    system::User user;
-   REQUIRE_FALSE(system::User::getUserFromIdentifier(USER, user));
+   REQUIRE_FALSE(system::User::getUserFromIdentifier(USER_TWO, user));
    REQUIRE_FALSE(Request::fromJson(requestObj, request));
    CHECK(request->getType() == Request::Type::GET_JOB);
    CHECK(request->getId() == 91);
    CHECK(std::static_pointer_cast<JobIdRequest>(request)->getUser() == user);
-   CHECK(std::static_pointer_cast<JobIdRequest>(request)->getRequestUsername() == USER);
+   CHECK(std::static_pointer_cast<JobIdRequest>(request)->getRequestUsername() == USER_TWO);
    CHECK(std::static_pointer_cast<JobIdRequest>(request)->getJobId() == "142");
    CHECK(std::static_pointer_cast<JobIdRequest>(request)->getEncodedJobId() == "Y2x1c3Rlci0xNDIK");
    CHECK(logDest->getSize() == 0);
@@ -274,8 +272,8 @@ TEST_CASE("Parse invalid get job request")
    json::Object requestObj;
    requestObj[FIELD_MESSAGE_TYPE] = static_cast<int>(Request::Type::GET_JOB);
    requestObj[FIELD_REQUEST_ID] = 91;
-   requestObj[FIELD_REAL_USER] = USER;
-   requestObj[FIELD_REQUEST_USERNAME] = USER;
+   requestObj[FIELD_REAL_USER] = USER_TWO;
+   requestObj[FIELD_REQUEST_USERNAME] = USER_TWO;
    requestObj[FIELD_ENCODED_JOB_ID] = "Y2x1c3Rlci0xNDIK";
 
    std::shared_ptr<Request> request;
