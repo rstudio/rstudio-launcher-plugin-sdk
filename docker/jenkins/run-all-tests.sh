@@ -27,14 +27,14 @@
 # Get the build dir
 BUILD_DIR=$1
 
-FAILURES=0
+TOTAL_FAILURES=0
 runTest()
 {
     CURR_DIR=$(pwd)
     cd "${BUILD_DIR}/${1}" || return $?
     ./run-tests.sh
 
-    FAILURES=$(expr $FAILURES + $?)
+    TOTAL_FAILURES=$(($(cat failures.log) + TOTAL_FAILURES))
 
     cd "${CURR_DIR}" || exit $?
 }
@@ -61,5 +61,10 @@ runTest "sdk/src/system/tests"
 tools/delete-test-users.sh
 
 # Exit
-echo "Test failures: $FAILURES"
-exit $FAILURES
+echo "Test failures: $TOTAL_FAILURES"
+
+if [[ $TOTAL_FAILURES -ne 0 ]]; then
+  exit 1
+fi
+
+exit 0
