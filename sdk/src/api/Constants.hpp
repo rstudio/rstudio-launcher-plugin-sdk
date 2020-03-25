@@ -48,15 +48,18 @@ constexpr char const* FIELD_REQUEST_USERNAME = "requestUsername";
 constexpr char const* FIELD_JOB_ID = "jobId";
 constexpr char const* FIELD_ENCODED_JOB_ID = "encodedJobId";
 
+// Error response fields.
+constexpr char const* FIELD_ERROR_CODE = "errorCode";
+constexpr char const* FIELD_ERROR_MESSAGE = "errorMessage";
+
 // Bootstrap request and response fields.
 constexpr char const* FIELD_VERSION = "version";
 constexpr char const* FIELD_VERSION_MAJOR = "major";
 constexpr char const* FIELD_VERSION_MINOR = "minor";
 constexpr char const* FIELD_VERSION_PATCH = "patch";
 
-// Error response fields.
-constexpr char const* FIELD_ERROR_CODE = "errorCode";
-constexpr char const* FIELD_ERROR_MESSAGE = "errorMessage";
+// JobState response fields.
+constexpr char const* FIELD_JOBS = "jobs";
 
 // ClusterInfo response fields.
 constexpr char const* FIELD_ALLOW_UNKNOWN_IMAGES = "allowUnknownImages";
