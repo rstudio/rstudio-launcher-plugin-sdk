@@ -660,6 +660,18 @@ Error Job::fromJson(const json::Object& in_json, Job& out_job)
    return Success();
 }
 
+Error Job::stateFromString(const std::string& in_statusString, State& out_status)
+{
+   if (!jobStatusFromString(in_statusString, out_status))
+      return Error(
+         "StateParseError",
+         1,
+         quoteStr(in_statusString) + " is not a valid job status",
+         ERROR_LOCATION);
+
+   return Success();
+}
+
 Job& Job::operator=(const Job& in_other)
 {
    if (this == &in_other)

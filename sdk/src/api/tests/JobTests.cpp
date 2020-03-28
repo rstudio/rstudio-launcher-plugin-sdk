@@ -820,6 +820,21 @@ TEST_CASE("To JSON: Placement Constraint")
    REQUIRE(constraint.toJson() == constraintObj);
 }
 
+// Job::State  =========================================================================================================
+TEST_CASE("Job state conversion")
+{
+   Job::State result;
+   CHECK((!Job::stateFromString("Canceled", result) && result == Job::State::CANCELED));
+   CHECK((!Job::stateFromString("Failed", result) && result == Job::State::FAILED));
+   CHECK((!Job::stateFromString("Finished", result) && result == Job::State::FINISHED));
+   CHECK((!Job::stateFromString("Killed", result) && result == Job::State::KILLED));
+   CHECK((!Job::stateFromString("Pending", result) && result == Job::State::PENDING));
+   CHECK((!Job::stateFromString("Running", result) && result == Job::State::RUNNING));
+   CHECK((!Job::stateFromString("Suspended", result) && result == Job::State::SUSPENDED));
+   CHECK((!Job::stateFromString("", result) && result == Job::State::UNKNOWN));
+   CHECK((Job::stateFromString("invalid", result) && result == Job::State::UNKNOWN));
+}
+
 // Job =================================================================================================================
 TEST_CASE("From JSON: Job (name and command only)")
 {

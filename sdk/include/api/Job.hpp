@@ -229,6 +229,16 @@ struct Job
    static Error fromJson(const json::Object& in_json, Job& out_job);
 
    /**
+    * @brief Converst a status string into its equivalent Job::State enum value.
+    *
+    * @param in_statusString    The string to convert.
+    * @param out_status         The converted status, if no error occurred.
+    *
+    * @return Success if in_statusString is a valid job state; Error otherwise.
+    */
+   static Error stateFromString(const std::string& in_statusString, State& out_status);
+
+   /**
     * @brief Assignment operator.
     *
     * @param in_other       The Job to copy into this Job.
