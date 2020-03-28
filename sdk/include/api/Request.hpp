@@ -26,7 +26,13 @@
 
 #include <Noncopyable.hpp>
 
+#include <set>
+#include <vector>
+
 #include <PImpl.hpp>
+#include <Optional.hpp>
+#include <system/DateTime.hpp>
+#include "Job.hpp"
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -256,6 +262,67 @@ private:
    PRIVATE_IMPL(m_impl);
 
    friend class Request;
+};
+
+class JobStateRequest : public JobIdRequest
+{
+public:
+   /**
+    * @brief Gets the end of the date range for this request.
+    *
+    * If this value is set, only jobs which were submitted before this DateTime should be returned in the response.
+    *
+    * @return The optional end of the date range.
+    */
+   const Optional<system::DateTime>& getEndTime() const;
+
+   /**
+    * @brief Gets the set of Job fields which should be included in the response.
+    *
+    * If this value is set, only the fields which are included in this set should be returned in the response. ID will
+    * always be returned, as it is required.
+    *
+    * @return The optional set of Job fields to include in the response.
+    */
+   const Optional<std::set<std::string> >& getFieldList() const;
+
+   /**
+    * @brief Gets the start of the date range for this request.
+    *
+    * If this value is set, only jobs which were submitted after this DateTime should be returned in the response.
+    *
+    * @return The optional start of the date range.
+    */
+   const Optional<system::DateTime>&  getStartTime() const;
+
+   /**
+    * @brief Gets the set of Job statuses by which to filter the returned list of jobs.
+    *
+    * If this value is set, only the jobs which have one of the specified states should be returned in the response.
+    *
+    * @return The optional set of Job statuses by which to filter the returned list of jobs.
+    */
+   const Optional<std::vector<Job::State> >& getStatusList() const;
+
+   /**
+    * @brief Gets the set of Job tags by which to filter the returned list of jobs.
+    *
+    * If this value is set, only the jobs which have one of the specified states should be returned in the response.
+    *
+    * @return The optional set of Job statuses by which to filter the returned list of jobs.
+    */
+   const Optional<std::vector<std::string> >& getTags() const;
+
+private:
+   /**
+    * @brief Constructor.
+    *
+    * @param in_requestJson     The JSON Object which represents the job state request.
+    */
+   explicit JobStateRequest(const json::Object& in_requestJson);
+
+   // The private implementation of JobStateRequest
+   PRIVATE_IMPL(m_impl);
 };
 
 /**
