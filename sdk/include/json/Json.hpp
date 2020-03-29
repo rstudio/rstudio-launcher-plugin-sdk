@@ -2108,8 +2108,9 @@ Error readObject(const Object& in_object, const std::string& in_name, Optional<s
    Error error = readObject(in_object, in_name, values);
    if (error && !isMissingMemberError(error))
       return error;
+   else if (!error)
+      out_values = values;
 
-   out_values = values;
    return Success();
 }
 
@@ -2131,8 +2132,9 @@ Error readObject(const Object& in_object, const std::string& in_name, Optional<s
    Error error = readObject(in_object, in_name, values);
    if (error && !isMissingMemberError(error))
       return error;
+   else if (!error)
+      out_values = values;
 
-   out_values = values;
    return Success();
 }
 

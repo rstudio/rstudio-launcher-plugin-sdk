@@ -110,11 +110,6 @@ User::User(const User& in_other) :
 {
 }
 
-User::User(User&& in_other) noexcept :
-   m_impl(std::move(in_other.m_impl))
-{
-}
-
 Error User::getCurrentUser(User& out_currentUser)
 {
    return getUserFromIdentifier(::geteuid(), out_currentUser);
@@ -168,18 +163,24 @@ FilePath User::getUserHomePath(const std::string& in_envOverride)
 
 User& User::operator=(const User& in_other)
 {
-   m_impl->Name = in_other.m_impl->Name;
-   m_impl->UserId = in_other.m_impl->UserId;
-   m_impl->GroupId = in_other.m_impl->GroupId;
-   m_impl->HomeDirectory = in_other.m_impl->HomeDirectory;
-   m_impl->Shell = in_other.m_impl->Shell;
-   return *this;
-}
+   if (this == &in_other)
+      return *this;
 
-User& User::operator=(User &&in_other) noexcept
-{
-   m_impl.reset();
-   m_impl.swap(in_other.m_impl);
+   if ((m_impl == nullptr) && (in_other.m_impl == nullptr))
+      return *this;
+
+   if (in_other.m_impl == nullptr)
+   {
+      m_impl.reset();
+      return *this;
+   }
+
+   if (m_impl == nullptr)
+      m_impl.reset(new Impl());
+
+   *m_impl = *in_other.m_impl;
+
+   return *this;
 }
 
 bool User::operator==(const User& in_other) const
