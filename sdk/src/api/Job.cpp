@@ -672,6 +672,11 @@ Error Job::stateFromString(const std::string& in_statusString, State& out_status
    return Success();
 }
 
+std::string Job::stateToString(const State& in_status)
+{
+   return jobStatusToString(in_status);
+}
+
 Job& Job::operator=(const Job& in_other)
 {
    if (this == &in_other)

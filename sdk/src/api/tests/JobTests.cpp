@@ -821,7 +821,7 @@ TEST_CASE("To JSON: Placement Constraint")
 }
 
 // Job::State  =========================================================================================================
-TEST_CASE("Job state conversion")
+TEST_CASE("From String: Job state")
 {
    Job::State result;
    CHECK((!Job::stateFromString("Canceled", result) && result == Job::State::CANCELED));
@@ -833,6 +833,18 @@ TEST_CASE("Job state conversion")
    CHECK((!Job::stateFromString("Suspended", result) && result == Job::State::SUSPENDED));
    CHECK((!Job::stateFromString("", result) && result == Job::State::UNKNOWN));
    CHECK((Job::stateFromString("invalid", result) && result == Job::State::UNKNOWN));
+}
+
+TEST_CASE("To String: Job state")
+{
+   CHECK(Job::stateToString(Job::State::CANCELED) == "Canceled");
+   CHECK(Job::stateToString(Job::State::FAILED) == "Failed");
+   CHECK(Job::stateToString(Job::State::FINISHED) == "Finished");
+   CHECK(Job::stateToString(Job::State::KILLED) == "Killed");
+   CHECK(Job::stateToString(Job::State::PENDING) == "Pending");
+   CHECK(Job::stateToString(Job::State::RUNNING) == "Running");
+   CHECK(Job::stateToString(Job::State::SUSPENDED) == "Suspended");
+   CHECK(Job::stateToString(Job::State::UNKNOWN).empty());
 }
 
 // Job =================================================================================================================
