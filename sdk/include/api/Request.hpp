@@ -284,7 +284,7 @@ public:
     *
     * @return The optional set of Job fields to include in the response.
     */
-   const Optional<std::set<std::string> >& getFieldList() const;
+   const Optional<std::set<std::string> >& getFieldSet() const;
 
    /**
     * @brief Gets the start of the date range for this request.
@@ -293,7 +293,7 @@ public:
     *
     * @return The optional start of the date range.
     */
-   const Optional<system::DateTime>&  getStartTime() const;
+   const Optional<system::DateTime>& getStartTime() const;
 
    /**
     * @brief Gets the set of Job statuses by which to filter the returned list of jobs.
@@ -302,7 +302,7 @@ public:
     *
     * @return The optional set of Job statuses by which to filter the returned list of jobs.
     */
-   const Optional<std::vector<Job::State> >& getStatusList() const;
+   const Optional<std::set<Job::State> >& getStatusSet() const;
 
    /**
     * @brief Gets the set of Job tags by which to filter the returned list of jobs.
@@ -311,7 +311,7 @@ public:
     *
     * @return The optional set of Job statuses by which to filter the returned list of jobs.
     */
-   const Optional<std::vector<std::string> >& getTags() const;
+   const Optional<std::set<std::string> >& getTagSet() const;
 
 private:
    /**
@@ -323,6 +323,8 @@ private:
 
    // The private implementation of JobStateRequest
    PRIVATE_IMPL(m_impl);
+
+   friend class Request;
 };
 
 /**

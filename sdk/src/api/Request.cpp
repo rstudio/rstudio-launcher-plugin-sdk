@@ -153,9 +153,9 @@ Error Request::fromJson(const json::Object& in_requestJson, std::shared_ptr<Requ
       }
       case Type::GET_JOB:
       {
-         std::shared_ptr<JobIdRequest> jobIdRequest(new JobIdRequest(Type::GET_JOB, in_requestJson));
+         std::shared_ptr<JobStateRequest> jobStateRequest(new JobStateRequest(in_requestJson));
 
-         out_request = jobIdRequest;
+         out_request = jobStateRequest;
          break;
       }
       default:
@@ -361,6 +361,121 @@ int BootstrapRequest::getPatchNumber() const
    return m_impl->Patch;
 }
 
+// Job State ===========================================================================================================
+struct JobStateRequest::Impl
+{
+   /** The end of the range of submission times by which to filter the jobs. */
+   Optional<system::DateTime> EndTime;
+
+   /** The set of fields to be returned for each job. */
+   Optional<std::set<std::string> > FieldSet;
+
+   /** The start of the range of submission times by which to filter the jobs. */
+   Optional<system::DateTime> StartTime;
+
+   /** The set of statuses by which to filter the returned jobs. */
+   Optional<std::set<Job::State> > StatusSet;
+
+   /** The set of tags tby which to filter the returned jobs. */
+   Optional<std::set<std::string> > TagSet;
+};
+
+PRIVATE_IMPL_DELETER_IMPL(JobStateRequest)
+
+const Optional<system::DateTime>& JobStateRequest::getEndTime() const
+{
+   return m_impl->EndTime;
+}
+
+const Optional<std::set<std::string> >& JobStateRequest::getFieldSet() const
+{
+   return m_impl->FieldSet;
+}
+
+const Optional<system::DateTime>& JobStateRequest::getStartTime() const
+{
+   return m_impl->StartTime;
+}
+
+const Optional<std::set<Job::State> >& JobStateRequest::getStatusSet() const
+{
+   return m_impl->StatusSet;
+}
+
+const Optional<std::set<std::string> >& JobStateRequest::getTagSet() const
+{
+   return m_impl->TagSet;
+}
+
+JobStateRequest::JobStateRequest(const json::Object& in_requestJson) :
+   JobIdRequest(Type::GET_JOB, in_requestJson),
+   m_impl(new Impl())
+{
+   Optional<std::string> endTimeStr, startTimeStr;
+   Optional<std::set<std::string> > strStatuses;
+   Error error = json::readObject(in_requestJson,
+      FIELD_JOB_END_TIME, endTimeStr,
+      FIELD_JOB_FIELDS, m_impl->FieldSet,
+      FIELD_JOB_START_TIME, startTimeStr,
+      FIELD_JOB_STATUSES, strStatuses,
+      FIELD_JOB_TAGS, m_impl->TagSet);
+
+   if (error)
+   {
+      logging::logError(error);
+      m_baseImpl->IsValid = false;
+      return;
+   }
+
+   if (strStatuses)
+   {
+      std::set<Job::State> statuses;
+      for (const std::string& strStatus: strStatuses.getValueOr({}))
+      {
+         Job::State status;
+         error = Job::stateFromString(strStatus, status);
+
+         if (error)
+         {
+            logging::logError(error);
+            m_baseImpl->IsValid = false;
+            continue;
+         }
+
+         statuses.insert(status);
+      }
+
+      m_impl->StatusSet = statuses;
+   }
+   
+   if (endTimeStr)
+   {
+      system::DateTime endTime;
+      error = system::DateTime::fromString(endTimeStr.getValueOr(""), endTime);
+      if (error)
+      {
+         logging::logError(error);
+         m_baseImpl->IsValid = false;
+      }
+      else
+         m_impl->EndTime = endTime;
+   }
+
+   if (startTimeStr)
+   {
+      system::DateTime startTime;
+      error = system::DateTime::fromString(startTimeStr.getValueOr(""), startTime);
+      if (error)
+      {
+         logging::logError(error);
+         m_baseImpl->IsValid = false;
+      }
+      else
+         m_impl->StartTime = startTime;
+   }
+}
+
+// Helpers =============================================================================================================
 std::ostream& operator<<(std::ostream& in_ostream, Request::Type in_type)
 {
    switch(in_type)

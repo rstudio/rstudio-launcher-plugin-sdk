@@ -234,10 +234,17 @@ TEST_CASE("Parse get job request")
    REQUIRE_FALSE(Request::fromJson(requestObj, request));
    CHECK(request->getType() == Request::Type::GET_JOB);
    CHECK(request->getId() == 657);
-   CHECK(std::static_pointer_cast<JobIdRequest>(request)->getUser().isAllUsers());
-   CHECK(std::static_pointer_cast<JobIdRequest>(request)->getRequestUsername() == USER_TWO);
-   CHECK(std::static_pointer_cast<JobIdRequest>(request)->getJobId() == "2588");
-   CHECK(std::static_pointer_cast<JobIdRequest>(request)->getEncodedJobId() == "");
+
+   std::shared_ptr<JobStateRequest> jobStateRequest = std::static_pointer_cast<JobStateRequest>(request);
+   CHECK(jobStateRequest->getUser().isAllUsers());
+   CHECK(jobStateRequest->getRequestUsername() == USER_TWO);
+   CHECK(jobStateRequest->getJobId() == "2588");
+   CHECK(jobStateRequest->getEncodedJobId() == "");
+   CHECK_FALSE(jobStateRequest->getEndTime());
+   CHECK_FALSE(jobStateRequest->getFieldSet());
+   CHECK_FALSE(jobStateRequest->getStartTime());
+   CHECK_FALSE(jobStateRequest->getStatusSet());
+   CHECK_FALSE(jobStateRequest->getTagSet());
    CHECK(logDest->getSize() == 0);
 }
 
@@ -260,11 +267,85 @@ TEST_CASE("Parse get job request w/ encoded ID")
    REQUIRE_FALSE(Request::fromJson(requestObj, request));
    CHECK(request->getType() == Request::Type::GET_JOB);
    CHECK(request->getId() == 91);
-   CHECK(std::static_pointer_cast<JobIdRequest>(request)->getUser() == user);
-   CHECK(std::static_pointer_cast<JobIdRequest>(request)->getRequestUsername() == USER_TWO);
-   CHECK(std::static_pointer_cast<JobIdRequest>(request)->getJobId() == "142");
-   CHECK(std::static_pointer_cast<JobIdRequest>(request)->getEncodedJobId() == "Y2x1c3Rlci0xNDIK");
+
+   std::shared_ptr<JobStateRequest> jobStateRequest = std::static_pointer_cast<JobStateRequest>(request);
+   CHECK(jobStateRequest->getUser() == user);
+   CHECK(jobStateRequest->getRequestUsername() == USER_TWO);
+   CHECK(jobStateRequest->getJobId() == "142");
+   CHECK(jobStateRequest->getEncodedJobId() == "Y2x1c3Rlci0xNDIK");
+   CHECK_FALSE(jobStateRequest->getEndTime());
+   CHECK_FALSE(jobStateRequest->getFieldSet());
+   CHECK_FALSE(jobStateRequest->getStartTime());
+   CHECK_FALSE(jobStateRequest->getStatusSet());
+   CHECK_FALSE(jobStateRequest->getTagSet());
    CHECK(logDest->getSize() == 0);
+}
+
+TEST_CASE("Parse complete get job request")
+{
+   MockLogPtr logDest = getMockLogDest();
+
+   system::DateTime expectedEnd, expectedStart;
+   REQUIRE_FALSE(system::DateTime::fromString("2020-03-15T18:00:00", expectedEnd));
+   REQUIRE_FALSE(system::DateTime::fromString("2020-03-15T15:00:00", expectedStart));
+
+   std::set<std::string> expectedFields, expectedTags;
+   expectedFields.insert("id");
+   expectedFields.insert("status");
+   expectedFields.insert("statusMessage");
+
+   expectedTags.insert("tag1");
+   expectedTags.insert("tag 2");
+
+   std::set<Job::State> expectedStatuses;
+   expectedStatuses.insert(Job::State::PENDING);
+   expectedStatuses.insert(Job::State::RUNNING);
+
+   json::Array fields, statuses, tags;
+   fields.push_back("id");
+   fields.push_back("status");
+   fields.push_back("statusMessage");
+
+   statuses.push_back("Pending");
+   statuses.push_back("Running");
+
+   tags.push_back("tag1");
+   tags.push_back("tag 2");
+
+   json::Object requestObj;
+   requestObj[FIELD_MESSAGE_TYPE] = static_cast<int>(Request::Type::GET_JOB);
+   requestObj[FIELD_REQUEST_ID] = 91;
+   requestObj[FIELD_REAL_USER] = USER_FIVE;
+   requestObj[FIELD_REQUEST_USERNAME] = USER_FIVE;
+   requestObj[FIELD_JOB_ID] = "142";
+   requestObj[FIELD_ENCODED_JOB_ID] = "Y2x1c3Rlci0xNDIK";
+   requestObj[FIELD_JOB_END_TIME] = "2020-03-15T18:00:00";
+   requestObj[FIELD_JOB_FIELDS] = fields;
+   requestObj[FIELD_JOB_START_TIME] = "2020-03-15T15:00:00";
+   requestObj[FIELD_JOB_STATUSES] = statuses;
+   requestObj[FIELD_JOB_TAGS] = tags;
+
+   std::shared_ptr<Request> request;
+
+   system::User user;
+   REQUIRE_FALSE(system::User::getUserFromIdentifier(USER_FIVE, user));
+   REQUIRE_FALSE(Request::fromJson(requestObj, request));
+   CHECK(request->getType() == Request::Type::GET_JOB);
+   CHECK(request->getId() == 91);
+   CHECK(logDest->getSize() == 0);
+
+   std::shared_ptr<JobStateRequest> jobRequest = std::static_pointer_cast<JobStateRequest>(request);
+   CHECK(jobRequest->getUser() == user);
+   CHECK(jobRequest->getRequestUsername() == USER_FIVE);
+   CHECK(jobRequest->getJobId() == "142");
+   CHECK(jobRequest->getEncodedJobId() == "Y2x1c3Rlci0xNDIK");
+   CHECK((jobRequest->getEndTime() &&
+      jobRequest->getEndTime().getValueOr(system::DateTime()) == expectedEnd));
+   CHECK((jobRequest->getFieldSet() && jobRequest->getFieldSet().getValueOr({}) == expectedFields));
+   CHECK((jobRequest->getStartTime() &&
+      jobRequest->getStartTime().getValueOr(system::DateTime()) == expectedStart));
+   CHECK((jobRequest->getStatusSet() && jobRequest->getStatusSet().getValueOr({}) == expectedStatuses));
+   CHECK((jobRequest->getTagSet() && jobRequest->getTagSet().getValueOr({}) == expectedTags));
 }
 
 TEST_CASE("Parse invalid get job request")
@@ -276,9 +357,53 @@ TEST_CASE("Parse invalid get job request")
    requestObj[FIELD_REQUEST_USERNAME] = USER_TWO;
    requestObj[FIELD_ENCODED_JOB_ID] = "Y2x1c3Rlci0xNDIK";
 
-   std::shared_ptr<Request> request;
+   SECTION("Missing Job ID")
+   {
+      std::shared_ptr<Request> request;
+      CHECK(Request::fromJson(requestObj, request));
+   }
 
-   REQUIRE(Request::fromJson(requestObj, request));
+   SECTION("Invalid date/time")
+   {
+      requestObj[FIELD_JOB_ID] = 444;
+      requestObj[FIELD_JOB_END_TIME] = "not a date time";
+
+      std::shared_ptr<Request> request;
+      CHECK(Request::fromJson(requestObj, request));
+   }
+
+   SECTION("Extra field")
+   {
+      requestObj[FIELD_JOB_ID] = 444;
+      requestObj["notAField"] = "value";
+
+      std::shared_ptr<Request> request;
+      CHECK(Request::fromJson(requestObj, request));
+   }
+
+   SECTION("Invalid status")
+   {
+      json::Array statuses;
+      statuses.push_back("Running");
+      statuses.push_back("Completed");
+      statuses.push_back("NotAStatus");
+      statuses.push_back("Failed");
+
+      requestObj[FIELD_JOB_ID] = 444;
+      requestObj[FIELD_JOB_STATUSES] = statuses;
+
+      std::shared_ptr<Request> request;
+      CHECK(Request::fromJson(requestObj, request));
+   }
+
+   SECTION("Invalid tags (not a json::Array)")
+   {
+      requestObj[FIELD_JOB_ID] = 444;
+      requestObj[FIELD_JOB_TAGS] = 32;
+
+      std::shared_ptr<Request> request;
+      CHECK(Request::fromJson(requestObj, request));
+   }
 }
 
 } // namespace api

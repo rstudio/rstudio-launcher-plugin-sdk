@@ -58,7 +58,12 @@ constexpr char const* FIELD_VERSION_MAJOR = "major";
 constexpr char const* FIELD_VERSION_MINOR = "minor";
 constexpr char const* FIELD_VERSION_PATCH = "patch";
 
-// JobState response fields.
+// JobState request and response fields.
+constexpr char const* FIELD_JOB_FIELDS = "fields";
+constexpr char const* FIELD_JOB_END_TIME = "endTime";
+constexpr char const* FIELD_JOB_START_TIME = "startTime";
+constexpr char const* FIELD_JOB_STATUSES = "statuses";
+constexpr char const* FIELD_JOB_TAGS = "tags";
 constexpr char const* FIELD_JOBS = "jobs";
 
 // ClusterInfo response fields.
