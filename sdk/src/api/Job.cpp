@@ -500,10 +500,11 @@ Error Job::fromJson(const json::Object& in_json, Job& out_job)
 {
    // Everything but the name is optional.
    Job result;
+   std::string submitTime;
    Optional<std::vector<std::string> > arguments;
    Optional<std::set<std::string> > queues, tags;
    Optional<std::string> cluster, command, exe, host, id, lastUpTime, stdIn, stdErr, stdOut, status, statusMessage,
-                         submitTime, user, workingDir;
+                         user, workingDir;
    Optional<json::Object> containerObj;
    Optional<json::Array> config, env, ports, mounts, constraints, limits;
 
@@ -646,15 +647,12 @@ Error Job::fromJson(const json::Object& in_json, Job& out_job)
       result.LastUpdateTime = lastUpdateTime;
    }
 
-   if (submitTime)
-   {
-      system::DateTime submissionTime;
-      error = system::DateTime::fromString(submitTime.getValueOr(""), submissionTime);
-      if (error)
-         return updateError("submissionTime", in_json, error);
+   system::DateTime submissionTime;
+   error = system::DateTime::fromString(submitTime, submissionTime);
+   if (error)
+      return updateError("submissionTime", in_json, error);
 
-      result.SubmissionTime = submissionTime;
-   }
+   result.SubmissionTime = submissionTime;
 
    out_job = result;
    return Success();
@@ -823,8 +821,7 @@ json::Object Job::toJson() const
    if (!StatusMessage.empty())
       jobObj[JOB_STATUS_MESSAGE] = StatusMessage;
 
-   if (SubmissionTime)
-      jobObj[JOB_SUBMISSION_TIME] = SubmissionTime.getValueOr(system::DateTime()).toString();
+  jobObj[JOB_SUBMISSION_TIME] = SubmissionTime.toString();
 
    jobObj[JOB_TAGS] = json::toJsonArray(Tags);
    jobObj[JOB_USER] = User.getUsername();

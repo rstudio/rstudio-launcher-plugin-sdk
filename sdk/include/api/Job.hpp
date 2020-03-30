@@ -375,7 +375,7 @@ struct Job
    std::string StatusMessage;
 
    /** The time at which the job was submitted to the job scheduling system. */
-   Optional<system::DateTime> SubmissionTime;
+   system::DateTime SubmissionTime;
 
    /** The tags which were set on the job by the user. Can be used for filtering jobs based on tags. */
    std::set<std::string> Tags;
