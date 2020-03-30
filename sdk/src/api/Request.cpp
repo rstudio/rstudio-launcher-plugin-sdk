@@ -427,6 +427,10 @@ JobStateRequest::JobStateRequest(const json::Object& in_requestJson) :
       return;
    }
 
+   // ID is required, ensure it is in the set of fields.
+   std::set<std::string> tmp;
+   m_impl->FieldSet.getValueOr(tmp).insert("id");
+
    if (strStatuses)
    {
       std::set<Job::State> statuses;

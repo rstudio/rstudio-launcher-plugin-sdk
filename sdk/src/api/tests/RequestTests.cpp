@@ -348,6 +348,49 @@ TEST_CASE("Parse complete get job request")
    CHECK((jobRequest->getTagSet() && jobRequest->getTagSet().getValueOr({}) == expectedTags));
 }
 
+TEST_CASE("Parse get job request with fields (no id)")
+{
+   MockLogPtr logDest = getMockLogDest();
+
+   std::set<std::string> expectedFields;
+   expectedFields.insert("id"); // ID is expected anyways.
+   expectedFields.insert("status");
+   expectedFields.insert("statusMessage");
+
+   json::Array fields;
+   fields.push_back("status");
+   fields.push_back("statusMessage");
+
+   json::Object requestObj;
+   requestObj[FIELD_MESSAGE_TYPE] = static_cast<int>(Request::Type::GET_JOB);
+   requestObj[FIELD_REQUEST_ID] = 91;
+   requestObj[FIELD_REAL_USER] = USER_FIVE;
+   requestObj[FIELD_REQUEST_USERNAME] = USER_FIVE;
+   requestObj[FIELD_JOB_ID] = "142";
+   requestObj[FIELD_ENCODED_JOB_ID] = "Y2x1c3Rlci0xNDIK";
+   requestObj[FIELD_JOB_FIELDS] = fields;
+
+   std::shared_ptr<Request> request;
+
+   system::User user;
+   REQUIRE_FALSE(system::User::getUserFromIdentifier(USER_FIVE, user));
+   REQUIRE_FALSE(Request::fromJson(requestObj, request));
+   CHECK(request->getType() == Request::Type::GET_JOB);
+   CHECK(request->getId() == 91);
+   CHECK(logDest->getSize() == 0);
+
+   std::shared_ptr<JobStateRequest> jobRequest = std::static_pointer_cast<JobStateRequest>(request);
+   CHECK(jobRequest->getUser() == user);
+   CHECK(jobRequest->getRequestUsername() == USER_FIVE);
+   CHECK(jobRequest->getJobId() == "142");
+   CHECK(jobRequest->getEncodedJobId() == "Y2x1c3Rlci0xNDIK");
+   CHECK_FALSE(jobRequest->getEndTime());
+   CHECK((jobRequest->getFieldSet() && jobRequest->getFieldSet().getValueOr({}) == expectedFields));
+   CHECK_FALSE(jobRequest->getStartTime());
+   CHECK_FALSE(jobRequest->getStatusSet());
+   CHECK_FALSE(jobRequest->getTagSet());
+}
+
 TEST_CASE("Parse invalid get job request")
 {
    json::Object requestObj;
