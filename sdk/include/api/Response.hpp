@@ -216,17 +216,14 @@ public:
     * @brief Constructor.
     *
     * @param in_requestId   The ID of the request for which this job state response is being sent.
-    * @param in_job         The job to be returned to the Launcher.
-    */
-   JobStateResponse(uint64_t in_requestId, JobPtr in_job);
-
-   /**
-    * @brief Constructor.
-    *
-    * @param in_requestId   The ID of the request for which this job state response is being sent.
     * @param in_jobs        The jobs to be returned to the Launcher.
+    * @param in_jobFields   The optional set of job fields to include for each job. If this is not set, all fields will
+    *                       be returned.
     */
-   JobStateResponse(uint64_t in_requestId, const JobList& in_jobs);
+   JobStateResponse(
+      uint64_t in_requestId,
+      JobList in_jobs,
+      Optional<std::set<std::string> > in_jobFields);
 
    /**
     * @brief Converts this job state response to a JSON object.

@@ -219,6 +219,7 @@ TEST_CASE("Job State Response")
    REQUIRE_FALSE(system::User::getUserFromIdentifier(USER_FOUR, user4));
 
    JobPtr job1(new Job()), job2(new Job()), job3(new Job()), job4(new Job());
+   job1->Id = "12";
    job1->Name = "Job 1";
    job1->Cluster = "SomeCluster";
    job1->Command = "echo";
@@ -230,6 +231,7 @@ TEST_CASE("Job State Response")
    job1->StandardOutFile = "/path/to/std-1.out";
    job1->StandardOutFile = "/path/to/std-1.err";
 
+   job2->Id = "13";
    job2->Name = "Job 2";
    job2->Cluster = "SomeCluster";
    job2->Exe = "/bin/bash";
@@ -241,6 +243,7 @@ TEST_CASE("Job State Response")
    job2->StandardOutFile = "/path/to/std-2.out";
    job2->StandardOutFile = "/path/to/std-2.err";
 
+   job3->Id = "14";
    job3->Name = "Job 3";
    job3->Cluster = "SomeCluster";
    job3->Exe = "/bin/myexe";
@@ -251,6 +254,7 @@ TEST_CASE("Job State Response")
    job3->StandardOutFile = "/path/to/std-3.out";
    job3->StandardOutFile = "/path/to/std-3.err";
 
+   job4->Id = "15";
    job4->Name = "Job 4";
    job4->Cluster = "SomeCluster";
    job4->Command = "tail";
@@ -271,9 +275,13 @@ TEST_CASE("Job State Response")
    jobList.push_back(job3->toJson());
    jobList.push_back(job4->toJson());
 
+   Optional<std::set<std::string> > noFields;
+
    SECTION("Single job")
    {
-      JobStateResponse jobStateResponse(54, job4);
+      JobList jobs;
+      jobs.push_back(job4);
+      JobStateResponse jobStateResponse(54, jobs, noFields);
 
       json::Object expected;
       expected[FIELD_RESPONSE_ID] = 6;
@@ -291,13 +299,65 @@ TEST_CASE("Job State Response")
       jobs.push_back(job2);
       jobs.push_back(job3);
       jobs.push_back(job4);
-      JobStateResponse jobStateResponse(133, jobs);
+      JobStateResponse jobStateResponse(133, jobs, noFields);
 
       json::Object expected;
       expected[FIELD_RESPONSE_ID] = 7;
       expected[FIELD_REQUEST_ID] = 133;
       expected[FIELD_MESSAGE_TYPE] = 2;
       expected[FIELD_JOBS] = jobList;
+
+      CHECK(jobStateResponse.toJson() == expected);
+   }
+
+   SECTION("Multiple jobs w/ field subset")
+   {
+      JobList jobs;
+      jobs.push_back(job1);
+      jobs.push_back(job2);
+      jobs.push_back(job3);
+      jobs.push_back(job4);
+
+      std::set<std::string> fields;
+      fields.insert("name");
+      fields.insert("user");
+      fields.insert("status");
+      Optional<std::set<std::string> > fieldsOpt(fields);
+
+      JobStateResponse jobStateResponse(133, jobs, fieldsOpt);
+
+      // Different Expected Job List.
+      json::Object job1Obj, job2Obj, job3Obj, job4Obj;
+      job1Obj["id"] = "12";
+      job1Obj["name"] = "Job 1";
+      job1Obj["user"] = USER_THREE;
+      job1Obj["status"] = "Pending";
+
+      job2Obj["id"] = "13";
+      job2Obj["name"] = "Job 2";
+      job2Obj["user"] = USER_TWO;
+      job2Obj["status"] = "Running";
+
+      job3Obj["id"] = "14";
+      job3Obj["name"] = "Job 3";
+      job3Obj["user"] = USER_THREE;
+      job3Obj["status"] = "Finished";
+
+      job4Obj["id"] = "15";
+      job4Obj["name"] = "Job 4";
+      job4Obj["user"] = USER_FOUR;
+      job4Obj["status"] = "Failed";
+      json::Array jobsArr;
+      jobsArr.push_back(job1Obj);
+      jobsArr.push_back(job2Obj);
+      jobsArr.push_back(job3Obj);
+      jobsArr.push_back(job4Obj);
+
+      json::Object expected;
+      expected[FIELD_RESPONSE_ID] = 8;
+      expected[FIELD_REQUEST_ID] = 133;
+      expected[FIELD_MESSAGE_TYPE] = 2;
+      expected[FIELD_JOBS] = jobsArr;
 
       CHECK(jobStateResponse.toJson() == expected);
    }
