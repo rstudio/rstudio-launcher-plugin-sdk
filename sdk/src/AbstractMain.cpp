@@ -155,7 +155,7 @@ struct AbstractMain::Impl
    }
 
    /**
-    * @brief Runs the process until a shutdown signal is recevied.
+    * @brief Runs the process until a shutdown signal is receveid.
     */
    void waitForSignal()
    {
