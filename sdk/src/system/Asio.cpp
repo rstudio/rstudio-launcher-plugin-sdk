@@ -57,7 +57,7 @@ struct AsioService::Impl
       IoService(getIoService()),
       IsRunning(true),
       IsSignalSetInit(false),
-      SignalSet(IoService)
+      SignalSet(IoService, SIGTERM, SIGINT) // These signals need to be passed in this order or it won't pick up SIGINTs
    {
    }
 
@@ -95,7 +95,7 @@ void AsioService::post(const AsioFunction& in_work)
    boost::asio::post(getAsioService().m_impl->IoService, in_work);
 }
 
-void AsioService::setSignalHandler(const OnSignal &in_onSignal)
+void AsioService::setSignalHandler(const OnSignal& in_onSignal)
 {
    std::shared_ptr<Impl> sharedThis = getAsioService().m_impl;
    UNIQUE_LOCK_MUTEX(sharedThis->Mutex)
@@ -103,10 +103,6 @@ void AsioService::setSignalHandler(const OnSignal &in_onSignal)
       if (!sharedThis->IsSignalSetInit)
       {
          sharedThis->IsSignalSetInit = true;
-
-         // Invoke the provided signal handler on SIGINT or SIGTERM.
-         sharedThis->SignalSet.add(SIGINT);
-         sharedThis->SignalSet.add(SIGTERM);
          sharedThis->SignalSet.async_wait(std::bind(in_onSignal, std::placeholders::_2));
       }
 
