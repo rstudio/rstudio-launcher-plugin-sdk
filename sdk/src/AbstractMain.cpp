@@ -247,8 +247,7 @@ int AbstractMain::run(int in_argc, char** in_argv)
    CHECK_ERROR(error)
 
    // Create and initialize the LauncherPluginApi.
-   std::shared_ptr<api::AbstractPluginApi> pluginApi;
-   error = createLauncherPluginApi(launcherCommunicator, pluginApi);
+   std::shared_ptr<api::AbstractPluginApi> pluginApi = createLauncherPluginApi(launcherCommunicator);
    CHECK_ERROR(error);
 
    error = pluginApi->initialize();
