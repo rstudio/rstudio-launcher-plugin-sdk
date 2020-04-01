@@ -56,13 +56,25 @@ struct AbstractPluginApi::Impl
     * @param in_type        The type of error which occurred.
     * @param in_error       The error which occurred.
     */
-   void sendErrorResponse(uint64_t in_requestId, ErrorResponse::Type in_type, const Error& in_error)
+   void sendErrorResponse(uint64_t in_requestId, ErrorResponse::Type in_type, const std::string& in_errorMessage)
    {
       LauncherCommunicator->sendResponse(
          ErrorResponse(
             in_requestId,
-            ErrorResponse::Type::UNKNOWN,
-            in_error.asString()));
+            in_type,
+            in_errorMessage));
+   }
+
+   /**
+    * @brief Sends an error response to the Launcher.
+    *
+    * @param in_requestId   The ID of the request for which an error occurred.
+    * @param in_type        The type of error which occurred.
+    * @param in_error       The error which occurred.
+    */
+   void sendErrorResponse(uint64_t in_requestId, ErrorResponse::Type in_type, const Error& in_error)
+   {
+      sendErrorResponse(in_requestId, in_type, in_error.asString());
    }
 
    /**
@@ -185,21 +197,19 @@ struct AbstractPluginApi::Impl
    {
       // This should be impossible. It would effectively be an internal server error.
       if (in_handlerType != in_request->getType())
-         return LauncherCommunicator->sendResponse(
-            ErrorResponse(
-               in_request->getId(),
-               ErrorResponse::Type::UNKNOWN,
-               "Internal Request Handling Error."));
+         return sendErrorResponse(
+            in_request->getId(),
+            ErrorResponse::Type::UNKNOWN,
+            "Internal Request Handling Error.");
 
 
       if (!JobSource)
       {
          logging::logErrorMessage("Request received before JobSource was initialized.", ERROR_LOCATION);
-         return LauncherCommunicator->sendResponse(
-            ErrorResponse(
-               in_request->getId(),
-               ErrorResponse::Type::UNKNOWN,
-               "Internal Request Handling Error."));
+         return sendErrorResponse(
+            in_request->getId(),
+            ErrorResponse::Type::UNKNOWN,
+            "Internal Request Handling Error.");
       }
 
       switch (in_handlerType)
@@ -210,12 +220,13 @@ struct AbstractPluginApi::Impl
             return handleBootstrap(std::static_pointer_cast<BootstrapRequest>(in_request));
          case Request::Type::GET_CLUSTER_INFO:
             return handleGetClusterInfo(std::static_pointer_cast<UserRequest>(in_request));
+         case Request::Type::GET_JOB:
+            return handleGetJobRequest(std::static_pointer_cast<JobStateRequest>(in_request));
          default:
-            return LauncherCommunicator->sendResponse(
-               ErrorResponse(
-                  in_request->getId(),
-                  ErrorResponse::Type::UNKNOWN,
-                  "Internal Request Handling Error."));
+            return sendErrorResponse(
+               in_request->getId(),
+               ErrorResponse::Type::UNKNOWN,
+               "Internal Request Handling Error.");
       }
    }
 
