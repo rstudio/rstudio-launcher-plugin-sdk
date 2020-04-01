@@ -301,6 +301,9 @@ struct Options::Impl
             ("max-message-size",
                value<size_t>(&MaxMessageSize)->default_value(5242880),
                "the maximum size of a message which can be sent to or received from the RStudio Launcher")
+            ("plugin-name",
+               value<std::string>(&PluginName)->default_value(""),
+               "the name of this plugin")
             ("scratch-path",
                value<system::FilePath>(&ScratchPath)->default_value(
                   system::FilePath("/var/lib/rstudio-launcher/")),
@@ -333,6 +336,7 @@ struct Options::Impl
    system::FilePath LauncherConfigFile;
    logging::LogLevel MaxLogLevel;
    size_t MaxMessageSize;
+   std::string PluginName;
    system::FilePath ScratchPath;
    std::string ServerUser;
    size_t ThreadPoolSize;
