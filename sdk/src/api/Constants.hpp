@@ -30,7 +30,7 @@ namespace api {
 
 // The RStudio Launcher Plugin API implemented by this SDK version.
 constexpr int API_VERSION_MAJOR = 1;
-constexpr int API_VERSION_MINOR = 1;
+constexpr int API_VERSION_MINOR = 2;
 constexpr int API_VERSION_PATCH = 0;
 
 // Common fields for all requests and responses.
