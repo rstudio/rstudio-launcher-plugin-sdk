@@ -23,11 +23,14 @@
 
 #include <api/AbstractPluginApi.hpp>
 
+#include <boost/algorithm/string/join.hpp>
+
 #include <api/Constants.hpp>
 #include <api/IJobSource.hpp>
 #include <api/Response.hpp>
 #include <options/Options.hpp>
 #include <system/Asio.hpp>
+#include <json/Json.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -187,6 +190,79 @@ struct AbstractPluginApi::Impl
             limits));
    }
 
+   void handleGetJobRequest(const std::shared_ptr<JobStateRequest>& in_getJobRequest)
+   {
+      const std::string& jobId = in_getJobRequest->getJobId();
+
+      const Optional<system::DateTime>& startTime = in_getJobRequest->getStartTime(),
+                                      & endTime = in_getJobRequest->getEndTime();
+
+      const Optional<std::set<std::string> >& fields = in_getJobRequest->getFieldSet(),
+                                            & tags = in_getJobRequest->getTagSet();
+
+      const Optional<std::set<Job::State> >& statuses = in_getJobRequest->getStatusSet();
+
+      std::vector<std::string> statusesStrSet;
+      std::transform(
+         statuses.getValueOr({}).begin(),
+         statuses.getValueOr({}).end(),
+         std::back_inserter(statusesStrSet),
+         &Job::stateToString);
+
+      std::string statusesStr = "none";
+      if (statuses)
+         statusesStr = boost::algorithm::join(statusesStrSet, ", ");
+
+      logging::logDebugMessage(
+         "Received getJobState request for " + in_getJobRequest->getUser().getUsername() +
+         ": jobID: " + jobId +
+         " startTime: " + (startTime ? startTime.getValueOr(system::DateTime()).toString() : "none") +
+         " endTime: " + (endTime ? endTime.getValueOr(system::DateTime()).toString() : "none") +
+         " statuses: " + statusesStr);
+
+      JobList jobs;
+      if (jobId == "*")
+      {
+         jobs = JobRepo->getJobs(in_getJobRequest->getUser());
+
+         // Filter the jobs based on the request.
+         for (auto itr = jobs.begin(); itr != jobs.end(); ++itr)
+         {
+            const JobPtr& job = *itr;
+
+            // Skip the job if it wasn't submitted within the requested range of submission times.
+            if (startTime && (job->SubmissionTime < startTime.getValueOr(system::DateTime())))
+               continue;
+            if (endTime && (job->SubmissionTime > endTime.getValueOr(system::DateTime())))
+               continue;
+
+            // Skip the job if it have all of the requested tags.
+            if (tags && !job->matchesTags(tags.getValueOr({})))
+               continue;
+
+            // Skip the job if it isn't in one of the requested states.
+            if (statuses && (statuses.getValueOr({}).find(job->Status) == statuses.getValueOr({}).end()))
+               continue;
+
+            jobs.push_back(job);
+         }
+      }
+      else
+      {
+         // If a specific Job ID was requested, ignore the other filters.
+         JobPtr job = JobRepo->getJob(jobId, in_getJobRequest->getUser());
+         if (job == nullptr)
+            return sendErrorResponse(
+               in_getJobRequest->getId(),
+               ErrorResponse::Type::JOB_NOT_FOUND,
+               "Job " + jobId + " could not be found for user " + in_getJobRequest->getUser().getUsername());
+
+         jobs.push_back(job);
+      }
+
+      return LauncherCommunicator->sendResponse(JobStateResponse(in_getJobRequest->getId(), jobs, fields));
+   }
+
    /**
     * @brief Handles a request from the Launcher.
     *
@@ -266,6 +342,9 @@ Error AbstractPluginApi::initialize()
    comms->registerRequestHandler(
       Request::Type::GET_CLUSTER_INFO,
       std::bind(&Impl::handleRequest, m_abstractPluginImpl.get(), Request::Type::GET_CLUSTER_INFO, _1));
+   comms->registerRequestHandler(
+      Request::Type::GET_JOB,
+      std::bind(&Impl::handleRequest, m_abstractPluginImpl.get(), Request::Type::GET_JOB, _1));
 
    // Make the heartbeat event.
    WeakThis weakThis = shared_from_this();
