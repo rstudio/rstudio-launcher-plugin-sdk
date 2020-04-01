@@ -45,7 +45,7 @@ Error LocalJobSource::getCustomConfig(const system::User &, std::vector<api::Job
 {
    static const api::JobConfig::Type strType = api::JobConfig::Type::STRING;
    out_customConfig = {
-      api::JobConfig("p\amProfile", strType),
+      api::JobConfig("pamProfile", strType),
       api::JobConfig("encryptedPassword", strType)
    };
 
