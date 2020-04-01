@@ -203,11 +203,12 @@ struct AbstractPluginApi::Impl
       const Optional<std::set<Job::State> >& statuses = in_getJobRequest->getStatusSet();
 
       std::vector<std::string> statusesStrSet;
-      std::transform(
-         statuses.getValueOr({}).begin(),
-         statuses.getValueOr({}).end(),
-         std::back_inserter(statusesStrSet),
-         &Job::stateToString);
+      if (statuses)
+         std::transform(
+            statuses.getValueOr({}).begin(),
+            statuses.getValueOr({}).end(),
+            std::back_inserter(statusesStrSet),
+            &Job::stateToString);
 
       std::string statusesStr = "none";
       if (statuses)
