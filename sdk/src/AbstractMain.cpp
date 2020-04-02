@@ -178,6 +178,12 @@ private:
 
 int AbstractMain::run(int in_argc, char** in_argv)
 {
+   // Initialize Main. This should initialize the plugin-specific options, and any other plugin specific elements needed
+   // (e.g it could add a custom logging destination). We need to do this before loggers are added in case the plugin
+   // needs to initialize some things for its program ID.
+   Error error = initialize();
+   CHECK_ERROR(error)
+
    // Set up the logger.
    using namespace logging;
    setProgramId(getProgramId());
@@ -195,11 +201,6 @@ int AbstractMain::run(int in_argc, char** in_argv)
 
    // Initialize the default options. This must be done before the custom options are initialized.
    options::Options& options = options::Options::getInstance();
-
-   // Initialize Main. This should initialize the plugin-specific options, and any other plugin specific elements needed
-   // (e.g it could add a custom logging destination).
-   Error error = initialize();
-   CHECK_ERROR(error)
 
    // Read the options.
    error = options.readOptions(in_argc, in_argv, getConfigFile());
