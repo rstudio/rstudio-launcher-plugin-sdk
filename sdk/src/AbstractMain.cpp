@@ -47,7 +47,7 @@ if (in_error)                             \
    logging::logError(in_error);           \
    if (!std::string(in_msg).empty())      \
       logging::logErrorMessage(in_msg);   \
-   return error.getCode();                \
+   return 1;                              \
 }                                         \
 
 #define CHECK_ERROR_0(in_error, dummy)  CHECK_ERROR_1(in_error, "")
