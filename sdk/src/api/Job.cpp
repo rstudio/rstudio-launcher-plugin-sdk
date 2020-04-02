@@ -540,7 +540,8 @@ Error Job::fromJson(const json::Object& in_json, Job& out_job)
    if (error)
       return error;
 
-   if (command && exe)
+   // If both command and exe are non-empty, it's ambiguous which command should be run.
+   if ((command && !command.getValueOr("").empty()) && (exe && !exe.getValueOr("").empty()))
       return jobParseError(
          JobParseError::CONFLICTING_VALUES,
          quoteStr(JOB_COMMAND) + " and " + quoteStr(JOB_EXECUTABLE),
@@ -548,7 +549,10 @@ Error Job::fromJson(const json::Object& in_json, Job& out_job)
          in_json,
          ERROR_LOCATION);
 
-   if (!command && !exe && !containerObj)
+   // If all of these are empty, there's nothing to run.
+   if ((!command || command.getValueOr("").empty()) &&
+      (!exe || exe.getValueOr("").empty()) &&
+      (!containerObj || containerObj.getValueOr(json::Object()).isEmpty()))
       return jobParseError(
          JobParseError::MISSING_VALUE,
          "one of " +
