@@ -152,17 +152,17 @@ HeartbeatResponse::HeartbeatResponse() :
 // Cluster Info Response ===============================================================================================
 struct ClusterInfoResponse::Impl
 {
-   explicit Impl(Capabilities in_capabilities) :
+   explicit Impl(JobSourceConfiguration in_capabilities) :
          ClusterCapabilities(std::move(in_capabilities))
    {
    }
 
-   Capabilities ClusterCapabilities;
+   JobSourceConfiguration ClusterCapabilities;
 };
 
 PRIVATE_IMPL_DELETER_IMPL(ClusterInfoResponse)
 
-ClusterInfoResponse::ClusterInfoResponse(uint64_t in_requestId, const Capabilities& in_capabilities) :
+ClusterInfoResponse::ClusterInfoResponse(uint64_t in_requestId, const JobSourceConfiguration& in_capabilities) :
    Response(Response::Type::CLUSTER_INFO, in_requestId),
    m_impl(new Impl(in_capabilities))
 {
@@ -172,16 +172,16 @@ json::Object ClusterInfoResponse::toJson() const
 {
    json::Object result = Response::toJson();
 
-   const Capabilities& caps = m_impl->ClusterCapabilities;
-   result[FIELD_CONTAINER_SUPPORT] = caps.ContainerCaps.SupportsContainers;
+   const JobSourceConfiguration& caps = m_impl->ClusterCapabilities;
+   result[FIELD_CONTAINER_SUPPORT] = caps.ContainerConfig.SupportsContainers;
 
-   if (caps.ContainerCaps.SupportsContainers)
+   if (caps.ContainerConfig.SupportsContainers)
    {
-      if (!caps.ContainerCaps.DefaultImage.empty())
-         result[FIELD_DEFAULT_IMAGE] = caps.ContainerCaps.DefaultImage;
+      if (!caps.ContainerConfig.DefaultImage.empty())
+         result[FIELD_DEFAULT_IMAGE] = caps.ContainerConfig.DefaultImage;
 
-      result[FIELD_ALLOW_UNKNOWN_IMAGES] = caps.ContainerCaps.AllowUnknownImages;
-      result[FIELD_IMAGES] = json::toJsonArray(caps.ContainerCaps.ContainerImages);
+      result[FIELD_ALLOW_UNKNOWN_IMAGES] = caps.ContainerConfig.AllowUnknownImages;
+      result[FIELD_IMAGES] = json::toJsonArray(caps.ContainerConfig.ContainerImages);
    }
 
    if (!caps.Queues.empty())

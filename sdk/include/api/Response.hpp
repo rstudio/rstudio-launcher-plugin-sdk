@@ -48,7 +48,7 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace api {
 
-struct Capabilities;
+struct JobSourceConfiguration;
 
 /**
  * @brief Represents the common components of all responses which can be sent the RStudio Launcher.
@@ -220,7 +220,7 @@ public:
      * @param in_requestId          The ID of the request for which this response is being sent.
      * @param in_capabilities       The capabilities of the cluster.
      */
-    ClusterInfoResponse(uint64_t in_requestId, const Capabilities& in_capabilities);
+    ClusterInfoResponse(uint64_t in_requestId, const JobSourceConfiguration& in_capabilities);
 
     /**
      * @brief Converts this cluster info response to a JSON object.

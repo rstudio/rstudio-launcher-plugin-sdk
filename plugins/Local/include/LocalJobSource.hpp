@@ -60,7 +60,7 @@ public:
     *
     * @return Success if the capabilities for this Job Source could be populated; Error otherwise.
     */
-   Error getCapabilities(const system::User&, api::Capabilities& out_capabilities) const override;
+   Error getConfiguration(const system::User&, api::JobSourceConfiguration& out_capabilities) const override;
 };
 
 } // namespace local

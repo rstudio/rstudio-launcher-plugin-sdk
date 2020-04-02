@@ -109,8 +109,8 @@ struct AbstractPluginApi::Impl
       const system::User& requestUser = in_clusterInfoRequest->getUser();
       uint64_t requestId = in_clusterInfoRequest->getId();
 
-      Capabilities caps;
-      Error error = JobSource->getCapabilities(requestUser, caps);
+      JobSourceConfiguration caps;
+      Error error = JobSource->getConfiguration(requestUser, caps);
       if (error)
          return sendErrorResponse(requestId, ErrorResponse::Type::UNKNOWN, error);
 

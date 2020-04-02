@@ -45,13 +45,13 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace api {
 
-/** @brief Describes the capabilities of this Job Source with respect to Containers. */
-struct ContainerCapabilties
+/** @brief Describes the container configuration of the Job Source. */
+struct ContainerConfiguration
 {
    /**
     * @brief Default constructor.
     */
-   ContainerCapabilties() :
+   ContainerConfiguration() :
       AllowUnknownImages(false),
       SupportsContainers(false)
    {
@@ -70,11 +70,11 @@ struct ContainerCapabilties
    bool SupportsContainers;
 };
 
-/** @brief Describes the capabilities of this Job Source. */
-struct Capabilities
+/** @brief Describes the capabilities and configuration of this Job Source. */
+struct JobSourceConfiguration
 {
    /** The capabilities of this Job Source, with respect to Containers. */
-   ContainerCapabilties ContainerCaps;
+   ContainerConfiguration ContainerConfig;
 
    /** The customer configuration values supported by this Job Source. */
    JobConfigList CustomConfig;
@@ -122,11 +122,11 @@ public:
     *                               used to return different capabilities based on the configured user profiles. For
     *                               more information about user profiles, see the 'User Profiles' subsection of the
     *                               'Advanced Features' section of the RStudio Launcher Plugin SDK Developer's Guide.
-    * @param out_capabilities       The capabilities of this Job Source, for the specified user.
+    * @param out_configuration      The capabilities of this Job Source, for the specified user.
     *
     * @return Success if the capabilities for this Job Source could be populated; Error otherwise.
     */
-   virtual Error getCapabilities(const system::User& in_user, Capabilities& out_capabilities) const = 0;
+   virtual Error getConfiguration(const system::User& in_user, JobSourceConfiguration& out_configuration) const = 0;
 };
 
 } // namespace api

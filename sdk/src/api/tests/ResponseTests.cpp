@@ -24,7 +24,7 @@
 #include <TestMain.hpp>
 
 #include <api/Constants.hpp>
-#include <api/IJobSource.hpp> // Capabilities struct
+#include <api/IJobSource.hpp> // JobSourceConfiguration struct
 #include <api/Response.hpp>
 #include <json/Json.hpp>
 
@@ -59,7 +59,7 @@ TEST_CASE("Create ClusterInfo Response")
 
    SECTION("No special fields")
    {
-      ClusterInfoResponse clusterInfoResponse(26, Capabilities());
+      ClusterInfoResponse clusterInfoResponse(26, JobSourceConfiguration());
 
       expected[FIELD_RESPONSE_ID] = 1;
       expected[FIELD_CONTAINER_SUPPORT] = false;
@@ -76,7 +76,7 @@ TEST_CASE("Create ClusterInfo Response")
                     limit2(ResourceLimit::Type::MEMORY, "250", "50"),
                     limit3(ResourceLimit::Type::CPU_TIME, "3600", "60");
 
-      Capabilities caps;
+      JobSourceConfiguration caps;
       caps.Queues = { "queue1", "QUEUE-TWO" };
       caps.ResourceLimits = { limit1, limit2, limit3 };
 
@@ -116,7 +116,7 @@ TEST_CASE("Create ClusterInfo Response")
          config2("CustomConfig2", JobConfig::Type::STRING),
          config3("conf 3", JobConfig::Type::FLOAT);
 
-      Capabilities caps;
+      JobSourceConfiguration caps;
       caps.CustomConfig = { config1, config2, config3 };
       caps.PlacementConstraints = { constraint1, constraint2, constraint3, constraint4, constraint5 };
       caps.Queues = { "queue1", "QUEUE-TWO", "another queue" };
@@ -154,10 +154,10 @@ TEST_CASE("Create ClusterInfo Response")
    SECTION("Container support, no unknown, no default")
    {
 
-      Capabilities caps;
-      caps.ContainerCaps.SupportsContainers = true;
-      caps.ContainerCaps.AllowUnknownImages = false;
-      caps.ContainerCaps.ContainerImages = { "image-number-1", "Image2", "  image_three_ " };
+      JobSourceConfiguration caps;
+      caps.ContainerConfig.SupportsContainers = true;
+      caps.ContainerConfig.AllowUnknownImages = false;
+      caps.ContainerConfig.ContainerImages = { "image-number-1", "Image2", "  image_three_ " };
 
       ClusterInfoResponse clusterInfoResponse(26, caps);
 
@@ -179,11 +179,11 @@ TEST_CASE("Create ClusterInfo Response")
 
    SECTION("Container support, unknown, default")
    {
-      Capabilities caps;
-      caps.ContainerCaps.SupportsContainers = true;
-      caps.ContainerCaps.AllowUnknownImages = true;
-      caps.ContainerCaps.ContainerImages = { "image-number-1", "Image2", "  image_three_ " };
-      caps.ContainerCaps.DefaultImage = "  image_three_ ";
+      JobSourceConfiguration caps;
+      caps.ContainerConfig.SupportsContainers = true;
+      caps.ContainerConfig.AllowUnknownImages = true;
+      caps.ContainerConfig.ContainerImages = { "image-number-1", "Image2", "  image_three_ " };
+      caps.ContainerConfig.DefaultImage = "  image_three_ ";
 
       ClusterInfoResponse clusterInfoResponse(26, caps);
 

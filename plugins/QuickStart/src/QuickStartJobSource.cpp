@@ -35,7 +35,7 @@ Error QuickStartJobSource::initialize()
    return Success();
 }
 
-Error QuickStartJobSource::getCapabilities(const system::User& in_user, api::Capabilities& out_capabilities) const
+Error QuickStartJobSource::getConfiguration(const system::User& in_user, api::JobSourceConfiguration& out_capabilities) const
 {
    // TODO #7: Define cluster capabilities.
    return Success();
