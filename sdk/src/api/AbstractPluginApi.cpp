@@ -203,16 +203,16 @@ struct AbstractPluginApi::Impl
       const Optional<std::set<Job::State> >& statuses = in_getJobRequest->getStatusSet();
 
       std::vector<std::string> statusesStrSet;
+      std::string statusesStr = "none";
       if (statuses)
+      {
          std::transform(
             statuses.getValueOr({}).begin(),
             statuses.getValueOr({}).end(),
             std::back_inserter(statusesStrSet),
             &Job::stateToString);
-
-      std::string statusesStr = "none";
-      if (statuses)
          statusesStr = boost::algorithm::join(statusesStrSet, ", ");
+      }
 
       logging::logDebugMessage(
          "Received getJobState request for " + in_getJobRequest->getUser().getUsername() +
@@ -227,25 +227,20 @@ struct AbstractPluginApi::Impl
          jobs = JobRepo->getJobs(in_getJobRequest->getUser());
 
          // Filter the jobs based on the request.
-         for (auto itr = jobs.begin(); itr != jobs.end(); ++itr)
+         for (auto itr = jobs.begin(); itr != jobs.end();)
          {
             const JobPtr& job = *itr;
 
-            // Skip the job if it wasn't submitted within the requested range of submission times.
-            if (startTime && (job->SubmissionTime < startTime.getValueOr(system::DateTime())))
-               continue;
-            if (endTime && (job->SubmissionTime > endTime.getValueOr(system::DateTime())))
-               continue;
-
-            // Skip the job if it have all of the requested tags.
-            if (tags && !job->matchesTags(tags.getValueOr({})))
-               continue;
-
-            // Skip the job if it isn't in one of the requested states.
-            if (statuses && (statuses.getValueOr({}).find(job->Status) == statuses.getValueOr({}).end()))
-               continue;
-
-            jobs.push_back(job);
+            // Skip the job if it wasn't submitted within the requested range of submission times...
+            if ((startTime && (job->SubmissionTime < startTime.getValueOr(system::DateTime()))) ||
+               (endTime && (job->SubmissionTime > endTime.getValueOr(system::DateTime()))) ||
+               // ... or if it doesn't have all of the requested tags...
+               (tags && !job->matchesTags(tags.getValueOr({}))) ||
+               // ... or if it isn't in one of the requested states.
+               (statuses && (statuses.getValueOr({}).find(job->Status) == statuses.getValueOr({}).end())))
+               itr = jobs.erase(itr);
+            else
+               ++itr;
          }
       }
       else
