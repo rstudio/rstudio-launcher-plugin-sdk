@@ -111,9 +111,9 @@ public:
    virtual Error initialize() = 0;
 
    /**
-    * @brief Gets the capabilities of this Job Source for the specified user.
+    * @brief Gets the configuration and capabilities of this Job Source for the specified user.
     *
-    * This function controls Cluster capabilities.
+    * This function controls the options that will be available to users when launching jobs.
     *
     * NOTE: Many of the values here should most likely be controllable by Launcher administrators when they configure
     *       the Launcher. For more details, see the RStudio Launcher Plugin SDK QuickStart Guide TODO #7.
@@ -122,7 +122,7 @@ public:
     *                               used to return different capabilities based on the configured user profiles. For
     *                               more information about user profiles, see the 'User Profiles' subsection of the
     *                               'Advanced Features' section of the RStudio Launcher Plugin SDK Developer's Guide.
-    * @param out_configuration      The capabilities of this Job Source, for the specified user.
+    * @param out_configuration      The configuration and capabilities of this Job Source, for the specified user.
     *
     * @return Success if the capabilities for this Job Source could be populated; Error otherwise.
     */

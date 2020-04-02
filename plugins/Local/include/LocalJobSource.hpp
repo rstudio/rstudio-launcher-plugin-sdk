@@ -51,16 +51,16 @@ public:
    Error initialize() override;
 
    /**
-    * @brief Gets the capabilities of the Local Job Source.
+    * @brief Gets the configuration and capabilities of the Local Job Source.
     *
     * The Local Job Source only has two custom configuration values. It does not support resource limits, placement
     * constraints, queues, or containers.
     *
-    * @param out_capabilities       The capabilities of this Job Source, for the specified user.
+    * @param out_configuration       The configuration and capabilities of this Job Source, for the specified user.
     *
     * @return Success if the capabilities for this Job Source could be populated; Error otherwise.
     */
-   Error getConfiguration(const system::User&, api::JobSourceConfiguration& out_capabilities) const override;
+   Error getConfiguration(const system::User&, api::JobSourceConfiguration& out_configuration) const override;
 };
 
 } // namespace local
