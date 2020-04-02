@@ -45,7 +45,54 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace api {
 
-/** Generic interface for communicating with a Job Source. Implementation is plugin specific. */
+/** @brief Describes the capabilities of this Job Source with respect to Containers. */
+struct ContainerCapabilties
+{
+   /**
+    * @brief Default constructor.
+    */
+   ContainerCapabilties() :
+      AllowUnknownImages(false),
+      SupportsContainers(false)
+   {
+   }
+
+   /** Whether users may select unknown images when launching a job. */
+   bool AllowUnknownImages;
+
+   /** The list of known images. */
+   std::set<std::string> ContainerImages;
+
+   /** The default image. */
+   std::string DefaultImage;
+
+   /** Whether this Job Source supports containers. Default: false. */
+   bool SupportsContainers;
+};
+
+/** @brief Describes the capabilities of this Job Source. */
+struct Capabilities
+{
+   /** The capabilities of this Job Source, with respect to Containers. */
+   ContainerCapabilties ContainerCaps;
+
+   /** The customer configuration values supported by this Job Source. */
+   JobConfigList CustomConfig;
+
+   /** The set of job placement constraints which may be set when launching a job. */
+   PlacementConstraintList PlacementConstraints;
+
+   /** The set of queues on which jobs may be run. */
+   std::set<std::string> Queues;
+
+   /**
+    * The set of resource limit types, optionally with maximum and default values, which user may set when launching a
+    * job.
+    */
+   ResourceLimitList ResourceLimits;
+};
+
+/** @brief Generic interface for communicating with a Job Source. Implementation is plugin specific. */
 class IJobSource
 {
 public:
@@ -64,146 +111,22 @@ public:
    virtual Error initialize() = 0;
 
    /**
-    * @brief If this job source supports containers, returns whether unknown images may be selected by users when
-    *        launching jobs.
+    * @brief Gets the capabilities of this Job Source for the specified user.
     *
     * This function controls Cluster capabilities.
     *
-    * NOTE: This should most likely be controllable by Launcher administrators when they configure the Launcher.
-    *
-    * @param in_user                    The user who made the request to see the capabilities of the Cluster. This may
-    *                                   be used to return different capabilities based on the configured user profiles.
-    * @param out_allowUnknownImages     Whether or not unknown images should be allowed.
-    *
-    * @return Success if the value of the allow unknown images setting could be checked; Error otherwise.
-    */
-   virtual Error allowUnknownImages(const system::User& in_user, bool& out_allowUnknownImages) const
-   {
-      out_allowUnknownImages = false;
-      return Success();
-   }
-
-   /**
-    * @brief If this job source supports containers, gets the container images which are available to run jobs.
-    *
-    * This function controls Cluster capabilities.
-    *
-    * @param in_user        The user who made the request to see the capabilities of the Cluster. This may be used to
-    *                       return different capabilities based on the configured user profiles.
-    * @param out_images     The set of container images on which jobs may be run.
-    *
-    * @return Success if the set of container images could be retrieved, error others.
-    */
-   virtual Error getContainerImages(const system::User& in_user, std::set<std::string>& out_images) const
-   {
-      out_images = {};
-      return Success();
-   }
-
-   /**
-    * @brief Gets the custom configuration values which may be set on the jobs, if any.
-    *
-    * This function controls Cluster capabilities.
-    *
-    * NOTE: Custom configuration values should be used sparingly. If possible, find other means to surface values that
-    *       could be surfaced here. For example, if a custom configuration value could be set by a system administrator,
-    *       consider adding it to the Plugin's Options.
+    * NOTE: Many of the values here should most likely be controllable by Launcher administrators when they configure
+    *       the Launcher. For more details, see the RStudio Launcher Plugin SDK QuickStart Guide TODO #7.
     *
     * @param in_user                The user who made the request to see the capabilities of the Cluster. This may be
-    *                               used to return different capabilities based on the configured user profiles.
-    * @param out_customConfig       The custom configuration settings available to set on jobs.
+    *                               used to return different capabilities based on the configured user profiles. For
+    *                               more information about user profiles, see the 'User Profiles' subsection of the
+    *                               'Advanced Features' section of the RStudio Launcher Plugin SDK Developer's Guide.
+    * @param out_capabilities       The capabilities of this Job Source, for the specified user.
     *
-    * @return Success if the custom configuration settings could be populated; Error otherwise.
+    * @return Success if the capabilities for this Job Source could be populated; Error otherwise.
     */
-   virtual Error getCustomConfig(const system::User& in_user, std::vector<JobConfig>& out_customConfig) const
-   {
-      out_customConfig = {};
-      return Success();
-   }
-
-   /**
-    * @brief If this job source supports containers, returns the default container image to use when a job is launched,
-    *        if any.
-    *
-    * This function controls Cluster capabilities.
-    *
-    * @param in_user            The user who made the request to see the capabilities of the Cluster. This may be used
-    *                           to return different capabilities based on the configured user profiles.
-    * @param out_defaultImage   The default container image, if any.
-    *
-    * @return Success if the default image could be populated; Error otherwise.
-    */
-   virtual Error getDefaultImage(const system::User& in_user, std::string& out_defaultImage) const
-   {
-      out_defaultImage = "";
-      return Success();
-   }
-
-   /**
-    * @brief Gets the custom placement constraints which may be set on jobs, if any.
-    *
-    * This function controls Cluster capabilities.
-    *
-    * @param in_user            The user who made the request to see the capabilities of the Cluster. This may be used
-    *                           to return different capabilities based on the configured user profiles.
-    * @param out_constraints    The list of custom placement constraints which may be set on jobs, if any.
-    *
-    * @return Success if the list of custom placement constraints could be populated; Error otherwise.
-    */
-   virtual Error getPlacementConstraints(
-      const system::User& in_user,
-      std::vector<PlacementConstraint>& out_constraints) const
-   {
-      out_constraints = {};
-      return Success();
-   }
-
-   /**
-    * @brief Gets the queues which are available to run jobs, if any.
-    *
-    * This function controls Cluster capabilities.
-    *
-    * @param in_user        The user who made the request to see the capabilities of the Cluster. This may be used to
-    *                       return different capabilities based on the configured user profiles.
-    * @param out_queues     The set of queues on which jobs may be run, if any.
-    *
-    * @return Success if the list of queues could be populated; Error otherwise.
-    */
-   virtual Error getQueues(const system::User& in_user, std::set<std::string>& out_queues) const
-   {
-      out_queues = {};
-      return Success();
-   }
-
-   /**
-    * @brief Gets the resource limit types which can be set for jobs, including default and maximum values, if any.
-    *
-    * This function controls Cluster capabilities.
-    *
-    * @param in_user        The user who made the request to see the capabilities of the Cluster. This may be used to
-    *                       return different capabilities based on the configured user profiles.
-    * @param out_limits     The resource limit types which can be set for jobs, including default and maximum values, if
-    *                       any.
-    *
-    * @return Success if the list of resource limits could be populated; Error otherwise.
-    */
-   virtual Error getResourceLimits(const system::User& in_user, std::vector<ResourceLimit>& out_limits) const
-   {
-      out_limits = {};
-      return Success();
-   }
-
-   /**
-    * @brief Gets whether this job source supports containers.
-    *
-    * This function controls Cluster capabilities.
-    *
-    * @return True if the job source supports containers; false otherwise.
-    */
-   virtual bool supportsContainers() const
-   {
-      return false;
-   }
+   virtual Error getCapabilities(const system::User& in_user, Capabilities& out_capabilities) const = 0;
 };
 
 } // namespace api

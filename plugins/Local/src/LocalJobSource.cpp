@@ -36,14 +36,11 @@ Error LocalJobSource::initialize()
    return Success();
 }
 
-Error LocalJobSource::getCustomConfig(const system::User &, std::vector<api::JobConfig>& out_customConfig) const
+Error LocalJobSource::getCapabilities(const system::User&, api::Capabilities& out_capabilities) const
 {
-
    static const api::JobConfig::Type strType = api::JobConfig::Type::STRING;
-   out_customConfig = {
-      api::JobConfig("pamProfile", strType),
-      api::JobConfig("encryptedPassword", strType)
-   };
+   out_capabilities.CustomConfig.emplace_back("pamProfile", strType);
+   out_capabilities.CustomConfig.emplace_back("encryptedPassword", strType);
 
    return Success();
 }

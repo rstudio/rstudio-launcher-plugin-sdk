@@ -45,7 +45,23 @@ public:
     */
    Error initialize() override;
 
-   // TODO #7: Define cluster capabilities.
+   /**
+    * @brief Gets the capabilities of this Job Source for the specified user.
+    *
+    * This function controls Cluster capabilities.
+    *
+    * NOTE: Many of the values here should most likely be controllable by Launcher administrators when they configure
+    *       the Launcher. For more details, see the RStudio Launcher Plugin SDK QuickStart Guide TODO #7.
+    *
+    * @param in_user                The user who made the request to see the capabilities of the Cluster. This may be
+    *                               used to return different capabilities based on the configured user profiles. For
+    *                               more information about user profiles, see the 'User Profiles' subsection of the
+    *                               'Advanced Features' section of the RStudio Launcher Plugin SDK Developer's Guide.
+    * @param out_capabilities       The capabilities of this Job Source, for the specified user.
+    *
+    * @return Success if the capabilities for this Job Source could be populated; Error otherwise.
+    */
+   Error getCapabilities(const system::User& in_user, api::Capabilities& out_capabilities) const override;
 };
 
 } // namespace quickstart

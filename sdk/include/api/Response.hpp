@@ -48,6 +48,8 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace api {
 
+struct Capabilities;
+
 /**
  * @brief Represents the common components of all responses which can be sent the RStudio Launcher.
  */
@@ -215,42 +217,11 @@ public:
     /**
      * @brief
      *
-     * @param in_requestId                  The ID of the request for which this response is being sent.
-     * @param in_config                     The set of custom job configuration settings and their possible values.
-     * @param in_placementConstraints       The set of custom placement constraints which may be set on jobs.
-     * @param in_queues                     The set of available queues on which to run jobs, if any.
-     *                                      maximum values.
-     * @param in_resourceLimits             The set of resource limits which may be set on jobs, including default and
+     * @param in_requestId          The ID of the request for which this response is being sent.
+     * @param in_capabilities       The capabilities of the cluster.
      */
-    ClusterInfoResponse(
-       uint64_t in_requestId,
-       std::vector<JobConfig> in_config,
-       std::vector<PlacementConstraint> in_placementConstraints,
-       std::set<std::string> in_queues,
-       std::vector<ResourceLimit> in_resourceLimits);
+    ClusterInfoResponse(uint64_t in_requestId, const Capabilities& in_capabilities);
 
-    /**
-     * @brief
-     *
-     * @param in_requestId                  The ID of the request for which this response is being sent.
-     * @param in_allowUnknownImages         Whether or not to allow unknown images to be used to launch jobs.
-     * @param in_config                     The set of custom job configuration settings and their possible values.
-     * @param in_containerImages            The set of available container images which may be used for launching jobs.
-     * @param in_defaultImage               The default container image to use when launching a job.
-     * @param in_placementConstraints       The set of custom placement constraints which may be set on jobs.
-     * @param in_queues                     The set of available queues on which to run jobs, if any.
-     *                                      maximum values.
-     * @param in_resourceLimits             The set of resource limits which may be set on jobs, including default and
-     */
-    ClusterInfoResponse(
-       uint64_t in_requestId,
-       bool in_allowUnknownImages,
-       std::vector<JobConfig> in_config,
-       std::set<std::string> in_containerImages,
-       std::string in_defaultImage,
-       std::vector<PlacementConstraint> in_placementConstraints,
-       std::set<std::string> in_queues,
-       std::vector<ResourceLimit> in_resourceLimits);
     /**
      * @brief Converts this cluster info response to a JSON object.
      *
