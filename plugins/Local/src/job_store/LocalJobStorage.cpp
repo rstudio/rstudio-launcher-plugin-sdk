@@ -41,7 +41,7 @@ namespace job_store {
 
 namespace {
 
-constexpr const char* JOB_FILE_EXT     = "job";
+constexpr const char* JOB_FILE_EXT     = ".job";
 constexpr const char* ROOT_JOBS_DIR    = "jobs";
 constexpr const char* ROOT_OUTPUT_DIR  = "output";
 
