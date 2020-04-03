@@ -73,10 +73,10 @@ struct ContainerConfiguration
 /** @brief Describes the capabilities and configuration of this Job Source. */
 struct JobSourceConfiguration
 {
-   /** The capabilities of this Job Source, with respect to Containers. */
+   /** The container configuration of this Job Source. */
    ContainerConfiguration ContainerConfig;
 
-   /** The customer configuration values supported by this Job Source. */
+   /** The custom configuration values supported by this Job Source. */
    JobConfigList CustomConfig;
 
    /** The set of job placement constraints which may be set when launching a job. */
@@ -118,13 +118,14 @@ public:
     * NOTE: Many of the values here should most likely be controllable by Launcher administrators when they configure
     *       the Launcher. For more details, see the RStudio Launcher Plugin SDK QuickStart Guide TODO #7.
     *
-    * @param in_user                The user who made the request to see the capabilities of the Cluster. This may be
-    *                               used to return different capabilities based on the configured user profiles. For
-    *                               more information about user profiles, see the 'User Profiles' subsection of the
-    *                               'Advanced Features' section of the RStudio Launcher Plugin SDK Developer's Guide.
+    * @param in_user                The user who made the request to see the configuration and capabilities of the
+    *                               Cluster. This may be used to return a different configuration based on any
+    *                               configured user profiles. For more information about user profiles, see the
+    *                               'User Profiles' subsection of the 'Advanced Features' section of the RStudio
+    *                               Launcher Plugin SDK Developer's Guide.
     * @param out_configuration      The configuration and capabilities of this Job Source, for the specified user.
     *
-    * @return Success if the capabilities for this Job Source could be populated; Error otherwise.
+    * @return Success if the configuration and capabilities for this Job Source could be populated; Error otherwise.
     */
    virtual Error getConfiguration(const system::User& in_user, JobSourceConfiguration& out_configuration) const = 0;
 };

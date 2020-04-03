@@ -39,7 +39,7 @@ Error QuickStartJobSource::getConfiguration(
    const system::User& in_user,
    api::JobSourceConfiguration& out_configuration) const
 {
-   // TODO #7: Define cluster capabilities.
+   // TODO #7: Define cluster configuration.
    return Success();
 }
 

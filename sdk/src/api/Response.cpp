@@ -152,19 +152,19 @@ HeartbeatResponse::HeartbeatResponse() :
 // Cluster Info Response ===============================================================================================
 struct ClusterInfoResponse::Impl
 {
-   explicit Impl(JobSourceConfiguration in_capabilities) :
-         ClusterCapabilities(std::move(in_capabilities))
+   explicit Impl(JobSourceConfiguration in_configuration) :
+         ClusterConfig(std::move(in_configuration))
    {
    }
 
-   JobSourceConfiguration ClusterCapabilities;
+   JobSourceConfiguration ClusterConfig;
 };
 
 PRIVATE_IMPL_DELETER_IMPL(ClusterInfoResponse)
 
-ClusterInfoResponse::ClusterInfoResponse(uint64_t in_requestId, const JobSourceConfiguration& in_capabilities) :
+ClusterInfoResponse::ClusterInfoResponse(uint64_t in_requestId, const JobSourceConfiguration& in_configuration) :
    Response(Response::Type::CLUSTER_INFO, in_requestId),
-   m_impl(new Impl(in_capabilities))
+   m_impl(new Impl(in_configuration))
 {
 }
 
@@ -172,30 +172,30 @@ json::Object ClusterInfoResponse::toJson() const
 {
    json::Object result = Response::toJson();
 
-   const JobSourceConfiguration& caps = m_impl->ClusterCapabilities;
-   result[FIELD_CONTAINER_SUPPORT] = caps.ContainerConfig.SupportsContainers;
+   const JobSourceConfiguration& clusterConfig = m_impl->ClusterConfig;
+   result[FIELD_CONTAINER_SUPPORT] = clusterConfig.ContainerConfig.SupportsContainers;
 
-   if (caps.ContainerConfig.SupportsContainers)
+   if (clusterConfig.ContainerConfig.SupportsContainers)
    {
-      if (!caps.ContainerConfig.DefaultImage.empty())
-         result[FIELD_DEFAULT_IMAGE] = caps.ContainerConfig.DefaultImage;
+      if (!clusterConfig.ContainerConfig.DefaultImage.empty())
+         result[FIELD_DEFAULT_IMAGE] = clusterConfig.ContainerConfig.DefaultImage;
 
-      result[FIELD_ALLOW_UNKNOWN_IMAGES] = caps.ContainerConfig.AllowUnknownImages;
-      result[FIELD_IMAGES] = json::toJsonArray(caps.ContainerConfig.ContainerImages);
+      result[FIELD_ALLOW_UNKNOWN_IMAGES] = clusterConfig.ContainerConfig.AllowUnknownImages;
+      result[FIELD_IMAGES] = json::toJsonArray(clusterConfig.ContainerConfig.ContainerImages);
    }
 
-   if (!caps.Queues.empty())
-      result[FIELD_QUEUES] = json::toJsonArray(caps.Queues);
+   if (!clusterConfig.Queues.empty())
+      result[FIELD_QUEUES] = json::toJsonArray(clusterConfig.Queues);
 
    json::Array config, constraints, limits;
 
-   for (const JobConfig& configVal: caps.CustomConfig)
+   for (const JobConfig& configVal: clusterConfig.CustomConfig)
       config.push_back(configVal.toJson());
 
-   for (const PlacementConstraint& constraint: caps.PlacementConstraints)
+   for (const PlacementConstraint& constraint: clusterConfig.PlacementConstraints)
       constraints.push_back(constraint.toJson());
 
-   for (const ResourceLimit& limit: caps.ResourceLimits)
+   for (const ResourceLimit& limit: clusterConfig.ResourceLimits)
       limits.push_back(limit.toJson());
 
    result[FIELD_CONFIG] = config;

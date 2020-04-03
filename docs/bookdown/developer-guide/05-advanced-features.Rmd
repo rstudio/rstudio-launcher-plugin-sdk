@@ -196,7 +196,7 @@ Error MarsJobSource::initialize()
 
 > Important: This feature is not exposed through the RStudio Server Pro job launching UI. The use of this feature will require a feature request to the RStudio IDE project. This feature should only be used when there are no other alternatives.
 
-The [Cluster Info Response](#cluster-info) is used to report the capabilities of the Plugin. The RStudio Launcher Plugin SDK QuickStart Guide describes how the Plugin Developer may declare support for various types of resource limits, containers, custom job placement constraints, and job queues. In the event that there is some job configuration setting that is not covered by one of those built-in job settings, the Job Config feature may used.
+The [Cluster Info Response](#cluster-info) is used to report the configuration and capabilities of the Plugin. The RStudio Launcher Plugin SDK QuickStart Guide describes how the Plugin Developer may declare support for various types of resource limits, containers, custom job placement constraints, and job queues. In the event that there is some job configuration setting that is not covered by one of those built-in job settings, the Job Config feature may used.
 
 A `JobConfig` value consists of the name of the configuration setting, its type, and optionally its value. It may have one of four types: `string`, `int`, `enum`, or `float`. 
 

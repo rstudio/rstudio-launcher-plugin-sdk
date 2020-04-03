@@ -58,7 +58,7 @@ public:
     *
     * @param out_configuration       The configuration and capabilities of this Job Source, for the specified user.
     *
-    * @return Success if the capabilities for this Job Source could be populated; Error otherwise.
+    * @return Success if the configuration and capabilities for this Job Source could be populated; Error otherwise.
     */
    Error getConfiguration(const system::User&, api::JobSourceConfiguration& out_configuration) const override;
 };

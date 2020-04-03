@@ -218,9 +218,9 @@ public:
      * @brief
      *
      * @param in_requestId          The ID of the request for which this response is being sent.
-     * @param in_capabilities       The capabilities of the cluster.
+     * @param in_configuration      The configuration and capabilities of the cluster.
      */
-    ClusterInfoResponse(uint64_t in_requestId, const JobSourceConfiguration& in_capabilities);
+    ClusterInfoResponse(uint64_t in_requestId, const JobSourceConfiguration& in_configuration);
 
     /**
      * @brief Converts this cluster info response to a JSON object.

@@ -36,11 +36,11 @@ Error LocalJobSource::initialize()
    return Success();
 }
 
-Error LocalJobSource::getConfiguration(const system::User&, api::JobSourceConfiguration& out_capabilities) const
+Error LocalJobSource::getConfiguration(const system::User&, api::JobSourceConfiguration& out_configuration) const
 {
    static const api::JobConfig::Type strType = api::JobConfig::Type::STRING;
-   out_capabilities.CustomConfig.emplace_back("pamProfile", strType);
-   out_capabilities.CustomConfig.emplace_back("encryptedPassword", strType);
+   out_configuration.CustomConfig.emplace_back("pamProfile", strType);
+   out_configuration.CustomConfig.emplace_back("encryptedPassword", strType);
 
    return Success();
 }
