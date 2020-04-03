@@ -194,13 +194,31 @@ struct AbstractPluginApi::Impl
    {
       const std::string& jobId = in_getJobRequest->getJobId();
 
-      const Optional<system::DateTime>& startTime = in_getJobRequest->getStartTime(),
-                                      & endTime = in_getJobRequest->getEndTime();
+      Optional<system::DateTime> startTime, endTime;
+      Error error = in_getJobRequest->getStartTime(startTime);
+      if (error)
+         return sendErrorResponse(
+            in_getJobRequest->getId(),
+            ErrorResponse::Type::INVALID_REQUEST,
+            "Invalid start time");
+
+      error = in_getJobRequest->getEndTime(endTime);
+      if (error)
+         return sendErrorResponse(
+            in_getJobRequest->getId(),
+            ErrorResponse::Type::INVALID_REQUEST,
+            "Invalid end time");
 
       const Optional<std::set<std::string> >& fields = in_getJobRequest->getFieldSet(),
                                             & tags = in_getJobRequest->getTagSet();
 
-      const Optional<std::set<Job::State> >& statuses = in_getJobRequest->getStatusSet();
+      Optional<std::set<Job::State> > statuses;
+      error = in_getJobRequest->getStatusSet(statuses);
+      if (error)
+         return sendErrorResponse(
+            in_getJobRequest->getId(),
+            ErrorResponse::Type::INVALID_REQUEST,
+            "Invalid status(es): " + error.getMessage());
 
       std::vector<std::string> statusesStrSet;
       std::string statusesStr = "none";

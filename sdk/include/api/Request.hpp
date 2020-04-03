@@ -272,9 +272,11 @@ public:
     *
     * If this value is set, only jobs which were submitted before this DateTime should be returned in the response.
     *
-    * @return The optional end of the date range.
+    * @param out_endTime    The end time, if it was set and the string value could be parsed as a DateTime correctly.
+    *
+    * @return Success if the value was set and could be parsed correctly, or if the value was not set; Error otherwise.
     */
-   const Optional<system::DateTime>& getEndTime() const;
+   Error getEndTime(Optional<system::DateTime>& out_endTime) const;
 
    /**
     * @brief Gets the set of Job fields which should be included in the response.
@@ -291,18 +293,24 @@ public:
     *
     * If this value is set, only jobs which were submitted after this DateTime should be returned in the response.
     *
-    * @return The optional start of the date range.
+    * @param out_startTime      The start time, if it was set and the string value could be parsed as a DateTime
+    *                           correctly.
+    *
+    * @return Success if the value was set and could be parsed correctly, or if the value was not set; Error otherwise.
     */
-   const Optional<system::DateTime>& getStartTime() const;
+   Error getStartTime(Optional<system::DateTime>& out_endTime) const;
 
    /**
     * @brief Gets the set of Job statuses by which to filter the returned list of jobs.
     *
     * If this value is set, only the jobs which have one of the specified states should be returned in the response.
     *
-    * @return The optional set of Job statuses by which to filter the returned list of jobs.
+    * @param out_statuses       The set of statuses to filter by, if any were set and they could all be parsed as
+    *                           Job::State values correctly.
+    *
+    * @return Success if the value was set and could be parsed correctly, or if the value was not set; Error otherwise.
     */
-   const Optional<std::set<Job::State> >& getStatusSet() const;
+   Error getStatusSet(Optional<std::set<Job::State> >& out_statuses) const;
 
    /**
     * @brief Gets the set of Job tags by which to filter the returned list of jobs.

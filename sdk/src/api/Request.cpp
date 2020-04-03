@@ -28,6 +28,7 @@
 #include <logging/Logger.hpp>
 #include <system/User.hpp>
 #include <boost/algorithm/string/trim.hpp>
+#include <boost/algorithm/string/join.hpp>
 
 #include "Constants.hpp"
 
@@ -43,6 +44,7 @@ enum class RequestError
    INVALID_REQUEST_TYPE = 1,
    INVALID_REQUEST = 2,
    INVALID_USER = 3,
+   INVALID_INPUT = 4,
 };
 
 Error requestError(
@@ -68,6 +70,11 @@ Error requestError(
       case RequestError::INVALID_USER:
       {
          message.append("Details of request user could not be found");
+         break;
+      }
+      case RequestError::INVALID_INPUT:
+      {
+         message.append("Invalid input received");
          break;
       }
       case RequestError::SUCCESS:
@@ -365,16 +372,16 @@ int BootstrapRequest::getPatchNumber() const
 struct JobStateRequest::Impl
 {
    /** The end of the range of submission times by which to filter the jobs. */
-   Optional<system::DateTime> EndTime;
+   Optional<std::string> EndTime;
 
    /** The set of fields to be returned for each job. */
    Optional<std::set<std::string> > FieldSet;
 
    /** The start of the range of submission times by which to filter the jobs. */
-   Optional<system::DateTime> StartTime;
+   Optional<std::string> StartTime;
 
    /** The set of statuses by which to filter the returned jobs. */
-   Optional<std::set<Job::State> > StatusSet;
+   Optional<std::set<std::string> > StatusSet;
 
    /** The set of tags tby which to filter the returned jobs. */
    Optional<std::set<std::string> > TagSet;
@@ -382,9 +389,19 @@ struct JobStateRequest::Impl
 
 PRIVATE_IMPL_DELETER_IMPL(JobStateRequest)
 
-const Optional<system::DateTime>& JobStateRequest::getEndTime() const
+Error JobStateRequest::getEndTime(Optional<system::DateTime>& out_endTime) const
 {
-   return m_impl->EndTime;
+   if (m_impl->EndTime)
+   {
+      system::DateTime endTime;
+      Error error = system::DateTime::fromString(m_impl->EndTime.getValueOr(""), endTime);
+      if (error)
+         return error;
+
+      out_endTime = endTime;
+   }
+
+   return Success();
 }
 
 const Optional<std::set<std::string> >& JobStateRequest::getFieldSet() const
@@ -392,14 +409,47 @@ const Optional<std::set<std::string> >& JobStateRequest::getFieldSet() const
    return m_impl->FieldSet;
 }
 
-const Optional<system::DateTime>& JobStateRequest::getStartTime() const
+Error JobStateRequest::getStartTime(Optional<system::DateTime>& out_startTime) const
 {
-   return m_impl->StartTime;
+   if (m_impl->StartTime)
+   {
+      system::DateTime startTime;
+      Error error = system::DateTime::fromString(m_impl->StartTime.getValueOr(""), startTime);
+      if (error)
+         return error;
+
+      out_startTime = startTime;
+   }
+
+   return Success();
 }
 
-const Optional<std::set<Job::State> >& JobStateRequest::getStatusSet() const
+Error JobStateRequest::getStatusSet(Optional<std::set<Job::State> >& out_statuses) const
 {
-   return m_impl->StatusSet;
+   if (m_impl->StatusSet)
+   {
+      std::set<Job::State> statuses;
+      std::set<std::string> invalidStatuses;
+      for (const std::string& status: m_impl->StatusSet.getValueOr({}))
+      {
+         Job::State state;
+         Error error = Job::stateFromString(status, state);
+         if (error)
+            invalidStatuses.insert(status);
+         else
+            statuses.insert(state);
+      }
+
+      if (!invalidStatuses.empty())
+         return requestError(
+            RequestError::INVALID_INPUT,
+            boost::algorithm::join(invalidStatuses, ","),
+            ERROR_LOCATION);
+
+      out_statuses = statuses;
+   }
+
+   return Success();
 }
 
 const Optional<std::set<std::string> >& JobStateRequest::getTagSet() const
@@ -411,15 +461,14 @@ JobStateRequest::JobStateRequest(const json::Object& in_requestJson) :
    JobIdRequest(Type::GET_JOB, in_requestJson),
    m_impl(new Impl())
 {
-   Optional<std::string> endTimeStr, startTimeStr;
-   Optional<std::set<std::string> > strStatuses;
    Error error = json::readObject(in_requestJson,
-      FIELD_JOB_END_TIME, endTimeStr,
+      FIELD_JOB_END_TIME, m_impl->EndTime,
       FIELD_JOB_FIELDS, m_impl->FieldSet,
-      FIELD_JOB_START_TIME, startTimeStr,
-      FIELD_JOB_STATUSES, strStatuses,
+      FIELD_JOB_START_TIME, m_impl->StartTime,
+      FIELD_JOB_STATUSES, m_impl->StatusSet,
       FIELD_JOB_TAGS, m_impl->TagSet);
 
+   // Test
    if (error)
    {
       logging::logError(error);
@@ -430,53 +479,6 @@ JobStateRequest::JobStateRequest(const json::Object& in_requestJson) :
    // ID is required, ensure it is in the set of fields.
    std::set<std::string> tmp;
    m_impl->FieldSet.getValueOr(tmp).insert("id");
-
-   if (strStatuses)
-   {
-      std::set<Job::State> statuses;
-      for (const std::string& strStatus: strStatuses.getValueOr({}))
-      {
-         Job::State status;
-         error = Job::stateFromString(strStatus, status);
-
-         if (error)
-         {
-            logging::logError(error);
-            m_baseImpl->IsValid = false;
-            continue;
-         }
-
-         statuses.insert(status);
-      }
-
-      m_impl->StatusSet = statuses;
-   }
-   
-   if (endTimeStr)
-   {
-      system::DateTime endTime;
-      error = system::DateTime::fromString(endTimeStr.getValueOr(""), endTime);
-      if (error)
-      {
-         logging::logError(error);
-         m_baseImpl->IsValid = false;
-      }
-      else
-         m_impl->EndTime = endTime;
-   }
-
-   if (startTimeStr)
-   {
-      system::DateTime startTime;
-      error = system::DateTime::fromString(startTimeStr.getValueOr(""), startTime);
-      if (error)
-      {
-         logging::logError(error);
-         m_baseImpl->IsValid = false;
-      }
-      else
-         m_impl->StartTime = startTime;
-   }
 }
 
 // Helpers =============================================================================================================

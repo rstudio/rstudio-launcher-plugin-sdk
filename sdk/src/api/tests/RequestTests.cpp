@@ -235,15 +235,18 @@ TEST_CASE("Parse get job request")
    CHECK(request->getType() == Request::Type::GET_JOB);
    CHECK(request->getId() == 657);
 
+   Optional<system::DateTime> endTime, startTime;
+   Optional<std::set<Job::State> > statuses;
+
    std::shared_ptr<JobStateRequest> jobStateRequest = std::static_pointer_cast<JobStateRequest>(request);
    CHECK(jobStateRequest->getUser().isAllUsers());
    CHECK(jobStateRequest->getRequestUsername() == USER_TWO);
    CHECK(jobStateRequest->getJobId() == "2588");
    CHECK(jobStateRequest->getEncodedJobId() == "");
-   CHECK_FALSE(jobStateRequest->getEndTime());
+   CHECK((!jobStateRequest->getEndTime(endTime) && !endTime));
    CHECK_FALSE(jobStateRequest->getFieldSet());
-   CHECK_FALSE(jobStateRequest->getStartTime());
-   CHECK_FALSE(jobStateRequest->getStatusSet());
+   CHECK((!jobStateRequest->getStartTime(startTime) && !startTime));
+   CHECK((!jobStateRequest->getStatusSet(statuses) && !statuses));
    CHECK_FALSE(jobStateRequest->getTagSet());
    CHECK(logDest->getSize() == 0);
 }
@@ -268,15 +271,18 @@ TEST_CASE("Parse get job request w/ encoded ID")
    CHECK(request->getType() == Request::Type::GET_JOB);
    CHECK(request->getId() == 91);
 
+   Optional<system::DateTime> endTime, startTime;
+   Optional<std::set<Job::State> > statuses;
+
    std::shared_ptr<JobStateRequest> jobStateRequest = std::static_pointer_cast<JobStateRequest>(request);
    CHECK(jobStateRequest->getUser() == user);
    CHECK(jobStateRequest->getRequestUsername() == USER_TWO);
    CHECK(jobStateRequest->getJobId() == "142");
    CHECK(jobStateRequest->getEncodedJobId() == "Y2x1c3Rlci0xNDIK");
-   CHECK_FALSE(jobStateRequest->getEndTime());
+   CHECK((!jobStateRequest->getEndTime(endTime) && !endTime));
    CHECK_FALSE(jobStateRequest->getFieldSet());
-   CHECK_FALSE(jobStateRequest->getStartTime());
-   CHECK_FALSE(jobStateRequest->getStatusSet());
+   CHECK((!jobStateRequest->getStartTime(startTime) && !startTime));
+   CHECK((!jobStateRequest->getStatusSet(statuses) && !statuses));
    CHECK_FALSE(jobStateRequest->getTagSet());
    CHECK(logDest->getSize() == 0);
 }
@@ -301,13 +307,13 @@ TEST_CASE("Parse complete get job request")
    expectedStatuses.insert(Job::State::PENDING);
    expectedStatuses.insert(Job::State::RUNNING);
 
-   json::Array fields, statuses, tags;
+   json::Array fields, statusArr, tags;
    fields.push_back("id");
    fields.push_back("status");
    fields.push_back("statusMessage");
 
-   statuses.push_back("Pending");
-   statuses.push_back("Running");
+   statusArr.push_back("Pending");
+   statusArr.push_back("Running");
 
    tags.push_back("tag1");
    tags.push_back("tag 2");
@@ -322,7 +328,7 @@ TEST_CASE("Parse complete get job request")
    requestObj[FIELD_JOB_END_TIME] = "2020-03-15T18:00:00";
    requestObj[FIELD_JOB_FIELDS] = fields;
    requestObj[FIELD_JOB_START_TIME] = "2020-03-15T15:00:00";
-   requestObj[FIELD_JOB_STATUSES] = statuses;
+   requestObj[FIELD_JOB_STATUSES] = statusArr;
    requestObj[FIELD_JOB_TAGS] = tags;
 
    std::shared_ptr<Request> request;
@@ -334,17 +340,21 @@ TEST_CASE("Parse complete get job request")
    CHECK(request->getId() == 91);
    CHECK(logDest->getSize() == 0);
 
+   Optional<system::DateTime> endTime, startTime;
+   Optional<std::set<Job::State> > statuses;
+
    std::shared_ptr<JobStateRequest> jobRequest = std::static_pointer_cast<JobStateRequest>(request);
    CHECK(jobRequest->getUser() == user);
    CHECK(jobRequest->getRequestUsername() == USER_FIVE);
    CHECK(jobRequest->getJobId() == "142");
    CHECK(jobRequest->getEncodedJobId() == "Y2x1c3Rlci0xNDIK");
-   CHECK((jobRequest->getEndTime() &&
-      jobRequest->getEndTime().getValueOr(system::DateTime()) == expectedEnd));
+   CHECK((!jobRequest->getEndTime(endTime) && endTime &&
+      endTime.getValueOr(system::DateTime()) == expectedEnd));
    CHECK((jobRequest->getFieldSet() && jobRequest->getFieldSet().getValueOr({}) == expectedFields));
-   CHECK((jobRequest->getStartTime() &&
-      jobRequest->getStartTime().getValueOr(system::DateTime()) == expectedStart));
-   CHECK((jobRequest->getStatusSet() && jobRequest->getStatusSet().getValueOr({}) == expectedStatuses));
+   CHECK((!jobRequest->getStartTime(startTime) && startTime &&
+      startTime.getValueOr(system::DateTime()) == expectedStart));
+   CHECK((!jobRequest->getStatusSet(statuses) && statuses &&
+   statuses.getValueOr({}) == expectedStatuses));
    CHECK((jobRequest->getTagSet() && jobRequest->getTagSet().getValueOr({}) == expectedTags));
 }
 
@@ -379,15 +389,18 @@ TEST_CASE("Parse get job request with fields (no id)")
    CHECK(request->getId() == 91);
    CHECK(logDest->getSize() == 0);
 
+   Optional<system::DateTime> endTime, startTime;
+   Optional<std::set<Job::State> > statuses;
+
    std::shared_ptr<JobStateRequest> jobRequest = std::static_pointer_cast<JobStateRequest>(request);
    CHECK(jobRequest->getUser() == user);
    CHECK(jobRequest->getRequestUsername() == USER_FIVE);
    CHECK(jobRequest->getJobId() == "142");
    CHECK(jobRequest->getEncodedJobId() == "Y2x1c3Rlci0xNDIK");
-   CHECK_FALSE(jobRequest->getEndTime());
+   CHECK((!jobRequest->getEndTime(endTime) && !endTime));
    CHECK((jobRequest->getFieldSet() && jobRequest->getFieldSet().getValueOr({}) == expectedFields));
-   CHECK_FALSE(jobRequest->getStartTime());
-   CHECK_FALSE(jobRequest->getStatusSet());
+   CHECK((!jobRequest->getStartTime(startTime) && !startTime));
+   CHECK((!jobRequest->getStatusSet(statuses) && !statuses));
    CHECK_FALSE(jobRequest->getTagSet());
 }
 
@@ -400,6 +413,9 @@ TEST_CASE("Parse invalid get job request")
    requestObj[FIELD_REQUEST_USERNAME] = USER_TWO;
    requestObj[FIELD_ENCODED_JOB_ID] = "Y2x1c3Rlci0xNDIK";
 
+   system::User user;
+   REQUIRE_FALSE(system::User::getUserFromIdentifier(USER_TWO, user));
+
    SECTION("Missing Job ID")
    {
       std::shared_ptr<Request> request;
@@ -408,40 +424,63 @@ TEST_CASE("Parse invalid get job request")
 
    SECTION("Invalid date/time")
    {
-      requestObj[FIELD_JOB_ID] = 444;
+      requestObj[FIELD_JOB_ID] = "444";
       requestObj[FIELD_JOB_END_TIME] = "not a date time";
 
       std::shared_ptr<Request> request;
-      CHECK(Request::fromJson(requestObj, request));
-   }
+      CHECK_FALSE(Request::fromJson(requestObj, request));
+      CHECK(request->getType() == Request::Type::GET_JOB);
+      CHECK(request->getId() == 91);
 
-   SECTION("Extra field")
-   {
-      requestObj[FIELD_JOB_ID] = 444;
-      requestObj["notAField"] = "value";
+      Optional<system::DateTime> endTime, startTime;
+      Optional<std::set<Job::State> > statuses;
 
-      std::shared_ptr<Request> request;
-      CHECK(Request::fromJson(requestObj, request));
+      std::shared_ptr<JobStateRequest> jobRequest = std::static_pointer_cast<JobStateRequest>(request);
+      CHECK(jobRequest->getUser() == user);
+      CHECK(jobRequest->getRequestUsername() == USER_TWO);
+      CHECK(jobRequest->getJobId() == "444");
+      CHECK(jobRequest->getEncodedJobId() == "Y2x1c3Rlci0xNDIK");
+      CHECK((jobRequest->getEndTime(endTime) && !endTime));
+      CHECK(!jobRequest->getFieldSet());
+      CHECK((!jobRequest->getStartTime(startTime) && !startTime));
+      CHECK((!jobRequest->getStatusSet(statuses) && !statuses));
+      CHECK_FALSE(jobRequest->getTagSet());
    }
 
    SECTION("Invalid status")
    {
-      json::Array statuses;
-      statuses.push_back("Running");
-      statuses.push_back("Completed");
-      statuses.push_back("NotAStatus");
-      statuses.push_back("Failed");
+      json::Array statusArr;
+      statusArr.push_back("Running");
+      statusArr.push_back("Completed");
+      statusArr.push_back("NotAStatus");
+      statusArr.push_back("Failed");
 
-      requestObj[FIELD_JOB_ID] = 444;
-      requestObj[FIELD_JOB_STATUSES] = statuses;
+      requestObj[FIELD_JOB_ID] = "444";
+      requestObj[FIELD_JOB_STATUSES] = statusArr;
 
       std::shared_ptr<Request> request;
-      CHECK(Request::fromJson(requestObj, request));
+      CHECK_FALSE(Request::fromJson(requestObj, request));
+      CHECK(request->getType() == Request::Type::GET_JOB);
+      CHECK(request->getId() == 91);
+
+      Optional<system::DateTime> endTime, startTime;
+      Optional<std::set<Job::State> > statuses;
+
+      std::shared_ptr<JobStateRequest> jobRequest = std::static_pointer_cast<JobStateRequest>(request);
+      CHECK(jobRequest->getUser() == user);
+      CHECK(jobRequest->getRequestUsername() == USER_TWO);
+      CHECK(jobRequest->getJobId() == "444");
+      CHECK(jobRequest->getEncodedJobId() == "Y2x1c3Rlci0xNDIK");
+      CHECK((!jobRequest->getEndTime(endTime) && !endTime));
+      CHECK(!jobRequest->getFieldSet());
+      CHECK((!jobRequest->getStartTime(startTime) && !startTime));
+      CHECK((jobRequest->getStatusSet(statuses) && !statuses));
+      CHECK_FALSE(jobRequest->getTagSet());
    }
 
    SECTION("Invalid tags (not a json::Array)")
    {
-      requestObj[FIELD_JOB_ID] = 444;
+      requestObj[FIELD_JOB_ID] = "444";
       requestObj[FIELD_JOB_TAGS] = 32;
 
       std::shared_ptr<Request> request;
