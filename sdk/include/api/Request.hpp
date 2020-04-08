@@ -191,6 +191,9 @@ private:
    friend class Request;
 };
 
+/**
+ * @brief Base class which should be used for requests that require a Job ID.
+ */
 class JobIdRequest : public UserRequest
 {
 public:
@@ -264,6 +267,9 @@ private:
    friend class Request;
 };
 
+/**
+ * @brief Represents a job state request received from the Launcher.
+ */
 class JobStateRequest : public JobIdRequest
 {
 public:
