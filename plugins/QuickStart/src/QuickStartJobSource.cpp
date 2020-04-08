@@ -35,6 +35,14 @@ Error QuickStartJobSource::initialize()
    return Success();
 }
 
+Error QuickStartJobSource::getConfiguration(
+   const system::User& in_user,
+   api::JobSourceConfiguration& out_configuration) const
+{
+   // TODO #7: Define cluster configuration.
+   return Success();
+}
+
 Error QuickStartJobSource::getJobs(api::JobList &out_jobs) const
 {
    // TODO #8: Pull all RStudio jobs from the job scheduling system synchronously.

@@ -26,6 +26,7 @@
 #include <atomic>
 
 #include <json/Json.hpp>
+#include <api/IJobSource.hpp>
 #include "Constants.hpp"
 
 namespace rstudio {
@@ -214,85 +215,19 @@ json::Object JobStateResponse::toJson() const
 // Cluster Info Response ===============================================================================================
 struct ClusterInfoResponse::Impl
 {
-   Impl(
-      std::vector<JobConfig> in_config,
-      std::vector<PlacementConstraint> in_placementConstraints,
-      std::set<std::string> in_queues,
-      std::vector<ResourceLimit> in_resourceLimits) :
-         AllowUnknownImages(false),
-         Config(std::move(in_config)),
-         PlacementConstraints(std::move(in_placementConstraints)),
-         Queues(std::move(in_queues)),
-         ResourceLimits(std::move(in_resourceLimits)),
-         SupportsContainers(false)
+   explicit Impl(JobSourceConfiguration in_configuration) :
+         ClusterConfig(std::move(in_configuration))
    {
    }
 
-   Impl(
-      bool in_allowUnknownImages,
-      std::vector<JobConfig> in_config,
-      std::set<std::string> in_containerImages,
-      std::string in_defaultImage,
-      std::vector<PlacementConstraint> in_placementConstraints,
-      std::set<std::string> in_queues,
-      std::vector<ResourceLimit> in_resourceLimits) :
-         AllowUnknownImages(in_allowUnknownImages),
-         Config(std::move(in_config)),
-         ContainerImages(std::move(in_containerImages)),
-         DefaultImage(std::move(in_defaultImage)),
-         PlacementConstraints(std::move(in_placementConstraints)),
-         Queues(std::move(in_queues)),
-         ResourceLimits(std::move(in_resourceLimits)),
-         SupportsContainers(true)
-   {
-   }
-
-   bool AllowUnknownImages;
-   std::vector<JobConfig> Config;
-   std::set<std::string> ContainerImages;
-   std::string DefaultImage;
-   std::vector<PlacementConstraint> PlacementConstraints;
-   std::set<std::string> Queues;
-   std::vector<ResourceLimit> ResourceLimits;
-   bool SupportsContainers;
+   JobSourceConfiguration ClusterConfig;
 };
 
 PRIVATE_IMPL_DELETER_IMPL(ClusterInfoResponse)
 
-ClusterInfoResponse::ClusterInfoResponse(
-   uint64_t in_requestId,
-   std::vector<JobConfig> in_config,
-   std::vector<PlacementConstraint> in_placementConstraints,
-   std::set<std::string> in_queues,
-   std::vector<ResourceLimit> in_resourceLimits) :
-      Response(Response::Type::CLUSTER_INFO, in_requestId),
-      m_impl(
-         new Impl(
-            std::move(in_config),
-            std::move(in_placementConstraints),
-            std::move(in_queues),
-            std::move(in_resourceLimits)))
-{
-}
-
-ClusterInfoResponse::ClusterInfoResponse(
-   uint64_t in_requestId,
-   bool in_allowUnknownImages,
-   std::vector<JobConfig> in_config,
-   std::set<std::string> in_containerImages,
-   std::string in_defaultImage,
-   std::vector<PlacementConstraint> in_placementConstraints,
-   std::set<std::string> in_queues,
-   std::vector<ResourceLimit> in_resourceLimits) :
-      Response(Response::Type::CLUSTER_INFO, in_requestId),
-      m_impl(new Impl(
-         in_allowUnknownImages,
-         std::move(in_config),
-         std::move(in_containerImages),
-         std::move(in_defaultImage),
-         std::move(in_placementConstraints),
-         std::move(in_queues),
-         std::move(in_resourceLimits)))
+ClusterInfoResponse::ClusterInfoResponse(uint64_t in_requestId, const JobSourceConfiguration& in_configuration) :
+   Response(Response::Type::CLUSTER_INFO, in_requestId),
+   m_impl(new Impl(in_configuration))
 {
 }
 
@@ -300,29 +235,30 @@ json::Object ClusterInfoResponse::toJson() const
 {
    json::Object result = Response::toJson();
 
-   result[FIELD_CONTAINER_SUPPORT] = m_impl->SupportsContainers;
+   const JobSourceConfiguration& clusterConfig = m_impl->ClusterConfig;
+   result[FIELD_CONTAINER_SUPPORT] = clusterConfig.ContainerConfig.SupportsContainers;
 
-   if (m_impl->SupportsContainers)
+   if (clusterConfig.ContainerConfig.SupportsContainers)
    {
-      if (!m_impl->DefaultImage.empty())
-         result[FIELD_DEFAULT_IMAGE] = m_impl->DefaultImage;
+      if (!clusterConfig.ContainerConfig.DefaultImage.empty())
+         result[FIELD_DEFAULT_IMAGE] = clusterConfig.ContainerConfig.DefaultImage;
 
-      result[FIELD_ALLOW_UNKNOWN_IMAGES] = m_impl->AllowUnknownImages;
-      result[FIELD_IMAGES] = json::toJsonArray(m_impl->ContainerImages);
+      result[FIELD_ALLOW_UNKNOWN_IMAGES] = clusterConfig.ContainerConfig.AllowUnknownImages;
+      result[FIELD_IMAGES] = json::toJsonArray(clusterConfig.ContainerConfig.ContainerImages);
    }
 
-   if (!m_impl->Queues.empty())
-      result[FIELD_QUEUES] = json::toJsonArray(m_impl->Queues);
+   if (!clusterConfig.Queues.empty())
+      result[FIELD_QUEUES] = json::toJsonArray(clusterConfig.Queues);
 
    json::Array config, constraints, limits;
 
-   for (const JobConfig& configVal: m_impl->Config)
+   for (const JobConfig& configVal: clusterConfig.CustomConfig)
       config.push_back(configVal.toJson());
 
-   for (const PlacementConstraint& constraint: m_impl->PlacementConstraints)
+   for (const PlacementConstraint& constraint: clusterConfig.PlacementConstraints)
       constraints.push_back(constraint.toJson());
 
-   for (const ResourceLimit& limit: m_impl->ResourceLimits)
+   for (const ResourceLimit& limit: clusterConfig.ResourceLimits)
       limits.push_back(limit.toJson());
 
    result[FIELD_CONFIG] = config;

@@ -60,20 +60,16 @@ public:
    Error initialize() override;
 
    /**
-    * @brief Gets the custom configuration values for the Local Plugin.
+    * @brief Gets the configuration and capabilities of the Local Job Source.
     *
-    * This function controls Cluster capabilities.
+    * The Local Job Source only has two custom configuration values. It does not support resource limits, placement
+    * constraints, queues, or containers.
     *
-    * The Local Plugin supports two custom configuration values: The PAM Profile, and an encrypted password.
+    * @param out_configuration       The configuration and capabilities of this Job Source, for the specified user.
     *
-    * The system::User parameter is not used. The Local Plugin does not support user profiles, and returns the same
-    * custom configuration values regardless of the request user.
-    *
-    * @param out_customConfig       The custom configuration settings available to set on jobs.
-    *
-    * @return The PAM Profile and encrypted password custom configuration values.
+    * @return Success if the configuration and capabilities for this Job Source could be populated; Error otherwise.
     */
-    Error getCustomConfig(const system::User&, std::vector<api::JobConfig>& out_customConfig) const override;
+   Error getConfiguration(const system::User&, api::JobSourceConfiguration& out_configuration) const override;
 
    /**
     * @brief Gets all RStudio jobs currently in the job scheduling system.

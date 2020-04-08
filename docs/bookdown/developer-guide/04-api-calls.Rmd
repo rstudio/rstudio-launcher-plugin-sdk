@@ -128,20 +128,13 @@ This request is sent to the Plugin once, immediately after the Plugin is launche
 
 ### Cluster Info {#cluster-info}
 
-This API call is responsible for reporting the capabilities of the job scheduling system. The RStudio IDE uses this call to determine what UI to surface to the end user when they launch jobs. When this request is received, the SDK will invoke the following methods to compose the correct response:
+This API call is responsible for reporting the configuration and capabilities of the job scheduling system. RStudio applications use this call to determine what UI to surface to the end user when they launch jobs. When this request is received, the SDK will invoke the following method to compose the correct response:
 
-* `IJobSource::supportsContainers`
-* `IJobSource::getContainerImages`
-* `IJobSource::getDefaultImage`
-* `IJobSource::allowUnknownImages`
-* `IJobSource::getCustomConfiguration`
-* `IJobSource::getPlacementConstraints`
-* `IJobSource::getQueues`
-* `IJobSource::getResourceLimits`
+* `IJobSource::getConfiguration`
 
-For all of these methods, except `IJobSource::supportsContainers`, the Plugin may return an error if it encounters any issues populating these fields. Additionally, the same subset of these methods are provided a `system::User` object, which represents the user who initiated the Cluster Info request. This optionally allows the Plugin Developer to provide different results on a per-user or per-group basis. This may be useful to allow system administrator to set different maximum and default Resource Limits for different groups of user via the [User Profiles feature](#user-profiles). It also may be useful if the job scheduling system allows administrators to make similar rule sets.  
+The Plugin may return an error from this method if it encounters any issues populating the fields on the `JobSourceConfiguration` object. Additionally, the method is provided with a `system::User` object, which represents the user who initiated the Cluster Info request. This optionally allows the Plugin Developer to provide different results on a per-user or per-group basis. This may be useful to allow system administrator to set different maximum and default Resource Limits for different groups of user via the [User Profiles feature](#user-profiles). It also may be useful if the job scheduling system allows administrators to make similar rule sets.
 
-For simple examples of implementing these methods, see "TODO: #7" in the RStudio Launcher QuickStart Guide.
+For a simple example of implementing this method, see "TODO: #7" in the RStudio Launcher QuickStart Guide.
 
 &nbsp;
 

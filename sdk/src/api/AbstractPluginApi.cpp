@@ -130,64 +130,12 @@ struct AbstractPluginApi::Impl
       const system::User& requestUser = in_clusterInfoRequest->getUser();
       uint64_t requestId = in_clusterInfoRequest->getId();
 
-      std::vector<api::JobConfig> config;
-      std::vector<api::PlacementConstraint> constraints;
-      std::set<std::string> queues;
-      std::vector<api::ResourceLimit> limits;
-
-      Error error = JobSource->getCustomConfig(requestUser, config);
+      JobSourceConfiguration caps;
+      Error error = JobSource->getConfiguration(requestUser, caps);
       if (error)
          return sendErrorResponse(requestId, ErrorResponse::Type::UNKNOWN, error);
 
-      error = JobSource->getPlacementConstraints(requestUser, constraints);
-      if (error)
-         return sendErrorResponse(requestId, ErrorResponse::Type::UNKNOWN, error);
-
-      error = JobSource->getQueues(requestUser, queues);
-      if (error)
-         return sendErrorResponse(requestId, ErrorResponse::Type::UNKNOWN, error);
-
-      error  = JobSource->getResourceLimits(requestUser, limits);
-      if (error)
-         return sendErrorResponse(requestId, ErrorResponse::Type::UNKNOWN, error);
-
-      if (JobSource->supportsContainers())
-      {
-         bool allowUnknownImages = false;
-         std::set<std::string> images;
-         std::string defaultImage;
-
-         error = JobSource->allowUnknownImages(requestUser, allowUnknownImages);
-         if (error)
-            return sendErrorResponse(requestId, ErrorResponse::Type::UNKNOWN, error);
-
-         error = JobSource->getContainerImages(requestUser, images);
-         if (error)
-            return sendErrorResponse(requestId, ErrorResponse::Type::UNKNOWN, error);
-
-         error = JobSource->getDefaultImage(requestUser, defaultImage);
-         if (error)
-            return sendErrorResponse(requestId, ErrorResponse::Type::UNKNOWN, error);
-
-         return LauncherCommunicator->sendResponse(
-            ClusterInfoResponse(
-               in_clusterInfoRequest->getId(),
-               allowUnknownImages,
-               config,
-               images,
-               defaultImage,
-               constraints,
-               queues,
-               limits));
-      }
-
-      return LauncherCommunicator->sendResponse(
-         ClusterInfoResponse(
-            in_clusterInfoRequest->getId(),
-            config,
-            constraints,
-            queues,
-            limits));
+      return LauncherCommunicator->sendResponse(ClusterInfoResponse(in_clusterInfoRequest->getId(), caps));
    }
 
    void handleGetJobRequest(const std::shared_ptr<JobStateRequest>& in_getJobRequest)
