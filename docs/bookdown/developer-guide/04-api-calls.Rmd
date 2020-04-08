@@ -126,6 +126,44 @@ This request is sent to the Plugin once, immediately after the Plugin is launche
 | responseId   | See above.                                                                  | 0
 | version      | The Launcher Plugin API version in use by the Plugin.                       | [Version](#api-ver)
 
+### Cluster Info {#cluster-info}
+
+This API call is responsible for reporting the configuration and capabilities of the job scheduling system. RStudio applications use this call to determine what UI to surface to the end user when they launch jobs. When this request is received, the SDK will invoke the following method to compose the correct response:
+
+* `IJobSource::getConfiguration`
+
+The Plugin may return an error from this method if it encounters any issues populating the fields on the `JobSourceConfiguration` object. Additionally, the method is provided with a `system::User` object, which represents the user who initiated the Cluster Info request. This optionally allows the Plugin Developer to provide different results on a per-user or per-group basis. This may be useful to allow system administrator to set different maximum and default Resource Limits for different groups of user via the [User Profiles feature](#user-profiles). It also may be useful if the job scheduling system allows administrators to make similar rule sets.
+
+For a simple example of implementing this method, see "TODO: #7" in the RStudio Launcher QuickStart Guide.
+
+&nbsp;
+
+**Cluster Info Request**
+
+|  Field Name     |                               Description                                   |  Value
+| --------------- | --------------------------------------------------------------------------- | -------
+| messageType     | See above.                                                                  | 9
+| requestId       | See above.                                                                  | Int
+| username        | See above.                                                                  | String
+| requestUsername | See above.                                                                  | String
+
+&nbsp;
+
+**Cluster Info Response**
+
+|  Field Name          |                               Description                                                                              |  Value
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------- | ----------------------------------------
+| messageType          | See above.                                                                                                             | 8
+| requestId            | See above.                                                                                                             | Int
+| responseId           | See above.                                                                                                             | Int
+| supportsContainers   | Whether or not the job scheduling system supports containers.                                                          | Boolean
+| config               | Any custom configuration values which may be set per job.                                                              | [JobConfig](#job-config) Array
+| placementConstraints | Any custom placement constraints which may be requested for a job.                                                     | [PlacementConstraint](#constraint) Array
+| queues               | The queues which are available to run jobs, if the job scheduling system supports queues.                              | String Array
+| resourceLimits       | The types of resource limits which may be requested for a job, including default and maximum values, if any.           | [ResourceLimit](#limit) Array
+| images               | If the job scheduling system supports containers, the list of container images which may be used when launching a job. | String Array
+| defaultImage         | If the job scheduling system supports containers, the default container image to use if none is selected.              | String
+| allowUnknownImages   | If the job scheduling system supports containers, whether to allow jobs to be run on images which are not known.       | Boolean
 
 ## Complex API Types {#complex-types}
 
@@ -138,4 +176,26 @@ This section describes the details of API types which are not simple types like 
 | major        | The major component of the supported version.                               | Int
 | minor        | The minor component of the supported version.                               | Int
 | patch        | The patch component of the supported version.                               | Int
+
+### JobConfig {#job-config}
+
+|  Field Name  |                               Description                                   |  Value
+| ------------ | --------------------------------------------------------------------------- | ------------------------------------
+| name         | The name of the custom configuration value.                                 | String
+| valueType    | The type of the custom configuration value.                                 | "string", "int", "float", or "enum"
+
+### PlacementConstraint {#constraint}
+
+|  Field Name  |                               Description                                   |  Value
+| ------------ | --------------------------------------------------------------------------- | -------
+| name         | The name of the placement constraint.                                       | String
+| value        | One of the possible values of the placement constraint.                     | String 
+
+### ResourceLimit {#limit}
+
+|  Field Name  |                               Description                                   |  Value
+| ------------ | --------------------------------------------------------------------------- | ------------------------------------------------
+| limitType    | The type of the resource.                                                   | "cpuCount", "cpuTime", "memory", or "memorySwap"
+| defaultValue | One of the possible values of the placement constraint.                     | String 
+| maxValue     | One of the possible values of the placement constraint.                     | String 
 

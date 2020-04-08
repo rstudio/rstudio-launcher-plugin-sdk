@@ -30,7 +30,7 @@ namespace api {
 
 // The RStudio Launcher Plugin API implemented by this SDK version.
 constexpr int API_VERSION_MAJOR = 1;
-constexpr int API_VERSION_MINOR = 0;
+constexpr int API_VERSION_MINOR = 1;
 constexpr int API_VERSION_PATCH = 0;
 
 // Common fields for all requests and responses.
@@ -39,6 +39,10 @@ constexpr char const* FIELD_REQUEST_ID = "requestId";
 
 // Common fields for all responses.
 constexpr char const* FIELD_RESPONSE_ID = "responseId";
+
+// Common fields for requests which require a username.
+constexpr char const* FIELD_REAL_USER = "username";
+constexpr char const* FIELD_REQUEST_USERNAME = "requestUsername";
 
 // Bootstrap request and response fields.
 constexpr char const* FIELD_VERSION = "version";
@@ -49,6 +53,16 @@ constexpr char const* FIELD_VERSION_PATCH = "patch";
 // Error response fields.
 constexpr char const* FIELD_ERROR_CODE = "errorCode";
 constexpr char const* FIELD_ERROR_MESSAGE = "errorMessage";
+
+// ClusterInfo response fields.
+constexpr char const* FIELD_ALLOW_UNKNOWN_IMAGES = "allowUnknownImages";
+constexpr char const* FIELD_CONFIG = "config";
+constexpr char const* FIELD_CONTAINER_SUPPORT = "supportsContainers";
+constexpr char const* FIELD_DEFAULT_IMAGE = "defaultImage";
+constexpr char const* FIELD_IMAGES = "images";
+constexpr char const* FIELD_PLACEMENT_CONSTRAINTS = "placementConstraints";
+constexpr char const* FIELD_QUEUES = "queues";
+constexpr char const* FIELD_RESOURCE_LIMITS = "resourceLimits";
 
 } // namespace api
 } // namespace launcher_plugins

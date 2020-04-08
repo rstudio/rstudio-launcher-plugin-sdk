@@ -36,6 +36,16 @@ Error LocalJobSource::initialize()
    return Success();
 }
 
+Error LocalJobSource::getConfiguration(const system::User&, api::JobSourceConfiguration& out_configuration) const
+{
+   static const api::JobConfig::Type strType = api::JobConfig::Type::STRING;
+   out_configuration.CustomConfig.emplace_back("pamProfile", strType);
+   out_configuration.CustomConfig.emplace_back("encryptedPassword", strType);
+
+   return Success();
+}
+
+
 } // namespace local
 } // namespace launcher_plugins
 } // namespace rstudio

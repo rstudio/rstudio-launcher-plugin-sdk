@@ -63,10 +63,9 @@ SRC_INCLUDES=(
   "ILogDestination.hpp"               #  4
   "FileLogDestination.hpp"            #  5
   "Logger.hpp"                        #  6
-  "DateTime.hpp"                      #  7
-  "FilePath.hpp"                      #  8
-  "system/User.hpp"                   #  9
-  "system/PosixSystem.hpp")           # 10
+  "FilePath.hpp"                      #  7
+  "system/User.hpp"                   #  8
+  "system/PosixSystem.hpp")           #  9
 DEST_INCLUDES=(
   "Error.hpp"                         #  1
   "PImpl.hpp"                         #  2
@@ -74,10 +73,9 @@ DEST_INCLUDES=(
   "logging/ILogDestination.hpp"       #  4
   "logging/FileLogDestination.hpp"    #  5
   "logging/Logger.hpp"                #  6
-  "system/DateTime.hpp"               #  7
-  "system/FilePath.hpp"               #  8
-  "system/User.hpp"                   #  9
-  "system/PosixSystem.hpp")           # 10
+  "system/FilePath.hpp"               #  7
+  "system/User.hpp"                   #  8
+  "system/PosixSystem.hpp")           #  9
 
 SRC_SOURCES=(
   "Error.cpp"                         #  1
@@ -147,6 +145,10 @@ copyFile()
     replace "$DEST" "thread::" "system::"
     replace "$DEST" "#include <boost/noncopyable.hpp>" "#include <Noncopyable.hpp>"
     replace "$DEST" "boost::noncopyable" "Noncopyable"
+    replace "$DEST" "#include <boost/optional.hpp>" "#include <Optional.hpp>"
+    replace "$DEST" "boost::optional" "Optional"
+    replace "$DEST" "get_value_or" "getValueOr"
+    replace "$DEST" "#include <shared_core/DateTime.hpp>" "#include <system/DateTime.hpp>"
 
     # Fix includes
     for I in "${!SRC_INCLUDES[@]}"; do
@@ -165,8 +167,8 @@ for I in "${!SRC_INCLUDES[@]}"; do
     SRC_FILE=${SRC_INCLUDES[$I]}
     DEST_PATH="$DEST_INCLUDE/${DEST_INCLUDES[$I]}"
 
-    # Make DateTime private in the SDK.
-    if [[ "$SRC_FILE" == "DateTime.hpp" || "$SRC_FILE" == "system/PosixSystem.hpp" ]]; then
+    # Make PosixSystem private in the SDK.
+    if [[ "$SRC_FILE" == "system/PosixSystem.hpp" ]]; then
       DEST_PATH="$DEST_SRC/${DEST_INCLUDES[$I]}"
     fi
 
@@ -233,7 +235,6 @@ for I in "${!SRC_SOURCES[@]}"; do
     fi
 
     if [[ "$SRC_FILE" == "Logger.cpp" ]]; then
-        replace "$DEST_PATH" "<system/DateTime.hpp>" "\"../system/DateTime.hpp\""
         replace "$DEST_PATH" "<system/ReaderWriterMutex.hpp>" "\"../system/ReaderWriterMutex.hpp\""
     fi
 

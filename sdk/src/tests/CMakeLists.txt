@@ -3,7 +3,7 @@
 #
 # CMakeLists.txt
 #
-# Copyright (C) 2019-20 by RStudio, PBC
+# Copyright (C) 2020 by RStudio, PBC
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
@@ -19,37 +19,13 @@
 # OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-set(RLPS_COMMS_TEST_MAIN ../../tests/TestMain.cpp)
-
 # Copy the test runner that runs all options tests.
-configure_file(../../tests/run-tests.sh run-tests.sh COPYONLY)
+configure_file(run-tests.sh run-tests.sh COPYONLY)
 
-# Allow files in the tests folder to be included
-include_directories(
-   ../../tests
-)
+# Optional Tests
+add_executable(rlps-optional-tests TestMain.cpp
+   OptionalTests.cpp)
 
-# Abstract Communicator Tests
-add_executable(rlps-abstract-communicator-tests
-   ${RLPS_COMMS_TEST_MAIN}
-   AbstractCommunicatorTests.cpp
-   ${RLPS_HEADER_FILES}
-   )
-
-target_link_libraries(rlps-abstract-communicator-tests
+target_link_libraries(rlps-optional-tests
    rstudio-launcher-plugin-sdk-lib
-   ${RLPS_BOOST_LIBS}
-   )
-
-
-# Message Handler Tests
-add_executable(rlps-message-handler-tests
-   ${RLPS_COMMS_TEST_MAIN}
-   MessageHandlerTests.cpp
-   ${RLPS_HEADER_FILES}
-)
-
-target_link_libraries(rlps-message-handler-tests
-   rstudio-launcher-plugin-sdk-lib
-   ${RLPS_BOOST_LIBS}
-)
+   ${RLPS_BOOST_LIBS})

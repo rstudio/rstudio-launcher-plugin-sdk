@@ -50,6 +50,31 @@ struct AbstractPluginApi::Impl
    }
 
    /**
+    * @brief Sends an error response to the Launcher.
+    *
+    * @param in_requestId   The ID of the request for which an error occurred.
+    * @param in_type        The type of error which occurred.
+    * @param in_error       The error which occurred.
+    */
+   void sendErrorResponse(uint64_t in_requestId, ErrorResponse::Type in_type, const Error& in_error)
+   {
+      LauncherCommunicator->sendResponse(
+         ErrorResponse(
+            in_requestId,
+            ErrorResponse::Type::UNKNOWN,
+            in_error.asString()));
+   }
+
+   /**
+    * @brief "Handles" a received heartbeat request by logging a debug message.
+    */
+   static void handleHeartbeat()
+   {
+      // There's really nothing to do here, since if the Launcher dies the plugin will die.
+      logging::logDebugMessage("Received Heartbeat from Launcher.");
+   }
+
+   /**
     * @brief Handles bootstrap requests from the Launcher.
     *
     * @param in_bootstrapRequest    The bootstrap request to handle.
@@ -72,24 +97,24 @@ struct AbstractPluginApi::Impl
 
       Error error = JobSource->initialize();
       if (error)
-         return LauncherCommunicator->sendResponse(
-            ErrorResponse(
-               in_bootstrapRequest->getId(),
-               ErrorResponse::Type::UNKNOWN,
-               error.asString()));
+         return sendErrorResponse(in_bootstrapRequest->getId(), ErrorResponse::Type::UNKNOWN, error);
 
       // TODO: pull down existing jobs and put them in the repository.
 
       LauncherCommunicator->sendResponse(BootstrapResponse(in_bootstrapRequest->getId()));
    }
 
-   /**
-    * @brief "Handles" a received heartbeat request by logging a debug message.
-    */
-   void handleHeartbeat()
+   void handleGetClusterInfo(const std::shared_ptr<UserRequest>& in_clusterInfoRequest)
    {
-      // There's really nothing to do here, since if the Launcher dies the plugin will die.
-      logging::logDebugMessage("Received Heartbeat from Launcher.");
+      const system::User& requestUser = in_clusterInfoRequest->getUser();
+      uint64_t requestId = in_clusterInfoRequest->getId();
+
+      JobSourceConfiguration caps;
+      Error error = JobSource->getConfiguration(requestUser, caps);
+      if (error)
+         return sendErrorResponse(requestId, ErrorResponse::Type::UNKNOWN, error);
+
+      return LauncherCommunicator->sendResponse(ClusterInfoResponse(in_clusterInfoRequest->getId(), caps));
    }
 
    /**
@@ -108,12 +133,25 @@ struct AbstractPluginApi::Impl
                ErrorResponse::Type::UNKNOWN,
                "Internal Request Handling Error."));
 
+
+      if (!JobSource)
+      {
+         logging::logErrorMessage("Request received before JobSource was initialized.", ERROR_LOCATION);
+         return LauncherCommunicator->sendResponse(
+            ErrorResponse(
+               in_request->getId(),
+               ErrorResponse::Type::UNKNOWN,
+               "Internal Request Handling Error."));
+      }
+
       switch (in_handlerType)
       {
          case Request::Type::HEARTBEAT:
             return handleHeartbeat();
          case Request::Type::BOOTSTRAP:
             return handleBootstrap(std::static_pointer_cast<BootstrapRequest>(in_request));
+         case Request::Type::GET_CLUSTER_INFO:
+            return handleGetClusterInfo(std::static_pointer_cast<UserRequest>(in_request));
          default:
             return LauncherCommunicator->sendResponse(
                ErrorResponse(
@@ -150,6 +188,9 @@ Error AbstractPluginApi::initialize()
    comms->registerRequestHandler(
       Request::Type::HEARTBEAT,
       std::bind(&Impl::handleRequest, m_abstractPluginImpl.get(), Request::Type::HEARTBEAT, _1));
+   comms->registerRequestHandler(
+      Request::Type::GET_CLUSTER_INFO,
+      std::bind(&Impl::handleRequest, m_abstractPluginImpl.get(), Request::Type::GET_CLUSTER_INFO, _1));
 
    // Make the heartbeat event.
    WeakThis weakThis = shared_from_this();

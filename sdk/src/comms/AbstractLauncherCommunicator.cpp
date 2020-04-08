@@ -93,7 +93,7 @@ void AbstractLauncherCommunicator::registerRequestHandler(
 
 void AbstractLauncherCommunicator::sendResponse(const api::Response& in_response)
 {
-   std::string message = m_baseImpl->MsgHandler.formatMessage(in_response.asJson().write());
+   std::string message = m_baseImpl->MsgHandler.formatMessage(in_response.toJson().write());
    writeResponse(message);
 }
 

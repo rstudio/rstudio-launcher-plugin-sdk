@@ -31,7 +31,7 @@
 
 #include <boost/lexical_cast.hpp>
 #include <boost/numeric/conversion/cast.hpp>
-#include <boost/optional.hpp>
+#include <Optional.hpp>
 
 #include <logging/Logger.hpp>
 #include <Error.hpp>
@@ -72,9 +72,9 @@ T stringTo(const std::string& in_strValue, T in_defaultValue)
  * @return The converted value, on successful conversion; an empty optional value otherwise.
  */
 template <typename T>
-boost::optional<T> stringTo(const std::string& str)
+Optional<T> stringTo(const std::string& str)
 {
-   boost::optional<T> result;
+   Optional<T> result;
 
    try
    {
@@ -195,9 +195,9 @@ TOutput numberTo(TInput input, TOutput defaultValue)
  * @return The converted value on successful conversion; an empty optional value otherwise.
  */
 template <typename TInput, typename TOutput>
-boost::optional<TOutput> numberTo(TInput input)
+Optional<TOutput> numberTo(TInput input)
 {
-   boost::optional<TOutput> result;
+   Optional<TOutput> result;
 
    try
    {

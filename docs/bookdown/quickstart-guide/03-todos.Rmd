@@ -1,5 +1,8 @@
 # TODO Items {#todos}
+
 This section will walk the developer through each of the QuickStart `TODO` items. As each `TODO` is completed, it is recommended to remove it from the code.
+
+Throughout this chapter, an example Plugin Developer who is part of the "Orchid Organization" and developing a Launcher Plugin for the "Mars" job scheduling system will be used. The theoretical Mars job scheduling provides a C/C++ interface, which will be referred to as the `mars_api`. It provides a set of free functions which allow the caller to get details from the Mars job scheduling system. `mars_api` calls may throw `mars_exceptions` which need to be handled.
 
 ## TODO #1: Change Namespaces
  
@@ -7,7 +10,11 @@ TODO Location        Impact
 -------------------  -----------------
 QuickStartMain.cpp   All source files
 
-The classes in the QuickStart RStudio Launcher Plugin are all in the `rstudio::launcher_plugins::quickstart` namespace. As desired, these namespaces may be changed. For example, if the developer of the Plugin is part of the "Orchid Organization" and is developing a plugin for the "Tiger Lily" job scheduling system, they may change the following namespace definitions
+The classes in the QuickStart RStudio Launcher Plugin are all in the `rstudio::launcher_plugins::quickstart` namespace. As desired, these namespaces may be changed. 
+
+### Example
+
+The Plugin Developer may change the following namespace definitions
 
 ```{c, echo=TRUE, eval=FALSE}
 namespace rstudio {
@@ -19,14 +26,15 @@ namespace quickstart {
 } // namespace rstudio
 ```
 
-to this:
+to
 ```{c, echo=TRUE, eval=FALSE}
 namespace orchid {
-namespace tiger_lily {
+namespace mars {
   ...
-} // namespace tiger_lily
+} // namespace mars
 } // namespace orchid
 ```
+
 
 ## TODO #2: Rename Classes
  
@@ -34,7 +42,9 @@ TODO Location        Impact
 -------------------  -----------------
 QuickStartMain.cpp   All source files
 
-Continuing with the previous example, the developer may now wish to rename all the classes from `QuickStart*` to `TigerLily*`. For example, `QuickStartMain` would become `TigerLilyMain`.
+### Example
+
+The developer may now wish to rename all the classes from `QuickStart*` to `Mars*`. For example, `QuickStartMain` would become `MarsMain`.
 
 In addition, the developer may also wish to modify the include guards to match their new namespace and class names. For example,
 
@@ -46,11 +56,12 @@ In addition, the developer may also wish to modify the include guards to match t
 might become
 
 ```{c, echo=TRUE, eval=FALSE}
-#ifndef TIGERLILY_TIGER_LILY_PLUGIN_API
-#define TIGERLILY_TIGER_LILY_PLUGIN_API
+#ifndef ORCHID_MARS_PLUGIN_API
+#define ORCHID_MARS_PLUGIN_API
 ```
 
 The naming schemes described here are only recommendations. The exact naming scheme is completely at the discretion of the developer.
+
 
 ## TODO #3: Change the Plugin Name
  
@@ -59,7 +70,11 @@ TODO Location        Impact
 QuickStartMain.cpp   QuickStartMain.cpp
 
 
-The plugin name is used to generate the program ID, which will be used for logging, and the configuration file name. By default, the program ID will be `"rstudio-" + getPluginName() + "-launcher"`. The configuration file name will be `"launcher." + getPluginName() + ".conf"` and must be located in `/etc/rstudio`. Continuing the previous example, the "Orchid" organization developer might change
+The plugin name is used to generate the program ID, which will be used for logging, and the configuration file name. By default, the program ID will be `"rstudio-" + getPluginName() + "-launcher"`. The configuration file name will be `"launcher." + getPluginName() + ".conf"` and must be located in `/etc/rstudio`.
+
+### Example
+
+The developer might now change
 
 ```{c, eval=FALSE}
 std::string getPluginName() const override
@@ -74,7 +89,7 @@ to
 ```{c, eval=FALSE}
 std::string getPluginName() const override
 {
-  return "tigerlily";
+  return "mars";
 }
 ```
 
@@ -85,16 +100,20 @@ TODO Location        Impact
 QuickStartMain.cpp   QuickStartMain.cpp
 
 
-The program ID will be used to uniquely identify logs from the plugin that are sent to the system log. By default, the value will be `"rstudio-" + getPluginName() + "-launcher"`, however it is possible to override `AbstractMain::getProgramID()` to set a custom program ID. Continuing with the previous example, the Orchid organization developer might add 
+The program ID will be used to uniquely identify logs from the plugin that are sent to the system log. By default, the value will be `"rstudio-" + getPluginName() + "-launcher"`, however it is possible to override `AbstractMain::getProgramID()` to set a custom program ID.
+
+### Example
+
+The developer might add 
 
 ```{c, eval=FALSE}
 std::string getProgramId() const override
 {
-  return "orchid-" + getProgramName() + "-launcher"
+  return "orchid-" + getProgramName() + "-launcher";
 }
 ```
 
-to `TigerLilyMain.cpp`.
+to `MarsMain.cpp`.
 
 ## TODO #5: Add Options 
  
@@ -102,15 +121,16 @@ TODO Location           Impact
 ----------------------  ---------------------------------------------
 QuickStartOptions.cpp   QuickStartOptions.cpp, QuickStartOptions.hpp
 
-
-
 The QuickStartOptions class demonstrates how to add job scheduling specific options to the Plugin. It may not be immediately obvious what options will be required for the Plugin, but when it does become clear that an option is needed it can be added here.
 
-Continuing the previous example, suppose that the Tiger Lily job scheduling system can be controlled using an HTTP API, and it can be set up at a custom URL and port. The Orchid developer might then add a required option for the URL, an optional option for whether SSL should be used, and an optional option for the port. In that case, the developer might modify QuickStartOptions.hpp and QuickStartOptions.cpp in the following way:
+### Example
+
+Suppose that the Mars job scheduling system can be controlled using an HTTP API, and it can be set up at a custom URL and port. The Orchid developer might then add a required option for the URL, an optional option for whether SSL should be used, and an optional option for the port. In that case, the developer might modify QuickStartOptions.hpp and QuickStartOptions.cpp in the following way:
 
 
-```{c,eval=FALSE}
-// QuickStartOptions.hpp =========================
+**QuickStartOptions.hpp**
+
+```{Rcpp,eval=FALSE}
 class QuickStartOptions : public Noncopyable
 {
 public:
@@ -127,8 +147,9 @@ private:
 }
 ```
 
-```{c,eval=FALSE}
-// QuickStartOptions.cpp =========================
+**QuickStartOptions.cpp**
+
+```{Rcpp,eval=FALSE}
 bool QuickStartOptions::getSampleOption() const 
 {
   return m_sampleOption;
@@ -147,9 +168,14 @@ void QuickStartOptions::initialize()
 
 ```
 
-```{c,eval=FALSE}
-// TigerLilyOptions.hpp ==========================
-class TigerLilyOptions : public Noncopyable
+**MarsOptions.hpp**
+
+```{Rcpp,eval=FALSE}
+namespace orchid {
+namespace mars {
+namespace options {
+
+class MarsOptions : public Noncopyable
 {
 public:
 // ...
@@ -171,16 +197,29 @@ private:
   
   bool m_useSsl;
 }
+
+} // namespace options
+} // namespace mars
+} // namespace orchid
 ```
 
-```{c,eval=FALSE}
-// TigerLilyOptions.cpp ==========================
-const std::string& TigerLilyOptions::getHost() const 
+**MarsOptions.cpp**
+
+```{Rcpp,eval=FALSE}
+#include "options/MarsOptions.hpp"
+
+#include <options/Options.hpp>
+
+namespace orchid {
+namespace mars {
+namespace options {
+
+const std::string& MarsOptions::getHost() const 
 {
   return m_host;
 }
 
-unsigned int TigerLilyOptions::getPort() const 
+unsigned int MarsOptions::getPort() const 
 {
   if (m_port != 0)
     return m_port;
@@ -191,12 +230,12 @@ unsigned int TigerLilyOptions::getPort() const
   return 80;
 }
 
-bool TigerLilyOptions::getUseSsl() const 
+bool MarsOptions::getUseSsl() const 
 {
   return m_useSsl;
 }
 
-void TigerLilyOptions::initialize()
+void MarsOptions::initialize()
 {
    // TODO #5: Add options, as necessary.
    using namespace rstudio::launcher_plugins::options;
@@ -213,6 +252,9 @@ void TigerLilyOptions::initialize()
        "whether to use HTTPS (true) or HTTP (false, default) when connecting to the Tiger Lily server");
 }
 
+} // namespace options
+} // namespace mars
+} // namespace orchid
 ```
 
 ## TODO #6: Initilaize Communication
@@ -225,3 +267,169 @@ QuickStartJobSource.cpp   QuickStartJobSource.cpp
 The next step is to initialize communication with the job scheduling system. This might involve opening a TCP connection to the job scheduling system which will remain open for the duration of the Plugin's lifetime, or it might involve testing that it is possible to connect to the job scheduling system. In the case of the sample Local Plugin, provided with this SDK, no communication test is necessary since jobs will be run on the local machine.
 
 Any other tasks which need to be completed before the Plugin is ready to launch jobs must be completed here. For example, in the RStudio SLURM Launcher Plugin it was also necessary to check which timezone the SLURM cluster is using, since job timestamps need to be compared later on. If the Plugin implementation will be tied to a specific version, or set of versions, of the job scheduling system, that should be validated here as well.
+
+### Example
+
+The Plugin Developer may now change
+
+
+```{Rcpp,eval=FALSE}
+#include <QuickStartJobSource.hpp>
+
+#include <Error.hpp>
+
+namespace rstudio {
+namespace launcher_plugins {
+namespace quickstart {
+
+Error QuickStartJobSource::initialize()
+{
+   // TODO #6: Initialize communication with the job scheduling system. If communication fails, return an error.
+   return Success();
+}
+
+} // namespace quickstart
+} // namespace launcher_plugins
+} // namespace rstudio
+```
+
+in `QuickStartJobSource.cpp` to
+
+
+```{rcpp,eval=FALSE}
+#include "MarsJobSource.hpp"
+
+#include <Error.hpp>
+#include "options/MarsOptions.hpp"
+
+namespace orchid {
+namespace mars {
+
+Error MarsJobSource::initialize()
+{
+  const options::MarsOptions& opts = options::MarsOptions::getInstance();
+  
+  try
+  {
+    mars_api::init(opts.host(), opts.port(), opts.useSsl());
+  }
+  catch (const mars_expcetion& e)
+  {
+    return Error("MarsApiError", e.code(), e.what(), ERROR_LOCATION);
+  }
+  
+  return Success();
+}
+
+} // namespace mars
+} // namespace orchid
+```
+
+## TODO #7: Define the Cluster Configuration
+ 
+TODO Location             Impact
+------------------------  ------------------------
+QuickStartJobSource.cpp   QuickStartJobSource.cpp
+
+
+RStudio applications which make use of the Launcher can determine the configuration and capabilities of each job scheduling system by submitting a Cluster Info request to the Launcher. Each Plugin is responsible for returning a complete and correct list of the configuration and capabilities of the job scheduling system with which it integrates. For more information about the Cluster Info request, see the RStudio Launcher Plugin SDK Developer Guide.
+
+Some aspects of the configuration and capabilities may be independent of the end user or the Launcher, and others may differ by user. If any configuration or capability values should differ based on the end user, it is likely that these rules should be configurable by the system admin. For the convenience of the Plugin Developer, an `AbstractUserProfiles` class has been provided to facilitate the implementation of User Profiles. For more details about implementing this feature, please refer to the 'User Profiles' section of the 'Advanced Features' chapter of the RStudio Launcher Plugin SDK Developer Guide.
+
+This section will describe the questions which need to be answered to correctly define the configuration and capabilities of a job scheduling system, and what value(s) of the `JobSourceConfiguration` structure should be modified in the overridden implementation of `IJobSource::getConfigurations`.
+
+* Does the job scheduling system support or require containers (such as Docker or Singularity containers)? If yes:
+    + set `JobSourceConfiguration::ContainerConfig::SupportsContainers` to `true`. Note that if `JobSourceConfiguration::ContainerConfig::SupportsContainers` is set to `false`, all other values of `JobSourceConfiguration::ContainerConfig` will be ignored.
+    + decide how the list of available container images should be determined and add each container image name to `JobSourceConfiguration::ContainerConfig::ContainerImages`.
+    + decide how the default container image should be determined, if any, and then set the value of `JobSourceConfiguration::ContainerConfig::DefaultImage`.
+    * decide whether unknown images should be allowed and set `JobSourceConfiguration::ContainerConfig""AllowUnknownImages` to `true` or `false` as desired.
+    > Info: The RStudio Kubernetes Launcher Plugin allows system administrators to control the list of available container images, the default image, and whether unknown images should be allowed on a per-user or per-group basis through the User Profiles feature. For an example of what that configuration looks like, see the sample `launcher.kubernetes.profiles.conf` file in the [Job Launcher Plugin Configuration section of the RStudio Job Launcher Administrator's Guide](https://docs.rstudio.com/job-launcher/index.html#job-launcher-plugin-configuration).
+    
+    &nbsp;
+
+* Does the job scheduling system support job queues? A job queue is a subset of machines within the job scheduling system. When a job is submitted to the job scheduling system, a specific queue may be requested and the job should be run on one or more of the machines in the requested queue. In some job scheduling systems, this may also be known as a "partition". If yes:
+    + pull down the list of queues from the job scheduling system, or otherwise determine the list available queues, and add each queue to `JobSourceConfiguration::Queues`.
+    
+* Does the job scheduling system support setting resource limits on a job?
+    + determine the type of resource limits that are supported by the job scheduling system. The SDK allows the following resource types: Cpu Count, Cpu Time, Memory, and Memory Swap. For each supported type add a `ResourceLimit` object of that type to `JobSourceConfiguration::ResourceLimits`, optionally setting the maximum and default values of that resource limit type.
+
+    &nbsp;
+
+    > Info: The existing RStudio Launcher Plugins allow system administrators to configure the maximum and default values for each resource type on a per-user or per-group basis through the User Profiles feature. From an exampleof what that looks like, see a sample `launcher.<plugin name>.profiles.conf` [Job Launcher Plugin Configuration section of the RStudio Job Launcher Administrator's Guide](https://docs.rstudio.com/job-launcher/index.html#job-launcher-plugin-configuration).
+
+* Does the job scheduling system support other placement constraints that are important to surface? It is not necessary to surface every placement constraint supported by the job scheduling system; however if any constraints are commonly used or otherwise important to the end user, they may be surfaced through this feature. Examples of such constraints may be other types of resource limits (e.g. disk space, GPU count, GPU time, etc.), or other types of constraints entirely (e.g. disk type, region of a cloud service, etc.). If yes:
+    + for each placement constraint type, add one `PlacementConstraint` object to `JobSourceConfiguration::PlacementConstraints` for each possible value of that constraint.
+
+> Important: Whether or not to use the `system::User` parameter provided to each of the capabilities methods is at the discretion of the Plugin Developer. If the Plugin Developer does not wish to support User Profiles and does not have another method to determine per-user or per-group rules, the `system::User` parameter may simply be ignored.
+
+If there are any job configuration values which cannot be covered by one of the above categories, refer to the 'Custom Job Source Configuration' section of the 'Advanced Features' chapter of the RStudio Launcher Plugin SDK Developer's Guide.
+
+### Example
+
+Assume that the Mars scheduling system has the following capabilities:
+
+* container support
+* a way to list available container images that are available to a given user
+* no default container image
+* no way to specify unknown images
+* a way to set a limit on the number of CPUs, the amount of Memory, and the number of GPUs, and a way to check the maximum possible values that can be requested
+* job queues
+
+The Plugin developer can report this support by changing
+
+```{Rcpp, eval=FALSE}
+Error QuickStartJobSource::getConfiguration(
+  const system::User& in_user,
+  api::JobSourceConfiguration& out_configuration) const
+{
+  // TODO #7: Define cluster configuration.
+  return Success();
+}
+```
+
+in `QuickStartJobSource.cpp` to
+
+```{Rcpp, eval=FALSE}
+Error MarsJobSource::getConfiguration(
+  const system::User& in_user,
+  api::JobSourceConfiguration& out_configuration) const
+{
+  api::ContainerConfiguration& containerConfig = out_configuration.ContainerConfig;
+  containerConfig.SupportsContainers = true;
+   
+  int maxGpuCount = 0, maxCpuCount = 0, maxMemoryMB = 0;
+  try
+  {
+    // Get the container images and the queues.
+    containerConfig.ContainerImages = mars_api::get_images(in_user.getUsername());
+    out_configuration.Queues  = mars_api::get_queues());
+    
+    // Get the maximum resource limit and placement constraint values.
+    maxGpuCount = mars_api::get_total_gpus();
+    maxCpuCount = mars_api::get_total_cpus();
+    maxMemoryMB = mars_api::get_max_memory();
+  }
+  catch (const mars_exception& e)
+  {
+    return Error("MarsApiError", e.code(), e.what(), ERROR_LOCATION);
+  }
+  
+  // Populate placement constraints with one constraint value for gpu_count for each integer
+  // less than or equal to the maximum gpu_count value.
+  for (int i = 0; i <= maxCpuCount; ++i)
+    out_configuration.PlacementConstraints.emplace_back("gpu_count", std::toString(i));
+  
+  // Populate the resource limits.
+  out_configuration.ResourceLimits.emplace_back(
+    api::ResourceLimit::Type::CPU_COUNT,
+    std::toString(maxCpuCount));
+  out_configuration.ResourceLimits.emplace_back(
+    api::ResourceLimit::Type::MEMORY,
+    std::toString((double)maxMemoryMB));
+  
+  return Success();
+}
+```
+
+in `MarsJobSource.cpp`.
+  

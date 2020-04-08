@@ -25,9 +25,14 @@
 #ifndef LAUNCHER_PLUGINS_RESPONSE_HPP
 #define LAUNCHER_PLUGINS_RESPONSE_HPP
 
+#include <Noncopyable.hpp>
+
 #include <cstdint>
 
+#include <vector>
+
 #include <PImpl.hpp>
+#include <api/Job.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -43,10 +48,12 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace api {
 
+struct JobSourceConfiguration;
+
 /**
  * @brief Represents the common components of all responses which can be sent the RStudio Launcher.
  */
-class Response
+class Response : public Noncopyable
 {
 public:
    /**
@@ -59,7 +66,7 @@ public:
     *
     * @return The JSON object which represents this response.
     */
-   virtual json::Object asJson() const;
+   virtual json::Object toJson() const;
 
 protected:
    /**
@@ -116,8 +123,8 @@ private:
 };
 
 /**
- * @brief Class which represents a bootstrap response which can be sent to the RStudio Launcher in response to a
- *        bootstrap request.
+ * @brief Class which represents a bootstrap response which can be sent to the Launcher in response to a bootstrap
+ *        request.
  */
 class BootstrapResponse : public Response
 {
@@ -134,11 +141,11 @@ public:
     *
     * @return The JSON object which represents this bootstrap response.
     */
-   json::Object asJson() const override;
+   json::Object toJson() const override;
 };
 
 /**
- * @brief Class which represents an error response which can be sent to the RStudio Launcher in response to any request.
+ * @brief Class which represents an error response which can be sent to the Launcher in response to any request.
  */
 class ErrorResponse : public Response
 {
@@ -180,7 +187,7 @@ public:
     *
     * @return The JSON object which represents this error response.
     */
-   json::Object asJson() const override;
+   json::Object toJson() const override;
 
 private:
    // The private implementation of ErrorResponse.
@@ -188,7 +195,7 @@ private:
 };
 
 /**
- * @brief Class which represents a heartbeat response which should be sent to the server every configured
+ * @brief Class which represents a heartbeat response which should be sent to the Launcher every configured
  * heartbeat-interval-seconds.
  */
 class HeartbeatResponse : public Response
@@ -199,6 +206,33 @@ public:
     */
    HeartbeatResponse();
 };
+
+/**
+ * @brief Class which represents a cluster info response which should be sent to the Launcher in response to a cluster
+ *        info request.
+ */
+ class ClusterInfoResponse : public Response
+ {
+ public:
+    /**
+     * @brief
+     *
+     * @param in_requestId          The ID of the request for which this response is being sent.
+     * @param in_configuration      The configuration and capabilities of the cluster.
+     */
+    ClusterInfoResponse(uint64_t in_requestId, const JobSourceConfiguration& in_configuration);
+
+    /**
+     * @brief Converts this cluster info response to a JSON object.
+     *
+     * @return The JSON object which represents this cluster info response.
+     */
+    json::Object toJson() const override;
+
+ private:
+    // The private implementation of ClusterInfoResponse
+    PRIVATE_IMPL(m_impl);
+ };
 
 } // namespace api
 } // namespace launcher_plugins

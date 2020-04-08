@@ -24,6 +24,8 @@
 #ifndef LAUNCHER_PLUGINS_REQUEST_HPP
 #define LAUNCHER_PLUGINS_REQUEST_HPP
 
+#include <Noncopyable.hpp>
+
 #include <PImpl.hpp>
 
 namespace rstudio {
@@ -50,9 +52,9 @@ namespace launcher_plugins {
 namespace api {
 
 /**
- * @brief Base class for all requests which may be received from the RStudio Launcher.
+ * @brief Base class for all requests which may be received from the Launcher.
  */
-class Request
+class Request : public Noncopyable
 {
 public:
    /**
@@ -143,7 +145,7 @@ protected:
 };
 
 /**
- * @brief Represents a bootstrap request received from the RStudio Launcher.
+ * @brief Represents a bootstrap request received from the Launcher.
  */
 class BootstrapRequest: public Request
 {
@@ -179,6 +181,47 @@ private:
 
    // The private implementation of BootstrapRequest.
    PRIVATE_IMPL(m_impl);
+
+   friend class Request;
+};
+
+/**
+ * @brief Base class which should be used by the class of requests which require a username.
+ */
+class UserRequest : public Request
+{
+public:
+   /**
+    * @brief Gets the user who initiated this request.
+    *
+    * If an admin user made this request, this object may represent all users (check by calling User::isAllUsers()). In
+    * that case, information for all users should be returned.
+    *
+    * @return The user who initiated this request.
+    */
+   const system::User& getUser() const;
+
+   /**
+    * @brief Gets the actual username that was used when the request was submitted.
+    *
+    * This value is only useful for auditing purposes and should not be required by most plugins.
+    *
+    * @return The actual username that was used when the request was submitted.
+    */
+   const std::string& getRequestUsername() const;
+
+protected:
+   /**
+    * @brief Constructor.
+    *
+    * @param in_type            The type of the user request.
+    * @param in_requestJson     The JSON Object which represents the user request.
+    */
+   explicit UserRequest(Request::Type in_type, const json::Object& in_requestJson);
+
+private:
+   // The private implementation of UserRequest.
+   PRIVATE_IMPL(m_userImpl);
 
    friend class Request;
 };

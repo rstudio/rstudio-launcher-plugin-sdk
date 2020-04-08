@@ -44,6 +44,27 @@ public:
     * @return Success if the job source could be initialized; Error otherwise.
     */
    Error initialize() override;
+
+   /**
+    * @brief Gets the configuration and capabilities of this Job Source for the specified user.
+    *
+    * This function controls the options that will be available to users when launching jobs.
+    *
+    * NOTE: Many of the values here should most likely be controllable by Launcher administrators when they configure
+    *       the Launcher. For more details, see the RStudio Launcher Plugin SDK QuickStart Guide TODO #7.
+    *
+    * @param in_user                The user who made the request to see the configuration and capabilities of the
+    *                               Cluster. This may be used to return a different configuration based on any
+    *                               configured user profiles. For more information about user profiles, see the
+    *                               'User Profiles' subsection of the 'Advanced Features' section of the RStudio
+    *                               Launcher Plugin SDK Developer's Guide.
+    * @param out_configuration      The configuration and capabilities of this Job Source, for the specified user.
+    *
+    * @return Success if the configuration and capabilities for this Job Source could be populated; Error otherwise.
+    */
+   virtual Error getConfiguration(
+      const system::User& in_user,
+      api::JobSourceConfiguration& out_configuration) const override;
 };
 
 } // namespace quickstart
