@@ -229,7 +229,7 @@ This section describes the details of API types which are not simple types, such
 | stdin                | The standard input to be passed to the command or exe of the Job.                                 | String
 | stderr               | The location of the file which contains the standard error output of the Job.                     | String
 | stdout               | The location of the file which contains the standard output of the Job.                           | String
-| status               | The current status of the job.                                                                    | "Canceled", "Failed", "Finished", "Killed", "Pending", "Running", or "Suspended"
+| status               | The current status of the job.                                                                    | [JobState](#job-state)
 | statusMessage        | The message or reason of the current status of the Job.                                           | String
 | submissionTime       | The time at which the Job was submitted to the Cluster.                                           | String (ISO 8601 format DateTime)
 | tags                 | The tags that were set for the Job. Used for filtering Jobs.                                      | String Array
@@ -243,6 +243,20 @@ This section describes the details of API types which are not simple types, such
 | name         | The name of the custom configuration value.                                 | String
 | valueType    | The type of the custom configuration value. Optional.                       | "string", "int", "float", or "enum"
 | value        | The value of the custom configuration value. Optional.                      | String (convertible to valueType)
+
+### JobState {#job-state}
+
+This type is JSON String value with limited set of valid values, rather than a JSON object like the other types described here. The possible values of a JobState field and their meanings are listed in the table below.
+
+|   Value   |                                                           Description
+| --------- |--------------------------------------------------------------------------------------------------------------------------
+| Canceled  | The job was canceled by the user before it began to run.
+| Failed    | The job could not be launched due to an error. This status does not refer to jobs where the process exited with a non-zero exit code.
+| Finished  | The job was launched and finished executing. This includes jobs where the process exited with a non-zero exit code.
+| Killed    | The job was forcibly killed while it was running. I.e. the job process received `SIGKILL`.
+| Pending   | The job was successfully submitted to the job scheduling system but has not started running yet.
+| Running   | The job is currently running.
+| Suspended | The job was running, but execution was paused and may be resumed at a later time.
 
 ### Mount {#mount}
 
