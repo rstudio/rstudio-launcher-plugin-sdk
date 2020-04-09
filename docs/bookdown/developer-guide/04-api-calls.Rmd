@@ -4,6 +4,8 @@ The Launcher Plugin API is a set of requests and responses which may be sent fro
 
 For each API call, this section will go into detail on how the request corresponds to methods on the `IJobSource` interface, or on other components of the SDK.
 
+## Common Fields {#common-fields}
+
 The following fields are common to all requests and responses:
 
 &nbsp;
@@ -35,8 +37,8 @@ In addition, many requests may also include `username` and `requestUsername` fie
 
 |    Field Name   |                                                   Description
 | --------------- | -------------------------------------------------------------------------------------------------------------------
-| username        | The username of the user that initiated the request. Used for auditing/security purposes. Some requests have the ability to specify * for this value, indicating all users’ information should be returned. This can occur if a super user (admin user) makes a request, or if authorization is disabled.
-| requestUsername | The actual username used when the request was submitted. This should be ignored in most plugins, and the username value above should be used. This field is provided for additional information if needed.
+| username        | The username of the user that initiated the request. Used for auditing/security purposes. Some requests have the ability to specify '*' for this value, indicating all users’ information should be returned. This can occur if a super user (admin user) makes a request, or if authorization is disabled.
+| requestUsername | The actual username used when the request was submitted. This should be ignored in most plugins, and the username value (above) should be used. This field is provided for additional information if needed.
 
 ## Requests and Responses {#req-and-resp}
 
@@ -50,9 +52,9 @@ For any request, the Plugin may return an Error response. To return an Error res
 
 |  Field Name  |                               Description                                   |  Value
 | ------------ | --------------------------------------------------------------------------- | -------
-| messageType  | See above.                                                                  | -1
-| requestId    | See above.                                                                  | Int
-| responseId   | See above.                                                                  | Int
+| messageType  | [See above.](#common-fields)                                                | -1
+| requestId    | [See above.](#common-fields)                                                | Int
+| responseId   | [See above.](#common-fields)                                                | Int
 | errorCode    | The error code. More details in the [Error Codes](#error-codes) section.    | Int
 | errorMessage | The error message. More details in the [Error Codes](#error-codes) section. | Int
 
@@ -88,8 +90,8 @@ Despite the fact that there will be many heartbeats sent to and from the Launche
 
 |  Field Name  |                               Description                                   |  Value
 | ------------ | --------------------------------------------------------------------------- | -------
-| messageType  | See above.                                                                  | 0
-| requestId    | See above.                                                                  | 0
+| messageType  | [See above.](#common-fields)                                                | 0
+| requestId    | [See above.](#common-fields)                                                | 0
 
 &nbsp;
 
@@ -97,9 +99,9 @@ Despite the fact that there will be many heartbeats sent to and from the Launche
 
 |  Field Name  |                               Description                                   |  Value
 | ------------ | --------------------------------------------------------------------------- | -------
-| messageType  | See above.                                                                  | 0
-| requestId    | See above.                                                                  | 0
-| responseId   | See above.                                                                  | 0
+| messageType  | [See above.](#common-fields)                                                | 0
+| requestId    | [See above.](#common-fields)                                                | 0
+| responseId   | [See above.](#common-fields)                                                | 0
 
 ### Bootstrap {#bootstrap}
 
@@ -111,8 +113,8 @@ This request is sent to the Plugin once, immediately after the Plugin is launche
 
 |  Field Name  |                               Description                                   |  Value
 | ------------ | --------------------------------------------------------------------------- | -------
-| messageType  | See above.                                                                  | 1
-| requestId    | See above.                                                                  | 0
+| messageType  | [See above.](#common-fields)                                                | 1
+| requestId    | [See above.](#common-fields)                                                | 0
 | version      | The Launcher Plugin API version in use by the Launcher.                     | [Version](#api-ver)
 
 &nbsp;
@@ -121,9 +123,9 @@ This request is sent to the Plugin once, immediately after the Plugin is launche
 
 |  Field Name  |                               Description                                   |  Value
 | ------------ | --------------------------------------------------------------------------- | -------
-| messageType  | See above.                                                                  | 1
-| requestId    | See above.                                                                  | 0
-| responseId   | See above.                                                                  | 0
+| messageType  | [See above.](#common-fields)                                                | 1
+| requestId    | [See above.](#common-fields)                                                | 0
+| responseId   | [See above.](#common-fields)                                                | 0
 | version      | The Launcher Plugin API version in use by the Plugin.                       | [Version](#api-ver)
 
 ### Cluster Info {#cluster-info}
@@ -134,7 +136,7 @@ This API call is responsible for reporting the configuration and capabilities of
 
 The Plugin may return an error from this method if it encounters any issues populating the fields on the `JobSourceConfiguration` object. Additionally, the method is provided with a `system::User` object, which represents the user who initiated the Cluster Info request. This optionally allows the Plugin Developer to provide different results on a per-user or per-group basis. This may be useful to allow system administrator to set different maximum and default Resource Limits for different groups of user via the [User Profiles feature](#user-profiles). It also may be useful if the job scheduling system allows administrators to make similar rule sets.
 
-For a simple example of implementing this method, see "TODO: #7" in the RStudio Launcher QuickStart Guide.
+For a simple example of implementing this method, see 'TODO: #7' in the RStudio Launcher Plugin SDK QuickStart Guide.
 
 &nbsp;
 
@@ -142,10 +144,10 @@ For a simple example of implementing this method, see "TODO: #7" in the RStudio 
 
 |  Field Name     |                               Description                                   |  Value
 | --------------- | --------------------------------------------------------------------------- | -------
-| messageType     | See above.                                                                  | 9
-| requestId       | See above.                                                                  | Int
-| username        | See above.                                                                  | String
-| requestUsername | See above.                                                                  | String
+| messageType     | [See above.](#common-fields)                                                | 9
+| requestId       | [See above.](#common-fields)                                                | Int
+| username        | [See above.](#common-fields)                                                | String
+| requestUsername | [See above.](#common-fields)                                                | String
 
 &nbsp;
 
@@ -153,9 +155,9 @@ For a simple example of implementing this method, see "TODO: #7" in the RStudio 
 
 |  Field Name          |                               Description                                                                              |  Value
 | -------------------- | ---------------------------------------------------------------------------------------------------------------------- | ----------------------------------------
-| messageType          | See above.                                                                                                             | 8
-| requestId            | See above.                                                                                                             | Int
-| responseId           | See above.                                                                                                             | Int
+| messageType          | [See above.](#common-fields)                                                                                           | 8
+| requestId            | [See above.](#common-fields)                                                                                           | Int
+| responseId           | [See above.](#common-fields)                                                                                           | Int
 | supportsContainers   | Whether or not the job scheduling system supports containers.                                                          | Boolean
 | config               | Any custom configuration values which may be set per job.                                                              | [JobConfig](#job-config) Array
 | placementConstraints | Any custom placement constraints which may be requested for a job.                                                     | [PlacementConstraint](#constraint) Array
@@ -233,7 +235,6 @@ This section describes the details of API types which are not simple types, such
 | tags                 | The tags that were set for the Job. Used for filtering Jobs.                                      | String Array
 | user                 | The username of the user who launched the Job.                                                    | String
 | workingDirectory     | The directory to use as the working directory for the command or exe.                             | String
-
 
 ### JobConfig {#job-config}
 
