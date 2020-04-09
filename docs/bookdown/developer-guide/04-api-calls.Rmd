@@ -246,7 +246,7 @@ This section describes the details of API types which are not simple types, such
 
 ### JobState {#job-state}
 
-This type is JSON String value with limited set of valid values, rather than a JSON object like the other types described here. The possible values of a JobState field and their meanings are listed in the table below.
+This type is a JSON String value with limited set of valid values, rather than a JSON object like the other types described here. The possible values of a JobState field and their meanings are listed in the table below.
 
 |   Value   |                                                           Description
 | --------- |--------------------------------------------------------------------------------------------------------------------------
