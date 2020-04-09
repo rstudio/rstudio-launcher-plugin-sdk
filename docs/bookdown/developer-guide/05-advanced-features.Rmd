@@ -2,6 +2,35 @@
 
 This section describes optional, advanced features of the SDK which are not covered in the RStudio Launcher Plugin SDK QuickStart Guide.
 
+## Date-Time Support {#date-time}
+
+The SDK provides a utility class for working with `DateTime` objects (`include/system/DateTime.hpp`). Dates and times can be converted from string to `system::DateTime` using `system::DateTime::fromString`, and to string using `system::DateTime::toString`. When converting from string, the default expected time string format will be `YYYY-MM-DDThh:mm:ss.ssssssTZ`, or `%Y-%m-%dT%H:%M:%S%F%ZP` using the supported format specification. This is the ISO 8601 extended time format. When converting to string, the default output format is `YYYY-MM-DDThh:mm:ss.ssssssZ`, or `%Y-%m-%dT%H:%M:%S%FZ`. Note that the default output string is in UTC time.
+
+To use a non-default format specification, a custom format specification may be provided to the conversion function. Below is a table which describes the possible format values. As with most string formats, characters which are not prefixed by `%` will be included in the output (or should be included in the input) verbatim.
+
+|  Value  |                    Description                   |                                       Example
+| ------- | ------------------------------------------------ | ------------------------------------------------------------------------------------
+| %a      | Short weekday                                    | "Mon", "Tue"
+| %A      | Long weekday                                     | "Monday", "Tuesday"
+| %b      | Short month                                      | "Nov", "Dec"
+| %B      | Long month                                       | "November", "December
+| %d      | Numerical day of the month                       | "01" through "31", as appropriate for the month
+| %f      | Fractional seconds                               | "04:01:33.000000", "04:52:16.598763"
+| %F      | Fractional seconds, if non-zero                  | "04:01:33", "04:52:16.598763"
+| %H      | Hour value, on the 24 hour clock                 | "00" through "23"
+| %j      | Numerical day of the year                        | "001" through "365" (or "366" on leap years)
+| %m      | Numerical month                                  | "01" through "12"
+| %M      | Minute value                                     | "00" through "59"
+| %s      | Seconds with fractional seconds                  | "28.003251"
+| %S      | Seconds                                          | "28"
+| %U      | Numerical week of the year, starting on a Sunday | "00" through "53", where the first Sunday in January is the first day of week 01
+| %w      | Numerical day of the week, starting from 0       | "0" through "6"
+| %W      | Numerical week of the year, starting on a Monday | "00" through "53", where the first Monday in January is the first day of week 01
+| %y      | Two digit year                                   | 2019 would be "19"
+| %Y      | Four digit year                                  | "2019"
+| %ZP     | Posix time zone string                           | "-07:00", "PST-08PDT+01,M4.1.0/02:00,M10.5.0/02:00", "Z"
+
+
 ## User Profiles {#user-profiles}
 
 It may be useful to allow system administrators to set default or maximum values for certain features on a per-user or per-group basis. For example, if a job scheduling system supports requesting an amount of memory for a job, system administrators may wish to give different memory levels to different groups of users. For more examples, see the sample `/etc/rstudio/launcher.kubernetes.profiles.conf` in the [Job Launcher Plugin Configuration section of the RStudio Job Launcher Guide](https://docs.rstudio.com/job-launcher/latest/index.html#job-launcher-plugin-configuration).
