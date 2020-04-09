@@ -251,7 +251,7 @@ This section describes the details of API types which are not simple types, such
 | mountPath    | The destination path of the mount.                                                                            | String
 | readOnly     | Whether the source path should be mounted with write permissions (`false`) or not (`true`). Default: `false`. | Boolean
 | hostMount    | The host mount source. Mutually exclusive with 'nfsMount'.                                                    | [HostMount](#host-mount)
-| nfsMount     | The nfs mount source. Mutally exclusive with 'hostMount'.                                                     | [NfsMount](#nfs-mount)
+| nfsMount     | The nfs mount source. Mutually exclusive with 'hostMount'.                                                     | [NfsMount](#nfs-mount)
 
 ### NfsMount {#nfs-mount}
 
