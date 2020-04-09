@@ -128,6 +128,50 @@ This request is sent to the Plugin once, immediately after the Plugin is launche
 | responseId   | [See above.](#common-fields)                                                | 0
 | version      | The Launcher Plugin API version in use by the Plugin.                       | [Version](#api-ver)
 
+### Jobs {#jobs}
+
+There are two API requests which return a Job State Response: the Submit Job and Job State requests. The SDK maintains an internal cache of all jobs in the system. When a Job State request is received, the SDK searches the cache for any jobs that match the request and sends them back to the Launcher. The SDK will also manage filtering the jobs and restricting the job fields in the response, if necessary. For more information about how the job cache is maintained, see the [Job Repository](#job-repo) section of the [Advanced Features](#advanced-features) chapter.
+
+&nbsp;
+
+**Submit Job Request**
+
+|  Field Name     |                               Description                                   |  Value
+| --------------- | --------------------------------------------------------------------------- | -------
+| messageType     | [See above.](#common-fields)                                                | 2
+| requestId       | [See above.](#common-fields)                                                | Int
+| username        | [See above.](#common-fields)                                                | String
+| requestUsername | [See above.](#common-fields)                                                | String
+| job             | The job object which describes the job to be launched.                      | [Job](#job-object)
+
+&nbsp;
+
+**Job State Request**
+
+|  Field Name     |                                                              Description                                                              |  Value
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------- | -------
+| messageType     | [See above.](#common-fields)                                                                                                          | 3
+| requestId       | [See above.](#common-fields)                                                                                                          | Int
+| username        | [See above.](#common-fields)                                                                                                          | String
+| requestUsername | [See above.](#common-fields)                                                                                                          | String
+| jobId           | The ID of the job to be retrieved. If this fields is '*' all jobs should be retrieved and filters may be used.                        | String
+| encodedJobId    | The Launcher generated encoded job ID which contains extra metadata. Provides extra information only.                                 | String
+| tags            | If present, the set of tags by which to filter the jobs. Only jobs which have all these tags will be returned.                        | String Array
+| startTime       | If present, only jobs which were submitted after this UTC time will be returned. Format: `YYYY-MM-DDThh:mm:ss`.                       | String
+| endTime         | If present, only jobs which were submitted before this UTC time will be returned. Format: `YYYY-MM-DDThh:mm:ss`.                      | String
+| statuses        | If present, only jobs which have one of the specified statuses will be returned.                                                      | [JobState](#job-state) Array
+| fields          | If present, only the job fields included in this list will be included in the response, excepted 'id', which will always be returned. | String Array
+
+&nbsp;
+
+**Job State Response**
+
+|  Field Name     |                               Description                                   |  Value
+| --------------- | --------------------------------------------------------------------------- | -------
+| messageType     | [See above.](#common-fields)                                                | 2
+| jobs            | The list of jobs that met the request criteria.                             | [Job](#job-object) Array
+
+
 ### Cluster Info {#cluster-info}
 
 This API call is responsible for reporting the configuration and capabilities of the job scheduling system. RStudio applications use this call to determine what UI to surface to the end user when they launch jobs. When this request is received, the SDK will invoke the following method to compose the correct response:
@@ -166,9 +210,6 @@ For a simple example of implementing this method, see 'TODO: #7' in the RStudio 
 | images               | If the job scheduling system supports containers, the list of container images which may be used when launching a job. | String Array
 | defaultImage         | If the job scheduling system supports containers, the default container image to use if none is selected.              | String
 | allowUnknownImages   | If the job scheduling system supports containers, whether to allow jobs to be run on images which are not known.       | Boolean
-
-## Jobs {#jobs}
-
 
 ## Complex API Types {#complex-types}
 
