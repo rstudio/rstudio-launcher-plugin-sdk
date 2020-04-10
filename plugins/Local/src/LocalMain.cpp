@@ -20,8 +20,8 @@
 
 #include <AbstractMain.hpp>
 
+#include <climits>
 #include <unistd.h>
-#include <zconf.h>
 
 #include <LocalOptions.hpp>
 #include <LocalPluginApi.hpp>
