@@ -450,7 +450,7 @@ Each job detail must be converted from the format in the Job Scheduling System t
 
 ### Job Fields {#todo-8-fields}
 
-The `Job` object has a field for each detail that the Launcher requires. This document will discuss some of the fields which require special consideration. Because jobs may remain in the system between Plugin restarts, the Plugin must be able to populate each field of the `Job` object exactly as it would have been when it was submitted to the Plugin based on the record of the job in the Job Scheduling System. If any fields cannot be retrieved from the Job Scheduling System, it will most likely be easier to ignore them during this TODO and design a solution during [TODO #10](#todo-10). Then it  For more information about each field, see the RStudio Launcher Plugin SDK API Reference.
+The `Job` object has a field for each detail that the Launcher requires. This document will discuss some of the fields which require special consideration. Because jobs may remain in the system between Plugin restarts, the Plugin must be able to populate each field of the `Job` object exactly as it would have been when it was submitted to the Plugin based on the record of the job in the Job Scheduling System. If any fields cannot be retrieved from the Job Scheduling System, it will most likely be easier to ignore them during this TODO and design a solution during [TODO #10](#todo-10). For more information about each field, see the RStudio Launcher Plugin SDK API Reference.
 
 #### Command vs. Exe vs. Container {#todo-8-command-exe}
 
