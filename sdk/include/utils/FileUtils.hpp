@@ -44,7 +44,7 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace utils {
 
-Error readFileToString(const system::FilePath& in_file, std::string& out_fileContents);
+Error readFileIntoString(const system::FilePath& in_file, std::string& out_fileContents);
 
 } // namespace utils
 } // namespace launcher_plugins

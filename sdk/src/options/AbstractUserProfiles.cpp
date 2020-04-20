@@ -565,7 +565,7 @@ Error AbstractUserProfiles::Impl::populateGroups(const std::set<std::string>& in
 Error AbstractUserProfiles::initialize()
 {
    std::string iniFileContents;
-   Error error = utils::readFileToString(getConfigurationFile(),iniFileContents);
+   Error error = utils::readFileIntoString(getConfigurationFile(), iniFileContents);
    if (error)
    {
       error = userProfileError(

@@ -60,7 +60,7 @@ inline Error readJobFromFile(const FilePath& in_jobFile, api::JobPtr& out_job)
    assert(out_job != nullptr);
 
    std::string jobJsonStr;
-   Error error = utils::readFileToString(in_jobFile, jobJsonStr);
+   Error error = utils::readFileIntoString(in_jobFile, jobJsonStr);
    if (error)
       return error;
 
