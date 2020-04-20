@@ -241,6 +241,8 @@ This section describes the details of API types which are not simple types, such
 
 ### HostMount {#host-mount}
 
+This represents a host mount source. If this field is present in a [Mount](#mount) object, the Plugin should attempt to mount the requested path from the Launcher host, or reject the request on the basis that mounting host paths is not supported.
+
 |  Field Name  |                               Description                                   |  Value
 | ------------ | --------------------------------------------------------------------------- | -------
 | path         | The source path to be mounted.                                              | String
@@ -309,6 +311,8 @@ This type is a JSON String value with limited set of valid values, rather than a
 | nfsMount     | The nfs mount source. Mutually exclusive with 'hostMount'.                                                    | [NfsMount](#nfs-mount)
 
 ### NfsMount {#nfs-mount}
+
+This represents an NFS server mount source. If this field is present in a [Mount](#mount) object, the Plugin should attempt to mount the requested path from the specified NFS server, or reject the request on the basis that mounting NFS paths is not supported.
 
 |  Field Name  |                               Description                                   |  Value
 | ------------ | --------------------------------------------------------------------------- | -------
