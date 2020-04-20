@@ -82,6 +82,10 @@ Error DateTime::fromString(const std::string& in_timeStr, DateTime& out_dateTime
    {
       ss >> time;
    }
+   catch(const std::exception& e)
+   {
+      return Error("TimeParseError", 1, "Failed to parse time: " + in_timeStr + ". Reason: " + e.what(), ERROR_LOCATION);
+   }
    catch (...)
    {
       return Error("TimeParseError", 1, "Failed to parse time: " + in_timeStr, ERROR_LOCATION);
