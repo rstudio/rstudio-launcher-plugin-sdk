@@ -25,7 +25,6 @@
 
 #include <boost/date_time/local_time/local_time.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/date_time/gregorian/gregorian_types.hpp>
 
 #include <Error.hpp>
 
@@ -174,6 +173,7 @@ bool DateTime::operator>=(const DateTime& in_other) const
 
 DateTime& DateTime::addHours(uint64_t in_hours)
 {
+   m_impl->Time += boost::posix_time::hours(in_hours);
    return *this;
 }
 
@@ -186,6 +186,7 @@ DateTime DateTime::addHours(uint64_t in_hours) const
 
 DateTime& DateTime::addMicroseconds(uint64_t in_microseconds)
 {
+   m_impl->Time += boost::posix_time::microseconds(in_microseconds);
    return *this;
 }
 
@@ -198,6 +199,7 @@ DateTime DateTime::addMicroseconds(uint64_t in_microseconds) const
 
 DateTime& DateTime::addMinutes(uint64_t in_minutes)
 {
+   m_impl->Time += boost::posix_time::minutes(in_minutes);
    return *this;
 }
 
@@ -210,6 +212,7 @@ DateTime DateTime::addMinutes(uint64_t in_minutes) const
 
 DateTime& DateTime::addSeconds(uint64_t in_seconds)
 {
+   m_impl->Time += boost::posix_time::seconds(in_seconds);
    return *this;
 }
 
