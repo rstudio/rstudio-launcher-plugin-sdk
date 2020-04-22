@@ -24,6 +24,7 @@
 
 #include <jobs/JobStatusNotifier.hpp>
 
+#include <memory>
 #include <mutex>
 
 #include <boost/signals2.hpp>
@@ -59,7 +60,7 @@ struct JobStatusNotifier::Impl
    /** Map of every signal per job. */
    SignalMap JobSignalMap;
 
-   /** Mutex. */
+   /** Mutex to protect map access. */
    std::mutex Mutex;
 };
 
@@ -97,6 +98,7 @@ struct Subscription
          {
             UNIQUE_LOCK_MUTEX(parent->m_impl->Mutex)
             {
+               // Check if this is the last subscription to m_jobId. If so, remove the entry from the map.
                auto itr = parent->m_impl->JobSignalMap.find(m_jobId);
                if (itr != parent->m_impl->JobSignalMap.end() && itr->second.empty())
                {
@@ -119,7 +121,84 @@ private:
    Connection m_connection;
 };
 
+JobStatusNotifier::JobStatusNotifier() :
+   m_impl(new Impl())
+{
+}
 
+SubscriptionHandle JobStatusNotifier::subscribe(const OnJobStatusUpdate& in_onJobStatusUpdate)
+{
+   return std::make_shared<Subscription>(
+      shared_from_this(),
+      "",
+      m_impl->AllJobsSignal.connect(in_onJobStatusUpdate));
+}
+
+SubscriptionHandle JobStatusNotifier::subscribe(
+   const std::string& in_jobId,
+   const OnJobStatusUpdate& in_onJobStatusUpdate)
+{
+   // If for some reason the job ID is empty, treat it like subscribe all. If the job Id is *, also treat it like
+   // subscribe all.
+   if (in_jobId.empty() || in_jobId == "*")
+      return subscribe(in_onJobStatusUpdate);
+
+   Connection connection;
+
+   // Get a connection. This requires accessing the map, so hold the lock.
+   UNIQUE_LOCK_MUTEX(m_impl->Mutex)
+   {
+      auto itr = m_impl->JobSignalMap.find(in_jobId);
+      if (itr == m_impl->JobSignalMap.end())
+      {
+         // If there's no entry for in_jobId yet, make one.
+         auto signalPair = m_impl->JobSignalMap.insert(std::make_pair(in_jobId, Signal()));
+         if (signalPair.second) // Check that insertion was successful. Should always be true because we have the lock.
+            connection = signalPair.first->second.connect(in_onJobStatusUpdate);
+      }
+      else
+         connection = itr->second.connect(in_onJobStatusUpdate);
+   }
+   END_LOCK_MUTEX
+
+   return std::make_shared<Subscription>(shared_from_this(), in_jobId, connection);
+}
+
+void JobStatusNotifier::updateJob(
+   const api::JobPtr& in_job,
+   api::Job::State in_newStatus,
+   const std::string& in_statusMessage,
+   const system::DateTime& in_invocationTime)
+{
+   LOCK_JOB(in_job)
+   {
+      // Do nothing if the job has a newer status than this status.
+      if (in_job->LastUpdateTime &&
+         (in_job->LastUpdateTime.getValueOr(system::DateTime()) >= in_invocationTime))
+         return;
+
+      bool notify = (in_job->Status != in_newStatus) || (in_job->StatusMessage != in_statusMessage);
+
+      in_job->LastUpdateTime = in_invocationTime;
+      in_job->Status = in_newStatus;
+      in_job->StatusMessage = in_statusMessage;
+
+      // If there was a meaningful change to the job, notify the listeners.
+      if (notify)
+      {
+         m_impl->AllJobsSignal(in_job);
+
+         UNIQUE_LOCK_MUTEX(m_impl->Mutex)
+         {
+            auto itr = m_impl->JobSignalMap.find(in_job->Id);
+            if (itr != m_impl->JobSignalMap.end())
+               itr->second(in_job);
+         }
+         END_LOCK_MUTEX
+      }
+   }
+   END_LOCK_JOB
+}
 
 } // namespace jobs
 } // namespace launcher_plugins

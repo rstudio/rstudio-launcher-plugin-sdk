@@ -94,7 +94,7 @@ public:
     *                               the Job Scheduling System.
     */
    void updateJob(
-      api::JobPtr in_job,
+      const api::JobPtr& in_job,
       api::Job::State in_newStatus,
       const std::string& in_statusMessage = "",
       const system::DateTime& in_invocationTime = system::DateTime());
