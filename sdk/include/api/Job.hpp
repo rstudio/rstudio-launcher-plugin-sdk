@@ -662,10 +662,10 @@ struct ResourceLimit
    std::string DefaultValue;
 };
 
-#define LOCK_JOB(in_jobPtr)                                 \
+#define LOCK_JOB(in_job)                                    \
 try                                                         \
 {                                                           \
-   rstudio::launcher_plugins::api::JobLock lock(in_jobPtr); \
+   rstudio::launcher_plugins::api::JobLock jobLock(in_job); \
 
 
 #define END_LOCK_JOB END_LOCK_MUTEX

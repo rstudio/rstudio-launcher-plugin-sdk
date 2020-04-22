@@ -140,7 +140,7 @@ struct AbstractMain::Impl
    }
 
    /**
-    * @brief Callback function to be invoked when a communication error occurrs with the RStudio Launcher, such as a
+    * @brief Callback function to be invoked when a communication error occurs with the RStudio Launcher, such as a
     *        malformed message.
     *
     * @param in_sharedThis      A shared pointer to this.
@@ -161,7 +161,7 @@ struct AbstractMain::Impl
    {
       UNIQUE_LOCK_MUTEX(m_mutex)
       if (!m_exitProcess)
-         m_exitConditionVar.wait(lock, [&]{ return m_exitProcess; });
+         m_exitConditionVar.wait(uniqueLock, [&]{ return m_exitProcess; });
       END_LOCK_MUTEX
    }
 

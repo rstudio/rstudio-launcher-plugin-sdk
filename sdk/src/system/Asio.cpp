@@ -230,7 +230,7 @@ struct AsioStream::Impl : public std::enable_shared_from_this<AsioStream::Impl>
 
                   // If there was no error, pop the first message and start writing over again.
                   instance->WriteBuffer.pop();
-                  instance->startWriting(lock, in_onError);
+                  instance->startWriting(uniqueLock, in_onError);
 
                END_LOCK_MUTEX
             }
@@ -297,7 +297,7 @@ void AsioStream::writeBytes(const std::string& in_data, const OnError& in_onErro
 
       m_impl->WriteBuffer.push(in_data);
       if (m_impl->WriteBuffer.size() == 1)
-         m_impl->startWriting(lock, in_onError);
+         m_impl->startWriting(uniqueLock, in_onError);
 
    END_LOCK_MUTEX
 }
