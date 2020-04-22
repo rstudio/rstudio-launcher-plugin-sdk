@@ -43,7 +43,7 @@ class Noninheritable
    /*
     * @brief Virtual Destructor.
     */
-   virtual ~Noninheritable();
+   virtual ~Noninheritable() = default;
 
 private:
    /**
