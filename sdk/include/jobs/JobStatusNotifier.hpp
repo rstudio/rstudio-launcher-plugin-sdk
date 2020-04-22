@@ -51,30 +51,16 @@ typedef std::function<void(const api::JobPtr&)> OnJobStatusUpdate;
 /**
  * @brief Class which notifies subscribers when a job updates.
  */
-class JobStatusNotifier : public Noncopyable, public Noninheritable<JobStatusNotifier>
+class JobStatusNotifier :
+   public Noncopyable,
+   public Noninheritable<JobStatusNotifier>,
+   public std::enable_shared_from_this<JobStatusNotifier>
 {
 public:
    /**
     * @brief Constructor.
     */
    JobStatusNotifier();
-
-   /**
-    * @brief Updates the status of a job with a new status and optionally a new status message.
-    *
-    * @param in_job                 The job to be updated.
-    * @param in_newStatus           The new status of the job.
-    * @param in_statusMessage       The new status message of the job. Default: "".
-    * @param in_invocationTime      The time at which this method was invoked. Default: Current Time. If there is
-    *                               concern about time differences between the RStudio Launcher Host and the Job
-    *                               Scheduling System, this may be overridden with the  time from the point of view of
-    *                               the Job Scheduling System.
-    */
-   void updateJob(
-      api::JobPtr in_job,
-      api::Job::State in_newStatus,
-      const std::string& in_statusMessage = "",
-      const system::DateTime& in_invocationTime = system::DateTime());
 
    /**
     * @brief Subscribes to all jobs.
@@ -96,9 +82,28 @@ public:
     */
    SubscriptionHandle subscribe(const std::string& in_jobId, const OnJobStatusUpdate& in_onJobStatusUpdate);
 
+   /**
+    * @brief Updates the status of a job with a new status and optionally a new status message.
+    *
+    * @param in_job                 The job to be updated.
+    * @param in_newStatus           The new status of the job.
+    * @param in_statusMessage       The new status message of the job. Default: "".
+    * @param in_invocationTime      The time at which this method was invoked. Default: Current Time. If there is
+    *                               concern about time differences between the RStudio Launcher Host and the Job
+    *                               Scheduling System, this may be overridden with the  time from the point of view of
+    *                               the Job Scheduling System.
+    */
+   void updateJob(
+      api::JobPtr in_job,
+      api::Job::State in_newStatus,
+      const std::string& in_statusMessage = "",
+      const system::DateTime& in_invocationTime = system::DateTime());
+
 private:
-   // The private implementation of
+   // The private implementation of JobStatusNotifier.
    PRIVATE_IMPL(m_impl);
+
+   friend class Subscription;
 };
 
 /** Convenience typedef */
