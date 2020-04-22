@@ -421,7 +421,7 @@ json::Object HostMountSource::toJson() const
 // Job =================================================================================================================
 struct Job::Impl
 {
-   std::mutex Mutex;
+   std::recursive_mutex Mutex;
 };
 
 PRIVATE_IMPL_DELETER_IMPL(Job)
@@ -925,12 +925,12 @@ json::Object JobConfig::toJson() const
 // JobLock =============================================================================================================
 struct JobLock::Impl
 {
-   explicit Impl(std::mutex& in_mutex) :
+   explicit Impl(std::recursive_mutex& in_mutex) :
       Lock(in_mutex)
    {
    }
 
-   std::lock_guard<std::mutex> Lock;
+   std::lock_guard<std::recursive_mutex> Lock;
 };
 
 PRIVATE_IMPL_DELETER_IMPL(JobLock)
