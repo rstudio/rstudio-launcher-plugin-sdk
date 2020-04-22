@@ -272,7 +272,7 @@ struct AbstractPluginApi::Impl
    std::shared_ptr<IJobSource> JobSource;
 
    /** The job repository */
-   std::shared_ptr<jobs::JobRepository> JobRepo;
+   jobs::JobRepositoryPtr JobRepo;
 
    /** The communicator that will be used to send and receive messages from the RStudio Launcher. */
    std::shared_ptr<comms::AbstractLauncherCommunicator> LauncherCommunicator;
@@ -334,7 +334,7 @@ AbstractPluginApi::AbstractPluginApi(std::shared_ptr<comms::AbstractLauncherComm
 {
 }
 
-std::shared_ptr<jobs::JobRepository> AbstractPluginApi::createJobRepository() const
+jobs::JobRepositoryPtr AbstractPluginApi::createJobRepository() const
 {
    return std::make_shared<jobs::JobRepository>();
 }

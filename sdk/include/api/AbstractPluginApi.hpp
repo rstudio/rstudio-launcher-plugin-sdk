@@ -79,7 +79,7 @@ private:
     *
     * @return The job repository.
     */
-    virtual std::shared_ptr<jobs::JobRepository> createJobRepository() const;
+    virtual jobs::JobRepositoryPtr createJobRepository() const;
 
    /**
     * @brief Creates the job source which can communicate with this Plugin's job scheduling system.

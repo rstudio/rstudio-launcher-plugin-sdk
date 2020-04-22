@@ -46,7 +46,7 @@ namespace jobs {
 /**
  * @brief Stores any jobs currently in the job scheduling system.
  */
-class JobRepository : Noncopyable
+class JobRepository : public Noncopyable
 {
 public:
    /**
@@ -112,6 +112,9 @@ private:
    // The private implementation of JobRepository.
    PRIVATE_IMPL(m_impl);
 };
+
+/** Convenience typedef. */
+typedef std::shared_ptr<JobRepository> JobRepositoryPtr;
 
 } // namespace jobs
 } // namespace launcher_plugins
