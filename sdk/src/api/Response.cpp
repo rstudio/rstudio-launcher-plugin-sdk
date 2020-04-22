@@ -185,11 +185,12 @@ json::Object JobStateResponse::toJson() const
    for (const JobPtr& job: m_impl->Jobs)
    {
       json::Object jobObj;
+      // Lock the job to ensure it doesn't change while we serialize it.
+      LOCK_JOB(job)
       {
-         // Lock the job to ensure it doesn't change while we serialize it.
-         JobLock lock(job);
          jobObj = job->toJson();
       }
+      END_LOCK_JOB
 
       if (m_impl->Fields)
       {
