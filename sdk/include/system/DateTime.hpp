@@ -147,31 +147,13 @@ public:
    bool operator>=(const DateTime& in_other) const;
 
    /**
-    * @brief Adds the specified number of days to this DateTime.
-    *
-    * @param in_days    The number of days to add to this DateTime.
-    *
-    * @return A refernce to this DateTime.
-    */
-   DateTime& addDays(int in_days);
-
-   /**
-    * @brief Adds the specified number of days to a copy of this DateTime.
-    *
-    * @param in_days    The number of days to add to this DateTime.
-    *
-    * @return The new DateTime.
-    */
-   DateTime addDays(int in_days) const;
-
-   /**
     * @brief Adds the specified number of hours to this DateTime.
     *
     * @param in_hours   The number of hours to add to this DateTime.
     *
     * @return A reference to this DateTime.
     */
-   DateTime& addHours(int in_hours);
+   DateTime& addHours(uint64_t in_hours);
 
    /**
     * @brief Adds the specified number of hours to a copy of this DateTime.
@@ -180,7 +162,7 @@ public:
     *
     * @return The new DateTime.
     */
-   DateTime addHours(int in_hours) const;
+   DateTime addHours(uint64_t in_hours) const;
 
    /**
     * @brief Adds the specified number of microseconds to this DateTime.
@@ -189,7 +171,7 @@ public:
     *
     * @return A reference to this DateTime.
     */
-   DateTime& addMicroseconds(int in_microseconds);
+   DateTime& addMicroseconds(uint64_t in_microseconds);
 
    /**
     * @brief Adds the specified number of microseconds to a copy of this DateTime.
@@ -198,7 +180,7 @@ public:
     *
     * @return The new DateTime.
     */
-   DateTime addMicroseconds(int in_microseconds) const;
+   DateTime addMicroseconds(uint64_t in_microseconds) const;
 
    /**
     * @brief Adds the specified number of minutes to this DateTime.
@@ -207,7 +189,7 @@ public:
     *
     * @return A reference to this DateTime.
     */
-   DateTime& addMinutes(int in_minutes);
+   DateTime& addMinutes(uint64_t in_minutes);
 
    /**
     * @brief Adds the specified number of minutes to a copy of this DateTime.
@@ -216,25 +198,7 @@ public:
     *
     * @return The new DateTime.
     */
-   DateTime addMinutes(int in_minutes) const;
-
-   /**
-    * @brief Adds the specified number of months to this DateTime.
-    *
-    * @param in_months      The number of months to add to this DateTime.
-    *
-    * @return A reference to this DateTime.
-    */
-   DateTime& addMonths(int in_months);
-
-   /**
-    * @brief Adds the specified number of months to a copy this DateTime.
-    *
-    * @param in_months      The number of months to add to this DateTime.
-    *
-    * @return The new DateTime.
-    */
-   DateTime addMonths(int in_months) const;
+   DateTime addMinutes(uint64_t in_minutes) const;
 
    /**
     * @brief Adds the specified number of seconds to this DateTime.
@@ -243,7 +207,7 @@ public:
     *
     * @return A reference to this DateTime.
     */
-   DateTime& addSeconds(int in_seconds);
+   DateTime& addSeconds(uint64_t in_seconds);
 
    /**
     * @brief Adds the specified number of seconds to a copy of this DateTime.
@@ -252,25 +216,7 @@ public:
     *
     * @return The new DateTime.
     */
-   DateTime addSeconds(int in_seconds) const;
-
-   /**
-    * @brief Adds the specified number of years to this DateTime.
-    *
-    * @param in_years       The number of years to add to this DateTime.
-    *
-    * @return A reference to this DateTime.
-    */
-   DateTime& addYears(int in_years);
-
-   /**
-    * @brief Adds the specified number of years to a copy of this DateTime.
-    *
-    * @param in_years       The number of years to add to this DateTime.
-    *
-    * @return The new DateTime.
-    */
-   DateTime addYears(int in_years) const;
+   DateTime addSeconds(uint64_t in_seconds) const;
 
    /**
     * @brief Converts this DateTime to an ISO 8601 time string.

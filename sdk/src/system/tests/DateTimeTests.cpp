@@ -339,14 +339,6 @@ TEST_CASE("Add times")
    DateTime d;
    REQUIRE_FALSE(DateTime::fromString("2019-02-15T11:23:44.039876Z", d));
 
-   SECTION("Days")
-   {
-      DateTime res = const_cast<const DateTime*>(&d)->addDays(14);
-
-      CHECK(res.toString() == "2019-03-01T11:23:44.039876Z");
-      CHECK(d.addDays(5).toString() == "2019-02-20T11:23:44.039876Z");
-   }
-
    SECTION("Hours")
    {
       DateTime res = const_cast<const DateTime*>(&d)->addHours(6);
@@ -365,18 +357,18 @@ TEST_CASE("Add times")
 
    SECTION("Minutes")
    {
-      DateTime res = const_cast<const DateTime*>(&d)->addMinutes(200);
+      DateTime res = const_cast<const DateTime*>(&d)->addMinutes(17);
 
-      CHECK(res.toString() == "2019-02-15T11:23:44.039876Z");
-      CHECK(d.addMicroseconds(300000).toString() == "2019-02-15T11:23:44.039876Z");
+      CHECK(res.toString() == "2019-02-15T11:40:44.039876Z");
+      CHECK(d.addMinutes(1508).toString() == "2019-02-16T12:31:44.039876Z");
    }
 
-   SECTION("Microseconds")
+   SECTION("Seconds")
    {
-      DateTime res = const_cast<const DateTime*>(&d)->addMicroseconds(200);
+      DateTime res = const_cast<const DateTime*>(&d)->addSeconds(8);
 
-      CHECK(res.toString() == "2019-02-15T11:23:44.039876Z");
-      CHECK(d.addMicroseconds(300000).toString() == "2019-02-15T11:23:44.039876Z");
+      CHECK(res.toString() == "2019-02-15T11:23:52.039876Z");
+      CHECK(d.addSeconds(10800).toString() == "2019-02-15T14:23:44.039876Z");
    }
 }
 

@@ -25,6 +25,7 @@
 
 #include <boost/date_time/local_time/local_time.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/date_time/gregorian/gregorian_types.hpp>
 
 #include <Error.hpp>
 
@@ -171,87 +172,51 @@ bool DateTime::operator>=(const DateTime& in_other) const
    return in_other <= *this;
 }
 
-DateTime& DateTime::addDays(int in_days)
+DateTime& DateTime::addHours(uint64_t in_hours)
 {
    return *this;
 }
 
-DateTime DateTime::addDays(int in_days) const
-{
-   system::DateTime copy(*this);
-   copy.addDays(in_days);
-   return copy;
-}
-
-DateTime& DateTime::addHours(int in_hours)
-{
-   return *this;
-}
-
-DateTime DateTime::addHours(int in_hours) const
+DateTime DateTime::addHours(uint64_t in_hours) const
 {
    system::DateTime copy(*this);
    copy.addHours(in_hours);
    return copy;
 }
 
-DateTime& DateTime::addMicroseconds(int in_microseconds)
+DateTime& DateTime::addMicroseconds(uint64_t in_microseconds)
 {
    return *this;
 }
 
-DateTime DateTime::addMicroseconds(int in_microseconds) const
+DateTime DateTime::addMicroseconds(uint64_t in_microseconds) const
 {
    system::DateTime copy(*this);
    copy.addMicroseconds(in_microseconds);
    return copy;
 }
 
-DateTime& DateTime::addMinutes(int in_minutes)
+DateTime& DateTime::addMinutes(uint64_t in_minutes)
 {
    return *this;
 }
 
-DateTime DateTime::addMinutes(int in_minutes) const
+DateTime DateTime::addMinutes(uint64_t in_minutes) const
 {
    system::DateTime copy(*this);
    copy.addMinutes(in_minutes);
    return copy;
 }
 
-DateTime& DateTime::addMonths(int in_months)
+DateTime& DateTime::addSeconds(uint64_t in_seconds)
 {
    return *this;
 }
 
-DateTime DateTime::addMonths(int in_months) const
-{
-   system::DateTime copy(*this);
-   copy.addMonths(in_months);
-   return copy;
-}
-
-DateTime& DateTime::addSeconds(int in_seconds)
-{
-   return *this;
-}
-
-DateTime DateTime::addSeconds(int in_seconds) const
+DateTime DateTime::addSeconds(uint64_t in_seconds) const
 {
    system::DateTime copy(*this);
    copy.addSeconds(in_seconds);
-   return copy;
-}
-
-DateTime& DateTime::addYears(int in_years)
-{
-   return *this;
-}
-
-DateTime DateTime::addYears(int in_years) const
-{
-   system::DateTime copy(*this);
-   copy.addYears(in_years);
    return copy;
 }
 
