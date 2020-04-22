@@ -30,8 +30,9 @@ include_directories(
 )
 
 set(RLPS_JOBS_TEST_SOURCES
-   JobStatusNotifierTests.cpp
+   JobPrunerTests.cpp
    JobRepositoryTests.cpp
+   JobStatusNotifierTests.cpp
 )
 
 # Abstract Communicator Tests
