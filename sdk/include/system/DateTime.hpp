@@ -147,6 +147,132 @@ public:
    bool operator>=(const DateTime& in_other) const;
 
    /**
+    * @brief Adds the specified number of days to this DateTime.
+    *
+    * @param in_days    The number of days to add to this DateTime.
+    *
+    * @return A refernce to this DateTime.
+    */
+   DateTime& addDays(int in_days);
+
+   /**
+    * @brief Adds the specified number of days to a copy of this DateTime.
+    *
+    * @param in_days    The number of days to add to this DateTime.
+    *
+    * @return The new DateTime.
+    */
+   DateTime addDays(int in_days) const;
+
+   /**
+    * @brief Adds the specified number of hours to this DateTime.
+    *
+    * @param in_hours   The number of hours to add to this DateTime.
+    *
+    * @return A reference to this DateTime.
+    */
+   DateTime& addHours(int in_hours);
+
+   /**
+    * @brief Adds the specified number of hours to a copy of this DateTime.
+    *
+    * @param in_hours   The number of hours to add to this DateTime.
+    *
+    * @return The new DateTime.
+    */
+   DateTime addHours(int in_hours) const;
+
+   /**
+    * @brief Adds the specified number of microseconds to this DateTime.
+    *
+    * @param in_microseconds    The number of microseconds to add to this DateTime.
+    *
+    * @return A reference to this DateTime.
+    */
+   DateTime& addMicroseconds(int in_microseconds);
+
+   /**
+    * @brief Adds the specified number of microseconds to a copy of this DateTime.
+    *
+    * @param in_microseconds    The number of microseconds to add to this DateTime.
+    *
+    * @return The new DateTime.
+    */
+   DateTime addMicroseconds(int in_microseconds) const;
+
+   /**
+    * @brief Adds the specified number of minutes to this DateTime.
+    *
+    * @param in_minutes     The number of minutes to add to this DateTime.
+    *
+    * @return A reference to this DateTime.
+    */
+   DateTime& addMinutes(int in_minutes);
+
+   /**
+    * @brief Adds the specified number of minutes to a copy of this DateTime.
+    *
+    * @param in_minutes     The number of minutes to add to this DateTime.
+    *
+    * @return The new DateTime.
+    */
+   DateTime addMinutes(int in_minutes) const;
+
+   /**
+    * @brief Adds the specified number of months to this DateTime.
+    *
+    * @param in_months      The number of months to add to this DateTime.
+    *
+    * @return A reference to this DateTime.
+    */
+   DateTime& addMonths(int in_months);
+
+   /**
+    * @brief Adds the specified number of months to a copy this DateTime.
+    *
+    * @param in_months      The number of months to add to this DateTime.
+    *
+    * @return The new DateTime.
+    */
+   DateTime addMonths(int in_months) const;
+
+   /**
+    * @brief Adds the specified number of seconds to this DateTime.
+    *
+    * @param in_seconds     The number of seconds to add to this DateTime.
+    *
+    * @return A reference to this DateTime.
+    */
+   DateTime& addSeconds(int in_seconds);
+
+   /**
+    * @brief Adds the specified number of seconds to a copy of this DateTime.
+    *
+    * @param in_seconds     The number of seconds to add to this DateTime.
+    *
+    * @return The new DateTime.
+    */
+   DateTime addSeconds(int in_seconds) const;
+
+   /**
+    * @brief Adds the specified number of years to this DateTime.
+    *
+    * @param in_years       The number of years to add to this DateTime.
+    *
+    * @return A reference to this DateTime.
+    */
+   DateTime& addYears(int in_years);
+
+   /**
+    * @brief Adds the specified number of years to a copy of this DateTime.
+    *
+    * @param in_years       The number of years to add to this DateTime.
+    *
+    * @return The new DateTime.
+    */
+   DateTime addYears(int in_years) const;
+
+   /**
     * @brief Converts this DateTime to an ISO 8601 time string.
     *
     * @return This DateTime as an ISO 8601 string representation.
@@ -177,6 +303,8 @@ private:
    // The private implementation of DateTime.
    PRIVATE_IMPL(m_impl);
 };
+
+
 
 } // namespace system
 } // namespace launcher_plugins

@@ -334,6 +334,52 @@ TEST_CASE("Assignment")
    }
 }
 
+TEST_CASE("Add times")
+{
+   DateTime d;
+   REQUIRE_FALSE(DateTime::fromString("2019-02-15T11:23:44.039876Z", d));
+
+   SECTION("Days")
+   {
+      DateTime res = const_cast<const DateTime*>(&d)->addDays(14);
+
+      CHECK(res.toString() == "2019-03-01T11:23:44.039876Z");
+      CHECK(d.addDays(5).toString() == "2019-02-20T11:23:44.039876Z");
+   }
+
+   SECTION("Hours")
+   {
+      DateTime res = const_cast<const DateTime*>(&d)->addHours(6);
+
+      CHECK(res.toString() == "2019-02-15T17:23:44.039876Z");
+      CHECK(d.addHours(28).toString() == "2019-02-16T15:23:44.039876Z");
+   }
+
+   SECTION("Microseconds")
+   {
+      DateTime res = const_cast<const DateTime*>(&d)->addMicroseconds(204);
+
+      CHECK(res.toString() == "2019-02-15T11:23:44.040080Z");
+      CHECK(d.addMicroseconds(300030).toString() == "2019-02-15T11:23:44.339906Z");
+   }
+
+   SECTION("Minutes")
+   {
+      DateTime res = const_cast<const DateTime*>(&d)->addMinutes(200);
+
+      CHECK(res.toString() == "2019-02-15T11:23:44.039876Z");
+      CHECK(d.addMicroseconds(300000).toString() == "2019-02-15T11:23:44.039876Z");
+   }
+
+   SECTION("Microseconds")
+   {
+      DateTime res = const_cast<const DateTime*>(&d)->addMicroseconds(200);
+
+      CHECK(res.toString() == "2019-02-15T11:23:44.039876Z");
+      CHECK(d.addMicroseconds(300000).toString() == "2019-02-15T11:23:44.039876Z");
+   }
+}
+
 } // namespace system
 } // namespace launcher_plugins
 } // namespace rstudio
