@@ -503,7 +503,7 @@ Error MarsJobSource::getJobs(api::JobList &out_jobs) const
   {
     marsJobs = mars_api::list_jobs(opts.getMarsServiceUser());
   }
-  catch (const mars_expcetion& e)
+  catch (const mars_exception& e)
   {
     return Error("MarsApiError", e.code(), e.what(), ERROR_LOCATION);
   }
