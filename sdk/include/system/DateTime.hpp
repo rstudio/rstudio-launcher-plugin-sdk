@@ -43,22 +43,25 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace system {
 
+// Forward Declaration
+class DateTime;
+
 /**
- * @brief Represents an interval of time (e.g. 5 hours, 43 minutes, and 21 seconds) as opposed to a point in time.
+ * @brief Represents an duration of time (e.g. 5 hours, 43 minutes, and 21 seconds) as opposed to a point in time.
  */
-class IntervalTime : public Noninheritable<IntervalTime>
+class TimeDuration : public Noninheritable<TimeDuration>
 {
 public:
    /**
     * @brief Constructor.
     *
-    * @param in_days            The number of days in this IntervalTime.
-    * @param in_hours           The number of hours in this IntervalTime.
-    * @param in_minutes         The number of minutes in this IntervalTime.
-    * @param in_seconds         The number of seconds in this IntervalTime.
-    * @param in_microseconds    The number of microseconds in this IntervalTime.
+    * @param in_days            The number of days in this TimeDuration.
+    * @param in_hours           The number of hours in this TimeDuration.
+    * @param in_minutes         The number of minutes in this TimeDuration.
+    * @param in_seconds         The number of seconds in this TimeDuration.
+    * @param in_microseconds    The number of microseconds in this TimeDuration.
     */
-   explicit IntervalTime(
+   explicit TimeDuration(
       int64_t in_days = 0,
       int64_t in_hours = 0,
       int64_t in_minutes = 0,
@@ -68,144 +71,146 @@ public:
    /**
     * @brief Copy constructor.
     *
-    * @param in_other   The IntervalTime to copy into this IntervalTime.
+    * @param in_other   The TimeDuration to copy into this TimeDuration.
     */
-   IntervalTime(const IntervalTime& in_other);
+   TimeDuration(const TimeDuration& in_other);
 
    /**
     * @brief Move constructor.
     *
-    * @param in_other   The IntervalTime to move into this IntervalTime.
+    * @param in_other   The TimeDuration to move into this TimeDuration.
     */
-   IntervalTime(IntervalTime&& in_other);
+   TimeDuration(TimeDuration&& in_other);
 
    /**
     * @brief Destructor.
     */
-   ~IntervalTime() = default;
+   ~TimeDuration() = default;
 
    /**
-    * @brief Constructs an IntervalTime which represents the specified number of days.
+    * @brief Constructs an TimeDuration which represents the specified number of days.
     *
-    * @param in_days    The number of days which should be represented by the IntervalTime.
+    * @param in_days    The number of days which should be represented by the TimeDuration.
     *
-    * @return The new IntervalTime.
+    * @return The new TimeDuration.
     */
-   static IntervalTime Days(int64_t in_days);
+   static TimeDuration Days(int64_t in_days);
 
    /**
-    * @brief Constructs an IntervalTime which represents the specified number of hours.
+    * @brief Constructs an TimeDuration which represents the specified number of hours.
     *
-    * @param in_hours       The number of hours which should be represented by the IntervalTime.
+    * @param in_hours       The number of hours which should be represented by the TimeDuration.
     *
-    * @return The new IntervalTime.
+    * @return The new TimeDuration.
     */
-   static IntervalTime Hours(int64_t in_hours);
+   static TimeDuration Hours(int64_t in_hours);
 
    /**
-    * @brief Constructs an IntervalTime which represents the specified number of minutes.
+    * @brief Constructs an TimeDuration which represents the specified number of minutes.
     *
-    * @param in_minutes     The number of minutes which should be represented by the IntervalTime.
+    * @param in_minutes     The number of minutes which should be represented by the TimeDuration.
     *
-    * @return The new IntervalTime.
+    * @return The new TimeDuration.
     */
-   static IntervalTime Minutes(int64_t in_minutes);
+   static TimeDuration Minutes(int64_t in_minutes);
 
    /**
-    * @brief Constructs an IntervalTime which represents the specified number of seconds.
+    * @brief Constructs an TimeDuration which represents the specified number of seconds.
     *
-    * @param in_seconds     The number of seconds which should be represented by the IntervalTime.
+    * @param in_seconds     The number of seconds which should be represented by the TimeDuration.
     *
-    * @return The new IntervalTime.
+    * @return The new TimeDuration.
     */
-   static IntervalTime Seconds(int64_t in_seconds);
+   static TimeDuration Seconds(int64_t in_seconds);
 
    /**
-    * @brief Constructs an IntervalTime which represents the specified number of microseconds.
+    * @brief Constructs an TimeDuration which represents the specified number of microseconds.
     *
-    * @param in_microseconds        The number of microseconds which should be represented by the IntervalTime.
+    * @param in_microseconds        The number of microseconds which should be represented by the TimeDuration.
     *
-    * @return The new IntervalTime.
+    * @return The new TimeDuration.
     */
-   static IntervalTime Microseconds(int64_t in_microseconds);
+   static TimeDuration Microseconds(int64_t in_microseconds);
 
    /**
     * @brief Assignment operator.
     *
-    * @param in_other   The IntervalTime to copy into this IntervalTime.
+    * @param in_other   The TimeDuration to copy into this TimeDuration.
     *
-    * @return A reference to this IntervalTime.
+    * @return A reference to this TimeDuration.
     */
-   IntervalTime& operator=(const IntervalTime& in_other);
+   TimeDuration& operator=(const TimeDuration& in_other);
 
    /**
     * @brief Move operator.
     *
-    * @param in_other   The IntervalTime to move into this IntervalTime.
+    * @param in_other   The TimeDuration to move into this TimeDuration.
     *
-    * @return A reference to this IntervalTime.
+    * @return A reference to this TimeDuration.
     */
 
-   IntervalTime& operator=(const IntervalTime&& in_other);
+   TimeDuration& operator=(const TimeDuration&& in_other);
 
    /**
     * @brief Equality comparison operator.
     *
-    * @param in_other   The IntervalTime to compare against.
+    * @param in_other   The TimeDuration to compare against.
     *
-    * @return True if in_other has the same values as this IntervalTime; false otherwise.
+    * @return True if in_other has the same values as this TimeDuration; false otherwise.
     */
-   bool operator==(const IntervalTime& in_other) const;
+   bool operator==(const TimeDuration& in_other) const;
 
 
    /**
     * @brief Inequality comparison operator.
     *
-    * @param in_other   The IntervalTime to compare against.
+    * @param in_other   The TimeDuration to compare against.
     *
-    * @return False if in_other has the same values as this IntervalTime; true otherwise.
+    * @return False if in_other has the same values as this TimeDuration; true otherwise.
     */
-   bool operator!=(const IntervalTime& in_other) const;
+   bool operator!=(const TimeDuration& in_other) const;
 
    /**
-    * @brief Gets the number of days in this IntervalTime.
+    * @brief Gets the number of days in this TimeDuration.
     *
-    * @return The number of days in this IntervalTime.
+    * @return The number of days in this TimeDuration.
     */
    int64_t getDays() const;
 
    /**
-    * @brief Gets the number of hours in this IntervalTime.
+    * @brief Gets the number of hours in this TimeDuration.
     *
-    * @return The number of hours in this IntervalTime.
+    * @return The number of hours in this TimeDuration.
     */
 
    int64_t getHours() const;
 
    /**
-    * @brief Gets the number of minutes in this IntervalTime.
+    * @brief Gets the number of minutes in this TimeDuration.
     *
-    * @return The number of minutes in this IntervalTime.
+    * @return The number of minutes in this TimeDuration.
     */
    int64_t getMinutes() const;
 
    /**
-    * @brief Gets the number of seconds in this IntervalTime.
+    * @brief Gets the number of seconds in this TimeDuration.
     *
-    * @return The number of seconds in this IntervalTime.
+    * @return The number of seconds in this TimeDuration.
     */
    int64_t getSeconds() const;
 
    /**
-    * @brief Gets the number of days in this IntervalTime.
+    * @brief Gets the number of days in this TimeDuration.
     *
-    * @return The number of days in this IntervalTime.
+    * @return The number of days in this TimeDuration.
     */
    int64_t getMicroseconds() const;
 
 private:
    // The private implementation of interval time.
    PRIVATE_IMPL(m_impl);
+
+   friend class DateTime;
 };
 
 /** @brief Class which represents a date and time in UTC. */
@@ -269,49 +274,49 @@ public:
    DateTime& operator=(DateTime&& in_other);
 
    /**
-    * @brief Subtracts two DateTimes to produce an IntervalTime.
+    * @brief Subtracts two DateTimes to produce an TimeDuration.
     *
     * @param in_other       The date time to subtract from this.
     *
     * @return An interval time representing the difference between this DateTime and in_other.
     */
-   IntervalTime operator-(const DateTime& in_other) const;
+   TimeDuration operator-(const DateTime& in_other) const;
 
    /**
-    * @brief Subtracts the given IntervalTime from a copy of this DateTime.
+    * @brief Subtracts the given TimeDuration from a copy of this DateTime.
     *
     * @param in_intervalTime    The interval time to subtract from this DateTime.
     *
     * @return A reference to this DateTime.
     */
-   DateTime operator-(const IntervalTime& in_intervalTime) const;
+   DateTime operator-(const TimeDuration& in_intervalTime) const;
 
    /**
-    * @brief Subtracts the given IntervalTime from this DateTime.
+    * @brief Subtracts the given TimeDuration from this DateTime.
     *
     * @param in_intervalTime    The interval time to subtract from this DateTime.
     *
-    * @return The new DateTime, which is this value of DateTime minus the specified IntervalTime.
+    * @return The new DateTime, which is this value of DateTime minus the specified TimeDuration.
     */
-   DateTime& operator-=(const IntervalTime& in_intervalTime);
+   DateTime& operator-=(const TimeDuration& in_intervalTime);
 
    /**
-    * @brief Adds the given IntervalTime to a copy of this DateTime.
+    * @brief Adds the given TimeDuration to a copy of this DateTime.
     *
     * @param in_intervalTime    The interval time to add to this DateTime.
     *
-    * @return The new DateTime, which is this value of DateTime plus the specified IntervalTime.
+    * @return The new DateTime, which is this value of DateTime plus the specified TimeDuration.
     */
-   DateTime operator+(const IntervalTime& in_intervalTime) const;
+   DateTime operator+(const TimeDuration& in_intervalTime) const;
 
    /**
-    * @brief Adds the given IntervalTime to this DateTime.
+    * @brief Adds the given TimeDuration to this DateTime.
     *
     * @param in_intervalTime    The interval time to add to this DateTime.
     *
     * @return A reference to this DateTime.
     */
-   DateTime& operator+=(const IntervalTime& in_intervalTime);
+   DateTime& operator+=(const TimeDuration& in_intervalTime);
 
    /**
     * @brief Equality operator.

@@ -32,11 +32,11 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace system {
 
-TEST_CASE("IntervalTime Construction")
+TEST_CASE("TimeDuration Construction")
 {
    SECTION("Standard Constructor")
    {
-      IntervalTime i1(2, 5, 24, 57, 109827),
+      TimeDuration i1(2, 5, 24, 57, 109827),
                    i2(-3, -14, -31, -16, -94821),
                    i3(2, 50, 103, 72, 874680098),
                    i4(-5, -36, -444, -91, -39827160),
@@ -80,7 +80,7 @@ TEST_CASE("IntervalTime Construction")
 
    SECTION("Copy constructor and equality")
    {
-      IntervalTime i1(2, 5, 24, 57, 109827),
+      TimeDuration i1(2, 5, 24, 57, 109827),
                    i2(i1),
                    i3(2, 5, 24, 57, 109827);
 
@@ -88,7 +88,7 @@ TEST_CASE("IntervalTime Construction")
       CHECK(i1 == i3);
       CHECK(i2 == i3);
 
-      i1 = IntervalTime(5, 10, 12, 49);
+      i1 = TimeDuration(5, 10, 12, 49);
 
       CHECK(i1 != i2);
       CHECK(i1 != i3);
@@ -97,11 +97,11 @@ TEST_CASE("IntervalTime Construction")
 
    SECTION("Helper Constructors")
    {
-      IntervalTime i1a(6), i1b = IntervalTime::Days(6),
-         i2a(0, 15), i2b = IntervalTime::Hours(15),
-         i3a(0, 0, 26), i3b = IntervalTime::Minutes(26),
-         i4a(0, 0, 0, 48), i4b = IntervalTime::Seconds(48),
-         i5a(0, 0, 0, 0, 150387), i5b = IntervalTime::Microseconds(150387);
+      TimeDuration i1a(6), i1b = TimeDuration::Days(6),
+         i2a(0, 15), i2b = TimeDuration::Hours(15),
+         i3a(0, 0, 26), i3b = TimeDuration::Minutes(26),
+         i4a(0, 0, 0, 48), i4b = TimeDuration::Seconds(48),
+         i5a(0, 0, 0, 0, 150387), i5b = TimeDuration::Microseconds(150387);
 
       // i1
       CHECK(i1a == i1b);
@@ -454,7 +454,7 @@ TEST_CASE("Add times")
 
    SECTION("Days")
    {
-      IntervalTime i1 = IntervalTime::Days(2), i2 = IntervalTime::Days(16);
+      TimeDuration i1 = TimeDuration::Days(2), i2 = TimeDuration::Days(16);
       DateTime res = d + i1;
       d += i2;
 
@@ -464,7 +464,7 @@ TEST_CASE("Add times")
 
    SECTION("Hours")
    {
-      IntervalTime i1 = IntervalTime::Hours(6), i2 = IntervalTime::Hours(28);
+      TimeDuration i1 = TimeDuration::Hours(6), i2 = TimeDuration::Hours(28);
       DateTime res = d + i1;
       d += i2;
 
@@ -474,7 +474,7 @@ TEST_CASE("Add times")
 
    SECTION("Microseconds")
    {
-      IntervalTime i1 = IntervalTime::Microseconds(204), i2 = IntervalTime::Microseconds(300030);
+      TimeDuration i1 = TimeDuration::Microseconds(204), i2 = TimeDuration::Microseconds(300030);
       DateTime res = d + i1;
       d += i2;
 
@@ -484,7 +484,7 @@ TEST_CASE("Add times")
 
    SECTION("Minutes")
    {
-      IntervalTime i1 = IntervalTime::Minutes(17), i2 = IntervalTime::Minutes(1508);
+      TimeDuration i1 = TimeDuration::Minutes(17), i2 = TimeDuration::Minutes(1508);
       DateTime res = d + i1;
       d += i2;
 
@@ -494,7 +494,7 @@ TEST_CASE("Add times")
 
    SECTION("Seconds")
    {
-      IntervalTime i1 = IntervalTime::Seconds(8), i2 = IntervalTime::Seconds(10800);
+      TimeDuration i1 = TimeDuration::Seconds(8), i2 = TimeDuration::Seconds(10800);
       DateTime res = d + i1;
       d += i2;
 
@@ -504,7 +504,7 @@ TEST_CASE("Add times")
 
    SECTION("Composite")
    {
-      IntervalTime i1(3, 9, 0, 6, 60124),
+      TimeDuration i1(3, 9, 0, 6, 60124),
                    i2(20, 13, 65,34, 960124);
       DateTime res = d + i1;
       d += i2;
