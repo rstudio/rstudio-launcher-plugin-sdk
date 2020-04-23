@@ -55,14 +55,12 @@ public:
    /**
     * @brief Constructor.
     *
-    * @param in_days            The number of days in this TimeDuration.
     * @param in_hours           The number of hours in this TimeDuration.
     * @param in_minutes         The number of minutes in this TimeDuration.
     * @param in_seconds         The number of seconds in this TimeDuration.
     * @param in_microseconds    The number of microseconds in this TimeDuration.
     */
    explicit TimeDuration(
-      int64_t in_days = 0,
       int64_t in_hours = 0,
       int64_t in_minutes = 0,
       int64_t in_seconds = 0,
@@ -86,15 +84,6 @@ public:
     * @brief Destructor.
     */
    ~TimeDuration() = default;
-
-   /**
-    * @brief Constructs an TimeDuration which represents the specified number of days.
-    *
-    * @param in_days    The number of days which should be represented by the TimeDuration.
-    *
-    * @return The new TimeDuration.
-    */
-   static TimeDuration Days(int64_t in_days);
 
    /**
     * @brief Constructs an TimeDuration which represents the specified number of hours.
@@ -169,13 +158,6 @@ public:
     * @return False if in_other has the same values as this TimeDuration; true otherwise.
     */
    bool operator!=(const TimeDuration& in_other) const;
-
-   /**
-    * @brief Gets the number of days in this TimeDuration.
-    *
-    * @return The number of days in this TimeDuration.
-    */
-   int64_t getDays() const;
 
    /**
     * @brief Gets the number of hours in this TimeDuration.

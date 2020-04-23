@@ -36,53 +36,48 @@ TEST_CASE("TimeDuration Construction")
 {
    SECTION("Standard Constructor")
    {
-      TimeDuration i1(2, 5, 24, 57, 109827),
-                   i2(-3, -14, -31, -16, -94821),
-                   i3(2, 50, 103, 72, 874680098),
-                   i4(-5, -36, -444, -91, -39827160),
-                   i5(-3, 54, 21, -114, 100398764);
+      TimeDuration i1(5, 24, 57, 109827),
+                   i2(-14, -31, -16, -94821),
+                   i3(50, 103, 72, 874680098),
+                   i4(-36, -444, -91, -39827160),
+                   i5(54, -71, -114, 100398764);
 
       // i1
       CHECK(i1.getMicroseconds() == 109827);
       CHECK(i1.getSeconds() == 57);
       CHECK(i1.getMinutes() == 24);
       CHECK(i1.getHours() == 5);
-      CHECK(i1.getDays() == 2);
 
       // i2
       CHECK(i2.getMicroseconds() == -94821);
       CHECK(i2.getSeconds() == -16);
       CHECK(i2.getMinutes() == -31);
       CHECK(i2.getHours() == -14);
-      CHECK(i2.getDays() == -3);
 
       // i3
       CHECK(i3.getMicroseconds() == 680098);
       CHECK(i3.getSeconds() == 46);
       CHECK(i3.getMinutes() == 58);
-      CHECK(i3.getHours() == 3);
-      CHECK(i3.getDays() == 4);
+      CHECK(i3.getHours() == 51);
 
       // i4
       CHECK(i4.getMicroseconds() == -827160);
       CHECK(i4.getSeconds() == -10);
       CHECK(i4.getMinutes() == -26);
-      CHECK(i4.getHours() == -19);
-      CHECK(i4.getDays() == -6);
+      CHECK(i4.getHours() == -43);
 
       // i5
       CHECK(i5.getMicroseconds() == 398764);
       CHECK(i5.getSeconds() == -14);
-      CHECK(i5.getMinutes() == 21);
-      CHECK(i5.getHours() == 6);
-      CHECK(i5.getDays() == -1);
+      CHECK(i5.getMinutes() == -11);
+      CHECK(i5.getHours() == 53);
    }
 
    SECTION("Copy constructor and equality")
    {
-      TimeDuration i1(2, 5, 24, 57, 109827),
+      TimeDuration i1(5, 24, 57, 109827),
                    i2(i1),
-                   i3(2, 5, 24, 57, 109827);
+                   i3(5, 24, 57, 109827);
 
       CHECK(i1 == i2);
       CHECK(i1 == i3);
@@ -97,23 +92,21 @@ TEST_CASE("TimeDuration Construction")
 
    SECTION("Helper Constructors")
    {
-      TimeDuration i1a(6), i1b = TimeDuration::Days(6),
-         i2a(0, 15), i2b = TimeDuration::Hours(15),
-         i3a(0, 0, 26), i3b = TimeDuration::Minutes(26),
-         i4a(0, 0, 0, 48), i4b = TimeDuration::Seconds(48),
-         i5a(0, 0, 0, 0, 150387), i5b = TimeDuration::Microseconds(150387);
+      TimeDuration i1a(1, 31, 26), i1b = TimeDuration::Seconds(5486),
+         i2a(15), i2b = TimeDuration::Hours(15),
+         i3a(0, 26), i3b = TimeDuration::Minutes(26),
+         i4a(0, 0, 48), i4b = TimeDuration::Seconds(48),
+         i5a(0, 0, 0, 150387), i5b = TimeDuration::Microseconds(150387);
 
       // i1
       CHECK(i1a == i1b);
-      CHECK(i1b.getDays() == 6);
-      CHECK(i1b.getHours() == 0);
-      CHECK(i1b.getMinutes() == 0);
-      CHECK(i1b.getSeconds() == 0);
+      CHECK(i1b.getHours() == 1);
+      CHECK(i1b.getMinutes() == 31);
+      CHECK(i1b.getSeconds() == 26);
       CHECK(i1b.getMicroseconds() == 0);
 
       // i2
       CHECK(i2a == i2b);
-      CHECK(i2b.getDays() == 0);
       CHECK(i2b.getHours() == 15);
       CHECK(i2b.getMinutes() == 0);
       CHECK(i2b.getSeconds() == 0);
@@ -121,7 +114,6 @@ TEST_CASE("TimeDuration Construction")
 
       // i3
       CHECK(i3a == i3b);
-      CHECK(i3b.getDays() == 0);
       CHECK(i3b.getHours() == 0);
       CHECK(i3b.getMinutes() == 26);
       CHECK(i3b.getSeconds() == 0);
@@ -129,7 +121,6 @@ TEST_CASE("TimeDuration Construction")
 
       // i4
       CHECK(i4a == i4b);
-      CHECK(i4b.getDays() == 0);
       CHECK(i4b.getHours() == 0);
       CHECK(i4b.getMinutes() == 0);
       CHECK(i4b.getSeconds() == 48);
@@ -137,7 +128,6 @@ TEST_CASE("TimeDuration Construction")
 
       // i5
       CHECK(i5a == i5b);
-      CHECK(i5b.getDays() == 0);
       CHECK(i5b.getHours() == 0);
       CHECK(i5b.getMinutes() == 0);
       CHECK(i5b.getSeconds() == 0);
@@ -452,16 +442,6 @@ TEST_CASE("Add times")
    DateTime d;
    REQUIRE_FALSE(DateTime::fromString("2019-02-15T11:23:44.039876Z", d));
 
-   SECTION("Days")
-   {
-      TimeDuration i1 = TimeDuration::Days(2), i2 = TimeDuration::Days(16);
-      DateTime res = d + i1;
-      d += i2;
-
-      CHECK(res.toString() == "2019-02-17T11:23:44.039876Z");
-      CHECK(d.toString() == "2019-03-03T11:23:44.039876Z");
-   }
-
    SECTION("Hours")
    {
       TimeDuration i1 = TimeDuration::Hours(6), i2 = TimeDuration::Hours(28);
@@ -504,12 +484,12 @@ TEST_CASE("Add times")
 
    SECTION("Composite")
    {
-      TimeDuration i1(3, 9, 0, 6, 60124),
-                   i2(20, 13, 65,34, 960124);
+      TimeDuration i1(9, 0, 6, 60124),
+                   i2(493, 65,34, 960124);
       DateTime res = d + i1;
       d += i2;
 
-      CHECK(res.toString() == "2019-02-18T20:23:50.100000Z");
+      CHECK(res.toString() == "2019-02-15T20:23:50.100000Z");
       CHECK(d.toString() == "2019-03-08T01:29:19Z");
    }
 }

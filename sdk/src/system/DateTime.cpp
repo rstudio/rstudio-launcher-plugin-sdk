@@ -45,29 +45,25 @@ struct TimeDuration::Impl
 {
 
    explicit Impl(
-      int64_t in_days = 0,
       int64_t in_hours = 0,
       int64_t in_minutes = 0,
       int64_t in_seconds = 0,
       int64_t in_microseconds = 0) :
-      Days(in_days + (in_hours / 24)),
-      Time((in_hours % 24), in_minutes, in_seconds, in_microseconds)
+      Time(in_hours, in_minutes, in_seconds, in_microseconds)
    {
    }
 
-   boost::gregorian::date_duration Days;
    boost::posix_time::time_duration Time;
 };
 
 PRIVATE_IMPL_DELETER_IMPL(TimeDuration)
 
 TimeDuration::TimeDuration(
-   int64_t in_days,
    int64_t in_hours,
    int64_t in_minutes,
    int64_t in_seconds,
    int64_t in_microseconds) :
-   m_impl(new Impl(in_days, in_hours, in_minutes, in_seconds, in_microseconds))
+   m_impl(new Impl(in_hours, in_minutes, in_seconds, in_microseconds))
 {
 }
 
@@ -81,29 +77,24 @@ TimeDuration::TimeDuration(TimeDuration&& in_other) noexcept :
 {
 }
 
-TimeDuration TimeDuration::Days(int64_t in_days)
-{
-   return TimeDuration(in_days);
-}
-
 TimeDuration TimeDuration::Hours(int64_t in_hours)
 {
-   return TimeDuration(0, in_hours);
+   return TimeDuration( in_hours);
 }
 
 TimeDuration TimeDuration::Minutes(int64_t in_minutes)
 {
-   return TimeDuration(0, 0, in_minutes);
+   return TimeDuration(0, in_minutes);
 }
 
 TimeDuration TimeDuration::Seconds(int64_t in_seconds)
 {
-   return TimeDuration(0, 0, 0, in_seconds);
+   return TimeDuration(0, 0, in_seconds);
 }
 
 TimeDuration TimeDuration::Microseconds(int64_t in_microseconds)
 {
-   return TimeDuration(0, 0, 0, 0, in_microseconds);
+   return TimeDuration(0, 0, 0, in_microseconds);
 }
 
 TimeDuration& TimeDuration::operator=(const TimeDuration& in_other)
@@ -139,20 +130,12 @@ bool TimeDuration::operator==(const TimeDuration& in_other) const
    else if ((m_impl == nullptr) || (in_other.m_impl == nullptr))
       return false;
 
-   return (m_impl->Days == in_other.m_impl->Days) && (m_impl->Time == in_other.m_impl->Time);
+   return m_impl->Time == in_other.m_impl->Time;
 }
 
 bool TimeDuration::operator!=(const TimeDuration& in_other) const
 {
    return !(*this == in_other);
-}
-
-int64_t TimeDuration::getDays() const
-{
-   if (m_impl == nullptr)
-      return 0;
-
-   return m_impl->Days.days();
 }
 
 int64_t TimeDuration::getHours() const
