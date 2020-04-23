@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 #
-# run-tests
+# create-test-users.sh
 #
-# Copyright (C) 2019-20 by RStudio, PBC
+# Copyright (C) 2020 by RStudio, PBC
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,45 +24,42 @@
 # SOFTWARE.
 #
 
-FAILURES=0
+echo "Adding users..."
 
-# Create the rstudio-server user, if it does not already exist
+# Create the RStudio Server User, if it does not already exist
 grep rstudio-server < /etc/passwd >/dev/null
-ADD_USER=$?
+export ADD_USER=$?
+
+set -e # exit on failed commands
+
 if [[ $ADD_USER -ne 0 ]]; then
-  sudo adduser --system rstudio-server
+  echo "Adding rstudio-server user..."
+  sudo useradd --system "rstudio-server"
 fi
 
-# Add test users for UserProfileTests
 
+echo "Adding rlpstestgrpone group..."
 sudo groupadd "rlpstestgrpone" >/dev/null
+
+echo "Adding rlpstestgrptwo group..."
 sudo groupadd "rlpstestgrptwo" >/dev/null
+
+echo "Adding rlpstestgrpthree group..."
 sudo groupadd "rlpstestgrpthree" >/dev/null
+
+echo "Adding rlpstestusrone user..."
 sudo useradd -p "" -g "rlpstestgrpone" "rlpstestusrone" >/dev/null
+
+echo "Adding rlpstestusrtwo user..."
 sudo useradd -p "" -g "rlpstestgrpone" -G "rlpstestgrptwo,rlpstestgrpthree" "rlpstestusrtwo" >/dev/null
+
+echo "Adding rlpstestusrthree user..."
 sudo useradd -p "" -g "rlpstestgrptwo" "rlpstestusrthree" >/dev/null
+
+echo "Adding rlpstestusrfour user..."
 sudo useradd -p "" -g "rlpstestgrptwo" -G "rlpstestgrpthree" "rlpstestusrfour" >/dev/null
+
+echo "Adding rlpstestusrfive user..."
 sudo useradd -p "" -g "rlpstestgrpone" -G "rlpstestgrpthree" "rlpstestusrfive" >/dev/null
 
-for test in ./*-tests;
-do
-  echo "Running ${test}..."
-  ${test}
-  FAILURES=$((FAILURES + $?))
-done
-
-# Remove the user if it was added by this script
-if [[ $ADD_USER -ne 0 ]]; then
-  sudo userdel rstudio-server
-fi
-
-sudo userdel --remove "rlpstestusrone" >/dev/null 2>&1
-sudo userdel --remove "rlpstestusrtwo" >/dev/null 2>&1
-sudo userdel --remove "rlpstestusrthree" >/dev/null 2>&1
-sudo userdel --remove "rlpstestusrfour" >/dev/null 2>&1
-sudo userdel --remove "rlpstestusrfive" >/dev/null 2>&1
-sudo delgroup "rlpstestgrpone" >/dev/null
-sudo delgroup "rlpstestgrptwo" >/dev/null
-sudo delgroup "rlpstestgrpthree" >/dev/null
-
-exit $FAILURES
+echo "Succesfully added test users."

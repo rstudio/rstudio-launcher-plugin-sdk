@@ -30,7 +30,7 @@ namespace api {
 
 // The RStudio Launcher Plugin API implemented by this SDK version.
 constexpr int API_VERSION_MAJOR = 1;
-constexpr int API_VERSION_MINOR = 1;
+constexpr int API_VERSION_MINOR = 2;
 constexpr int API_VERSION_PATCH = 0;
 
 // Common fields for all requests and responses.
@@ -44,15 +44,27 @@ constexpr char const* FIELD_RESPONSE_ID = "responseId";
 constexpr char const* FIELD_REAL_USER = "username";
 constexpr char const* FIELD_REQUEST_USERNAME = "requestUsername";
 
+// Common fields for requests which require a job ID.
+constexpr char const* FIELD_JOB_ID = "jobId";
+constexpr char const* FIELD_ENCODED_JOB_ID = "encodedJobId";
+
+// Error response fields.
+constexpr char const* FIELD_ERROR_CODE = "errorCode";
+constexpr char const* FIELD_ERROR_MESSAGE = "errorMessage";
+
 // Bootstrap request and response fields.
 constexpr char const* FIELD_VERSION = "version";
 constexpr char const* FIELD_VERSION_MAJOR = "major";
 constexpr char const* FIELD_VERSION_MINOR = "minor";
 constexpr char const* FIELD_VERSION_PATCH = "patch";
 
-// Error response fields.
-constexpr char const* FIELD_ERROR_CODE = "errorCode";
-constexpr char const* FIELD_ERROR_MESSAGE = "errorMessage";
+// JobState request and response fields.
+constexpr char const* FIELD_JOB_FIELDS = "fields";
+constexpr char const* FIELD_JOB_END_TIME = "endTime";
+constexpr char const* FIELD_JOB_START_TIME = "startTime";
+constexpr char const* FIELD_JOB_STATUSES = "statuses";
+constexpr char const* FIELD_JOB_TAGS = "tags";
+constexpr char const* FIELD_JOBS = "jobs";
 
 // ClusterInfo response fields.
 constexpr char const* FIELD_ALLOW_UNKNOWN_IMAGES = "allowUnknownImages";

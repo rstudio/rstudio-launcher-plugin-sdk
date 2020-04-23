@@ -1,5 +1,5 @@
 /*
- * LocalJobSource.cpp
+ * FileUtils.hpp
  *
  * Copyright (C) 2020 by RStudio, PBC
  *
@@ -21,40 +21,33 @@
  *
  */
 
-#include <LocalJobSource.hpp>
 
-#include <Error.hpp>
+#ifndef LAUNCHER_PLUGINS_FILEUTILS_HPP
+#define LAUNCHER_PLUGINS_FILEUTILS_HPP
+
+#include <string>
 
 namespace rstudio {
 namespace launcher_plugins {
-namespace local {
 
-LocalJobSource::LocalJobSource(std::string in_hostname) :
-   m_jobStorage(std::move(in_hostname))
-{
-}
+class Error;
 
-Error LocalJobSource::initialize()
-{
-   // TODO: Initialize communications with the other local plugins, if any, and make sure we can read and write to the
-   //       file that will store job information.
-   return m_jobStorage.initialize();
-}
+namespace system {
 
-Error LocalJobSource::getConfiguration(const system::User&, api::JobSourceConfiguration& out_configuration) const
-{
-   static const api::JobConfig::Type strType = api::JobConfig::Type::STRING;
-   out_configuration.CustomConfig.emplace_back("pamProfile", strType);
-   out_configuration.CustomConfig.emplace_back("encryptedPassword", strType);
+class FilePath;
 
-   return Success();
-}
-
-Error LocalJobSource::getJobs(api::JobList& out_jobs) const
-{
-   return m_jobStorage.loadJobs(out_jobs);
-}
-
-} // namespace local
+} // namespace system
 } // namespace launcher_plugins
 } // namespace rstudio
+
+namespace rstudio {
+namespace launcher_plugins {
+namespace utils {
+
+Error readFileIntoString(const system::FilePath& in_file, std::string& out_fileContents);
+
+} // namespace utils
+} // namespace launcher_plugins
+} // namespace rstudio
+
+#endif

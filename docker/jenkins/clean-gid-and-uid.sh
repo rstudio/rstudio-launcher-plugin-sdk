@@ -28,29 +28,29 @@ set -f
 
 # Clean up user id
 USERID=$2
-USERINFO=$(getent passwd $USERID)
+USERINFO=$(getent passwd "$USERID")
 
 # okay if no user
 if [ $? -ne 0 ]; then
     echo "No user exists with id $USERID"
 else
     # turn userinfo into a space-separated array and extract the first element
-    USERINFO=(${USERINFO//:/ })
+    read -ra USERINFO <<< "${USERINFO//:/ }"
     USERNAME="${USERINFO[0]}"
 
     echo "Removing user $USERNAME with conflicting id $USERID"
 
     # use appropriate command for user deletion
     if hash userdel 2>/dev/null; then
-        userdel $USERNAME
+        userdel "$USERNAME"
     elif hash deluser 2>/dev/null; then
-        deluser $USERNAME
+        deluser "$USERNAME"
     fi
 fi
 
 # Clean up group id
 GROUPID=$1
-GROUPINFO=$(getent group $GROUPID)
+GROUPINFO=$(getent group "$GROUPID")
 
 # okay if no user
 if [ $? -ne 0 ]; then
@@ -59,14 +59,14 @@ if [ $? -ne 0 ]; then
 fi
 
 # turn group info into a space-separated array and extract the first element
-GROUPINFO=(${GROUPINFO//:/ })
+read -ra GROUPINFO <<< "${GROUPINFO//:/ }"
 GROUPNAME="${GROUPINFO[0]}"
 
 echo "Removing group $GROUPNAME with conflicting id $GROUPID"
 
 # use appropriate command for group deletion
 if hash groupdel 2>/dev/null; then
-    groupdel $GROUPNAME
+    groupdel "$GROUPNAME"
 elif hash delgroup 2>/dev/null; then
-    delgroup $GROUPNAME
+    delgroup "$GROUPNAME"
 fi

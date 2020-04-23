@@ -23,24 +23,24 @@
 
 #include "ReaderWriterMutex.hpp"
 
-#include <boost/thread/condition_variable.hpp>
-#include <boost/thread/recursive_mutex.hpp>
+#include <condition_variable>
+#include <mutex>
 
 namespace rstudio {
 namespace launcher_plugins {
 namespace system {
 
-typedef boost::unique_lock<boost::recursive_mutex> Lock;
+typedef std::unique_lock<std::recursive_mutex> Lock;
 
 // ReaderWriterMutex ===================================================================================================
 struct ReaderWriterMutex::Impl
 {
    bool IsWriting;
    unsigned int ReaderCount;
-   boost::recursive_mutex Mutex;
+   std::recursive_mutex Mutex;
    // This mutex is used to allow re-entrant lock behaviour on write. On read it's basically already re-entrant.
-   boost::recursive_mutex WriteMutex;
-   boost::condition_variable_any Condition;
+   std::recursive_mutex WriteMutex;
+   std::condition_variable_any Condition;
 };
 
 PRIVATE_IMPL_DELETER_IMPL(ReaderWriterMutex);

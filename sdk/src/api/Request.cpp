@@ -28,6 +28,7 @@
 #include <logging/Logger.hpp>
 #include <system/User.hpp>
 #include <boost/algorithm/string/trim.hpp>
+#include <boost/algorithm/string/join.hpp>
 
 #include "Constants.hpp"
 
@@ -43,6 +44,7 @@ enum class RequestError
    INVALID_REQUEST_TYPE = 1,
    INVALID_REQUEST = 2,
    INVALID_USER = 3,
+   INVALID_INPUT = 4,
 };
 
 Error requestError(
@@ -68,6 +70,11 @@ Error requestError(
       case RequestError::INVALID_USER:
       {
          message.append("Details of request user could not be found");
+         break;
+      }
+      case RequestError::INVALID_INPUT:
+      {
+         message.append("Invalid input received");
          break;
       }
       case RequestError::SUCCESS:
@@ -151,6 +158,13 @@ Error Request::fromJson(const json::Object& in_requestJson, std::shared_ptr<Requ
          out_request = userRequest;
          break;
       }
+      case Type::GET_JOB:
+      {
+         std::shared_ptr<JobStateRequest> jobStateRequest(new JobStateRequest(in_requestJson));
+
+         out_request = jobStateRequest;
+         break;
+      }
       default:
       {
          std::ostringstream osstream;
@@ -192,6 +206,99 @@ Request::Request(Type in_requestType, const json::Object& in_requestJson) :
       logging::logError(error);
       m_baseImpl->IsValid = false;
       return;
+   }
+}
+
+// User ================================================================================================================
+struct UserRequest::Impl
+{
+   /** The effective user for whom the request should be performed. */
+   system::User EffectiveUser;
+
+   /** The actual user who submitted the request. */
+   std::string RequestUsername;
+};
+
+PRIVATE_IMPL_DELETER_IMPL(UserRequest);
+
+const system::User & UserRequest::getUser() const
+{
+   return m_userImpl->EffectiveUser;
+}
+
+const std::string& UserRequest::getRequestUsername() const
+{
+   return m_userImpl->RequestUsername;
+}
+
+UserRequest::UserRequest(Request::Type in_type, const json::Object& in_requestJson) :
+   Request(in_type, in_requestJson),
+   m_userImpl(new Impl())
+{
+   std::string realUsername;
+   Optional<std::string> requestUsername;
+   Error error = json::readObject(in_requestJson,
+                                  FIELD_REAL_USER, realUsername,
+                                  FIELD_REQUEST_USERNAME, requestUsername);
+
+   if (error)
+   {
+      logging::logError(error);
+      m_baseImpl->IsValid = false;
+      return;
+   }
+
+   boost::trim(realUsername);
+   if (realUsername != "*")
+   {
+      error = system::User::getUserFromIdentifier(realUsername, m_userImpl->EffectiveUser);
+
+      if (error)
+      {
+         logging::logError(error);
+         m_userImpl->EffectiveUser = system::User(true);
+         m_baseImpl->IsValid = false;
+         return;
+      }
+   }
+
+   m_userImpl->RequestUsername = requestUsername.getValueOr("");
+}
+
+// JobId ===============================================================================================================
+struct JobIdRequest::Impl
+{
+   std::string JobId;
+   std::string EncodedJobId;
+};
+
+PRIVATE_IMPL_DELETER_IMPL(JobIdRequest)
+
+const std::string& JobIdRequest::getJobId() const
+{
+   return m_jobIdImpl->JobId;
+}
+
+const std::string& JobIdRequest::getEncodedJobId() const
+{
+   return m_jobIdImpl->EncodedJobId;
+}
+
+JobIdRequest::JobIdRequest(Request::Type in_type, const json::Object& in_requestJson) :
+   UserRequest(in_type, in_requestJson),
+   m_jobIdImpl(new Impl())
+{
+   Optional<std::string> encodedId;
+   Error error = json::readObject(in_requestJson,
+      FIELD_JOB_ID, m_jobIdImpl->JobId,
+      FIELD_ENCODED_JOB_ID, encodedId);
+
+   m_jobIdImpl->EncodedJobId = encodedId.getValueOr("");
+
+   if (error)
+   {
+      logging::logError(error);
+      m_baseImpl->IsValid = false;
    }
 }
 
@@ -261,6 +368,120 @@ int BootstrapRequest::getPatchNumber() const
    return m_impl->Patch;
 }
 
+// Job State ===========================================================================================================
+struct JobStateRequest::Impl
+{
+   /** The end of the range of submission times by which to filter the jobs. */
+   Optional<std::string> EndTime;
+
+   /** The set of fields to be returned for each job. */
+   Optional<std::set<std::string> > FieldSet;
+
+   /** The start of the range of submission times by which to filter the jobs. */
+   Optional<std::string> StartTime;
+
+   /** The set of statuses by which to filter the returned jobs. */
+   Optional<std::set<std::string> > StatusSet;
+
+   /** The set of tags tby which to filter the returned jobs. */
+   Optional<std::set<std::string> > TagSet;
+};
+
+PRIVATE_IMPL_DELETER_IMPL(JobStateRequest)
+
+Error JobStateRequest::getEndTime(Optional<system::DateTime>& out_endTime) const
+{
+   if (m_impl->EndTime)
+   {
+      system::DateTime endTime;
+      Error error = system::DateTime::fromString(m_impl->EndTime.getValueOr(""), endTime);
+      if (error)
+         return error;
+
+      out_endTime = endTime;
+   }
+
+   return Success();
+}
+
+const Optional<std::set<std::string> >& JobStateRequest::getFieldSet() const
+{
+   return m_impl->FieldSet;
+}
+
+Error JobStateRequest::getStartTime(Optional<system::DateTime>& out_startTime) const
+{
+   if (m_impl->StartTime)
+   {
+      system::DateTime startTime;
+      Error error = system::DateTime::fromString(m_impl->StartTime.getValueOr(""), startTime);
+      if (error)
+         return error;
+
+      out_startTime = startTime;
+   }
+
+   return Success();
+}
+
+Error JobStateRequest::getStatusSet(Optional<std::set<Job::State> >& out_statuses) const
+{
+   if (m_impl->StatusSet)
+   {
+      std::set<Job::State> statuses;
+      std::set<std::string> invalidStatuses;
+      for (const std::string& status: m_impl->StatusSet.getValueOr({}))
+      {
+         Job::State state;
+         Error error = Job::stateFromString(status, state);
+         if (error)
+            invalidStatuses.insert(status);
+         else
+            statuses.insert(state);
+      }
+
+      if (!invalidStatuses.empty())
+         return requestError(
+            RequestError::INVALID_INPUT,
+            boost::algorithm::join(invalidStatuses, ","),
+            ERROR_LOCATION);
+
+      out_statuses = statuses;
+   }
+
+   return Success();
+}
+
+const Optional<std::set<std::string> >& JobStateRequest::getTagSet() const
+{
+   return m_impl->TagSet;
+}
+
+JobStateRequest::JobStateRequest(const json::Object& in_requestJson) :
+   JobIdRequest(Type::GET_JOB, in_requestJson),
+   m_impl(new Impl())
+{
+   Error error = json::readObject(in_requestJson,
+      FIELD_JOB_END_TIME, m_impl->EndTime,
+      FIELD_JOB_FIELDS, m_impl->FieldSet,
+      FIELD_JOB_START_TIME, m_impl->StartTime,
+      FIELD_JOB_STATUSES, m_impl->StatusSet,
+      FIELD_JOB_TAGS, m_impl->TagSet);
+
+   // Test
+   if (error)
+   {
+      logging::logError(error);
+      m_baseImpl->IsValid = false;
+      return;
+   }
+
+   // ID is required, ensure it is in the set of fields.
+   std::set<std::string> tmp;
+   m_impl->FieldSet.getValueOr(tmp).insert("id");
+}
+
+// Helpers =============================================================================================================
 std::ostream& operator<<(std::ostream& in_ostream, Request::Type in_type)
 {
    switch(in_type)
@@ -320,62 +541,6 @@ std::ostream& operator<<(std::ostream& in_ostream, Request::Type in_type)
    }
 
    return in_ostream;
-}
-
-// User ================================================================================================================
-struct UserRequest::Impl
-{
-   /** The real user for whom the request should be performed. */
-   system::User RealUser;
-
-   /** The actual user who submitted the request. */
-   std::string RequestUsername;
-};
-
-PRIVATE_IMPL_DELETER_IMPL(UserRequest);
-
-const system::User & UserRequest::getUser() const
-{
-   return m_userImpl->RealUser;
-}
-
-const std::string& UserRequest::getRequestUsername() const
-{
-   return m_userImpl->RequestUsername;
-}
-
-UserRequest::UserRequest(Request::Type in_type, const json::Object& in_requestJson) :
-   Request(in_type, in_requestJson),
-   m_userImpl(new Impl())
-{
-   std::string realUsername;
-   Optional<std::string> requestUsername;
-   Error error = json::readObject(in_requestJson,
-      FIELD_REAL_USER, realUsername,
-      FIELD_REQUEST_USERNAME, requestUsername);
-
-   if (error)
-   {
-      logging::logError(error);
-      m_baseImpl->IsValid = false;
-      return;
-   }
-
-   boost::trim(realUsername);
-   if (realUsername != "*")
-   {
-      error = system::User::getUserFromIdentifier(realUsername, m_userImpl->RealUser);
-
-      if (error)
-      {
-         logging::logError(error);
-         m_userImpl->RealUser = system::User(true);
-         m_baseImpl->IsValid = false;
-         return;
-      }
-   }
-
-   m_userImpl->RequestUsername = requestUsername.getValueOr("");
 }
 
 } // namespace api

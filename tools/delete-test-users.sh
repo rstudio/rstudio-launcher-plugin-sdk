@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 #
-# compile
+# delete-test-users.sh
 #
-# Copyright (C) 2019-20 by RStudio, PBC
+# Copyright (C) 2020 by RStudio, PBC
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,30 +24,15 @@
 # SOFTWARE.
 #
 
-if [ -z "${CMAKE_BUILD_TYPE}" ]; then
-    CMAKE_BUILD_TYPE=Release
+if [[ $ADD_USER -ne 0 ]]; then
+  sudo userdel "rstudio-server"
 fi
 
-cd "$(dirname ${BASH_SOURCE[0]})/../.."
-
-BUILD_DIR=$(readlink -f "cmake-build-${CMAKE_BUILD_TYPE}")
-
-# clean requested
-if [[ "${1}" == "clean" ]]; then
-    rm -rf "${BUILD_DIR}"
-fi
-
-set -e
-
-CMAKE_INSTALL_PREFIX="/usr/lib/rstudio-server"
-
-mkdir -p "${BUILD_DIR}"
-cd "${BUILD_DIR}"
-rm -f CMakeCache.txt
-cmake -DCMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE}"            \
-      -DCMAKE_INSTALL_PREFIX="${CMAKE_INSTALL_PREFIX}"    \
-      ..
-
-make ${MAKEFLAGS}
-
-# TODO: install binaries
+sudo userdel --remove "rlpstestusrone" >/dev/null 2>&1
+sudo userdel --remove "rlpstestusrtwo" >/dev/null 2>&1
+sudo userdel --remove "rlpstestusrthree" >/dev/null 2>&1
+sudo userdel --remove "rlpstestusrfour" >/dev/null 2>&1
+sudo userdel --remove "rlpstestusrfive" >/dev/null 2>&1
+sudo groupdel "rlpstestgrpone" >/dev/null
+sudo groupdel "rlpstestgrptwo" >/dev/null
+sudo groupdel "rlpstestgrpthree" >/dev/null

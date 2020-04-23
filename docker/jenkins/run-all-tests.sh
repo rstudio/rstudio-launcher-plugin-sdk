@@ -27,28 +27,44 @@
 # Get the build dir
 BUILD_DIR=$1
 
-FAILURES=0
+TOTAL_FAILURES=0
 runTest()
 {
     CURR_DIR=$(pwd)
     cd "${BUILD_DIR}/${1}" || return $?
     ./run-tests.sh
 
-    FAILURES=$(expr $FAILURES + $?)
+    TOTAL_FAILURES=$(($(cat failures.log) + TOTAL_FAILURES))
 
     cd "${CURR_DIR}" || exit $?
 }
 
+# Create users for test cases
+tools/create-test-users.sh
+RET=$?
+if [[ $RET -ne 0 ]]; then
+  echo "Failed to create test users."
+  exit $RET
+fi
 
 # Unit tests first
 runTest "sdk/src/tests"
 runTest "sdk/src/api/tests"
 runTest "sdk/src/comms/tests"
+runTest "sdk/src/jobs/tests"
 runTest "sdk/src/options/tests"
 runTest "sdk/src/system/tests"
 
 # TODO: Integration tests
 
+# Remove test users
+tools/delete-test-users.sh
+
 # Exit
-echo "Test failures: $FAILURES"
-exit $FAILURES
+echo "Test failures: $TOTAL_FAILURES"
+
+if [[ $TOTAL_FAILURES -ne 0 ]]; then
+  exit 1
+fi
+
+exit 0

@@ -205,6 +205,173 @@ TEST_CASE("Create ClusterInfo Response")
    }
 }
 
+TEST_CASE("Job State Response")
+{
+   // Input values.
+   std::string submitted1Str = "2020-03-31T12:44:32.109485",
+               submitted2Str = "2020-03-29T13:05:26.123456",
+               last2Str      = "2020-03-30T15:42:20.654321",
+               submitted3Str = "2020-03-30T04:27:33.000002",
+               last3Str      = "2020-03-30T04:55:46.009387",
+               submitted4Str = "2020-03-31T12:48:01.932001";
+   system::DateTime submitted1, submitted2, last2, submitted3, last3, submitted4;
+   REQUIRE_FALSE(system::DateTime::fromString(submitted1Str, submitted1));
+   REQUIRE_FALSE(system::DateTime::fromString(submitted2Str, submitted2));
+   REQUIRE_FALSE(system::DateTime::fromString(last2Str, last2));
+   REQUIRE_FALSE(system::DateTime::fromString(submitted3Str, submitted3));
+   REQUIRE_FALSE(system::DateTime::fromString(last3Str, last3));
+   REQUIRE_FALSE(system::DateTime::fromString(submitted4Str, submitted4));
+
+   system::User user2, user3, user4;
+   REQUIRE_FALSE(system::User::getUserFromIdentifier(USER_TWO, user2));
+   REQUIRE_FALSE(system::User::getUserFromIdentifier(USER_THREE, user3));
+   REQUIRE_FALSE(system::User::getUserFromIdentifier(USER_FOUR, user4));
+
+   JobPtr job1(new Job()), job2(new Job()), job3(new Job()), job4(new Job());
+   job1->Id = "12";
+   job1->Name = "Job 1";
+   job1->Cluster = "SomeCluster";
+   job1->Command = "echo";
+   job1->Arguments = { "-n", "Hello world!" };
+   job1->User = user3;
+   job1->Status = Job::State::PENDING;
+   job1->SubmissionTime = submitted1;
+   job1->LastUpdateTime = submitted1;
+   job1->StandardOutFile = "/path/to/std-1.out";
+   job1->StandardOutFile = "/path/to/std-1.err";
+
+   job2->Id = "13";
+   job2->Name = "Job 2";
+   job2->Cluster = "SomeCluster";
+   job2->Exe = "/bin/bash";
+   job2->Arguments = { "-c", R"("echo -n Hello, World!")" };
+   job2->Status = Job::State::RUNNING;
+   job2->User = user2;
+   job2->SubmissionTime = submitted2;
+   job2->LastUpdateTime = last2;
+   job2->StandardOutFile = "/path/to/std-2.out";
+   job2->StandardOutFile = "/path/to/std-2.err";
+
+   job3->Id = "14";
+   job3->Name = "Job 3";
+   job3->Cluster = "SomeCluster";
+   job3->Exe = "/bin/myexe";
+   job3->Status = Job::State::FINISHED;
+   job3->User = user3;
+   job3->SubmissionTime = submitted3;
+   job3->LastUpdateTime = last3;
+   job3->StandardOutFile = "/path/to/std-3.out";
+   job3->StandardOutFile = "/path/to/std-3.err";
+
+   job4->Id = "15";
+   job4->Name = "Job 4";
+   job4->Cluster = "SomeCluster";
+   job4->Command = "tail";
+   job4->Arguments = { "-n20", "/path/to/my/file.txt" };
+   job4->Status = Job::State::FAILED;
+   job4->StatusMessage = "tail: cannot open '/path/to/my/file.txt' for reading: No such file or directory";
+   job4->User = user4;
+   job4->SubmissionTime = submitted4;
+   job4->LastUpdateTime = submitted4;
+   job4->StandardOutFile = "/path/to/std-4.out";
+   job4->StandardOutFile = "/path/to/std-4.err";
+
+   // Expected values. Can rely on Job::toJson as it's tested elsewhere
+   json::Array singleJob, jobList;
+   singleJob.push_back(job4->toJson());
+   jobList.push_back(job1->toJson());
+   jobList.push_back(job2->toJson());
+   jobList.push_back(job3->toJson());
+   jobList.push_back(job4->toJson());
+
+   Optional<std::set<std::string> > noFields;
+
+   SECTION("Single job")
+   {
+      JobList jobs;
+      jobs.push_back(job4);
+      JobStateResponse jobStateResponse(54, jobs, noFields);
+
+      json::Object expected;
+      expected[FIELD_RESPONSE_ID] = 6;
+      expected[FIELD_REQUEST_ID] = 54;
+      expected[FIELD_MESSAGE_TYPE] = 2;
+      expected[FIELD_JOBS] = singleJob;
+
+      CHECK(jobStateResponse.toJson() == expected);
+   }
+
+   SECTION("Multiple jobs")
+   {
+      JobList jobs;
+      jobs.push_back(job1);
+      jobs.push_back(job2);
+      jobs.push_back(job3);
+      jobs.push_back(job4);
+      JobStateResponse jobStateResponse(133, jobs, noFields);
+
+      json::Object expected;
+      expected[FIELD_RESPONSE_ID] = 7;
+      expected[FIELD_REQUEST_ID] = 133;
+      expected[FIELD_MESSAGE_TYPE] = 2;
+      expected[FIELD_JOBS] = jobList;
+
+      CHECK(jobStateResponse.toJson() == expected);
+   }
+
+   SECTION("Multiple jobs w/ field subset")
+   {
+      JobList jobs;
+      jobs.push_back(job1);
+      jobs.push_back(job2);
+      jobs.push_back(job3);
+      jobs.push_back(job4);
+
+      std::set<std::string> fields;
+      fields.insert("name");
+      fields.insert("user");
+      fields.insert("status");
+      Optional<std::set<std::string> > fieldsOpt(fields);
+
+      JobStateResponse jobStateResponse(133, jobs, fieldsOpt);
+
+      // Different Expected Job List.
+      json::Object job1Obj, job2Obj, job3Obj, job4Obj;
+      job1Obj["id"] = "12";
+      job1Obj["name"] = "Job 1";
+      job1Obj["user"] = USER_THREE;
+      job1Obj["status"] = "Pending";
+
+      job2Obj["id"] = "13";
+      job2Obj["name"] = "Job 2";
+      job2Obj["user"] = USER_TWO;
+      job2Obj["status"] = "Running";
+
+      job3Obj["id"] = "14";
+      job3Obj["name"] = "Job 3";
+      job3Obj["user"] = USER_THREE;
+      job3Obj["status"] = "Finished";
+
+      job4Obj["id"] = "15";
+      job4Obj["name"] = "Job 4";
+      job4Obj["user"] = USER_FOUR;
+      job4Obj["status"] = "Failed";
+      json::Array jobsArr;
+      jobsArr.push_back(job1Obj);
+      jobsArr.push_back(job2Obj);
+      jobsArr.push_back(job3Obj);
+      jobsArr.push_back(job4Obj);
+
+      json::Object expected;
+      expected[FIELD_RESPONSE_ID] = 8;
+      expected[FIELD_REQUEST_ID] = 133;
+      expected[FIELD_MESSAGE_TYPE] = 2;
+      expected[FIELD_JOBS] = jobsArr;
+
+      CHECK(jobStateResponse.toJson() == expected);
+   }
+}
+
 } // namespace api
 } // namespace launcher_plugins
 } // namespace rstudio

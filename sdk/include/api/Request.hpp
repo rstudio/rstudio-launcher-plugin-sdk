@@ -26,7 +26,13 @@
 
 #include <Noncopyable.hpp>
 
+#include <set>
+#include <vector>
+
 #include <PImpl.hpp>
+#include <Optional.hpp>
+#include <system/DateTime.hpp>
+#include "Job.hpp"
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -145,6 +151,82 @@ protected:
 };
 
 /**
+ * @brief Base class which should be used by the class of requests which require a username.
+ */
+class UserRequest : public Request
+{
+public:
+   /**
+    * @brief Gets the user who initiated this request.
+    *
+    * If an admin user made this request, this object may represent all users (check by calling User::isAllUsers()). In
+    * that case, information for all users should be returned.
+    *
+    * @return The user who initiated this request.
+    */
+   const system::User& getUser() const;
+
+   /**
+    * @brief Gets the actual username that was used when the request was submitted.
+    *
+    * This value is only useful for auditing purposes and should not be required by most plugins.
+    *
+    * @return The actual username that was used when the request was submitted.
+    */
+   const std::string& getRequestUsername() const;
+
+protected:
+   /**
+    * @brief Constructor.
+    *
+    * @param in_type            The type of the user request.
+    * @param in_requestJson     The JSON Object which represents the user request.
+    */
+   explicit UserRequest(Request::Type in_type, const json::Object& in_requestJson);
+
+private:
+   // The private implementation of UserRequest.
+   PRIVATE_IMPL(m_userImpl);
+
+   friend class Request;
+};
+
+/**
+ * @brief Base class which should be used for requests that require a Job ID.
+ */
+class JobIdRequest : public UserRequest
+{
+public:
+   /**
+    * @brief Gets the ID of the job for which this request was made.
+    *
+    * @return The ID of the job for which this request was made.
+    */
+   const std::string& getJobId() const;
+   /**
+    * @brief Gets the ID of the job for which this request was made.
+    *
+    * @return The ID of the job for which this request was made.
+    */
+   const std::string& getEncodedJobId() const;
+
+protected:
+   /**
+    * @brief Constructor.
+    *
+    * @param in_type            The type of the user request.
+    * @param in_requestJson     The JSON Object which represents the job ID request.
+    */
+   JobIdRequest(Request::Type in_type, const json::Object& in_requestJson);
+
+private:
+   // The private implementation of JobIdRequest.
+   PRIVATE_IMPL(m_jobIdImpl);
+
+   friend class Request;
+};
+
+/**
  * @brief Represents a bootstrap request received from the Launcher.
  */
 class BootstrapRequest: public Request
@@ -186,42 +268,75 @@ private:
 };
 
 /**
- * @brief Base class which should be used by the class of requests which require a username.
+ * @brief Represents a job state request received from the Launcher.
  */
-class UserRequest : public Request
+class JobStateRequest : public JobIdRequest
 {
 public:
    /**
-    * @brief Gets the user who initiated this request.
+    * @brief Gets the end of the date range for this request.
     *
-    * If an admin user made this request, this object may represent all users (check by calling User::isAllUsers()). In
-    * that case, information for all users should be returned.
+    * If this value is set, only jobs which were submitted before this DateTime should be returned in the response.
     *
-    * @return The user who initiated this request.
+    * @param out_endTime    The end time, if it was set and the string value could be parsed as a DateTime correctly.
+    *
+    * @return Success if the value was set and could be parsed correctly, or if the value was not set; Error otherwise.
     */
-   const system::User& getUser() const;
+   Error getEndTime(Optional<system::DateTime>& out_endTime) const;
 
    /**
-    * @brief Gets the actual username that was used when the request was submitted.
+    * @brief Gets the set of Job fields which should be included in the response.
     *
-    * This value is only useful for auditing purposes and should not be required by most plugins.
+    * If this value is set, only the fields which are included in this set should be returned in the response. ID will
+    * always be returned, as it is required.
     *
-    * @return The actual username that was used when the request was submitted.
+    * @return The optional set of Job fields to include in the response.
     */
-   const std::string& getRequestUsername() const;
+   const Optional<std::set<std::string> >& getFieldSet() const;
 
-protected:
+   /**
+    * @brief Gets the start of the date range for this request.
+    *
+    * If this value is set, only jobs which were submitted after this DateTime should be returned in the response.
+    *
+    * @param out_startTime      The start time, if it was set and the string value could be parsed as a DateTime
+    *                           correctly.
+    *
+    * @return Success if the value was set and could be parsed correctly, or if the value was not set; Error otherwise.
+    */
+   Error getStartTime(Optional<system::DateTime>& out_endTime) const;
+
+   /**
+    * @brief Gets the set of Job statuses by which to filter the returned list of jobs.
+    *
+    * If this value is set, only the jobs which have one of the specified states should be returned in the response.
+    *
+    * @param out_statuses       The set of statuses to filter by, if any were set and they could all be parsed as
+    *                           Job::State values correctly.
+    *
+    * @return Success if the value was set and could be parsed correctly, or if the value was not set; Error otherwise.
+    */
+   Error getStatusSet(Optional<std::set<Job::State> >& out_statuses) const;
+
+   /**
+    * @brief Gets the set of Job tags by which to filter the returned list of jobs.
+    *
+    * If this value is set, only the jobs which have one of the specified states should be returned in the response.
+    *
+    * @return The optional set of Job statuses by which to filter the returned list of jobs.
+    */
+   const Optional<std::set<std::string> >& getTagSet() const;
+
+private:
    /**
     * @brief Constructor.
     *
-    * @param in_type            The type of the user request.
-    * @param in_requestJson     The JSON Object which represents the user request.
+    * @param in_requestJson     The JSON Object which represents the job state request.
     */
-   explicit UserRequest(Request::Type in_type, const json::Object& in_requestJson);
+   explicit JobStateRequest(const json::Object& in_requestJson);
 
-private:
-   // The private implementation of UserRequest.
-   PRIVATE_IMPL(m_userImpl);
+   // The private implementation of JobStateRequest
+   PRIVATE_IMPL(m_impl);
 
    friend class Request;
 };

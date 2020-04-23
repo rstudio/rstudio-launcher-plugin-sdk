@@ -35,12 +35,12 @@ namespace quickstart {
 class QuickStartMain : public AbstractMain
 {
    /**
-    * @brief Creates the QuickStart Launcher Plugin API.
+    * @brief Creates the Launcher Plugin API.
     *
     * @param in_launcherCommunicator    The communicator that will be used to send and receive messages from the RStudio
     *                                   Launcher.
     *
-    * @return The QuickStart Launcher Plugin API.
+    * @return The Plugin specific Launcher Plugin API.
     */
    std::shared_ptr<api::AbstractPluginApi> createLauncherPluginApi(
       std::shared_ptr<comms::AbstractLauncherCommunicator> in_launcherCommunicator) const override

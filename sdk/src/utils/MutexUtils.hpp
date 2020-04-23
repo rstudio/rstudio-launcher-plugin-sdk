@@ -25,43 +25,28 @@
 #ifndef LAUNCHER_PLUGINS_MUTEX_UTILS_HPP
 #define LAUNCHER_PLUGINS_MUTEX_UTILS_HPP
 
-#include <boost/thread/exceptions.hpp>
-#include <boost/thread/lock_guard.hpp>
-#include <boost/thread/mutex.hpp>
+#include <mutex>
+#include <system_error>
 
 #include <Error.hpp>
 #include <logging/Logger.hpp>
 
-#include "ErrorUtils.hpp"
-
 #define LOCK_MUTEX(in_mutex)                       \
 try {                                              \
-   boost::lock_guard<boost::mutex> lock(in_mutex); \
+   std::lock_guard<std::mutex> lock(in_mutex);     \
 
+#define UNIQUE_LOCK_MUTEX(in_mutex)                \
+try {                                              \
+   std::unique_lock<std::mutex> lock(in_mutex);    \
 
 #define END_LOCK_MUTEX                             \
 }                                                  \
-catch (const boost::thread_resource_error& te)     \
+catch (const std::system_error& e)                 \
 {                                                  \
    using namespace rstudio::launcher_plugins;      \
    logging::logError(                              \
-      utils::createErrorFromBoostError(            \
-         te.code(),                                \
-         ERROR_LOCATION));                         \
+      systemError(e, ERROR_LOCATION));             \
 }                                                  \
 CATCH_UNEXPECTED_EXCEPTION;                        \
-
-#define UNIQUE_LOCK_MUTEX(in_mutex)                   \
-try {                                                 \
-   boost::unique_lock<boost::mutex> lock(in_mutex);   \
-
-
-#define END_UNIQUE_LOCK_MUTEX                                                                   \
-}                                                                                               \
-catch (const boost::lock_error& e)                                                              \
-{                                                                                               \
-   logging::logError(utils::createErrorFromBoostError(e.code(), e.what(), ERROR_LOCATION));     \
-END_LOCK_MUTEX                                                                                  \
-
 
 #endif

@@ -78,7 +78,18 @@ Error DateTime::fromString(const std::string& in_timeStr, DateTime& out_dateTime
    ss.imbue(std::locale(ss.getloc(), facet.release()));
 
    local_date_time time(boost::posix_time::not_a_date_time);
-   ss >> time;
+   try
+   {
+      ss >> time;
+   }
+   catch(const std::exception& e)
+   {
+      return Error("TimeParseError", 1, "Failed to parse time: " + in_timeStr + ". Reason: " + e.what(), ERROR_LOCATION);
+   }
+   catch (...)
+   {
+      return Error("TimeParseError", 1, "Failed to parse time: " + in_timeStr, ERROR_LOCATION);
+   }
 
    if (time.is_not_a_date_time())
       return Error("TimeParseError", 1, "Failed to parse time: " + in_timeStr, ERROR_LOCATION);

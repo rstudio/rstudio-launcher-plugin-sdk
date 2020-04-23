@@ -30,6 +30,8 @@
 
 #include <api/Job.hpp>
 
+#include "job_store/LocalJobStorage.hpp"
+
 namespace rstudio {
 namespace launcher_plugins {
 namespace local {
@@ -40,6 +42,13 @@ namespace local {
 class LocalJobSource : public api::IJobSource
 {
 public:
+   /**
+    * @brief Constructor.
+    *
+    * @param in_hostname    The name of the host running this instance of the Local Plugin.
+    */
+   explicit LocalJobSource(std::string in_hostname);
+
    /**
     * @brief Initializes the Local Job Source.
     *
@@ -61,6 +70,19 @@ public:
     * @return Success if the configuration and capabilities for this Job Source could be populated; Error otherwise.
     */
    Error getConfiguration(const system::User&, api::JobSourceConfiguration& out_configuration) const override;
+
+   /**
+    * @brief Gets all RStudio jobs currently in the job scheduling system.
+    *
+    * @param out_jobs   All RStudio jobs currently in the job scheduling system.
+    *
+    * @return Success if all jobs could be retrieved; Error otherwise.
+    */
+    Error getJobs(api::JobList& out_jobs) const override;
+
+private:
+   /** The job storage. */
+   job_store::LocalJobStorage m_jobStorage;
 };
 
 } // namespace local

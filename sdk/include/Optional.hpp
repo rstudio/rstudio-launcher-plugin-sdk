@@ -126,6 +126,22 @@ public:
    /**
     * @brief Assignment operator.
     *
+    * @param in_other   The optional value to copy to this optional.
+    *
+    * @return A reference to this optional.
+    */
+   Optional& operator=(Optional&& in_other) noexcept
+   {
+      if (this == &in_other)
+         return *this;
+
+      m_value = std::move(in_other.m_value);
+      return *this;
+   }
+
+   /**
+    * @brief Assignment operator.
+    *
     * @param in_value   The value to assign to this optional. The optional will take ownership of the value.
     *
     * @return A reference to this optional.

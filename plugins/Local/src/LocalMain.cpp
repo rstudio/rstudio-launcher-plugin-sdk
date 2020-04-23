@@ -20,12 +20,38 @@
 
 #include <AbstractMain.hpp>
 
+#include <climits>
+#include <unistd.h>
+
 #include <LocalOptions.hpp>
 #include <LocalPluginApi.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
 namespace local {
+
+namespace {
+
+/**
+ * @brief Gets the hostname of the machine running this process.
+ *
+ * @param out_hostname      The hostname of this machine.
+ *
+ * @return Success if the hostname could be retrieved; Error otherwise.
+ */
+Error getHostname(std::string& out_hostname)
+{
+   char hostname[HOST_NAME_MAX + 1];
+
+   int result = gethostname(hostname, HOST_NAME_MAX + 1);
+   if (result != 0)
+      return systemError(errno, ERROR_LOCATION);
+
+   out_hostname = hostname;
+   return Success();
+}
+
+} // anonymous namespace
 
 /**
  * @brief Main class for the Local Plugin.
@@ -44,7 +70,8 @@ private:
    std::shared_ptr<api::AbstractPluginApi> createLauncherPluginApi(
       std::shared_ptr<comms::AbstractLauncherCommunicator> in_launcherCommunicator) const override
    {
-      return std::shared_ptr<api::AbstractPluginApi>(new LocalPluginApi(in_launcherCommunicator));
+      return std::shared_ptr<api::AbstractPluginApi>(
+         new LocalPluginApi(m_hostname, in_launcherCommunicator));
    }
 
    /**
@@ -58,16 +85,36 @@ private:
     }
 
    /**
+    * @brief Gets the unique program ID for this plugin.
+    *
+    * @return The unique program ID for this plugin.
+    */
+   std::string getProgramId() const override
+   {
+      // Include the hostname in the program ID for load balanced scenarios.
+      return "rstudio-local-launcher-" + m_hostname;
+   }
+
+
+   /**
     * @brief Initializes the main process, including custom options.
     *
     * @return Success if the process could be initialized; Error otherwise.
     */
     Error initialize() override
     {
+       // Get the hostname of the machine running this instance of the Local Plugin.
+       Error error = getHostname(m_hostname);
+       if (error)
+          return error;
+
        // Ensure Local specific options are initialized.
        LocalOptions::getInstance().initialize();
        return Success();
     }
+
+private:
+   std::string m_hostname;
 };
 
 } // namespace local

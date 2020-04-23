@@ -19,36 +19,28 @@
 # OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-cmake_minimum_required(VERSION 3.14)
-project(rstudio_local_plugin)
+set(RLPS_JOBS_TEST_MAIN ../../tests/TestMain.cpp)
 
-set(CMAKE_CXX_STANDARD 11)
+# Copy the test runner that runs all options tests.
+configure_file(../../tests/run-tests.sh run-tests.sh COPYONLY)
 
-# include files
-file(GLOB_RECURSE LOCAL_HEADER_FILES "*.h*")
-
-# source files
-set(LOCAL_SOURCE_FILES
-   src/LocalJobSource.cpp
-   src/LocalOptions.cpp
-   src/LocalPluginApi.cpp
-   src/job_store/LocalJobStorage.cpp
-)
-
-# include directories
+# Allow files in the tests folder to be included
 include_directories(
-   include
-   ${RLPS_INCLUDE_DIR}
+   ../../tests
 )
 
-# define executable
-add_executable(rstudio-local-launcher src/LocalMain.cpp
-   ${LOCAL_SOURCE_FILES}
-   ${LOCAL_HEADER_FILES}
+set(RLPS_JOBS_TEST_SOURCES
+   JobRepositoryTests.cpp
 )
 
-#link dependencies
-target_link_libraries(rstudio-local-launcher 
+# Abstract Communicator Tests
+add_executable(rlps-jobs-tests
+   ${RLPS_JOBS_TEST_MAIN}
+   ${RLPS_JOBS_TEST_SOURCES}
+   ${RLPS_HEADER_FILES}
+)
+
+target_link_libraries(rlps-jobs-tests
    rstudio-launcher-plugin-sdk-lib
+   ${RLPS_BOOST_LIBS}
 )
-

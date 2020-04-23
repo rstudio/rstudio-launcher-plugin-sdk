@@ -1,5 +1,5 @@
 /*
- * LocalJobSource.cpp
+ * FileUtils.cpp
  *
  * Copyright (C) 2020 by RStudio, PBC
  *
@@ -21,40 +21,50 @@
  *
  */
 
-#include <LocalJobSource.hpp>
+
+#include <utils/FileUtils.hpp>
+
+#include <iostream>
+#include <sstream>
+
+#include <boost/iostreams/copy.hpp>
 
 #include <Error.hpp>
+#include <system/FilePath.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
-namespace local {
+namespace utils {
 
-LocalJobSource::LocalJobSource(std::string in_hostname) :
-   m_jobStorage(std::move(in_hostname))
+Error readFileIntoString(const system::FilePath& in_file, std::string& out_fileContents)
 {
-}
+   std::shared_ptr<std::istream> inputStream;
+   Error error = in_file.openForRead(inputStream);
+   if (error)
+      return error;
 
-Error LocalJobSource::initialize()
-{
-   // TODO: Initialize communications with the other local plugins, if any, and make sure we can read and write to the
-   //       file that will store job information.
-   return m_jobStorage.initialize();
-}
+   // Read the whole file into a string stream.
+   std::ostringstream oStrStream;
+   try
+   {
+      // Ensure an exception will be thrown if the failbit or badbit is set.
+      inputStream->exceptions(std::istream::failbit | std::istream::badbit);
 
-Error LocalJobSource::getConfiguration(const system::User&, api::JobSourceConfiguration& out_configuration) const
-{
-   static const api::JobConfig::Type strType = api::JobConfig::Type::STRING;
-   out_configuration.CustomConfig.emplace_back("pamProfile", strType);
-   out_configuration.CustomConfig.emplace_back("encryptedPassword", strType);
+      boost::iostreams::copy(*inputStream, oStrStream);
+   }
+   catch (std::exception& e)
+   {
+      // TODO: good error code for this?
+      error = systemError(1, "Failed to read file: " + std::string(e.what()), ERROR_LOCATION);
+      error.addProperty("file", in_file.getAbsolutePath());
+      return error;
+   }
+
+   out_fileContents = oStrStream.str();
 
    return Success();
 }
 
-Error LocalJobSource::getJobs(api::JobList& out_jobs) const
-{
-   return m_jobStorage.loadJobs(out_jobs);
-}
-
-} // namespace local
+} // namespace utils
 } // namespace launcher_plugins
 } // namespace rstudio

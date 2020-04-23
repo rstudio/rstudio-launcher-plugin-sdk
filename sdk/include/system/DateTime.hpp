@@ -156,7 +156,8 @@ public:
    /**
     * @brief Converts this DateTime to a string representation defined by the provided format.
     *
-    * @param in_format      The time format string, as documented by strftime. Also supports fractional seconds as %F.
+    * @param in_format      The time format string, as documented in the 'Date-Time Support' section of the
+    *                       'Advanced Features' chapter of the RStudio Launcher Plugin SDK Developer's Guide.
     *
     * @return This DateTime, as a string with the specified format.
     */
@@ -165,7 +166,8 @@ public:
    /**
     * @brief Converts this DateTime to a string representation defined by the provided format.
     *
-    * @param in_format      The time format string, as documented by strftime. Also supports fractional seconds as %F.
+    * @param in_format      The time format string, as documented in the 'Date-Time Support' section of the
+    *                       'Advanced Features' chapter of the RStudio Launcher Plugin SDK Developer's Guide.
     *
     * @return This DateTime, as a string with the specified format.
     */

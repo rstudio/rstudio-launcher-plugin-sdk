@@ -43,6 +43,12 @@ Error QuickStartJobSource::getConfiguration(
    return Success();
 }
 
+Error QuickStartJobSource::getJobs(api::JobList &out_jobs) const
+{
+   // TODO #8: Pull all RStudio jobs from the job scheduling system synchronously.
+   return Success();
+}
+
 } // namespace quickstart
 } // namespace launcher_plugins
 } // namespace rstudio

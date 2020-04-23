@@ -399,34 +399,109 @@ std::ostream& operator<<(std::ostream& io_ostream, const Error& in_error)
 }
 
 // Common error creation functions =====================================================================================
-Error systemError(int in_value, const ErrorLocation& in_location)
+Error systemError(int in_code, const ErrorLocation& in_location)
 {
-   boost::system::error_code ec(in_value, boost::system::system_category());
-   return Error("SystemError", in_value, ec.message(), in_location);
+   boost::system::error_code ec(in_code, boost::system::system_category());
+   Error error("SystemError", in_code, ec.message(), in_location);
+   error.addProperty("subcategory", ec.category().name());
+   return error;
 }
 
-Error systemError(int in_value,
+Error systemError(const std::error_code& in_code, const ErrorLocation& in_location)
+{
+   Error error("SystemError", in_code.value(), in_code.message(), in_location);
+   error.addProperty("subcategory", in_code.category().name());
+   return error;
+}
+
+Error systemError(const std::system_error& in_error, const ErrorLocation& in_location)
+{
+   Error error("SystemError", in_error.code().value(), in_error.what(), in_location);
+   error.addProperty("subcategory", in_error.code().category().name());
+   return error;
+}
+
+Error systemError(int in_code,
                   const Error& in_cause,
                   const ErrorLocation& in_location)
 {
-   return Error("SystemError", in_value, in_cause, in_location);
+   boost::system::error_code ec(in_code, boost::system::system_category());
+   Error error("SystemError", in_code, ec.message(), in_cause, in_location);
+   error.addProperty("subcategory", ec.category().name());
+   return error;
 }
 
-Error systemError(int in_value,
+Error systemError(const std::error_code& in_code, const Error& in_cause, const ErrorLocation& in_location)
+{
+   return Error(in_code.category().name(), in_code.value(), in_code.message(), in_cause, in_location);
+}
+
+Error systemError(const std::system_error& in_error, const Error& in_cause, const ErrorLocation& in_location)
+{
+   Error error(
+      "SystemError",
+      in_error.code().value(),
+      in_error.what(),
+      in_cause,
+      in_location);
+
+   error.addProperty("subcategory", in_error.code().category().name());
+   return error;
+}
+
+Error systemError(int in_code,
                   const std::string& in_description,
                   const ErrorLocation& in_location)
 {
-   Error error = systemError(in_value, in_location);
+   Error error = systemError(in_code, in_location);
    error.addProperty("description", in_description);
    return error;
 }
 
-Error systemError(int in_value,
+Error systemError(const std::error_code& in_code,
+                  const std::string& in_description,
+                  const ErrorLocation& in_location)
+{
+   Error error = systemError(in_code, in_location);
+   error.addProperty("description", in_description);
+   return error;
+}
+
+Error systemError(const std::system_error& in_error,
+                  const std::string& in_description,
+                  const ErrorLocation& in_location)
+{
+   Error error = systemError(in_error, in_location);
+   error.addProperty("description", in_description);
+   return error;
+}
+
+Error systemError(int in_code,
                   const std::string& in_description,
                   const Error& in_cause,
                   const ErrorLocation& in_location)
 {
-   Error error = systemError(in_value, in_cause, in_location);
+   Error error = systemError(in_code, in_cause, in_location);
+   error.addProperty("description", in_description);
+   return error;
+}
+
+Error systemError(const std::error_code&  in_code,
+                  const std::string& in_description,
+                  const Error& in_cause,
+                  const ErrorLocation& in_location)
+{
+   Error error = systemError(in_code, in_cause, in_location);
+   error.addProperty("description", in_description);
+   return error;
+}
+
+Error systemError(const std::system_error& in_error,
+                  const std::string& in_description,
+                  const Error& in_cause,
+                  const ErrorLocation& in_location)
+{
+   Error error = systemError(in_error, in_cause, in_location);
    error.addProperty("description", in_description);
    return error;
 }

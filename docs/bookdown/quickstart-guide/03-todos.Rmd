@@ -4,7 +4,7 @@ This section will walk the developer through each of the QuickStart `TODO` items
 
 Throughout this chapter, an example Plugin Developer who is part of the "Orchid Organization" and developing a Launcher Plugin for the "Mars" job scheduling system will be used. The theoretical Mars job scheduling provides a C/C++ interface, which will be referred to as the `mars_api`. It provides a set of free functions which allow the caller to get details from the Mars job scheduling system. `mars_api` calls may throw `mars_exceptions` which need to be handled.
 
-## TODO #1: Change Namespaces
+## TODO #1: Change Namespaces {#todo-1}
  
 TODO Location        Impact
 -------------------  -----------------
@@ -12,7 +12,7 @@ QuickStartMain.cpp   All source files
 
 The classes in the QuickStart RStudio Launcher Plugin are all in the `rstudio::launcher_plugins::quickstart` namespace. As desired, these namespaces may be changed. 
 
-### Example
+### Example {#todo-1-ex}
 
 The Plugin Developer may change the following namespace definitions
 
@@ -36,13 +36,13 @@ namespace mars {
 ```
 
 
-## TODO #2: Rename Classes
+## TODO #2: Rename Classes {#todo-2}
  
 TODO Location        Impact
 -------------------  -----------------
 QuickStartMain.cpp   All source files
 
-### Example
+### Example {#todo-2-ex}
 
 The developer may now wish to rename all the classes from `QuickStart*` to `Mars*`. For example, `QuickStartMain` would become `MarsMain`.
 
@@ -63,7 +63,7 @@ might become
 The naming schemes described here are only recommendations. The exact naming scheme is completely at the discretion of the developer.
 
 
-## TODO #3: Change the Plugin Name
+## TODO #3: Change the Plugin Name {#todo-3}
  
 TODO Location        Impact
 -------------------  -------------------
@@ -72,7 +72,7 @@ QuickStartMain.cpp   QuickStartMain.cpp
 
 The plugin name is used to generate the program ID, which will be used for logging, and the configuration file name. By default, the program ID will be `"rstudio-" + getPluginName() + "-launcher"`. The configuration file name will be `"launcher." + getPluginName() + ".conf"` and must be located in `/etc/rstudio`.
 
-### Example
+### Example {#todo-3-ex}
 
 The developer might now change
 
@@ -93,7 +93,7 @@ std::string getPluginName() const override
 }
 ```
 
-## TODO #4: Optionally Change the Program ID
+## TODO #4: Optionally Change the Program ID {#todo-4}
  
 TODO Location        Impact
 -------------------  -------------------
@@ -102,7 +102,7 @@ QuickStartMain.cpp   QuickStartMain.cpp
 
 The program ID will be used to uniquely identify logs from the plugin that are sent to the system log. By default, the value will be `"rstudio-" + getPluginName() + "-launcher"`, however it is possible to override `AbstractMain::getProgramID()` to set a custom program ID.
 
-### Example
+### Example {#todo-4-ex}
 
 The developer might add 
 
@@ -115,7 +115,7 @@ std::string getProgramId() const override
 
 to `MarsMain.cpp`.
 
-## TODO #5: Add Options 
+## TODO #5: Add Options  {#todo-5}
  
 TODO Location           Impact
 ----------------------  ---------------------------------------------
@@ -123,14 +123,14 @@ QuickStartOptions.cpp   QuickStartOptions.cpp, QuickStartOptions.hpp
 
 The QuickStartOptions class demonstrates how to add job scheduling specific options to the Plugin. It may not be immediately obvious what options will be required for the Plugin, but when it does become clear that an option is needed it can be added here.
 
-### Example
+### Example {#todo-5-ex}
 
-Suppose that the Mars job scheduling system can be controlled using an HTTP API, and it can be set up at a custom URL and port. The Orchid developer might then add a required option for the URL, an optional option for whether SSL should be used, and an optional option for the port. In that case, the developer might modify QuickStartOptions.hpp and QuickStartOptions.cpp in the following way:
+Suppose that the Mars job scheduling system can be controlled using an HTTP API, and it can be set up at a custom URL and port. The Orchid developer might then add a required option for the URL, an optional option for whether SSL should be used, and an optional option for the port. Additionally, the Mars Launcher Plugin will need to be able to make requests (such as listing all of the jobs in the system) as an administrator user. In that case, the developer might modify QuickStartOptions.hpp and QuickStartOptions.cpp in the following way:
 
 
 **QuickStartOptions.hpp**
 
-```{Rcpp,eval=FALSE}
+```{Rcpp, eval=FALSE}
 class QuickStartOptions : public Noncopyable
 {
 public:
@@ -149,7 +149,7 @@ private:
 
 **QuickStartOptions.cpp**
 
-```{Rcpp,eval=FALSE}
+```{Rcpp, eval=FALSE}
 bool QuickStartOptions::getSampleOption() const 
 {
   return m_sampleOption;
@@ -170,7 +170,7 @@ void QuickStartOptions::initialize()
 
 **MarsOptions.hpp**
 
-```{Rcpp,eval=FALSE}
+```{Rcpp, eval=FALSE}
 namespace orchid {
 namespace mars {
 namespace options {
@@ -179,6 +179,8 @@ class MarsOptions : public Noncopyable
 {
 public:
 // ...
+  
+  const std::string& getMarsServiceUser() const;
   
   const std::string& getHost() const;
   
@@ -190,6 +192,8 @@ public:
    
 private:
 // ...
+  
+  std:string m_marsServiceUser;
   
   std::string m_host;
   
@@ -205,7 +209,7 @@ private:
 
 **MarsOptions.cpp**
 
-```{Rcpp,eval=FALSE}
+```{Rcpp, eval=FALSE}
 #include "options/MarsOptions.hpp"
 
 #include <options/Options.hpp>
@@ -237,19 +241,22 @@ bool MarsOptions::getUseSsl() const
 
 void MarsOptions::initialize()
 {
-   // TODO #5: Add options, as necessary.
-   using namespace rstudio::launcher_plugins::options;
-   Options& options = Options::getInstance();
-   options.registerOptions()
-      ("host",
-       Value<std::string>(m_host),
-       "the IP address or hostname of the Tiger Lily server")
-      ("port",
-       Value<unsigned int>(m_port).setDefaultValue(0),
-       "the port to use for connecting to the Tiger Lily server")
-      ("use-ssl",
-       Value<bool>(m_useSsl).setDefaultValue(false),
-       "whether to use HTTPS (true) or HTTP (false, default) when connecting to the Tiger Lily server");
+  // TODO #5: Add options, as necessary.
+  using namespace rstudio::launcher_plugins::options;
+  Options& options = Options::getInstance();
+  options.registerOptions()
+    ("mars-service-user",
+     Value<std::string>(m_host).setDefaultValue("mars"),
+     "a user which can make service requests to the Mars server")
+    ("host",
+     Value<std::string>(m_host),
+     "the IP address or hostname of the Mars server")
+    ("port",
+     Value<unsigned int>(m_port).setDefaultValue(0),
+     "the port to use for connecting to the Mars server")
+    ("use-ssl",
+     Value<bool>(m_useSsl).setDefaultValue(false),
+     "whether to use HTTPS (true) or HTTP (false, default) when connecting to the Mars server");
 }
 
 } // namespace options
@@ -257,7 +264,7 @@ void MarsOptions::initialize()
 } // namespace orchid
 ```
 
-## TODO #6: Initilaize Communication
+## TODO #6: Initilaize Communication {#todo-6}
  
 TODO Location             Impact
 ------------------------  ------------------------
@@ -268,12 +275,11 @@ The next step is to initialize communication with the job scheduling system. Thi
 
 Any other tasks which need to be completed before the Plugin is ready to launch jobs must be completed here. For example, in the RStudio SLURM Launcher Plugin it was also necessary to check which timezone the SLURM cluster is using, since job timestamps need to be compared later on. If the Plugin implementation will be tied to a specific version, or set of versions, of the job scheduling system, that should be validated here as well.
 
-### Example
+### Example {#todo-6-ex}
 
 The Plugin Developer may now change
 
-
-```{Rcpp,eval=FALSE}
+```{Rcpp, eval=FALSE}
 #include <QuickStartJobSource.hpp>
 
 #include <Error.hpp>
@@ -296,7 +302,7 @@ Error QuickStartJobSource::initialize()
 in `QuickStartJobSource.cpp` to
 
 
-```{rcpp,eval=FALSE}
+```{Rcpp,eval=FALSE}
 #include "MarsJobSource.hpp"
 
 #include <Error.hpp>
@@ -325,7 +331,7 @@ Error MarsJobSource::initialize()
 } // namespace orchid
 ```
 
-## TODO #7: Define the Cluster Configuration
+## TODO #7: Define Cluster Configuration {#todo-7}
  
 TODO Location             Impact
 ------------------------  ------------------------
@@ -364,7 +370,7 @@ This section will describe the questions which need to be answered to correctly 
 
 If there are any job configuration values which cannot be covered by one of the above categories, refer to the 'Custom Job Source Configuration' section of the 'Advanced Features' chapter of the RStudio Launcher Plugin SDK Developer's Guide.
 
-### Example
+### Example {#todo-7-ex}
 
 Assume that the Mars scheduling system has the following capabilities:
 
@@ -433,3 +439,80 @@ Error MarsJobSource::getConfiguration(
 
 in `MarsJobSource.cpp`.
   
+  
+## TODO #8: Pull all jobs {#todo-8}
+
+When the Launcher starts the Plugin, it will send a Bootstrap request to ensure that the Plugin is initialized. During this request, the Plugin SDK will populate the `JobRepository` with any pre-existing Launcher jobs by calling `IJobSource::getJobs`. The Plugin developer needs to override `IJobSource::getJobs` to synchronously pull down the list jobs that are already in the Job Scheduling System.
+
+Any jobs which were not launched by the Plugin should not be included in the output. To distinguish between jobs that were launched by the Plugin and jobs that were launched either manually or by another tool, it may be useful to preface the name of the job with a unique tag (e.g. `'[RStudio Launcher] <job name>`). Alternately, if the Job Scheduling System supports setting custom fields on the job, a custom field may be used to indicate that the job was launched through the Plugin. Note that if a unique prefix is added to Launcher jobs by the Plugin, it should be removed from the job name before being returned to the Launcher.
+
+Each job detail must be converted from the format in the Job Scheduling System to the format understood by the Launcher. For example, if dates are represented as a string in the Job Scheduling System, they must be parsed as a `system::DateTime` before the associated `Job` object can be updated. For more information about parsing dates from strings, see the 'Date-Time Support' section of the 'Advanced Features' chapter of the RStudio Launcher Plugin SDK Developer's Guide.
+
+### Job Fields {#todo-8-fields}
+
+The `Job` object has a field for each detail that the Launcher requires. This document will discuss some of the fields which require special consideration. Because jobs may remain in the system between Plugin restarts, the Plugin must be able to populate each field of the `Job` object exactly as it would have been when it was submitted to the Plugin based on the record of the job in the Job Scheduling System. If any fields cannot be retrieved from the Job Scheduling System, it will most likely be easier to ignore them during this TODO and design a solution during [TODO #10](#todo-10). For more information about each field, see the RStudio Launcher Plugin SDK API Reference.
+
+#### Command vs. Exe vs. Container {#todo-8-command-exe}
+
+Depending on whether a Plugin supports containers, there are two or three possible ways a job may be submitted to the Plugin. Without container support, a job may be submitted wither either the `Job::Command` or the `Job::Exe` field set. The difference is that a job submitted with the `Job::Command` field populated should be executed as a shell command (e.g. `/bin/sh -c <Command>`), and a job submitted with the `Job::Exe` field populated should be executed directly. With container support, the job may be submitted with the `Command` and `Container` fields set, with the `Exe` and `Container` fields set, or just with the `Container` field set. In that case, the `Container` field describes the `Container` that should run either the shell command or the executable, or if no command or executable was set, the `Container` itself is the job to be run. Job submission is discussed in more detail in [TODO #10](#todo-10).
+
+The Plugin must be able to determine from the Job Scheduling System's record of the job which of the `Job::Command`, `Job::Exe`, and `Job::Container` fields should be populated, and must be able to repopulate those fields exactly as they were when they were submitted to the Plugin.
+
+#### Job Status {#todo-8-job-status}
+
+Another special consideration is how to convert from the Job Scheduling System's job status to the RStudio Launcher Plugin SDK job status. To help with the conversion, below is a table which describes all of the `Job::State` enumeration values and their meaning with respect to the state of the job.
+
+| `Job::State` Value | Meaning
+| ------------------ | ---------------------------------------------------------------------------
+| `CANCELED`         | The job was canceled by the user before it transitioned to the `RUNNING` state.
+| `FAILED`           | The job could not be launched by the Job Scheduling System. This does not include a job that runs and exits with a non-zero exit code.
+| `FINISHED`         | The job was launched by the Job Scheduling System and has exited. This includes jobs which exit with a non-zero exit code.
+| `KILLED`           | The job was forcibly stopped, using `SIGKILL`.
+| `PENDING`          | The job has been submitted to the Job Scheduling System but has not started running yet.
+| `RUNNING`          | The job is currently running.
+| `SUSPENDED`        | The job has been paused by the user, and may be resumed later.
+| `UNKNOWN`          | This is not a job status - it represents the default value of the job state, before it has been submitted to the Plugin. Jobs populated by the Plugin should not have this status.
+
+### Example {#todo-8-ex}
+
+Assume the following:
+
+* The Mars Job Scheduling System API has a `list_jobs` function which takes a username. It retrieves the jobs the specified user has permission to see.
+* The Orchid organization's developer has added a `marsJobToJob` helper function which converts a `mars_api::job` structure to an `rstudio::launcher_plugins::api::Job` structure.
+
+In that case, the Plugin developer might change
+
+```{Rcpp, eval=FALSE}
+
+Error QuickStartJobSource::getJobs(api::JobList &out_jobs) const
+{
+  // TODO #8: Pull all RStudio jobs from the job scheduling system synchronously.
+  return Success();
+}
+```
+
+in `QuickStartJobSource.cpp` to 
+
+```{Rcpp, eval=FALSE}
+
+Error MarsJobSource::getJobs(api::JobList &out_jobs) const
+{
+  const options::MarsOptions& opts = options::MarsOptions::getInstance();
+  std::vector<mars_api::job> marsJobs;
+  try
+  {
+    marsJobs = mars_api::list_jobs(opts.getMarsServiceUser());
+  }
+  catch (const mars_exception& e)
+  {
+    return Error("MarsApiError", e.code(), e.what(), ERROR_LOCATION);
+  }
+  
+  for (const mars_api::job& job: marsJobs)
+    out_jobs.push_back(marsJobTojob(job));
+  
+  return Success();
+}
+```
+
+in `MarsJobSource.cpp`.

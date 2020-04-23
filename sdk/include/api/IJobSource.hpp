@@ -128,6 +128,15 @@ public:
     * @return Success if the configuration and capabilities for this Job Source could be populated; Error otherwise.
     */
    virtual Error getConfiguration(const system::User& in_user, JobSourceConfiguration& out_configuration) const = 0;
+
+   /**
+    * @brief Gets all RStudio jobs currently in the job scheduling system.
+    *
+    * @param out_jobs   All RStudio jobs currently in the job scheduling system.
+    *
+    * @return Success if all jobs could be retrieved; Error otherwise.
+    */
+   virtual Error getJobs(JobList& out_jobs) const = 0;
 };
 
 } // namespace api

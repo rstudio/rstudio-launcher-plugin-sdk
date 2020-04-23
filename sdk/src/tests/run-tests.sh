@@ -33,4 +33,10 @@ do
   FAILURES=$((FAILURES + $?))
 done
 
-exit $FAILURES
+echo -n $FAILURES > failures.log
+
+if [[ $FAILURES -ne 0 ]]; then
+  exit 1
+fi
+
+exit 0

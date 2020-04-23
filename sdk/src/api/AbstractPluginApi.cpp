@@ -23,11 +23,14 @@
 
 #include <api/AbstractPluginApi.hpp>
 
+#include <boost/algorithm/string/join.hpp>
+
 #include <api/Constants.hpp>
 #include <api/IJobSource.hpp>
 #include <api/Response.hpp>
 #include <options/Options.hpp>
 #include <system/Asio.hpp>
+#include <json/Json.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -56,13 +59,25 @@ struct AbstractPluginApi::Impl
     * @param in_type        The type of error which occurred.
     * @param in_error       The error which occurred.
     */
-   void sendErrorResponse(uint64_t in_requestId, ErrorResponse::Type in_type, const Error& in_error)
+   void sendErrorResponse(uint64_t in_requestId, ErrorResponse::Type in_type, const std::string& in_errorMessage)
    {
       LauncherCommunicator->sendResponse(
          ErrorResponse(
             in_requestId,
-            ErrorResponse::Type::UNKNOWN,
-            in_error.asString()));
+            in_type,
+            in_errorMessage));
+   }
+
+   /**
+    * @brief Sends an error response to the Launcher.
+    *
+    * @param in_requestId   The ID of the request for which an error occurred.
+    * @param in_type        The type of error which occurred.
+    * @param in_error       The error which occurred.
+    */
+   void sendErrorResponse(uint64_t in_requestId, ErrorResponse::Type in_type, const Error& in_error)
+   {
+      sendErrorResponse(in_requestId, in_type, in_error.asString());
    }
 
    /**
@@ -99,7 +114,13 @@ struct AbstractPluginApi::Impl
       if (error)
          return sendErrorResponse(in_bootstrapRequest->getId(), ErrorResponse::Type::UNKNOWN, error);
 
-      // TODO: pull down existing jobs and put them in the repository.
+      JobList jobs;
+      error = JobSource->getJobs(jobs);
+      if (error)
+         return sendErrorResponse(in_bootstrapRequest->getId(), ErrorResponse::Type::UNKNOWN, error);
+
+      for (const JobPtr& job: jobs)
+         JobRepo->addJob(job);
 
       LauncherCommunicator->sendResponse(BootstrapResponse(in_bootstrapRequest->getId()));
    }
@@ -117,6 +138,93 @@ struct AbstractPluginApi::Impl
       return LauncherCommunicator->sendResponse(ClusterInfoResponse(in_clusterInfoRequest->getId(), caps));
    }
 
+   void handleGetJobRequest(const std::shared_ptr<JobStateRequest>& in_getJobRequest)
+   {
+      const std::string& jobId = in_getJobRequest->getJobId();
+
+      Optional<system::DateTime> startTime, endTime;
+      Error error = in_getJobRequest->getStartTime(startTime);
+      if (error)
+         return sendErrorResponse(
+            in_getJobRequest->getId(),
+            ErrorResponse::Type::INVALID_REQUEST,
+            "Invalid start time");
+
+      error = in_getJobRequest->getEndTime(endTime);
+      if (error)
+         return sendErrorResponse(
+            in_getJobRequest->getId(),
+            ErrorResponse::Type::INVALID_REQUEST,
+            "Invalid end time");
+
+      const Optional<std::set<std::string> >& fields = in_getJobRequest->getFieldSet(),
+                                            & tags = in_getJobRequest->getTagSet();
+
+      Optional<std::set<Job::State> > statuses;
+      error = in_getJobRequest->getStatusSet(statuses);
+      if (error)
+         return sendErrorResponse(
+            in_getJobRequest->getId(),
+            ErrorResponse::Type::INVALID_REQUEST,
+            "Invalid status(es): " + error.getMessage());
+
+      std::vector<std::string> statusesStrSet;
+      std::string statusesStr = "none";
+      if (statuses)
+      {
+         std::transform(
+            statuses.getValueOr({}).begin(),
+            statuses.getValueOr({}).end(),
+            std::back_inserter(statusesStrSet),
+            &Job::stateToString);
+         statusesStr = boost::algorithm::join(statusesStrSet, ", ");
+      }
+
+      logging::logDebugMessage(
+         "Received getJobState request for " + in_getJobRequest->getUser().getUsername() +
+         ": jobID: " + jobId +
+         " startTime: " + (startTime ? startTime.getValueOr(system::DateTime()).toString() : "none") +
+         " endTime: " + (endTime ? endTime.getValueOr(system::DateTime()).toString() : "none") +
+         " statuses: " + statusesStr);
+
+      JobList jobs;
+      if (jobId == "*")
+      {
+         jobs = JobRepo->getJobs(in_getJobRequest->getUser());
+
+         // Filter the jobs based on the request.
+         for (auto itr = jobs.begin(); itr != jobs.end();)
+         {
+            const JobPtr& job = *itr;
+
+            // Skip the job if it wasn't submitted within the requested range of submission times...
+            if ((startTime && (job->SubmissionTime < startTime.getValueOr(system::DateTime()))) ||
+               (endTime && (job->SubmissionTime > endTime.getValueOr(system::DateTime()))) ||
+               // ... or if it doesn't have all of the requested tags...
+               (tags && !job->matchesTags(tags.getValueOr({}))) ||
+               // ... or if it isn't in one of the requested states.
+               (statuses && (statuses.getValueOr({}).find(job->Status) == statuses.getValueOr({}).end())))
+               itr = jobs.erase(itr);
+            else
+               ++itr;
+         }
+      }
+      else
+      {
+         // If a specific Job ID was requested, ignore the other filters.
+         JobPtr job = JobRepo->getJob(jobId, in_getJobRequest->getUser());
+         if (job == nullptr)
+            return sendErrorResponse(
+               in_getJobRequest->getId(),
+               ErrorResponse::Type::JOB_NOT_FOUND,
+               "Job " + jobId + " could not be found for user " + in_getJobRequest->getUser().getUsername());
+
+         jobs.push_back(job);
+      }
+
+      return LauncherCommunicator->sendResponse(JobStateResponse(in_getJobRequest->getId(), jobs, fields));
+   }
+
    /**
     * @brief Handles a request from the Launcher.
     *
@@ -127,21 +235,19 @@ struct AbstractPluginApi::Impl
    {
       // This should be impossible. It would effectively be an internal server error.
       if (in_handlerType != in_request->getType())
-         return LauncherCommunicator->sendResponse(
-            ErrorResponse(
-               in_request->getId(),
-               ErrorResponse::Type::UNKNOWN,
-               "Internal Request Handling Error."));
+         return sendErrorResponse(
+            in_request->getId(),
+            ErrorResponse::Type::UNKNOWN,
+            "Internal Request Handling Error.");
 
 
       if (!JobSource)
       {
          logging::logErrorMessage("Request received before JobSource was initialized.", ERROR_LOCATION);
-         return LauncherCommunicator->sendResponse(
-            ErrorResponse(
-               in_request->getId(),
-               ErrorResponse::Type::UNKNOWN,
-               "Internal Request Handling Error."));
+         return sendErrorResponse(
+            in_request->getId(),
+            ErrorResponse::Type::UNKNOWN,
+            "Internal Request Handling Error.");
       }
 
       switch (in_handlerType)
@@ -152,17 +258,21 @@ struct AbstractPluginApi::Impl
             return handleBootstrap(std::static_pointer_cast<BootstrapRequest>(in_request));
          case Request::Type::GET_CLUSTER_INFO:
             return handleGetClusterInfo(std::static_pointer_cast<UserRequest>(in_request));
+         case Request::Type::GET_JOB:
+            return handleGetJobRequest(std::static_pointer_cast<JobStateRequest>(in_request));
          default:
-            return LauncherCommunicator->sendResponse(
-               ErrorResponse(
-                  in_request->getId(),
-                  ErrorResponse::Type::UNKNOWN,
-                  "Internal Request Handling Error."));
+            return sendErrorResponse(
+               in_request->getId(),
+               ErrorResponse::Type::UNKNOWN,
+               "Internal Request Handling Error.");
       }
    }
 
    /** The job source which communicates with the job scheduling system. */
    std::shared_ptr<IJobSource> JobSource;
+
+   /** The job repository */
+   std::shared_ptr<jobs::JobRepository> JobRepo;
 
    /** The communicator that will be used to send and receive messages from the RStudio Launcher. */
    std::shared_ptr<comms::AbstractLauncherCommunicator> LauncherCommunicator;
@@ -178,6 +288,9 @@ Error AbstractPluginApi::initialize()
    // Create the job source.
    m_abstractPluginImpl->JobSource = createJobSource();
 
+   // Create the job repository.
+   m_abstractPluginImpl->JobRepo = createJobRepository();
+
    // Register all the request handlers.
    std::shared_ptr<comms::AbstractLauncherCommunicator>& comms = m_abstractPluginImpl->LauncherCommunicator;
 
@@ -191,6 +304,9 @@ Error AbstractPluginApi::initialize()
    comms->registerRequestHandler(
       Request::Type::GET_CLUSTER_INFO,
       std::bind(&Impl::handleRequest, m_abstractPluginImpl.get(), Request::Type::GET_CLUSTER_INFO, _1));
+   comms->registerRequestHandler(
+      Request::Type::GET_JOB,
+      std::bind(&Impl::handleRequest, m_abstractPluginImpl.get(), Request::Type::GET_JOB, _1));
 
    // Make the heartbeat event.
    WeakThis weakThis = shared_from_this();
@@ -216,6 +332,11 @@ Error AbstractPluginApi::initialize()
 AbstractPluginApi::AbstractPluginApi(std::shared_ptr<comms::AbstractLauncherCommunicator> in_launcherCommunicator) :
    m_abstractPluginImpl(new Impl(std::move(in_launcherCommunicator)))
 {
+}
+
+std::shared_ptr<jobs::JobRepository> AbstractPluginApi::createJobRepository() const
+{
+   return std::make_shared<jobs::JobRepository>();
 }
 
 } // namespace api

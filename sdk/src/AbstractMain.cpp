@@ -20,11 +20,10 @@
 
 #include <AbstractMain.hpp>
 
+#include <condition_variable>
 #include <csignal>
 #include <iostream>
-
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/condition_variable.hpp>
+#include <mutex>
 
 #include <Error.hpp>
 #include <comms/StdIOLauncherCommunicator.hpp>
@@ -48,7 +47,7 @@ if (in_error)                             \
    logging::logError(in_error);           \
    if (!std::string(in_msg).empty())      \
       logging::logErrorMessage(in_msg);   \
-   return error.getCode();                \
+   return 1;                              \
 }                                         \
 
 #define CHECK_ERROR_0(in_error, dummy)  CHECK_ERROR_1(in_error, "")
@@ -125,7 +124,7 @@ struct AbstractMain::Impl
       UNIQUE_LOCK_MUTEX(m_mutex)
       m_exitProcess = true;
       m_exitConditionVar.notify_all();
-      END_UNIQUE_LOCK_MUTEX
+      END_LOCK_MUTEX
    }
 
    /**
@@ -156,14 +155,14 @@ struct AbstractMain::Impl
    }
 
    /**
-    * @brief Runs the process until a shutdown signal is recevied.
+    * @brief Runs the process until a shutdown signal is receveid.
     */
    void waitForSignal()
    {
       UNIQUE_LOCK_MUTEX(m_mutex)
       if (!m_exitProcess)
          m_exitConditionVar.wait(lock, [&]{ return m_exitProcess; });
-      END_UNIQUE_LOCK_MUTEX;
+      END_LOCK_MUTEX
    }
 
 private:
@@ -171,14 +170,20 @@ private:
    bool m_exitProcess;
 
    /** Mutex to protect the exit process boolean value. */
-   boost::mutex m_mutex;
+   std::mutex m_mutex;
 
    /** Condition variable to use to wait for or send a shutdown signal. */
-   boost::condition_variable m_exitConditionVar;
+   std::condition_variable m_exitConditionVar;
 };
 
 int AbstractMain::run(int in_argc, char** in_argv)
 {
+   // Initialize Main. This should initialize the plugin-specific options, and any other plugin specific elements needed
+   // (e.g it could add a custom logging destination). We need to do this before loggers are added in case the plugin
+   // needs to initialize some things for its program ID.
+   Error error = initialize();
+   CHECK_ERROR(error)
+
    // Set up the logger.
    using namespace logging;
    setProgramId(getProgramId());
@@ -196,11 +201,6 @@ int AbstractMain::run(int in_argc, char** in_argv)
 
    // Initialize the default options. This must be done before the custom options are initialized.
    options::Options& options = options::Options::getInstance();
-
-   // Initialize Main. This should initialize the plugin-specific options, and any other plugin specific elements needed
-   // (e.g it could add a custom logging destination).
-   Error error = initialize();
-   CHECK_ERROR(error)
 
    // Read the options.
    error = options.readOptions(in_argc, in_argv, getConfigFile());
@@ -227,7 +227,7 @@ int AbstractMain::run(int in_argc, char** in_argv)
                3,
                options.getLogLevel(),
                getProgramId(),
-               options.getScratchPath().completeChildPath(getPluginName()))));
+               options.getScratchPath())));
    }
 
    // Create the launcher communicator. For now this is always an StdIO communicator. Later, it could be dependant on
@@ -249,6 +249,8 @@ int AbstractMain::run(int in_argc, char** in_argv)
 
    // Create and initialize the LauncherPluginApi.
    std::shared_ptr<api::AbstractPluginApi> pluginApi = createLauncherPluginApi(launcherCommunicator);
+   CHECK_ERROR(error);
+
    error = pluginApi->initialize();
    CHECK_ERROR(error)
 

@@ -65,6 +65,15 @@ public:
    virtual Error getConfiguration(
       const system::User& in_user,
       api::JobSourceConfiguration& out_configuration) const override;
+
+   /**
+    * @brief Gets all RStudio jobs currently in the job scheduling system.
+    *
+    * @param out_jobs   All RStudio jobs currently in the job scheduling system.
+    *
+    * @return Success if all jobs could be retrieved; Error otherwise.
+    */
+   Error getJobs(api::JobList& out_jobs) const override;
 };
 
 } // namespace quickstart

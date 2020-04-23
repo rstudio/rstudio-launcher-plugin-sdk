@@ -39,6 +39,7 @@ set(RLPS_SOURCE_FILES
    src/comms/AbstractLauncherCommunicator.cpp
    src/comms/MessageHandler.cpp
    src/comms/StdIOLauncherCommunicator.cpp
+   src/jobs/JobRepository.cpp
    src/json/Json.cpp
    src/logging/FileLogDestination.cpp
    src/logging/Logger.cpp
@@ -53,6 +54,7 @@ set(RLPS_SOURCE_FILES
    src/system/ReaderWriterMutex.cpp
    src/system/User.cpp
    src/utils/ErrorUtils.cpp
+   src/utils/FileUtils.cpp
 )
 
 # include directory
@@ -86,6 +88,7 @@ if (NOT RLPS_UNIT_TESTS_DISABLED)
    add_subdirectory(src/tests)
    add_subdirectory(src/api/tests)
    add_subdirectory(src/comms/tests)
+   add_subdirectory(src/jobs/tests)
    add_subdirectory(src/options/tests)
    add_subdirectory(src/system/tests)
 endif()

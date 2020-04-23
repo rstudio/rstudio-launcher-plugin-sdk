@@ -23,6 +23,9 @@
 
 #include <api/AbstractPluginApi.hpp>
 
+#include "LocalJobSource.hpp"
+#include "job_store/LocalJobStorage.hpp"
+
 namespace rstudio {
 namespace launcher_plugins {
 namespace comms {
@@ -46,10 +49,13 @@ public:
    /**
     * @brief Constructor.
     *
+    * @param in_hostname                The name of the host running this instance of the Local Plugin.
     * @param in_launcherCommunicator    The communicator to use for sending and receiving messages from the RStudio
     *                                   Launcher.
     */
-   explicit LocalPluginApi(std::shared_ptr<comms::AbstractLauncherCommunicator> in_launcherCommunicator);
+   LocalPluginApi(
+      std::string in_hostname,
+      std::shared_ptr<comms::AbstractLauncherCommunicator> in_launcherCommunicator);
 
 private:
    /**
@@ -66,6 +72,9 @@ private:
     * @return Success if all components of the Plugin API could be initialized; Error otherwise.
     */
    Error doInitialize() override;
+
+   /** The hostname of the machine running this instance of the Local Plugin. */
+   std::string m_hostname;
 };
 
 } // namespace local

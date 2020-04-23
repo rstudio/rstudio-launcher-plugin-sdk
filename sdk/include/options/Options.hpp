@@ -235,6 +235,16 @@ public:
     */
    size_t getMaxMessageSize() const;
 
+   /**
+    * @brief Gets the name the administrator gave to this instance of the Plugin in the launcher.conf file.
+    *
+    * This value may be useful if a plugin implementation needs to be aware of other instances of the same Plugin in a
+    * load balanced scenario.
+    *
+    * @return The name the administrator gave to this instance of the Plugin in the launcher.conf file.
+    */
+   const std::string& getPluginName() const;
+
   /**
    * @brief Gets the scratch path to which log files and other plugin data may be written.
    *

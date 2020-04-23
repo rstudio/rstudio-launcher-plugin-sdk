@@ -29,7 +29,9 @@
 #include <string>
 #include <vector>
 
+#include <Noncopyable.hpp>
 #include <Optional.hpp>
+#include <PImpl.hpp>
 #include <system/DateTime.hpp>
 #include <system/User.hpp>
 
@@ -57,17 +59,20 @@ struct ExposedPort;
 struct HostMountSource;
 struct Job;
 struct JobConfig;
+class JobLock;
 struct Mount;
 struct NfsMountSource;
 struct ResourceLimit;
 struct PlacementConstraint;
 
 // Convenience Typedefs
+typedef std::shared_ptr<Job> JobPtr;
+
 typedef std::pair<std::string, std::string> EnvVariable;
 typedef std::vector<EnvVariable> EnvironmentList;
 typedef std::vector<ExposedPort> ExposedPortList;
 typedef std::vector<JobConfig> JobConfigList;
-typedef std::vector<Job> JobList;
+typedef std::vector<JobPtr> JobList;
 typedef std::vector<Mount> MountList;
 typedef std::vector<PlacementConstraint> PlacementConstraintList;
 typedef std::vector<ResourceLimit> ResourceLimitList;
@@ -195,6 +200,25 @@ struct Job
    };
 
    /**
+    * @brief Constructor.
+    */
+   Job();
+
+   /**
+    * @brief Copy constructor.
+    *
+    * @param in_other       The job to copy.
+    */
+   Job(const Job& in_other);
+
+   /**
+    * @brief Move constructor.
+    *
+    * @param in_other       The job to move into this job.
+    */
+   Job(Job&& in_other) noexcept;
+
+   /**
     * @brief Constructs a Job from a JSON object which represents the job.
     *
     * @param in_json        The JSON object which represents the job.
@@ -203,6 +227,43 @@ struct Job
     * @return Success if in_json could be parsed as a Job; Error otherwise.
     */
    static Error fromJson(const json::Object& in_json, Job& out_job);
+
+   /**
+    * @brief Converts a status string into its equivalent Job::State enum value.
+    *
+    * @param in_statusString    The string to convert.
+    * @param out_status         The converted status, if no error occurred.
+    *
+    * @return Success if in_statusString is a valid job state; Error otherwise.
+    */
+   static Error stateFromString(const std::string& in_statusString, State& out_status);
+
+   /**
+    * @brief Converts a Job::State enum value into its string representation.
+    *
+    * @param in_status   The Job::State value to be converted to string.
+    *
+    * @return The string representation of the specified Job::State.
+    */
+   static std::string stateToString(const State& in_status);
+
+   /**
+    * @brief Assignment operator.
+    *
+    * @param in_other       The Job to copy into this Job.
+    *
+    * @return A reference to this Job.
+    */
+   Job& operator=(const Job& in_other);
+
+   /**
+    * @brief Move operator.
+    *
+    * @param in_other       The Job to move into this Job.
+    *
+    * @return A reference to this Job.
+    */
+   Job& operator=(Job&& in_other) noexcept;
 
    /**
     * @brief Gets a job configuration value, if it exists.
@@ -314,16 +375,22 @@ struct Job
    std::string StatusMessage;
 
    /** The time at which the job was submitted to the job scheduling system. */
-   Optional<system::DateTime> SubmissionTime;
+   system::DateTime SubmissionTime;
 
    /** The tags which were set on the job by the user. Can be used for filtering jobs based on tags. */
    std::set<std::string> Tags;
 
    /** The user who ran the job. */
-   std::string User;
+   system::User User;
 
    /** The working directory from which to run the job. */
    std::string WorkingDirectory;
+
+private:
+   friend class JobLock;
+
+   // The  private implementation of a Job object.
+   PRIVATE_IMPL(m_impl);
 };
 
 /**
@@ -392,6 +459,24 @@ struct JobConfig
 
    /** The value of the custom job configuration value. */
    std::string Value;
+};
+
+/** @brief RAII class for locking access to a Job object. Should be used every time a Job is modified. */
+class JobLock : Noncopyable
+{
+public:
+   /**
+    * @brief Constructor.
+    *
+    * May throw a std::system_error.
+    *
+    * @param in_job     The job to lock.
+    */
+   explicit JobLock(JobPtr in_job);
+
+private:
+   // The private implementation of JobLock.
+   PRIVATE_IMPL(m_impl);
 };
 
 /** @brief Struct which represents an file system mount available to a job. */

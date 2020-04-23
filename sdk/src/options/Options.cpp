@@ -20,12 +20,14 @@
 
 #include <options/Options.hpp>
 
+#include <mutex>
+#include <thread>
+
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/parsers.hpp>
 #include <boost/program_options/variables_map.hpp>
-#include <boost/thread.hpp>
 
 #include <logging/Logger.hpp>
 #include <system/FilePath.hpp>
@@ -277,7 +279,7 @@ struct Options::Impl
    void initialize()
    {
       // lock the mutex to ensure we don't initialize the options twice.
-      boost::unique_lock<boost::mutex> lock(Mutex);
+      std::unique_lock<std::mutex> lock(Mutex);
       if (!IsInitialized)
       {
          OptionsDescription.add_options()
@@ -299,6 +301,9 @@ struct Options::Impl
             ("max-message-size",
                value<size_t>(&MaxMessageSize)->default_value(5242880),
                "the maximum size of a message which can be sent to or received from the RStudio Launcher")
+            ("plugin-name",
+               value<std::string>(&PluginName)->default_value(""),
+               "the name of this plugin")
             ("scratch-path",
                value<system::FilePath>(&ScratchPath)->default_value(
                   system::FilePath("/var/lib/rstudio-launcher/")),
@@ -308,7 +313,7 @@ struct Options::Impl
                "user to run the plugin as")
             ("thread-pool-size",
                value<size_t>(&ThreadPoolSize)->default_value(
-                  std::max<size_t>(4, boost::thread::hardware_concurrency())),
+                  std::max<size_t>(4, std::thread::hardware_concurrency())),
                "the number of threads in the thread pool");
 
          IsInitialized = true;
@@ -316,7 +321,7 @@ struct Options::Impl
    }
 
    // Mutex to protect read and write.
-   boost::mutex Mutex;
+   std::mutex Mutex;
 
    // Boost program options.
    options_description OptionsDescription;
@@ -331,6 +336,7 @@ struct Options::Impl
    system::FilePath LauncherConfigFile;
    logging::LogLevel MaxLogLevel;
    size_t MaxMessageSize;
+   std::string PluginName;
    system::FilePath ScratchPath;
    std::string ServerUser;
    size_t ThreadPoolSize;
