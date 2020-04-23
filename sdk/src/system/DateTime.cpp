@@ -256,6 +256,46 @@ DateTime& DateTime::operator=(DateTime&& in_other) noexcept
    return *this;
 }
 
+TimeDuration DateTime::operator-(const DateTime& in_other) const
+{
+   TimeDuration result;
+
+   if ((this != &in_other) && (m_impl == nullptr) && (in_other.m_impl != nullptr))
+      result.m_impl->Time = m_impl->Time - in_other.m_impl->Time;
+
+   return result;
+}
+
+DateTime DateTime::operator-(const TimeDuration& in_intervalTime) const
+{
+   DateTime result = *this;
+   result -= in_intervalTime;
+   return result;
+}
+
+DateTime& DateTime::operator-=(const TimeDuration& in_intervalTime)
+{
+   if ((m_impl != nullptr) && (in_intervalTime.m_impl != nullptr))
+      m_impl->Time -= in_intervalTime.m_impl->Time;
+
+   return *this;
+}
+
+DateTime DateTime::operator+(const TimeDuration& in_intervalTime) const
+{
+   DateTime result = *this;
+   result += in_intervalTime;
+   return result;
+}
+
+DateTime& DateTime::operator+=(const TimeDuration& in_intervalTime)
+{
+   if ((m_impl != nullptr) && (in_intervalTime.m_impl != nullptr))
+      m_impl->Time += in_intervalTime.m_impl->Time;
+
+   return *this;
+}
+
 bool DateTime::operator==(const DateTime& in_other) const
 {
    if (this == &in_other)

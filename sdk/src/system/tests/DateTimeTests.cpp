@@ -66,11 +66,11 @@ TEST_CASE("TimeDuration Construction")
       CHECK(i4.getMinutes() == -26);
       CHECK(i4.getHours() == -43);
 
-      // i5
-      CHECK(i5.getMicroseconds() == 398764);
-      CHECK(i5.getSeconds() == -14);
-      CHECK(i5.getMinutes() == -11);
-      CHECK(i5.getHours() == 53);
+      // i5 - If one field is negative all are negative (apparently).
+      CHECK(i5.getMicroseconds() == -398764);
+      CHECK(i5.getSeconds() == -34);
+      CHECK(i5.getMinutes() == -14);
+      CHECK(i5.getHours() == -55);
    }
 
    SECTION("Copy constructor and equality")
