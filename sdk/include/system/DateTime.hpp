@@ -80,7 +80,7 @@ public:
     *
     * @param in_other   The TimeDuration to move into this TimeDuration.
     */
-   TimeDuration(TimeDuration&& in_other);
+   TimeDuration(TimeDuration&& in_other) noexcept;
 
    /**
     * @brief Destructor.
@@ -149,7 +149,7 @@ public:
     * @return A reference to this TimeDuration.
     */
 
-   TimeDuration& operator=(const TimeDuration&& in_other);
+   TimeDuration& operator=(TimeDuration&& in_other) noexcept;
 
    /**
     * @brief Equality comparison operator.
@@ -271,7 +271,7 @@ public:
     *
     * @return A reference to this DateTime.
     */
-   DateTime& operator=(DateTime&& in_other);
+   DateTime& operator=(DateTime&& in_other) noexcept;
 
    /**
     * @brief Subtracts two DateTimes to produce an TimeDuration.

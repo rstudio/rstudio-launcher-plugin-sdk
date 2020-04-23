@@ -24,6 +24,7 @@
 #include <system/DateTime.hpp>
 
 #include <boost/date_time/local_time/local_time.hpp>
+#include <boost/date_time/gregorian/greg_duration.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
 #include <Error.hpp>
@@ -32,9 +33,161 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace system {
 
+namespace {
+
 constexpr char const* ISO_8601_INPUT_FORMAT  = "%Y-%m-%dT%H:%M:%S%F%ZP";
 constexpr char const* ISO_8601_OUTPUT_FORMAT = "%Y-%m-%dT%H:%M:%S%FZ";
 
+} // anonymous namespace
+
+// TimeDuration ========================================================================================================
+struct TimeDuration::Impl
+{
+
+   explicit Impl(
+      int64_t in_days = 0,
+      int64_t in_hours = 0,
+      int64_t in_minutes = 0,
+      int64_t in_seconds = 0,
+      int64_t in_microseconds = 0) :
+      Days(in_days + (in_hours / 24)),
+      Time((in_hours % 24), in_minutes, in_seconds, in_microseconds)
+   {
+   }
+
+   boost::gregorian::date_duration Days;
+   boost::posix_time::time_duration Time;
+};
+
+PRIVATE_IMPL_DELETER_IMPL(TimeDuration)
+
+TimeDuration::TimeDuration(
+   int64_t in_days,
+   int64_t in_hours,
+   int64_t in_minutes,
+   int64_t in_seconds,
+   int64_t in_microseconds) :
+   m_impl(new Impl(in_days, in_hours, in_minutes, in_seconds, in_microseconds))
+{
+}
+
+TimeDuration::TimeDuration(const TimeDuration& in_other) :
+   m_impl(new Impl(*in_other.m_impl))
+{
+}
+
+TimeDuration::TimeDuration(TimeDuration&& in_other) noexcept :
+   m_impl(std::move(in_other.m_impl))
+{
+}
+
+TimeDuration TimeDuration::Days(int64_t in_days)
+{
+   return TimeDuration(in_days);
+}
+
+TimeDuration TimeDuration::Hours(int64_t in_hours)
+{
+   return TimeDuration(0, in_hours);
+}
+
+TimeDuration TimeDuration::Minutes(int64_t in_minutes)
+{
+   return TimeDuration(0, 0, in_minutes);
+}
+
+TimeDuration TimeDuration::Seconds(int64_t in_seconds)
+{
+   return TimeDuration(0, 0, 0, in_seconds);
+}
+
+TimeDuration TimeDuration::Microseconds(int64_t in_microseconds)
+{
+   return TimeDuration(0, 0, 0, 0, in_microseconds);
+}
+
+TimeDuration& TimeDuration::operator=(const TimeDuration& in_other)
+{
+   if (this != &in_other)
+   {
+      if (in_other.m_impl == nullptr)
+         m_impl.reset();
+      else if (m_impl == nullptr)
+         m_impl.reset(new Impl(*in_other.m_impl));
+      else
+         *m_impl = *in_other.m_impl;
+   }
+
+   return *this;
+}
+
+TimeDuration& TimeDuration::operator=(TimeDuration&& in_other) noexcept
+{
+   if (this != &in_other)
+   {
+      m_impl.swap(in_other.m_impl);
+      in_other.m_impl.reset();
+   }
+
+   return *this;
+}
+
+bool TimeDuration::operator==(const TimeDuration& in_other) const
+{
+   if ((this == &in_other) || ((m_impl == nullptr) && (in_other.m_impl == nullptr)))
+      return true;
+   else if ((m_impl == nullptr) || (in_other.m_impl == nullptr))
+      return false;
+
+   return (m_impl->Days == in_other.m_impl->Days) && (m_impl->Time == in_other.m_impl->Time);
+}
+
+bool TimeDuration::operator!=(const TimeDuration& in_other) const
+{
+   return !(*this == in_other);
+}
+
+int64_t TimeDuration::getDays() const
+{
+   if (m_impl == nullptr)
+      return 0;
+
+   return m_impl->Days.days();
+}
+
+int64_t TimeDuration::getHours() const
+{
+   if (m_impl == nullptr)
+      return 0;
+
+   return m_impl->Time.hours();
+}
+
+int64_t TimeDuration::getMinutes() const
+{
+   if (m_impl == nullptr)
+      return 0;
+
+   return m_impl->Time.minutes();
+}
+
+int64_t TimeDuration::getSeconds() const
+{
+   if (m_impl == nullptr)
+      return 0;
+
+   return m_impl->Time.seconds();
+}
+
+int64_t TimeDuration::getMicroseconds() const
+{
+   if (m_impl == nullptr)
+      return 0;
+
+   return m_impl->Time.fractional_seconds();
+}
+
+// DateTime ============================================================================================================
 struct DateTime::Impl
 {
    Impl() :
@@ -97,10 +250,25 @@ Error DateTime::fromString(const std::string& in_timeStr, DateTime& out_dateTime
 
 DateTime& DateTime::operator=(const DateTime& in_other)
 {
-   if (in_other.m_impl == nullptr)
-      m_impl.reset();
-   else
-      m_impl->Time = in_other.m_impl->Time;
+   if (this != &in_other)
+   {
+      if (in_other.m_impl == nullptr)
+         m_impl.reset();
+      else if (m_impl == nullptr)
+         m_impl.reset(new Impl(*in_other.m_impl));
+      else
+         m_impl->Time = in_other.m_impl->Time;
+   }
+   return *this;
+}
+
+DateTime& DateTime::operator=(DateTime&& in_other) noexcept
+{
+   if (this != &in_other)
+   {
+      m_impl.swap(in_other.m_impl);
+      in_other.m_impl.reset();
+   }
 
    return *this;
 }
@@ -169,58 +337,6 @@ bool DateTime::operator>(const DateTime& in_other) const
 bool DateTime::operator>=(const DateTime& in_other) const
 {
    return in_other <= *this;
-}
-
-DateTime& DateTime::addHours(uint64_t in_hours)
-{
-   m_impl->Time += boost::posix_time::hours(in_hours);
-   return *this;
-}
-
-DateTime DateTime::addHours(uint64_t in_hours) const
-{
-   system::DateTime copy(*this);
-   copy.addHours(in_hours);
-   return copy;
-}
-
-DateTime& DateTime::addMicroseconds(uint64_t in_microseconds)
-{
-   m_impl->Time += boost::posix_time::microseconds(in_microseconds);
-   return *this;
-}
-
-DateTime DateTime::addMicroseconds(uint64_t in_microseconds) const
-{
-   system::DateTime copy(*this);
-   copy.addMicroseconds(in_microseconds);
-   return copy;
-}
-
-DateTime& DateTime::addMinutes(uint64_t in_minutes)
-{
-   m_impl->Time += boost::posix_time::minutes(in_minutes);
-   return *this;
-}
-
-DateTime DateTime::addMinutes(uint64_t in_minutes) const
-{
-   system::DateTime copy(*this);
-   copy.addMinutes(in_minutes);
-   return copy;
-}
-
-DateTime& DateTime::addSeconds(uint64_t in_seconds)
-{
-   m_impl->Time += boost::posix_time::seconds(in_seconds);
-   return *this;
-}
-
-DateTime DateTime::addSeconds(uint64_t in_seconds) const
-{
-   system::DateTime copy(*this);
-   copy.addSeconds(in_seconds);
-   return copy;
 }
 
 std::string DateTime::toString() const
