@@ -24,9 +24,11 @@
 #ifndef LAUNCHER_PLUGINS_DATE_TIME_HPP
 #define LAUNCHER_PLUGINS_DATE_TIME_HPP
 
-#include <PImpl.hpp>
+#include <Noninheritable.hpp>
 
 #include <string>
+
+#include <PImpl.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -41,8 +43,173 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace system {
 
+/**
+ * @brief Represents an interval of time (e.g. 5 hours, 43 minutes, and 21 seconds) as opposed to a point in time.
+ */
+class IntervalTime : public Noninheritable<IntervalTime>
+{
+public:
+   /**
+    * @brief Constructor.
+    *
+    * @param in_days            The number of days in this IntervalTime.
+    * @param in_hours           The number of hours in this IntervalTime.
+    * @param in_minutes         The number of minutes in this IntervalTime.
+    * @param in_seconds         The number of seconds in this IntervalTime.
+    * @param in_microseconds    The number of microseconds in this IntervalTime.
+    */
+   explicit IntervalTime(
+      int64_t in_days = 0,
+      int64_t in_hours = 0,
+      int64_t in_minutes = 0,
+      int64_t in_seconds = 0,
+      int64_t in_microseconds = 0);
+
+   /**
+    * @brief Copy constructor.
+    *
+    * @param in_other   The IntervalTime to copy into this IntervalTime.
+    */
+   IntervalTime(const IntervalTime& in_other);
+
+   /**
+    * @brief Move constructor.
+    *
+    * @param in_other   The IntervalTime to move into this IntervalTime.
+    */
+   IntervalTime(IntervalTime&& in_other);
+
+   /**
+    * @brief Destructor.
+    */
+   ~IntervalTime() = default;
+
+   /**
+    * @brief Constructs an IntervalTime which represents the specified number of days.
+    *
+    * @param in_days    The number of days which should be represented by the IntervalTime.
+    *
+    * @return The new IntervalTime.
+    */
+   static IntervalTime Days(int64_t in_days);
+
+   /**
+    * @brief Constructs an IntervalTime which represents the specified number of hours.
+    *
+    * @param in_hours       The number of hours which should be represented by the IntervalTime.
+    *
+    * @return The new IntervalTime.
+    */
+   static IntervalTime Hours(int64_t in_hours);
+
+   /**
+    * @brief Constructs an IntervalTime which represents the specified number of minutes.
+    *
+    * @param in_minutes     The number of minutes which should be represented by the IntervalTime.
+    *
+    * @return The new IntervalTime.
+    */
+   static IntervalTime Minutes(int64_t in_minutes);
+
+   /**
+    * @brief Constructs an IntervalTime which represents the specified number of seconds.
+    *
+    * @param in_seconds     The number of seconds which should be represented by the IntervalTime.
+    *
+    * @return The new IntervalTime.
+    */
+   static IntervalTime Seconds(int64_t in_seconds);
+
+   /**
+    * @brief Constructs an IntervalTime which represents the specified number of microseconds.
+    *
+    * @param in_microseconds        The number of microseconds which should be represented by the IntervalTime.
+    *
+    * @return The new IntervalTime.
+    */
+   static IntervalTime Microseconds(int64_t in_microseconds);
+
+   /**
+    * @brief Assignment operator.
+    *
+    * @param in_other   The IntervalTime to copy into this IntervalTime.
+    *
+    * @return A reference to this IntervalTime.
+    */
+   IntervalTime& operator=(const IntervalTime& in_other);
+
+   /**
+    * @brief Move operator.
+    *
+    * @param in_other   The IntervalTime to move into this IntervalTime.
+    *
+    * @return A reference to this IntervalTime.
+    */
+
+   IntervalTime& operator=(const IntervalTime&& in_other);
+
+   /**
+    * @brief Equality comparison operator.
+    *
+    * @param in_other   The IntervalTime to compare against.
+    *
+    * @return True if in_other has the same values as this IntervalTime; false otherwise.
+    */
+   bool operator==(const IntervalTime& in_other) const;
+
+
+   /**
+    * @brief Inequality comparison operator.
+    *
+    * @param in_other   The IntervalTime to compare against.
+    *
+    * @return False if in_other has the same values as this IntervalTime; true otherwise.
+    */
+   bool operator!=(const IntervalTime& in_other) const;
+
+   /**
+    * @brief Gets the number of days in this IntervalTime.
+    *
+    * @return The number of days in this IntervalTime.
+    */
+   int64_t getDays() const;
+
+   /**
+    * @brief Gets the number of hours in this IntervalTime.
+    *
+    * @return The number of hours in this IntervalTime.
+    */
+
+   int64_t getHours() const;
+
+   /**
+    * @brief Gets the number of minutes in this IntervalTime.
+    *
+    * @return The number of minutes in this IntervalTime.
+    */
+   int64_t getMinutes() const;
+
+   /**
+    * @brief Gets the number of seconds in this IntervalTime.
+    *
+    * @return The number of seconds in this IntervalTime.
+    */
+   int64_t getSeconds() const;
+
+   /**
+    * @brief Gets the number of days in this IntervalTime.
+    *
+    * @return The number of days in this IntervalTime.
+    */
+   int64_t getMicroseconds() const;
+
+private:
+   // The private implementation of interval time.
+   PRIVATE_IMPL(m_impl);
+};
+
 /** @brief Class which represents a date and time in UTC. */
-class DateTime
+class DateTime : public Noninheritable<DateTime>
 {
 public:
    /**
@@ -91,6 +258,60 @@ public:
     * @return A reference to this DateTime.
     */
    DateTime& operator=(const DateTime& in_other);
+
+   /**
+    * @brief Move operator.
+    *
+    * @param in_other   The DateTime to move to this.
+    *
+    * @return A reference to this DateTime.
+    */
+   DateTime& operator=(DateTime&& in_other);
+
+   /**
+    * @brief Subtracts two DateTimes to produce an IntervalTime.
+    *
+    * @param in_other       The date time to subtract from this.
+    *
+    * @return An interval time representing the difference between this DateTime and in_other.
+    */
+   IntervalTime operator-(const DateTime& in_other) const;
+
+   /**
+    * @brief Subtracts the given IntervalTime from a copy of this DateTime.
+    *
+    * @param in_intervalTime    The interval time to subtract from this DateTime.
+    *
+    * @return A reference to this DateTime.
+    */
+   DateTime operator-(const IntervalTime& in_intervalTime) const;
+
+   /**
+    * @brief Subtracts the given IntervalTime from this DateTime.
+    *
+    * @param in_intervalTime    The interval time to subtract from this DateTime.
+    *
+    * @return The new DateTime, which is this value of DateTime minus the specified IntervalTime.
+    */
+   DateTime& operator-=(const IntervalTime& in_intervalTime);
+
+   /**
+    * @brief Adds the given IntervalTime to a copy of this DateTime.
+    *
+    * @param in_intervalTime    The interval time to add to this DateTime.
+    *
+    * @return The new DateTime, which is this value of DateTime plus the specified IntervalTime.
+    */
+   DateTime operator+(const IntervalTime& in_intervalTime) const;
+
+   /**
+    * @brief Adds the given IntervalTime to this DateTime.
+    *
+    * @param in_intervalTime    The interval time to add to this DateTime.
+    *
+    * @return A reference to this DateTime.
+    */
+   DateTime& operator+=(const IntervalTime& in_intervalTime);
 
    /**
     * @brief Equality operator.
@@ -147,78 +368,6 @@ public:
    bool operator>=(const DateTime& in_other) const;
 
    /**
-    * @brief Adds the specified number of hours to this DateTime.
-    *
-    * @param in_hours   The number of hours to add to this DateTime.
-    *
-    * @return A reference to this DateTime.
-    */
-   DateTime& addHours(uint64_t in_hours);
-
-   /**
-    * @brief Adds the specified number of hours to a copy of this DateTime.
-    *
-    * @param in_hours   The number of hours to add to this DateTime.
-    *
-    * @return The new DateTime.
-    */
-   DateTime addHours(uint64_t in_hours) const;
-
-   /**
-    * @brief Adds the specified number of microseconds to this DateTime.
-    *
-    * @param in_microseconds    The number of microseconds to add to this DateTime.
-    *
-    * @return A reference to this DateTime.
-    */
-   DateTime& addMicroseconds(uint64_t in_microseconds);
-
-   /**
-    * @brief Adds the specified number of microseconds to a copy of this DateTime.
-    *
-    * @param in_microseconds    The number of microseconds to add to this DateTime.
-    *
-    * @return The new DateTime.
-    */
-   DateTime addMicroseconds(uint64_t in_microseconds) const;
-
-   /**
-    * @brief Adds the specified number of minutes to this DateTime.
-    *
-    * @param in_minutes     The number of minutes to add to this DateTime.
-    *
-    * @return A reference to this DateTime.
-    */
-   DateTime& addMinutes(uint64_t in_minutes);
-
-   /**
-    * @brief Adds the specified number of minutes to a copy of this DateTime.
-    *
-    * @param in_minutes     The number of minutes to add to this DateTime.
-    *
-    * @return The new DateTime.
-    */
-   DateTime addMinutes(uint64_t in_minutes) const;
-
-   /**
-    * @brief Adds the specified number of seconds to this DateTime.
-    *
-    * @param in_seconds     The number of seconds to add to this DateTime.
-    *
-    * @return A reference to this DateTime.
-    */
-   DateTime& addSeconds(uint64_t in_seconds);
-
-   /**
-    * @brief Adds the specified number of seconds to a copy of this DateTime.
-    *
-    * @param in_seconds     The number of seconds to add to this DateTime.
-    *
-    * @return The new DateTime.
-    */
-   DateTime addSeconds(uint64_t in_seconds) const;
-
-   /**
     * @brief Converts this DateTime to an ISO 8601 time string.
     *
     * @return This DateTime as an ISO 8601 string representation.
@@ -249,8 +398,6 @@ private:
    // The private implementation of DateTime.
    PRIVATE_IMPL(m_impl);
 };
-
-
 
 } // namespace system
 } // namespace launcher_plugins
