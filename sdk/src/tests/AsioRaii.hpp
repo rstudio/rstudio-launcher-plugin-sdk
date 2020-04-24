@@ -1,5 +1,5 @@
 /*
- * AsyncDeadlineTests.cpp
+ * AsioRaii.hpp
  *
  * Copyright (C) 2020 by RStudio, PBC
  *
@@ -21,64 +21,38 @@
  *
  */
 
-#include <TestMain.hpp>
+#ifndef LAUNCHER_PLUGINS_ASIO_INIT_HPP
+#define LAUNCHER_PLUGINS_ASIO_INIT_HPP
 
-#include <unistd.h>
-#include <atomic>
-
-#include <AsioRaii.hpp>
-#include <system/DateTime.hpp>
 #include <system/Asio.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
 namespace system {
 
-TEST_CASE("Deadline")
+struct AsioRaii
 {
-   AsioRaii init;
-   DateTime expired;
-   REQUIRE_FALSE(DateTime::fromString("2019-03-08T12:12:12Z", expired));
+   AsioRaii()
+   {
+      AsioService::startThreads(2);
+   }
 
-   DateTime threeSecLater = DateTime() + TimeDuration::Seconds(3),
-            oneHourLater = DateTime() + TimeDuration::Hours(1);
-
-   std::atomic<uint64_t> count;
-   AsyncDeadlineEvent immediate(
-      [&count]()
+   ~AsioRaii()
+   {
+      try
       {
-         count.fetch_add(1);
-      },
-      expired);
-
-   AsyncDeadlineEvent shortWait(
-      [threeSecLater, &count]()
+         AsioService::stop();
+         AsioService::waitForExit();
+      }
+      catch (...)
       {
-         DateTime now;
-         CHECK(now > threeSecLater);
-         count.fetch_add(1);
-      },
-      threeSecLater);
+      }
+   }
 
-   AsyncDeadlineEvent longWait(
-      [&count]()
-      {
-         CHECK(false);
-         count.fetch_add(1);
-      },
-      oneHourLater);
-
-   immediate.start();
-   shortWait.start();
-   longWait.start();
-
-   sleep(4);
-
-   longWait.cancel();
-
-   CHECK(count == 2);
-}
+};
 
 } // namespace system
 } // namespace launcher_plugins
 } // namespace rstudio
+
+#endif

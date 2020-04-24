@@ -25,6 +25,7 @@
 
 #include <unistd.h>
 
+#include <AsioRaii.hpp>
 #include <system/Asio.hpp>
 #include <system/DateTime.hpp>
 
@@ -32,29 +33,9 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace system {
 
-struct Init
-{
-   Init()
-   {
-      AsioService::startThreads(1);
-   }
-
-   ~Init()
-   {
-      try
-      {
-         AsioService::stop();
-         AsioService::waitForExit();
-      }
-      catch (...)
-      {
-      }
-   }
-};
-
 TEST_CASE("Timer is invoked")
 {
-   Init init;
+   AsioRaii init;
    AsyncTimedEvent timer;
    int count = 0;
    auto func = [&count]()
