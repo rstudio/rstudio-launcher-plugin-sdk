@@ -161,6 +161,8 @@ private:
    PRIVATE_IMPL(m_baseImpl);
 };
 
+typedef std::shared_ptr<AbstractLauncherCommunicator> AbstractLauncherCommunicatorPtr;
+
 } // namespace comms
 } // namespace launcher_plugins
 } // namespace rstudio

@@ -286,7 +286,7 @@ struct AbstractPluginApi::Impl
    jobs::JobRepositoryPtr JobRepo;
 
    /** The communicator that will be used to send and receive messages from the RStudio Launcher. */
-   std::shared_ptr<comms::AbstractLauncherCommunicator> LauncherCommunicator;
+   comms::AbstractLauncherCommunicatorPtr LauncherCommunicator;
 
    jobs::JobStatusNotifierPtr Notifier;
 
