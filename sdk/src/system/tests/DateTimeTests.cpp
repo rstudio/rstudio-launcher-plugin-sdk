@@ -494,6 +494,23 @@ TEST_CASE("Add times")
    }
 }
 
+TEST_CASE("Add and Subtract Tests")
+{
+   DateTime later, earlier;
+   REQUIRE_FALSE(DateTime::fromString("2019-02-15T18:43:49.040876Z", later));
+   REQUIRE_FALSE(DateTime::fromString("2019-02-15T11:23:44.039876Z", earlier));
+
+   TimeDuration difference(7, 20, 5, 1000),
+      negDifference(-7, -20, -5, -1000);
+
+   CHECK((later - earlier) == difference);
+   CHECK((earlier - later) == negDifference);
+   CHECK((earlier + difference) == later);
+   CHECK((earlier - negDifference) == later);
+   CHECK((later - difference) == earlier);
+   CHECK((later + negDifference) == earlier);
+}
+
 } // namespace system
 } // namespace launcher_plugins
 } // namespace rstudio

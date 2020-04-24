@@ -260,7 +260,7 @@ TimeDuration DateTime::operator-(const DateTime& in_other) const
 {
    TimeDuration result;
 
-   if ((this != &in_other) && (m_impl == nullptr) && (in_other.m_impl != nullptr))
+   if ((this != &in_other) && (m_impl != nullptr) && (in_other.m_impl != nullptr))
       result.m_impl->Time = m_impl->Time - in_other.m_impl->Time;
 
    return result;
