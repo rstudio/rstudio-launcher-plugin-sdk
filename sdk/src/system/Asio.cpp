@@ -399,6 +399,66 @@ void AsyncTimedEvent::reportError(const Error &in_error)
    cancel();
 }
 
+// AsyncDeadlineEvent ==================================================================================================
+struct AsyncDeadlineEvent::Impl
+{
+   Impl(AsioFunction in_work, DateTime in_deadline) :
+      Deadline(std::move(in_deadline)),
+      Work(std::move(in_work))
+   {
+
+   }
+
+   DateTime Deadline;
+   std::shared_ptr<boost::asio::deadline_timer> Timer;
+   AsioFunction Work;
+};
+
+AsyncDeadlineEvent::AsyncDeadlineEvent(const AsioFunction& in_work, const DateTime& in_deadlineTime) :
+   m_impl(new Impl(in_work, in_deadlineTime))
+{
+}
+
+AsyncDeadlineEvent::~AsyncDeadlineEvent()
+{
+   cancel();
+}
+
+void AsyncDeadlineEvent::cancel()
+{
+   if (m_impl->Timer != nullptr)
+      m_impl->Timer->cancel();
+}
+
+void AsyncDeadlineEvent::start()
+{
+   DateTime now;
+   if (now >= m_impl->Deadline)
+      AsioService::post(m_impl->Work);
+   else
+   {
+      TimeDuration diff = m_impl->Deadline - now;
+      m_impl->Timer.reset(
+         new boost::asio::deadline_timer(
+            getIoService(),
+            boost::posix_time::time_duration(
+               diff.getHours(),
+               diff.getMinutes(),
+               diff.getSeconds(),
+               diff.getMicroseconds())));
+
+      std::weak_ptr<Impl> weakThis = m_impl;
+      m_impl->Timer->async_wait(
+         [weakThis](boost::system::error_code in_ec)
+         {
+            // Don't do any work if this was canceled or m_impl has been destroyed.
+            std::shared_ptr<Impl> sharedThis = weakThis.lock();
+            if ((in_ec != boost::asio::error::operation_aborted) && sharedThis)
+               sharedThis->Work();
+         });
+   }
+}
+
 } // namespace system
 } // namespace launcher_plugins
 } // namespace rstudio

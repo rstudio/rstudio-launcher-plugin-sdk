@@ -198,6 +198,40 @@ private:
    PRIVATE_IMPL_SHARED(m_impl);
 };
 
+/**
+ * @brief Class which may be used to post async work to be performed at a later time.
+ */
+class AsyncDeadlineEvent : public Noninheritable<AsyncDeadlineEvent>
+{
+public:
+   /**
+    * @brief Constructor.
+    *
+    * @param in_work            The work to be performed when the deadline time is reached.
+    * @param in_deadlineTime    The time at which the work should be performed.
+    */
+   AsyncDeadlineEvent(const AsioFunction& in_work, const DateTime& in_deadlineTime);
+
+   /**
+    * @brief Destructor. The event will be canceled if this invoked before the deadline time.
+    */
+   ~AsyncDeadlineEvent();
+
+   /**
+    * @brief Cancels the event, if invoked before the deadline time.
+    */
+   void cancel();
+
+   /**
+    * @brief Starts waiting for the event.
+    */
+   void start();
+
+private:
+   // The private implementation of AsioDeadlineEvent.
+   PRIVATE_IMPL_SHARED(m_impl);
+};
+
 } // namespace system
 } // namespace launcher_plugins
 } // namespace rstudio
