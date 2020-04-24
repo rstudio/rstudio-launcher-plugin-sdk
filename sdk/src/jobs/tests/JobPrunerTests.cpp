@@ -29,8 +29,6 @@
 #include <system/Asio.hpp>
 #include <jobs/JobRepository.hpp>
 
-#include "../JobPruner.hpp"
-
 namespace rstudio {
 namespace launcher_plugins {
 namespace jobs {
@@ -39,8 +37,14 @@ std::atomic<uint32_t> s_count = { 0 };
 
 class MockRepo : public JobRepository
 {
+public:
+   explicit MockRepo(const JobStatusNotifierPtr& in_notifier) :
+      JobRepository(in_notifier)
+   {
+   }
+
 private:
-   void onJobRemoved(api::JobPtr in_job) override
+   void onJobRemoved(const api::JobPtr& in_job) override
    {
       s_count.fetch_add(1);
       // Only the second and third job will be removed.
@@ -63,9 +67,9 @@ TEST_CASE("Prune job")
 {
    system::AsioRaii init;
 
-   JobRepositoryPtr jobRepo(new MockRepo());
    JobStatusNotifierPtr notifier(new JobStatusNotifier());
-   JobPruner jobPruner(jobRepo, notifier);
+   JobRepositoryPtr jobRepo(new MockRepo(notifier));
+   jobRepo->initialize(); // The job repository makes the pruner in initialize.
 
    api::JobPtr job1(new api::Job()), job2(new api::Job()), job3(new api::Job());
 

@@ -28,9 +28,10 @@
 #include <api/Constants.hpp>
 #include <api/IJobSource.hpp>
 #include <api/Response.hpp>
+#include <json/Json.hpp>
+#include <jobs/JobPruner.hpp>
 #include <options/Options.hpp>
 #include <system/Asio.hpp>
-#include <json/Json.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -48,7 +49,8 @@ struct AbstractPluginApi::Impl
     *                                   Launcher.
     */
    explicit Impl(std::shared_ptr<comms::AbstractLauncherCommunicator> in_launcherCommunicator) :
-      LauncherCommunicator(std::move(in_launcherCommunicator))
+      LauncherCommunicator(std::move(in_launcherCommunicator)),
+      Notifier(new jobs::JobStatusNotifier())
    {
    }
 
@@ -125,6 +127,11 @@ struct AbstractPluginApi::Impl
       LauncherCommunicator->sendResponse(BootstrapResponse(in_bootstrapRequest->getId()));
    }
 
+   /**
+    * @brief Handles ClusterInfo requests from the Launcher.
+    *
+    * @param in_clusterInfoRequest      The request received from the launcher.
+    */
    void handleGetClusterInfo(const std::shared_ptr<UserRequest>& in_clusterInfoRequest)
    {
       const system::User& requestUser = in_clusterInfoRequest->getUser();
@@ -138,6 +145,10 @@ struct AbstractPluginApi::Impl
       return LauncherCommunicator->sendResponse(ClusterInfoResponse(in_clusterInfoRequest->getId(), caps));
    }
 
+   /**
+    * @brief
+    * @param in_getJobRequest
+    */
    void handleGetJobRequest(const std::shared_ptr<JobStateRequest>& in_getJobRequest)
    {
       const std::string& jobId = in_getJobRequest->getJobId();
@@ -277,6 +288,8 @@ struct AbstractPluginApi::Impl
    /** The communicator that will be used to send and receive messages from the RStudio Launcher. */
    std::shared_ptr<comms::AbstractLauncherCommunicator> LauncherCommunicator;
 
+   jobs::JobStatusNotifierPtr Notifier;
+
    /** A timed event to send heartbeats on the configured time interval */
    system::AsyncTimedEvent SendHeartbeatEvent;
 };
@@ -289,7 +302,10 @@ Error AbstractPluginApi::initialize()
    m_abstractPluginImpl->JobSource = createJobSource();
 
    // Create the job repository.
-   m_abstractPluginImpl->JobRepo = createJobRepository();
+   m_abstractPluginImpl->JobRepo = createJobRepository(m_abstractPluginImpl->Notifier);
+   Error error = m_abstractPluginImpl->JobRepo->initialize();
+   if (error)
+      return error;
 
    // Register all the request handlers.
    std::shared_ptr<comms::AbstractLauncherCommunicator>& comms = m_abstractPluginImpl->LauncherCommunicator;
@@ -312,12 +328,9 @@ Error AbstractPluginApi::initialize()
    WeakThis weakThis = shared_from_this();
    auto onHeartbeatTimer = [weakThis]()
    {
-      // If this doesn't exist just exit.
-      SharedThis sharedThis = weakThis.lock();
-      if (!sharedThis)
-         return;
-
-      sharedThis->m_abstractPluginImpl->LauncherCommunicator->sendResponse(HeartbeatResponse());
+      // If 'this' doesn't exist, just exit.
+      if (SharedThis sharedThis = weakThis.lock())
+         sharedThis->m_abstractPluginImpl->LauncherCommunicator->sendResponse(HeartbeatResponse());
    };
 
    // Start the heartbeat timer.
@@ -334,9 +347,9 @@ AbstractPluginApi::AbstractPluginApi(std::shared_ptr<comms::AbstractLauncherComm
 {
 }
 
-jobs::JobRepositoryPtr AbstractPluginApi::createJobRepository() const
+jobs::JobRepositoryPtr AbstractPluginApi::createJobRepository(const jobs::JobStatusNotifierPtr& in_jobStatusNotifier) const
 {
-   return std::make_shared<jobs::JobRepository>();
+   return std::make_shared<jobs::JobRepository>(in_jobStatusNotifier);
 }
 
 } // namespace api

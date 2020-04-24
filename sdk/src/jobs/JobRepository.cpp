@@ -26,6 +26,8 @@
 #include <map>
 
 #include <Error.hpp>
+#include <jobs/JobPruner.hpp>
+
 #include "../system/ReaderWriterMutex.hpp"
 
 using namespace rstudio::launcher_plugins::api;
@@ -34,20 +36,35 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace jobs {
 
+typedef std::shared_ptr<JobRepository> SharedThis;
+typedef std::weak_ptr<JobRepository> WeakThis;
+
 struct JobRepository::Impl
 {
-   system::ReaderWriterMutex Mutex;
+   explicit Impl(JobStatusNotifierPtr in_jobStatusNotifier) :
+      Notifier(std::move(in_jobStatusNotifier))
+   {
+   }
+
+   SubscriptionHandle AllJobsSubHandle;
+
    std::map<std::string, JobPtr> JobMap;
+
+   JobPrunerPtr JobPruneTimer;
+
+   system::ReaderWriterMutex Mutex;
+
+   JobStatusNotifierPtr Notifier;
 };
 
 PRIVATE_IMPL_DELETER_IMPL(JobRepository)
 
-JobRepository::JobRepository() :
-   m_impl(new Impl())
+JobRepository::JobRepository(JobStatusNotifierPtr in_jobStatusNotifier) :
+   m_impl(new Impl(std::move(in_jobStatusNotifier)))
 {
 }
 
-void JobRepository::addJob(JobPtr in_job)
+void JobRepository::addJob(const JobPtr& in_job)
 {
    WRITE_LOCK_BEGIN(m_impl->Mutex)
 
@@ -97,6 +114,24 @@ JobList JobRepository::getJobs(const system::User& in_user) const
    return jobs;
 }
 
+Error JobRepository::initialize()
+{
+   WeakThis weakThis = shared_from_this();
+   OnJobStatusUpdate onJobStatusUpdate = [weakThis](const JobPtr& in_job)
+   {
+      if (SharedThis sharedThis = weakThis.lock())
+      {
+         sharedThis->addJob(in_job);
+      }
+   };
+
+   m_impl->AllJobsSubHandle = m_impl->Notifier->subscribe(onJobStatusUpdate);
+
+   m_impl->JobPruneTimer.reset(new JobPruner(shared_from_this(), m_impl->Notifier));
+
+   return onInitialize();
+}
+
 void JobRepository::removeJob(const std::string& in_jobId)
 {
    WRITE_LOCK_BEGIN(m_impl->Mutex)
@@ -112,9 +147,14 @@ void JobRepository::removeJob(const std::string& in_jobId)
    RW_LOCK_END(true)
 }
 
-void JobRepository::onJobRemoved(JobPtr)
+void JobRepository::onJobRemoved(const JobPtr&)
 {
    // Do nothing.
+}
+
+Error JobRepository::onInitialize()
+{
+   return Success();
 }
 
 } // namespace jobs

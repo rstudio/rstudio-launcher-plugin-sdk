@@ -28,6 +28,7 @@
 
 #include <PImpl.hpp>
 #include <api/Job.hpp>
+#include <jobs/JobStatusNotifier.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -46,13 +47,15 @@ namespace jobs {
 /**
  * @brief Stores any jobs currently in the job scheduling system.
  */
-class JobRepository : public Noncopyable
+class JobRepository : public Noncopyable, public std::enable_shared_from_this<JobRepository>
 {
 public:
    /**
     * @brief Constructor.
+    *
+    * @param in_jobStatusNotifier       The job status notifier. Used to add new jobs.
     */
-   JobRepository();
+   explicit JobRepository(JobStatusNotifierPtr in_jobStatusNotifier);
 
    /**
     * @brief Virtual Destructor, to allow for inheritance, if necessary.
@@ -66,7 +69,7 @@ public:
     *
     * @param in_job     The job to add to the repository.
     */
-   void addJob(api::JobPtr in_job);
+   void addJob(const api::JobPtr& in_job);
 
    /**
     * @brief Gets the specified job for the specified user from the repository.
@@ -93,6 +96,13 @@ public:
    api::JobList getJobs(const system::User& in_user) const;
 
    /**
+    * @brief Initializes the JobRepository.
+    *
+    * @return Success if the repository could be initialized; Error otherwise.
+    */
+   Error initialize();
+
+   /**
     * @brief Removes a job from the repository.
     *
     * If there is no job with the specified id, nothing will happen.
@@ -107,7 +117,14 @@ private:
     *
     * @param in_job     The job that was removed from the repository.
     */
-   virtual void onJobRemoved(api::JobPtr in_job);
+   virtual void onJobRemoved(const api::JobPtr& in_job);
+
+   /**
+    * @brief Allows inheriting classes to perform custom initialization actions when the repository is created.
+    *
+    * @return Success if the repository could be initialized; Error otherwise.
+    */
+   virtual Error onInitialize();
 
    // The private implementation of JobRepository.
    PRIVATE_IMPL(m_impl);

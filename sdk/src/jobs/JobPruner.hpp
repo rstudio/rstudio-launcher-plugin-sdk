@@ -58,6 +58,9 @@ private:
    PRIVATE_IMPL_SHARED(m_impl);
 };
 
+/** Convenience Typedef. */
+typedef std::shared_ptr<JobPruner> JobPrunerPtr;
+
 } // namespace jobs
 } // namespace launcher_plugins
 } // namespace rstudio

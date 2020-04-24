@@ -23,7 +23,6 @@
 
 #include <TestMain.hpp>
 
-#include <Error.hpp>
 #include <jobs/JobRepository.hpp>
 #include <system/User.hpp>
 
@@ -72,34 +71,35 @@ TEST_CASE("One job")
    job->Id = "341";
    job->User = user1;
 
-   JobRepository repo;
-   repo.addJob(job);
+   JobStatusNotifierPtr notifier(new JobStatusNotifier()); 
+   JobRepositoryPtr repo(new JobRepository(notifier));
+   repo->addJob(job);
 
    SECTION("Get job for correct user")
    {
-      CHECK(isEqual(repo.getJob(job->Id, user1), job));
+      CHECK(isEqual(repo->getJob(job->Id, user1), job));
    }
 
    SECTION("Get job with admin privileges")
    {
-      CHECK(isEqual(repo.getJob(job->Id, allUsers), job));
+      CHECK(isEqual(repo->getJob(job->Id, allUsers), job));
    }
 
    SECTION("Get job for wrong user")
    {
-      CHECK(isEqual(repo.getJob(job->Id, user2), nullptr));
+      CHECK(isEqual(repo->getJob(job->Id, user2), nullptr));
    }
 
    SECTION("Get non-existent job")
    {
-      CHECK(isEqual(repo.getJob("340", allUsers), nullptr));
-      CHECK(isEqual(repo.getJob("340", user1), nullptr));
+      CHECK(isEqual(repo->getJob("340", allUsers), nullptr));
+      CHECK(isEqual(repo->getJob("340", user1), nullptr));
    }
 
    SECTION("Remove job")
    {
-      repo.removeJob(job->Id);
-      CHECK(isEqual(repo.getJob(job->Id, user1), nullptr));
+      repo->removeJob(job->Id);
+      CHECK(isEqual(repo->getJob(job->Id, user1), nullptr));
    }
 }
 
@@ -130,12 +130,13 @@ TEST_CASE("Multiple jobs")
    job5->Id = "343";
    job5->User = user2;
 
-   JobRepository repo;
-   repo.addJob(job1);
-   repo.addJob(job2);
-   repo.addJob(job3);
-   repo.addJob(job4);
-   repo.addJob(job5);
+   JobStatusNotifierPtr notifier(new JobStatusNotifier());
+   JobRepositoryPtr repo(new JobRepository(notifier));
+   repo->addJob(job1);
+   repo->addJob(job2);
+   repo->addJob(job3);
+   repo->addJob(job4);
+   repo->addJob(job5);
 
    SECTION("User one jobs")
    {
@@ -143,12 +144,12 @@ TEST_CASE("Multiple jobs")
       expected.push_back(job1);
       expected.push_back(job4);
 
-      CHECK(isEqual(repo.getJob(job1->Id, user1), job1));
-      CHECK(isEqual(repo.getJob(job2->Id, user1), nullptr));
-      CHECK(isEqual(repo.getJob(job3->Id, user1), nullptr));
-      CHECK(isEqual(repo.getJob(job4->Id, user1), job4));
-      CHECK(isEqual(repo.getJob(job5->Id, user1), nullptr));
-      CHECK(isEqual(repo.getJobs(user1), expected));
+      CHECK(isEqual(repo->getJob(job1->Id, user1), job1));
+      CHECK(isEqual(repo->getJob(job2->Id, user1), nullptr));
+      CHECK(isEqual(repo->getJob(job3->Id, user1), nullptr));
+      CHECK(isEqual(repo->getJob(job4->Id, user1), job4));
+      CHECK(isEqual(repo->getJob(job5->Id, user1), nullptr));
+      CHECK(isEqual(repo->getJobs(user1), expected));
    }
 
    SECTION("User two jobs")
@@ -158,12 +159,12 @@ TEST_CASE("Multiple jobs")
       expected.push_back(job5);
       expected.push_back(job3);
 
-      CHECK(isEqual(repo.getJob(job1->Id, user2), nullptr));
-      CHECK(isEqual(repo.getJob(job2->Id, user2), job2));
-      CHECK(isEqual(repo.getJob(job3->Id, user2), job3));
-      CHECK(isEqual(repo.getJob(job4->Id, user2), nullptr));
-      CHECK(isEqual(repo.getJob(job5->Id, user2), job5));
-      CHECK(isEqual(repo.getJobs(user2), expected));
+      CHECK(isEqual(repo->getJob(job1->Id, user2), nullptr));
+      CHECK(isEqual(repo->getJob(job2->Id, user2), job2));
+      CHECK(isEqual(repo->getJob(job3->Id, user2), job3));
+      CHECK(isEqual(repo->getJob(job4->Id, user2), nullptr));
+      CHECK(isEqual(repo->getJob(job5->Id, user2), job5));
+      CHECK(isEqual(repo->getJobs(user2), expected));
    }
 
    SECTION("All user jobs")
@@ -175,12 +176,12 @@ TEST_CASE("Multiple jobs")
       expected.push_back(job4);
       expected.push_back(job3);
 
-      CHECK(isEqual(repo.getJob(job1->Id, allUsers), job1));
-      CHECK(isEqual(repo.getJob(job2->Id, allUsers), job2));
-      CHECK(isEqual(repo.getJob(job3->Id, allUsers), job3));
-      CHECK(isEqual(repo.getJob(job4->Id, allUsers), job4));
-      CHECK(isEqual(repo.getJob(job5->Id, allUsers), job5));
-      CHECK(isEqual(repo.getJobs(allUsers), expected));
+      CHECK(isEqual(repo->getJob(job1->Id, allUsers), job1));
+      CHECK(isEqual(repo->getJob(job2->Id, allUsers), job2));
+      CHECK(isEqual(repo->getJob(job3->Id, allUsers), job3));
+      CHECK(isEqual(repo->getJob(job4->Id, allUsers), job4));
+      CHECK(isEqual(repo->getJob(job5->Id, allUsers), job5));
+      CHECK(isEqual(repo->getJobs(allUsers), expected));
    }
 
    SECTION("Remove a job")
@@ -189,14 +190,14 @@ TEST_CASE("Multiple jobs")
       expected.push_back(job2);
       expected.push_back(job3);
 
-      repo.removeJob(job5->Id);
+      repo->removeJob(job5->Id);
 
-      CHECK(isEqual(repo.getJob(job1->Id, user2), nullptr));
-      CHECK(isEqual(repo.getJob(job2->Id, user2), job2));
-      CHECK(isEqual(repo.getJob(job3->Id, user2), job3));
-      CHECK(isEqual(repo.getJob(job4->Id, user2), nullptr));
-      CHECK(isEqual(repo.getJob(job5->Id, user2), nullptr));
-      CHECK(isEqual(repo.getJobs(user2), expected));
+      CHECK(isEqual(repo->getJob(job1->Id, user2), nullptr));
+      CHECK(isEqual(repo->getJob(job2->Id, user2), job2));
+      CHECK(isEqual(repo->getJob(job3->Id, user2), job3));
+      CHECK(isEqual(repo->getJob(job4->Id, user2), nullptr));
+      CHECK(isEqual(repo->getJob(job5->Id, user2), nullptr));
+      CHECK(isEqual(repo->getJobs(user2), expected));
    }
 }
 

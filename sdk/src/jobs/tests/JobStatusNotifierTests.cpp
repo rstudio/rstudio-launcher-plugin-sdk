@@ -39,7 +39,8 @@ namespace jobs {
 TEST_CASE("Job Status Notifier")
 {
 
-   JobRepository jobRepo;
+   JobStatusNotifierPtr notifier(new JobStatusNotifier());
+   JobRepositoryPtr jobRepo(new JobRepository(notifier));
 
    api::JobPtr job1(new api::Job()),
                job2(new api::Job()),
@@ -81,12 +82,10 @@ TEST_CASE("Job Status Notifier")
    job3->LastUpdateTime = ld3;
    job4->LastUpdateTime = ld4;
 
-   jobRepo.addJob(job1);
-   jobRepo.addJob(job2);
-   jobRepo.addJob(job3);
-   jobRepo.addJob(job4);
-
-   std::shared_ptr<JobStatusNotifier> notifier(new JobStatusNotifier());
+   jobRepo->addJob(job1);
+   jobRepo->addJob(job2);
+   jobRepo->addJob(job3);
+   jobRepo->addJob(job4);
 
    SECTION("Subscribe to one")
    {
