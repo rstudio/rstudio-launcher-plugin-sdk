@@ -26,6 +26,7 @@
 #include <unistd.h>
 
 #include <system/Asio.hpp>
+#include <system/DateTime.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -61,7 +62,7 @@ TEST_CASE("Timer is invoked")
       ++count;
    };
 
-   timer.start(2, func);
+   timer.start(TimeDuration::Seconds(2), func);
    sleep(3);
    CHECK(count == 1);
 

@@ -469,14 +469,14 @@ Error Options::readOptions(int in_argc, const char* const in_argv[], const syste
    }
 }
 
-unsigned int Options::getJobExpiryHours() const
+system::TimeDuration Options::getJobExpiryHours() const
 {
-   return m_impl->JobExpiryHours;
+   return system::TimeDuration::Hours(m_impl->JobExpiryHours);
 }
 
-unsigned int Options::getHeartbeatIntervalSeconds() const
+system::TimeDuration Options::getHeartbeatIntervalSeconds() const
 {
-   return m_impl->HeartbeatIntervalSeconds;
+   return system::TimeDuration::Seconds(m_impl->HeartbeatIntervalSeconds);
 }
 
 const system::FilePath& Options::getLauncherConfigFile() const

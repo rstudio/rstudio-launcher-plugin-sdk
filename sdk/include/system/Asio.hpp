@@ -25,6 +25,7 @@
 #define LAUNCHER_PLUGINS_ASIO_HPP
 
 #include <Noncopyable.hpp>
+#include <Noninheritable.hpp>
 
 #include <functional>
 
@@ -34,6 +35,10 @@
 namespace rstudio {
 namespace launcher_plugins {
 namespace system {
+
+// Forward declarations
+class DateTime;
+class TimeDuration;
 
 /**
  * @brief Callback function which will be invoked asynchronously by the AsioService.
@@ -53,7 +58,7 @@ typedef std::function<void(int)> OnSignal;
 /**
  * @brief Async input/output class which may be used to manage ASIO operations.
  */
-class AsioService : public Noncopyable
+class AsioService : public Noncopyable, public Noninheritable<AsioService>
 {
 public:
 
@@ -114,7 +119,7 @@ private:
 /**
  * @brief Class which allows reading from or writing to streams asynchronously.
  */
-class AsioStream
+class AsioStream : public Noninheritable<AsioStream>
 {
 public:
    /**
@@ -153,7 +158,7 @@ private:
 /**
  * @brief Class which performs an action asynchronously every specified number of seconds.
  */
-class AsyncTimedEvent
+class AsyncTimedEvent : public Noninheritable<AsyncTimedEvent>
 {
 public:
    /**
@@ -162,15 +167,15 @@ public:
    AsyncTimedEvent();
 
    /**
-    * @brief Starts performing the specified event every in_intervalSeconds seconds.
+    * @brief Starts performing the specified event every in_timeDuration.
     *
     * This function may only be called once per instance. Restarting a canceled or otherwise stopped timed event will
     * not work. Instead, a new instance should be created and started.
     *
-    * @param in_intervalSeconds     The number of seconds to wait between each event.
-    * @param in_event               The action to perform every in_intervalSeconds seconds.
+    * @param in_timeDuration    The amount of time to wait between each event.
+    * @param in_event           The action to perform every in_timeDuration.
     */
-   void start(uint64_t in_intervalSeconds, const AsioFunction& in_event);
+   void start(const TimeDuration& in_timeDuration, const AsioFunction& in_event);
 
    /**
     * @brief Cancels the timed event.

@@ -30,6 +30,7 @@
 #include <boost/asio.hpp>
 
 #include <Error.hpp>
+#include <system/DateTime.hpp>
 #include <utils/ErrorUtils.hpp>
 #include <utils/MutexUtils.hpp>
 
@@ -362,19 +363,23 @@ AsyncTimedEvent::AsyncTimedEvent() :
 {
 }
 
-void AsyncTimedEvent::start(uint64_t in_intervalSeconds, const AsioFunction& in_event)
+void AsyncTimedEvent::start(const TimeDuration& in_timeDuration, const AsioFunction& in_event)
 {
    // If the interval is 0 there is nothing to do.
-   if (in_intervalSeconds == 0)
+   if (in_timeDuration == TimeDuration())
       return;
 
-   boost::posix_time::time_duration intervalSeconds = boost::posix_time::seconds(in_intervalSeconds);
+   boost::posix_time::time_duration timeDuration(
+      in_timeDuration.getHours(),
+      in_timeDuration.getMinutes(),
+      in_timeDuration.getSeconds(),
+      in_timeDuration.getMicroseconds());
 
    m_impl->Timer.reset(
-      new boost::asio::deadline_timer(getIoService(), intervalSeconds));
+      new boost::asio::deadline_timer(getIoService(), timeDuration));
 
    Impl::WeakImpl weakImpl = m_impl;
-   m_impl->Timer->async_wait(std::bind(&Impl::runEvent, m_impl, intervalSeconds, in_event, std::placeholders::_1));
+   m_impl->Timer->async_wait(std::bind(&Impl::runEvent, m_impl, timeDuration, in_event, std::placeholders::_1));
 }
 
 void AsyncTimedEvent::cancel()

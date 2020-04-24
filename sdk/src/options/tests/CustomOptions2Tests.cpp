@@ -53,8 +53,8 @@ TEST_CASE("custom options using default value")
       Error error = opts.getServerUser(serverUser);
       REQUIRE(!error);
 
-      REQUIRE(opts.getJobExpiryHours() == 24);
-      REQUIRE(opts.getHeartbeatIntervalSeconds() == 5);
+      REQUIRE(opts.getJobExpiryHours() == system::TimeDuration::Hours(24));
+      REQUIRE(opts.getHeartbeatIntervalSeconds() == system::TimeDuration::Seconds(5));
       REQUIRE(opts.getLogLevel() == logging::LogLevel::WARN);
       REQUIRE(opts.getScratchPath().getAbsolutePath() == "/var/lib/rstudio-launcher/");
       REQUIRE(serverUser.getUsername() == "rstudio-server");

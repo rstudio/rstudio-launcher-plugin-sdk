@@ -52,8 +52,8 @@ TEST_CASE("log level conflict (less detail, command line) options")
       Error error = opts.getServerUser(serverUser);
       REQUIRE(!error);
 
-      REQUIRE(opts.getJobExpiryHours() == 24);
-      REQUIRE(opts.getHeartbeatIntervalSeconds() == 5);
+      REQUIRE(opts.getJobExpiryHours() == system::TimeDuration::Hours(24));
+      REQUIRE(opts.getHeartbeatIntervalSeconds() == system::TimeDuration::Seconds(5));
       REQUIRE(opts.getLogLevel() == logging::LogLevel::DEBUG);
       REQUIRE(opts.getScratchPath().getAbsolutePath() == "/var/lib/rstudio-launcher/");
       REQUIRE(serverUser.getUsername() == "rstudio-server");
