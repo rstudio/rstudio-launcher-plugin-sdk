@@ -30,12 +30,11 @@ include_directories(
 )
 
 set(RLPS_JOBS_TEST_SOURCES
-   JobPrunerTests.cpp
    JobRepositoryTests.cpp
    JobStatusNotifierTests.cpp
 )
 
-# Abstract Communicator Tests
+# Jobs Tests
 add_executable(rlps-jobs-tests
    ${RLPS_JOBS_TEST_MAIN}
    ${RLPS_JOBS_TEST_SOURCES}
@@ -43,6 +42,18 @@ add_executable(rlps-jobs-tests
 )
 
 target_link_libraries(rlps-jobs-tests
+   rstudio-launcher-plugin-sdk-lib
+   ${RLPS_BOOST_LIBS}
+)
+
+# Job Pruner Tests
+add_executable(rlps-job-pruner-tests
+   ${RLPS_JOBS_TEST_MAIN}
+   JobPrunerTests.cpp
+   ${RLPS_HEADER_FILES}
+)
+
+target_link_libraries(rlps-job-pruner-tests
    rstudio-launcher-plugin-sdk-lib
    ${RLPS_BOOST_LIBS}
 )

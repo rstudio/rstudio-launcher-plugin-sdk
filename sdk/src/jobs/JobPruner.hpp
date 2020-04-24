@@ -36,12 +36,11 @@ namespace launcher_plugins {
 namespace jobs {
 
 /**
- * @brief Responsible for pruning expired jobs from the system.
+ * @brief Responsible for pruning expired jobs from the system as long as it is alive.
  */
 class JobPruner :
    public Noncopyable,
-   public Noninheritable<JobPruner>,
-   public std::enable_shared_from_this<JobPruner>
+   public Noninheritable<JobPruner>
 {
 public:
    /**
@@ -52,15 +51,12 @@ public:
     */
    JobPruner(
       JobRepositoryPtr in_jobRepository,
-      const JobStatusNotifierPtr& in_jobStatusNotifier);
+      JobStatusNotifierPtr in_jobStatusNotifier);
 
 private:
    // The private implementation of JobPruner
-   PRIVATE_IMPL(m_impl);
+   PRIVATE_IMPL_SHARED(m_impl);
 };
-
-/** Convenience typedef. */
-typedef std::shared_ptr<JobPruner> JobPrunerPtr;
 
 } // namespace jobs
 } // namespace launcher_plugins

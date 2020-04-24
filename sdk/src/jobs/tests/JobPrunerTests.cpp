@@ -25,6 +25,7 @@
 
 #include <atomic>
 
+#include <AsioRaii.hpp>
 #include <system/Asio.hpp>
 #include <jobs/JobRepository.hpp>
 
@@ -60,11 +61,11 @@ private:
 
 TEST_CASE("Prune job")
 {
-   system::AsioService::startThreads(2);
+   system::AsioRaii init;
 
    JobRepositoryPtr jobRepo(new MockRepo());
    JobStatusNotifierPtr notifier(new JobStatusNotifier());
-   JobPrunerPtr jobPruner = std::make_shared<JobPruner>(jobRepo, notifier);
+   JobPruner jobPruner(jobRepo, notifier);
 
    api::JobPtr job1(new api::Job()), job2(new api::Job()), job3(new api::Job());
 
@@ -89,6 +90,10 @@ TEST_CASE("Prune job")
    job3->SubmissionTime = sdt;
    job3->LastUpdateTime = ldt1;
 
+   jobRepo->addJob(job1);
+   jobRepo->addJob(job2);
+   jobRepo->addJob(job3);
+
    // Updates:
    // job 3 -> running
    notifier->updateJob(job3, api::Job::State::RUNNING, "", ldt2);
@@ -99,10 +104,13 @@ TEST_CASE("Prune job")
    // job3 -> finished
    notifier->updateJob(job3, api::Job::State::FINISHED, "", idt);
 
-   sleep(1);
-
-   system::AsioService::stop();
+   sleep(2);
    CHECK(s_count == 2);
+
+   api::JobList expected, actual = jobRepo->getJobs(system::User());
+   expected.push_back(job1);
+
+   CHECK(std::equal(expected.begin(), expected.end(), actual.begin()));
 }
 
 } // namespace jobs
