@@ -59,7 +59,7 @@ private:
 };
 
 /** Convenience Typedef. */
-typedef std::shared_ptr<JobPruner> JobPrunerPtr;
+typedef std::unique_ptr<JobPruner> JobPrunerPtr;
 
 } // namespace jobs
 } // namespace launcher_plugins
