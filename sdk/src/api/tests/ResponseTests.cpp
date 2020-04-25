@@ -372,6 +372,79 @@ TEST_CASE("Job State Response")
    }
 }
 
+TEST_CASE("Job Status Response Tests")
+{
+   JobPtr job(new Job());
+   job->Id = "58";
+   job->Name = "Some Job";
+
+   json::Object expected;
+   expected[FIELD_REQUEST_ID] = 0;
+   expected[FIELD_MESSAGE_TYPE] = 3;
+   expected[FIELD_ID] = "58";
+   expected[FIELD_JOB_NAME] = "Some Job";
+
+   SECTION("With status message")
+   {
+      job->Status = Job::State::PENDING;
+      job->StatusMessage = "Resources";
+
+      StreamSequences sequences;
+      sequences.emplace_back(12, 2);
+
+      json::Object seqObj;
+      json::Array seqArr;
+      seqObj[FIELD_REQUEST_ID] = 12;
+      seqObj[FIELD_SEQUENCE_ID] = 2;
+      seqArr.push_back(seqObj);
+
+      expected[FIELD_RESPONSE_ID] = 9;
+      expected[FIELD_JOB_STATUS] = Job::stateToString(Job::State::PENDING);
+      expected[FIELD_JOB_STATUS_MESSAGE] = "Resources";
+      expected[FIELD_SEQUENCES] = seqArr;
+
+      JobStatusResponse jobStatusResponse(sequences, job);
+      CHECK(jobStatusResponse.toJson() == expected);
+   }
+
+   SECTION("With status message")
+   {
+      job->Status = Job::State::RUNNING;
+
+      StreamSequences sequences;
+      sequences.emplace_back(12, 2);
+      sequences.emplace_back(16, 1);
+      sequences.emplace_back(10, 5);
+      sequences.emplace_back(11, 33);
+      sequences.emplace_back(86, 102);
+
+      json::Object seqObj1, seqObj2, seqObj3, seqObj4, seqObj5;
+      json::Array seqArr;
+      seqObj1[FIELD_REQUEST_ID] = 12;
+      seqObj1[FIELD_SEQUENCE_ID] = 2;
+      seqObj2[FIELD_REQUEST_ID] = 16;
+      seqObj2[FIELD_SEQUENCE_ID] = 1;
+      seqObj3[FIELD_REQUEST_ID] = 10;
+      seqObj3[FIELD_SEQUENCE_ID] = 5;
+      seqObj4[FIELD_REQUEST_ID] = 11;
+      seqObj4[FIELD_SEQUENCE_ID] = 33;
+      seqObj5[FIELD_REQUEST_ID] = 86;
+      seqObj5[FIELD_SEQUENCE_ID] = 102;
+      seqArr.push_back(seqObj1);
+      seqArr.push_back(seqObj2);
+      seqArr.push_back(seqObj3);
+      seqArr.push_back(seqObj4);
+      seqArr.push_back(seqObj5);
+
+      expected[FIELD_RESPONSE_ID] = 10;
+      expected[FIELD_JOB_STATUS] = Job::stateToString(Job::State::RUNNING);
+      expected[FIELD_SEQUENCES] = seqArr;
+
+      JobStatusResponse jobStatusResponse(sequences, job);
+      CHECK(jobStatusResponse.toJson() == expected);
+   }
+}
+
 } // namespace api
 } // namespace launcher_plugins
 } // namespace rstudio

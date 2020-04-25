@@ -27,12 +27,11 @@
 
 #include <Noncopyable.hpp>
 
-#include <cstdint>
-
 #include <vector>
 
 #include <PImpl.hpp>
 #include <api/Job.hpp>
+#include <api/ResponseTypes.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -120,6 +119,33 @@ protected:
 private:
    // The private implementation of Response.
    PRIVATE_IMPL(m_responseImpl);
+};
+
+/**
+ * @brief Base class for responses which are returned to multiple stream requests.
+ */
+class MultiStreamResponse : public Response
+{
+public:
+   /**
+    * @brief Converts this MultiStreamResponse to a JSON object.
+    *
+    * @return The JSON object which represents this MultiStreamResponse.
+    */
+   json::Object toJson() const override;
+
+protected:
+   /**
+    * @brief Constructor.
+    *
+    * @param in_responseType    The type of the base class.
+    * @param in_sequences       The sequence IDs for which this response should be sent.
+    */
+   MultiStreamResponse(Type in_responseType, StreamSequences in_sequences);
+
+private:
+   // The private implementation of MultiStreamResponse
+   PRIVATE_IMPL(m_streamResponseImpl);
 };
 
 /**
@@ -236,6 +262,32 @@ public:
 
 private:
    // The private implementation of ClusterInfoResponse
+   PRIVATE_IMPL(m_impl);
+};
+
+/**
+ * @brief Class which represents a single streamed
+ */
+class JobStatusResponse final : public MultiStreamResponse
+{
+public:
+   /**
+    * @brief Constructor.
+    *
+    * @param in_sequences   The stream sequences for which this response will be sent.
+    * @param in_job         The job that was updated.
+    */
+   JobStatusResponse(StreamSequences in_sequences, const JobPtr& in_job);
+
+   /**
+    * @brief Converts this job status response to a JSON object.
+    *
+    * @return The JSON object which represents this job status response.
+    */
+   json::Object toJson() const override;
+
+private:
+   // The private implementation of JobStatusResponse.
    PRIVATE_IMPL(m_impl);
 };
 

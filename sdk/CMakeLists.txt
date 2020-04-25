@@ -36,6 +36,7 @@ set(RLPS_SOURCE_FILES
    src/api/Job.cpp
    src/api/Request.cpp
    src/api/Response.cpp
+   src/api/ResponseTypes.cpp
    src/comms/AbstractLauncherCommunicator.cpp
    src/comms/MessageHandler.cpp
    src/comms/StdIOLauncherCommunicator.cpp

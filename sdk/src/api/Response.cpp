@@ -83,6 +83,37 @@ Response::Response(Type in_responseType, uint64_t in_requestId) :
 {
 }
 
+// MultiStreamResponse =================================================================================================
+struct MultiStreamResponse::Impl
+{
+   explicit Impl(StreamSequences in_sequences) :
+      Sequences(std::move(in_sequences))
+   {
+   }
+
+   StreamSequences Sequences;
+};
+
+PRIVATE_IMPL_DELETER_IMPL(MultiStreamResponse)
+
+json::Object MultiStreamResponse::toJson() const
+{
+   json::Object result = Response::toJson();
+
+   json::Array arr;
+   for (const StreamSequenceId& sequenceId: m_streamResponseImpl->Sequences)
+      arr.push_back(sequenceId.toJson());
+
+   result[FIELD_SEQUENCES] = arr;
+   return result;
+}
+
+MultiStreamResponse::MultiStreamResponse(Type in_responseType, StreamSequences in_sequences) :
+   Response(in_responseType, 0),
+   m_streamResponseImpl(new Impl(std::move(in_sequences)))
+{
+}
+
 // Error Response ======================================================================================================
 struct ErrorResponse::Impl
 {
@@ -211,6 +242,45 @@ json::Object JobStateResponse::toJson() const
 
    jsonObject[FIELD_JOBS] = jobsArray;
    return jsonObject;
+}
+
+// Job Status Response =================================================================================================
+struct JobStatusResponse::Impl
+{
+   explicit Impl(const api::JobPtr& in_job) :
+      JobId(in_job->Id),
+      JobName(in_job->Name),
+      Status(in_job->Status),
+      StatusMessage(in_job->StatusMessage)
+   {
+   }
+
+   std::string JobId;
+   std::string JobName;
+   Job::State Status;
+   std::string StatusMessage;
+};
+
+PRIVATE_IMPL_DELETER_IMPL(JobStatusResponse)
+
+JobStatusResponse::JobStatusResponse(StreamSequences in_sequences, const api::JobPtr& in_job) :
+   MultiStreamResponse(Type::JOB_STATUS, std::move(in_sequences)),
+   m_impl(new Impl(in_job))
+{
+}
+
+json::Object JobStatusResponse::toJson() const
+{
+   json::Object result = MultiStreamResponse::toJson();
+
+   result[FIELD_ID] = m_impl->JobId;
+   result[FIELD_JOB_NAME] = m_impl->JobName;
+   result[FIELD_JOB_STATUS] = api::Job::stateToString(m_impl->Status);
+
+   if (!m_impl->StatusMessage.empty())
+      result[FIELD_JOB_STATUS_MESSAGE] = m_impl->StatusMessage;
+
+   return result;
 }
 
 // Cluster Info Response ===============================================================================================
