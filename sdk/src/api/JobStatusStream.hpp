@@ -35,8 +35,12 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace api {
 
+/** Convenience typedef. */
 typedef AbstractMultiStream<JobStatusResponse, api::JobPtr> AbstractJobStatusStream;
 
+/**
+ * @brief Responsible for streaming Job Status data for a specific Job.
+ */
 class SingleJobStatusStream final :
    public AbstractJobStatusStream,
    public std::enable_shared_from_this<SingleJobStatusStream>
@@ -85,6 +89,9 @@ private:
    PRIVATE_IMPL(m_impl);
 };
 
+/**
+ * @brief Responsible for streaming Job Status data for all Jobs.
+ */
 class AllJobStatusStream final :
    public AbstractJobStatusStream,
    public std::enable_shared_from_this<AllJobStatusStream>
