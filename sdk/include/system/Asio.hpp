@@ -25,7 +25,6 @@
 #define LAUNCHER_PLUGINS_ASIO_HPP
 
 #include <Noncopyable.hpp>
-#include <Noninheritable.hpp>
 
 #include <functional>
 
@@ -58,7 +57,7 @@ typedef std::function<void(int)> OnSignal;
 /**
  * @brief Async input/output class which may be used to manage ASIO operations.
  */
-class AsioService : public Noncopyable, public Noninheritable<AsioService>
+class AsioService final : public Noncopyable
 {
 public:
 
@@ -119,7 +118,7 @@ private:
 /**
  * @brief Class which allows reading from or writing to streams asynchronously.
  */
-class AsioStream : public Noninheritable<AsioStream>
+class AsioStream final
 {
 public:
    /**
@@ -158,7 +157,7 @@ private:
 /**
  * @brief Class which performs an action asynchronously every specified number of seconds.
  */
-class AsyncTimedEvent : public Noninheritable<AsyncTimedEvent>
+class AsyncTimedEvent final
 {
 public:
    /**
@@ -201,7 +200,7 @@ private:
 /**
  * @brief Class which may be used to post async work to be performed at a later time.
  */
-class AsyncDeadlineEvent : public Noninheritable<AsyncDeadlineEvent>
+class AsyncDeadlineEvent final
 {
 public:
    /**

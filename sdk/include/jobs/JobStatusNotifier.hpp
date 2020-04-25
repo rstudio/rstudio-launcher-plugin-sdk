@@ -25,7 +25,6 @@
 #define LAUNCHER_PLUGINS_JOB_STATUS_NOTIFIER_HPP
 
 #include <Noncopyable.hpp>
-#include <Noninheritable.hpp>
 
 #include <string>
 #include <functional>
@@ -51,9 +50,8 @@ typedef std::function<void(const api::JobPtr&)> OnJobStatusUpdate;
 /**
  * @brief Class which notifies subscribers when a job updates.
  */
-class JobStatusNotifier :
+class JobStatusNotifier final :
    public Noncopyable,
-   public Noninheritable<JobStatusNotifier>,
    public std::enable_shared_from_this<JobStatusNotifier>
 {
 public:

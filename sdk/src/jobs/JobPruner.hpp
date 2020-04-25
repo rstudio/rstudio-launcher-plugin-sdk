@@ -25,7 +25,6 @@
 #define LAUNCHER_PLUGINS_JOB_PRUNER_HPP
 
 #include <Noncopyable.hpp>
-#include <Noninheritable.hpp>
 
 #include <PImpl.hpp>
 #include <jobs/JobRepository.hpp>
@@ -38,9 +37,7 @@ namespace jobs {
 /**
  * @brief Responsible for pruning expired jobs from the system as long as it is alive.
  */
-class JobPruner :
-   public Noncopyable,
-   public Noninheritable<JobPruner>
+class JobPruner final : public Noncopyable
 {
 public:
    /**

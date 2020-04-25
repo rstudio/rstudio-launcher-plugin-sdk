@@ -24,8 +24,6 @@
 #ifndef LAUNCHER_PLUGINS_DATE_TIME_HPP
 #define LAUNCHER_PLUGINS_DATE_TIME_HPP
 
-#include <Noninheritable.hpp>
-
 #include <string>
 
 #include <PImpl.hpp>
@@ -49,7 +47,7 @@ class DateTime;
 /**
  * @brief Represents an duration of time (e.g. 5 hours, 43 minutes, and 21 seconds) as opposed to a point in time.
  */
-class TimeDuration : public Noninheritable<TimeDuration>
+class TimeDuration final
 {
 public:
    /**
@@ -196,7 +194,7 @@ private:
 };
 
 /** @brief Class which represents a date and time in UTC. */
-class DateTime : public Noninheritable<DateTime>
+class DateTime final
 {
 public:
    /**
