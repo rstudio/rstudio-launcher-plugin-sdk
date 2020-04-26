@@ -223,8 +223,8 @@ Request::Request(Type in_requestType, const json::Object& in_requestJson) :
 // User ================================================================================================================
 struct UserRequest::Impl
 {
-   /** The real user for whom the request should be performed. */
-   system::User RealUser;
+   /** The effective user for whom the request should be performed. */
+   system::User EffectiveUser;
 
    /** The actual user who submitted the request. */
    std::string RequestUsername;
@@ -234,7 +234,7 @@ PRIVATE_IMPL_DELETER_IMPL(UserRequest)
 
 const system::User & UserRequest::getUser() const
 {
-   return m_userImpl->RealUser;
+   return m_userImpl->EffectiveUser;
 }
 
 const std::string& UserRequest::getRequestUsername() const
@@ -262,12 +262,12 @@ UserRequest::UserRequest(Request::Type in_type, const json::Object& in_requestJs
    boost::trim(realUsername);
    if (realUsername != "*")
    {
-      error = system::User::getUserFromIdentifier(realUsername, m_userImpl->RealUser);
+      error = system::User::getUserFromIdentifier(realUsername, m_userImpl->EffectiveUser);
 
       if (error)
       {
          logging::logError(error);
-         m_userImpl->RealUser = system::User(true);
+         m_userImpl->EffectiveUser = system::User(true);
          m_baseImpl->IsValid = false;
          return;
       }

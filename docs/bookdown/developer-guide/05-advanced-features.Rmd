@@ -30,6 +30,7 @@ To use a non-default format specification, a custom format specification may be 
 | %Y      | Four digit year                                  | "2019"
 | %ZP     | Posix time zone string                           | "-07:00", "PST-08PDT+01,M4.1.0/02:00,M10.5.0/02:00", "Z"
 
+More advanced formatting flags and additional documentation regarding the parsing and formatting of `DateTime` objects can be found in [Boost's Date Time I/O documentation](https://www.boost.org/doc/libs/1_72_0/doc/html/date_time/date_time_io.html).
 
 ## User Profiles {#user-profiles}
 

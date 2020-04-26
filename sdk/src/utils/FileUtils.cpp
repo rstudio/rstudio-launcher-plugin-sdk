@@ -36,7 +36,7 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace utils {
 
-Error readFileToString(const system::FilePath& in_file, std::string& out_fileContents)
+Error readFileIntoString(const system::FilePath& in_file, std::string& out_fileContents)
 {
    std::shared_ptr<std::istream> inputStream;
    Error error = in_file.openForRead(inputStream);

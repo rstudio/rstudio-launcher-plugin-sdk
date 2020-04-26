@@ -49,7 +49,7 @@ public:
    /**
     * @brief Constructor.
     *
-    * @param in_hostname    The
+    * @param in_hostname    The hostname of machine which is hosting this instance of the Local Plugin.
     */
    explicit LocalJobStorage(std::string in_hostname);
 

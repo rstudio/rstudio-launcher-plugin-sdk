@@ -154,7 +154,7 @@ There are two API requests which return a Job State Response: the Submit Job and
 | requestId       | [See above.](#common-fields)                                                                                                          | Int
 | username        | [See above.](#common-fields)                                                                                                          | String
 | requestUsername | [See above.](#common-fields)                                                                                                          | String
-| jobId           | The ID of the job to be retrieved. If this fields is '*' all jobs should be retrieved and filters may be used.                        | String
+| jobId           | The ID of the job to be retrieved. If this field is '*' all jobs should be retrieved and filters may be used.                        | String
 | encodedJobId    | The Launcher generated encoded job ID which contains extra metadata. Provides extra information only.                                 | String
 | tags            | If present, the set of tags by which to filter the jobs. Only jobs which have all these tags will be returned.                        | String Array
 | startTime       | If present, only jobs which were submitted after this UTC time will be returned. Format: `YYYY-MM-DDThh:mm:ss`.                       | String
@@ -203,13 +203,13 @@ For a simple example of implementing this method, see 'TODO: #7' in the RStudio 
 | requestId            | [See above.](#common-fields)                                                                                           | Int
 | responseId           | [See above.](#common-fields)                                                                                           | Int
 | supportsContainers   | Whether or not the job scheduling system supports containers.                                                          | Boolean
-| config               | Any custom configuration values which may be set per job.                                                              | [JobConfig](#job-config) Array
-| placementConstraints | Any custom placement constraints which may be requested for a job.                                                     | [PlacementConstraint](#constraint) Array
-| queues               | The queues which are available to run jobs, if the job scheduling system supports queues.                              | String Array
-| resourceLimits       | The types of resource limits which may be requested for a job, including default and maximum values, if any.           | [ResourceLimit](#limit) Array
+| config               | Any custom configuration values which may be set per Job.                                                              | [JobConfig](#job-config) Array
+| placementConstraints | Any custom placement constraints which may be requested for a Job.                                                     | [PlacementConstraint](#constraint) Array
+| queues               | The queues which are available to run Jobs, if the job scheduling system supports queues.                              | String Array
+| resourceLimits       | The types of resource limits which may be requested for a Job, including default and maximum values, if any.           | [ResourceLimit](#limit) Array
 | images               | If the job scheduling system supports containers, the list of container images which may be used when launching a job. | String Array
 | defaultImage         | If the job scheduling system supports containers, the default container image to use if none is selected.              | String
-| allowUnknownImages   | If the job scheduling system supports containers, whether to allow jobs to be run on images which are not known.       | Boolean
+| allowUnknownImages   | If the job scheduling system supports containers, whether to allow Jobs to be run on images which are not known.       | Boolean
 
 ## Complex API Types {#complex-types}
 
@@ -241,6 +241,8 @@ This section describes the details of API types which are not simple types, such
 
 ### HostMount {#host-mount}
 
+This represents a host mount source. If this field is present in a [Mount](#mount) object, the Plugin should attempt to mount the requested path from the Launcher host, or reject the request on the basis that mounting host paths is not supported.
+
 |  Field Name  |                               Description                                   |  Value
 | ------------ | --------------------------------------------------------------------------- | -------
 | path         | The source path to be mounted.                                              | String
@@ -249,14 +251,14 @@ This section describes the details of API types which are not simple types, such
 
 |      Field Name      |                                            Description                                            |  Value
 | -------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------
-| args                 | The arguments of the command or exe of the Job.                                                   | String Array
+| args                 | The arguments of the 'command' or 'exe' of the Job.                                               | String Array
 | cluster              | The cluster of the Job.                                                                           | String
-| command              | The command of the Job. Mutually exclusive with 'exe'.                                            | String
+| command              | The shell command of the Job. Mutually exclusive with 'exe'.                                      | String
 | config               | The custom configuration values of the Job.                                                       | [JobConfig](#job-config) Array
 | container            | The container configuration of the Job, if the Cluster supports containers.                       | [Container](#container) Array
 | environment          | The environment variables for the Job.                                                            | [Environment](#environment) Array
 | exe                  | The executable of the Job. Mutually exclusive with 'command'.                                     | String
-| exitCode             | The exit code of the command or exe of the Job.                                                   | Int
+| exitCode             | The exit code of the 'command' or 'exe' of the Job.                                               | Int
 | exposedPorts         | The exposed ports of the Job, if containers are used.                                             | [ExposedPort](#exposed-port) Array
 | host                 | The host on which the Job was (or is being) run.                                                  | String
 | id                   | The unique ID of the Job.                                                                         | String
@@ -265,17 +267,17 @@ This section describes the details of API types which are not simple types, such
 | name                 | The name of the Job.                                                                              | String
 | pid                  | The process ID of the Job, if applicable.                                                         | Int
 | id                   | The unique ID of the Job.                                                                         | String
-| placementConstraints | The list of placement constraints that were selected for the Job                                  | [PlacementConstraint](#constraint) Array
-| queues               | The list of queues that may be used to launch the Job, or the queue that was used to run the job. | String Array
-| stdin                | The standard input to be passed to the command or exe of the Job.                                 | String
+| placementConstraints | The list of placement constraints that were selected for the Job.                                 | [PlacementConstraint](#constraint) Array
+| queues               | The list of queues that may be used to launch the Job, or the queue that was used to run the Job. | String Array
+| stdin                | The standard input to be passed to the 'command' or 'exe' of the Job.                             | String
 | stderr               | The location of the file which contains the standard error output of the Job.                     | String
 | stdout               | The location of the file which contains the standard output of the Job.                           | String
-| status               | The current status of the job.                                                                    | [JobState](#job-state)
+| status               | The current status of the Job.                                                                    | [JobState](#job-state)
 | statusMessage        | The message or reason of the current status of the Job.                                           | String
 | submissionTime       | The time at which the Job was submitted to the Cluster.                                           | String (ISO 8601 format DateTime)
 | tags                 | The tags that were set for the Job. Used for filtering Jobs.                                      | String Array
 | user                 | The username of the user who launched the Job.                                                    | String
-| workingDirectory     | The directory to use as the working directory for the command or exe.                             | String
+| workingDirectory     | The directory to use as the working directory for the 'command' or 'exe'.                         | String
 
 ### JobConfig {#job-config}
 
@@ -294,7 +296,7 @@ This type is a JSON String value with limited set of valid values, rather than a
 | Canceled  | The job was canceled by the user before it began to run.
 | Failed    | The job could not be launched due to an error. This status does not refer to jobs where the process exited with a non-zero exit code.
 | Finished  | The job was launched and finished executing. This includes jobs where the process exited with a non-zero exit code.
-| Killed    | The job was forcibly killed while it was running. I.e. the job process received `SIGKILL`.
+| Killed    | The job was forcibly killed while it was running, i.e. the job process received `SIGKILL`.
 | Pending   | The job was successfully submitted to the job scheduling system but has not started running yet.
 | Running   | The job is currently running.
 | Suspended | The job was running, but execution was paused and may be resumed at a later time.
@@ -309,6 +311,8 @@ This type is a JSON String value with limited set of valid values, rather than a
 | nfsMount     | The nfs mount source. Mutually exclusive with 'hostMount'.                                                    | [NfsMount](#nfs-mount)
 
 ### NfsMount {#nfs-mount}
+
+This represents an NFS server mount source. If this field is present in a [Mount](#mount) object, the Plugin should attempt to mount the requested path from the specified NFS server, or reject the request on the basis that mounting NFS paths is not supported.
 
 |  Field Name  |                               Description                                   |  Value
 | ------------ | --------------------------------------------------------------------------- | -------
@@ -338,4 +342,3 @@ This type is a JSON String value with limited set of valid values, rather than a
 | major        | The major component of the supported version.                               | Int
 | minor        | The minor component of the supported version.                               | Int
 | patch        | The patch component of the supported version.                               | Int
-

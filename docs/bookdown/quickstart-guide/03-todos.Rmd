@@ -446,12 +446,11 @@ When the Launcher starts the Plugin, it will send a Bootstrap request to ensure 
 
 Any jobs which were not launched by the Plugin should not be included in the output. To distinguish between jobs that were launched by the Plugin and jobs that were launched either manually or by another tool, it may be useful to preface the name of the job with a unique tag (e.g. `'[RStudio Launcher] <job name>`). Alternately, if the Job Scheduling System supports setting custom fields on the job, a custom field may be used to indicate that the job was launched through the Plugin. Note that if a unique prefix is added to Launcher jobs by the Plugin, it should be removed from the job name before being returned to the Launcher.
 
-Each job detail must be converted from the format in the Job Scheduling System to the format understood by the Launcher. 
-For example, if dates are represented as a string in the Job Scheduling System, they must be parsed as a `system::DateTime` before the associated `Job` object can be updated. For more information about parsing dates from strings, see the 'Date-Time Support' section of the 'Advanced Features' chapter of the RStudio Launcher Plugin SDK Developer's Guide.
+Each job detail must be converted from the format in the Job Scheduling System to the format understood by the Launcher. For example, if dates are represented as a string in the Job Scheduling System, they must be parsed as a `system::DateTime` before the associated `Job` object can be updated. For more information about parsing dates from strings, see the 'Date-Time Support' section of the 'Advanced Features' chapter of the RStudio Launcher Plugin SDK Developer's Guide.
 
 ### Job Fields {#todo-8-fields}
 
-The `Job` object has a field for each detail that the Launcher requires. This document will discuss some of the fields which require special consideration. Because jobs may remain in the system between Plugin restarts, the Plugin must be able to populate each field of the `Job` object exactly as it would have been when it was submitted to the Plugin based on the record of the job in the Job Scheduling System. If any fields cannot be retrieved from the Job Scheduling System, it will most likely be easier to ignore them during this TODO and design a solution during [TODO #10](#todo-10). Then it  For more information about each field, see the RStudio Launcher Plugin SDK API Reference.
+The `Job` object has a field for each detail that the Launcher requires. This document will discuss some of the fields which require special consideration. Because jobs may remain in the system between Plugin restarts, the Plugin must be able to populate each field of the `Job` object exactly as it would have been when it was submitted to the Plugin based on the record of the job in the Job Scheduling System. If any fields cannot be retrieved from the Job Scheduling System, it will most likely be easier to ignore them during this TODO and design a solution during [TODO #10](#todo-10). For more information about each field, see the RStudio Launcher Plugin SDK API Reference.
 
 #### Command vs. Exe vs. Container {#todo-8-command-exe}
 
@@ -478,8 +477,8 @@ Another special consideration is how to convert from the Job Scheduling System's
 
 Assume the following:
 
-* the Mars Job Scheduling System API has a `list_jobs` function which takes a username. It retrieves the jobs the specified user has permission to see.
-* the Orchid organization's developer has added a `marsJobToJob` helper function which converts a `mars_api::job` structure to an `rstudio::launcher_plugins::api::Job` structure.
+* The Mars Job Scheduling System API has a `list_jobs` function which takes a username. It retrieves the jobs the specified user has permission to see.
+* The Orchid organization's developer has added a `marsJobToJob` helper function which converts a `mars_api::job` structure to an `rstudio::launcher_plugins::api::Job` structure.
 
 In that case, the Plugin developer might change
 
@@ -504,7 +503,7 @@ Error MarsJobSource::getJobs(api::JobList &out_jobs) const
   {
     marsJobs = mars_api::list_jobs(opts.getMarsServiceUser());
   }
-  catch (const mars_expcetion& e)
+  catch (const mars_exception& e)
   {
     return Error("MarsApiError", e.code(), e.what(), ERROR_LOCATION);
   }
