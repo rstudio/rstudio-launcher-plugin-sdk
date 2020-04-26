@@ -277,6 +277,7 @@ struct AbstractPluginApi::Impl
             Error error = StreamMgr->handleStreamRequest(std::static_pointer_cast<JobStatusRequest>(in_request));
             if (error)
                return sendErrorResponse(in_request->getId(), ErrorResponse::Type::UNKNOWN, error);
+            break;
          }
          default:
             return sendErrorResponse(
@@ -340,6 +341,9 @@ Error AbstractPluginApi::initialize()
    comms->registerRequestHandler(
       Request::Type::GET_JOB,
       std::bind(&Impl::handleRequest, m_abstractPluginImpl.get(), Request::Type::GET_JOB, _1));
+   comms->registerRequestHandler(
+      Request::Type::GET_JOB_STATUS,
+      std::bind(&Impl::handleRequest, m_abstractPluginImpl.get(), Request::Type::GET_JOB_STATUS, _1));
 
    // Make the heartbeat event.
    WeakThis weakThis = shared_from_this();
