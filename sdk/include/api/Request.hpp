@@ -222,14 +222,12 @@ protected:
 private:
    // The private implementation of JobIdRequest.
    PRIVATE_IMPL(m_jobIdImpl);
-
-   friend class Request;
 };
 
 /**
  * @brief Represents a bootstrap request received from the Launcher.
  */
-class BootstrapRequest: public Request
+class BootstrapRequest final : public Request
 {
 public:
    /**
@@ -270,7 +268,7 @@ private:
 /**
  * @brief Represents a job state request received from the Launcher.
  */
-class JobStateRequest : public JobIdRequest
+class JobStateRequest final : public JobIdRequest
 {
 public:
    /**
