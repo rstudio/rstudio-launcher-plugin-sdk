@@ -84,7 +84,7 @@ fi
 mkdir -p temp
 DOXYGEN_VER="1.8.16"
 DOXYGEN_TAR="doxygen-${DOXYGEN_VER}.src.tar.gz"
-wget "http://doxygen.nl/files/${DOXYGEN_TAR}" -O "temp/${DOXYGEN_TAR}"
+wget "https://sourceforge.net/projects/doxygen/files/rel-${DOXYGEN_VER}/${DOXYGEN_TAR}" -O "temp/${DOXYGEN_TAR}"
 
 tar -xzf "temp/${DOXYGEN_TAR}" -C temp/
 
