@@ -175,7 +175,7 @@ AllJobStatusStream::AllJobStatusStream(
    jobs::JobStatusNotifierPtr in_jobStatusNotifier,
    comms::AbstractLauncherCommunicatorPtr in_launcherCommunicator) :
       AbstractJobStatusStream(std::move(in_launcherCommunicator)),
-      m_impl()
+      m_impl(new Impl(std::move(in_jobRepository), std::move(in_jobStatusNotifier)))
 {
 }
 
