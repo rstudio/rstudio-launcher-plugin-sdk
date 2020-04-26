@@ -48,7 +48,8 @@ constexpr char const* FIELD_REQUEST_USERNAME       = "requestUsername";
 constexpr char const* FIELD_JOB_ID                 = "jobId";
 constexpr char const* FIELD_ENCODED_JOB_ID         = "encodedJobId";
 
-// Common fields for multi-stream responses.
+// Common fields for stream and multi-stream responses.
+constexpr char const* FIELD_CANCEL_STREAM          = "cancel";
 constexpr char const* FIELD_SEQUENCE_ID            = "seqId";
 constexpr char const* FIELD_SEQUENCES              = "sequences";
 

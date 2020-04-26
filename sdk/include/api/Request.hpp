@@ -340,6 +340,33 @@ private:
 };
 
 /**
+ * @brief Request from the launcher to begin or end a Job Status Stream.
+ */
+class JobStatusRequest final : public JobIdRequest
+{
+public:
+   /**
+    * @brief Gets whether the Job Status Stream should be started (false) or ended (true).
+    *
+    * @return
+    */
+   bool isCancelRequest() const;
+
+private:
+   /**
+    * @brief Constructor.
+    *
+    * @param in_requestJson     The JSON Object which represents the job status request.
+    */
+   explicit JobStatusRequest(const json::Object& in_requestJson);
+
+   // The private implementation of JobStateRequest
+   PRIVATE_IMPL(m_impl);
+
+   friend class Request;
+};
+
+/**
  * @brief Converts a Request::Type to string and adds it to the specified stream.
  *
  * @param in_ostream    The stream to which to add the string version of the type.

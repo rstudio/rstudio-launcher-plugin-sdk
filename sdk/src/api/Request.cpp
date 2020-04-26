@@ -161,8 +161,19 @@ Error Request::fromJson(const json::Object& in_requestJson, std::shared_ptr<Requ
       case Type::GET_JOB:
       {
          std::shared_ptr<JobStateRequest> jobStateRequest(new JobStateRequest(in_requestJson));
+         if (jobStateRequest->getUser().isEmpty())
+            return requestError(RequestError::INVALID_USER, in_requestJson.writeFormatted(), ERROR_LOCATION);
 
          out_request = jobStateRequest;
+         break;
+      }
+      case Type::GET_JOB_STATUS:
+      {
+         std::shared_ptr<JobStatusRequest> jobStatusRequest(new JobStatusRequest(in_requestJson));
+         if (jobStatusRequest->getUser().isEmpty())
+            return requestError(RequestError::INVALID_USER, in_requestJson.writeFormatted(), ERROR_LOCATION);
+
+         out_request = jobStatusRequest;
          break;
       }
       default:
@@ -219,7 +230,7 @@ struct UserRequest::Impl
    std::string RequestUsername;
 };
 
-PRIVATE_IMPL_DELETER_IMPL(UserRequest);
+PRIVATE_IMPL_DELETER_IMPL(UserRequest)
 
 const system::User & UserRequest::getUser() const
 {
@@ -479,6 +490,34 @@ JobStateRequest::JobStateRequest(const json::Object& in_requestJson) :
    // ID is required, ensure it is in the set of fields.
    std::set<std::string> tmp;
    m_impl->FieldSet.getValueOr(tmp).insert("id");
+}
+
+// Job Status Request ==================================================================================================
+struct JobStatusRequest::Impl
+{
+   bool IsCancelRequest;
+};
+
+PRIVATE_IMPL_DELETER_IMPL(JobStatusRequest)
+
+bool JobStatusRequest::isCancelRequest() const
+{
+   return m_impl->IsCancelRequest;
+}
+
+JobStatusRequest::JobStatusRequest(const json::Object& in_requestJson) :
+   JobIdRequest(Type::GET_JOB_STATUS, in_requestJson),
+   m_impl(new Impl())
+{
+   Optional<bool> isCancel;
+   Error error = json::readObject(in_requestJson, FIELD_CANCEL_STREAM, isCancel);
+   if (error)
+   {
+      logging::logError(error);
+      m_baseImpl->IsValid = false;
+   }
+
+   m_impl->IsCancelRequest = isCancel.getValueOr(false);
 }
 
 // Helpers =============================================================================================================
