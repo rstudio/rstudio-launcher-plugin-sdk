@@ -113,7 +113,7 @@ protected:
    void sendResponse(const std::set<uint64_t>& in_requestIds, Args... in_responseArgs);
 
    /** Mutex to protect shared state of the stream. */
-   std::mutex m_mutex;
+   mutable std::mutex m_mutex;
 
 private:
    PRIVATE_IMPL(m_baseImpl);

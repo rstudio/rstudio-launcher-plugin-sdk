@@ -129,7 +129,7 @@ template <typename R, typename ... Args>
 bool AbstractMultiStream<R, Args...>::isEmpty() const
 {
    bool empty = true;
-   LOCK_MUTEX(m_baseImpl->Mutex)
+   LOCK_MUTEX(m_mutex)
    {
       empty = m_baseImpl->Sequences.empty();
    }
@@ -137,6 +137,7 @@ bool AbstractMultiStream<R, Args...>::isEmpty() const
 
    return empty;
 }
+
 template <typename R, typename ... Args>
 void AbstractMultiStream<R, Args...>::removeRequest(uint64_t in_requestId)
 {
@@ -176,6 +177,26 @@ void AbstractMultiStream<R, Args...>::onRemoveRequest(uint64_t in_requestId)
 {
    m_baseImpl->removeRequest(in_requestId);
 }
+
+// Template Instantiations =============================================================================================
+#define INSTANTIATE_CLASS(R, ...)                                                                  \
+template                                                                                           \
+void AbstractMultiStream<R, __VA_ARGS__>::ImplDeleter::operator()(AbstractMultiStream::Impl*);     \
+template                                                                                           \
+AbstractMultiStream<R, __VA_ARGS__>::AbstractMultiStream(comms::AbstractLauncherCommunicatorPtr);  \
+template                                                                                           \
+bool AbstractMultiStream<R, __VA_ARGS__>::isEmpty() const;                                         \
+template                                                                                           \
+void AbstractMultiStream<R, __VA_ARGS__>::removeRequest(uint64_t);                                 \
+template                                                                                           \
+void AbstractMultiStream<R, __VA_ARGS__>::onAddRequest(uint64_t);                                  \
+template                                                                                           \
+void AbstractMultiStream<R, __VA_ARGS__>::sendResponse(__VA_ARGS__);                               \
+template                                                                                           \
+void AbstractMultiStream<R, __VA_ARGS__>::sendResponse(const std::set<uint64_t>&, __VA_ARGS__);    \
+
+INSTANTIATE_CLASS(JobStatusResponse, api::JobPtr)
+
 
 } // namespace api
 } // namespace launcher_plugins
