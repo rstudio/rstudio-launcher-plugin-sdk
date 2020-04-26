@@ -157,19 +157,17 @@ void AbstractMultiStream<R, Args...>::onAddRequest(uint64_t in_requestId)
 template <typename R, typename ... Args>
 void AbstractMultiStream<R, Args...>::sendResponse(Args... in_responseArgs)
 {
-   m_baseImpl->LauncherCommunicator->sendResponse(
-      R(
-         m_baseImpl->getSequences(),
-         in_responseArgs...));
+   StreamSequences sequences = m_baseImpl->getSequences();
+   if (!sequences.empty())
+   m_baseImpl->LauncherCommunicator->sendResponse(R(sequences, in_responseArgs...));
 }
 
 template <typename R, typename ... Args>
 void AbstractMultiStream<R, Args...>::sendResponse(const std::set<uint64_t>& in_requestIds, Args... in_responseArgs)
 {
-   m_baseImpl->LauncherCommunicator->sendResponse(
-      R(
-         m_baseImpl->getSequences(in_requestIds),
-         in_responseArgs...));
+   StreamSequences sequences = m_baseImpl->getSequences(in_requestIds);
+   if (!sequences.empty())
+      m_baseImpl->LauncherCommunicator->sendResponse(R(sequences, in_responseArgs...));
 }
 
 template <typename R, typename ... Args>
