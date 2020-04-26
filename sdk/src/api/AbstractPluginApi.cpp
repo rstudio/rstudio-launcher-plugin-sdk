@@ -28,6 +28,7 @@
 #include <api/Constants.hpp>
 #include <api/IJobSource.hpp>
 #include <api/Response.hpp>
+#include <api/StreamManager.hpp>
 #include <json/Json.hpp>
 #include <jobs/JobPruner.hpp>
 #include <options/Options.hpp>
@@ -271,6 +272,12 @@ struct AbstractPluginApi::Impl
             return handleGetClusterInfo(std::static_pointer_cast<UserRequest>(in_request));
          case Request::Type::GET_JOB:
             return handleGetJobRequest(std::static_pointer_cast<JobStateRequest>(in_request));
+         case Request::Type::GET_JOB_STATUS:
+         {
+            Error error = StreamMgr->handleStreamRequest(std::static_pointer_cast<JobStatusRequest>(in_request));
+            if (error)
+               return sendErrorResponse(in_request->getId(), ErrorResponse::Type::UNKNOWN, error);
+         }
          default:
             return sendErrorResponse(
                in_request->getId(),
@@ -288,10 +295,14 @@ struct AbstractPluginApi::Impl
    /** The communicator that will be used to send and receive messages from the RStudio Launcher. */
    comms::AbstractLauncherCommunicatorPtr LauncherCommunicator;
 
+   /** The job status notifier */
    jobs::JobStatusNotifierPtr Notifier;
 
    /** A timed event to send heartbeats on the configured time interval */
    system::AsyncTimedEvent SendHeartbeatEvent;
+
+   /** Manages all streamed responses. */
+   std::unique_ptr<StreamManager> StreamMgr;
 };
 
 PRIVATE_IMPL_DELETER_IMPL(AbstractPluginApi)
@@ -306,6 +317,12 @@ Error AbstractPluginApi::initialize()
    Error error = m_abstractPluginImpl->JobRepo->initialize();
    if (error)
       return error;
+
+   m_abstractPluginImpl->StreamMgr.reset(
+      new StreamManager(
+         m_abstractPluginImpl->JobRepo,
+         m_abstractPluginImpl->Notifier,
+         m_abstractPluginImpl->LauncherCommunicator));
 
    // Register all the request handlers.
    std::shared_ptr<comms::AbstractLauncherCommunicator>& comms = m_abstractPluginImpl->LauncherCommunicator;
