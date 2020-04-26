@@ -363,7 +363,7 @@ TEST_CASE("Parse get job request with fields (no id)")
    MockLogPtr logDest = getMockLogDest();
 
    std::set<std::string> expectedFields;
-   expectedFields.insert("id"); // ID is expected anyways.
+   expectedFields.insert("id"); // ID is expected no matter what.
    expectedFields.insert("status");
    expectedFields.insert("statusMessage");
 
