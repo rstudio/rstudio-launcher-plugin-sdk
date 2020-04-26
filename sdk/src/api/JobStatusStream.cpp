@@ -48,14 +48,18 @@ struct SingleJobStatusStream::Impl
       std::string in_jobId,
       jobs::JobRepositoryPtr in_jobRepository,
       jobs::JobStatusNotifierPtr in_jobStatusNotifier) :
-      JobId(std::move(in_jobId)),
-      JobRepo(std::move(in_jobRepository)),
-      Notifier(std::move(in_jobStatusNotifier))
+         IsInitialized(false),
+         JobId(std::move(in_jobId)),
+         JobRepo(std::move(in_jobRepository)),
+         Notifier(std::move(in_jobStatusNotifier))
    {
    }
 
    /** The JobStatus Subscription Handle. */
    jobs::SubscriptionHandle Handle;
+
+   /** Whether or not the stream has been initialized. */
+   bool IsInitialized;
 
    /** The ID of the job for which to stream status updates. */
    std::string JobId;
@@ -84,7 +88,8 @@ void SingleJobStatusStream::addRequest(uint64_t in_requestId)
    LOCK_MUTEX(m_mutex)
    {
       onAddRequest(in_requestId);
-      sendInitialState(in_requestId);
+      if (m_impl->IsInitialized)
+         sendInitialState(in_requestId);
    }
    END_LOCK_MUTEX
 }
@@ -121,6 +126,7 @@ Error SingleJobStatusStream::initialize()
 
    m_impl->Handle = m_impl->Notifier->subscribe(m_impl->JobId, onJobStatusUpdate);
 
+   m_impl->IsInitialized = true;
    return Success();
 }
 
@@ -150,6 +156,7 @@ struct AllJobStatusStream::Impl
    Impl(
       jobs::JobRepositoryPtr in_jobRepository,
       jobs::JobStatusNotifierPtr in_jobStatusNotifier):
+         IsInitialized(false),
          JobRepo(std::move(in_jobRepository)),
          Notifier(std::move(in_jobStatusNotifier))
    {
@@ -157,6 +164,9 @@ struct AllJobStatusStream::Impl
 
    /** The JobStatus Subscription Handle. */
    jobs::SubscriptionHandle Handle;
+
+   /** Whether or not the stream has been initialized. */
+   bool IsInitialized;
 
    /** The job repository from which to pull jobs. */
    jobs::JobRepositoryPtr JobRepo;
@@ -188,7 +198,8 @@ void AllJobStatusStream::addRequest(uint64_t in_requestId, const system::User& i
          m_impl->RequestUsers.emplace(in_requestId, in_requestUser);
 
       onAddRequest(in_requestId);
-      sendInitialStates(in_requestId);
+      if (m_impl->IsInitialized)
+         sendInitialStates(in_requestId);
    }
    END_LOCK_MUTEX
 }
@@ -219,6 +230,7 @@ Error AllJobStatusStream::initialize()
       }
    };
 
+   m_impl->IsInitialized = true;
    return Success();
 }
 
