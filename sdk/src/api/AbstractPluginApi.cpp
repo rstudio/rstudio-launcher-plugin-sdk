@@ -251,8 +251,7 @@ struct AbstractPluginApi::Impl
             in_request->getId(),
             ErrorResponse::Type::UNKNOWN,
             "Internal Request Handling Error.");
-
-
+      
       if (!JobSource)
       {
          logging::logErrorMessage("Request received before JobSource was initialized.", ERROR_LOCATION);
