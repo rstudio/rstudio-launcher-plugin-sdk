@@ -61,9 +61,15 @@ private:
    /**
     * @brief Creates the job source which can communicate with the Local system.
     *
+    * @param in_jobRepository           The job repository, from which to look up jobs.
+    * @param in_jobStatusNotifier       The job status notifier to which to post or from which to receive job status
+    *                                   updates.
+    *
     * @return The job source for the Local Plugin implementation.
     */
-   std::shared_ptr<api::IJobSource> createJobSource() const override;
+   std::shared_ptr<api::IJobSource> createJobSource(
+      jobs::JobRepositoryPtr in_jobRepository,
+      jobs::JobStatusNotifierPtr in_jobStatusNotifier) const override;
 
    /**
     * @brief This method is responsible for initializing all components necessary to communicate with the job launching

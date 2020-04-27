@@ -29,6 +29,13 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace quickstart {
 
+QuickStartJobSource::QuickStartJobSource(
+   jobs::JobRepositoryPtr in_jobRepository,
+   jobs::JobStatusNotifierPtr in_jobStatusNotifier) :
+      api::IJobSource(std::move(in_jobRepository), std::move(in_jobStatusNotifier))
+{
+}
+
 Error QuickStartJobSource::initialize()
 {
    // TODO #6: Initialize communication with the job scheduling system. If communication fails, return an error.

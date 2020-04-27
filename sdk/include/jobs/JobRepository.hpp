@@ -78,22 +78,22 @@ public:
     * be returned.
     *
     * @param in_jobId       The ID of the job to retrieve.
-    * @param in_user        The user requesting the job.
+    * @param in_user        The user requesting the job. Default: All users.
     *
     * @return The Job, if it could be found; an empty pointer otherwise.
     */
-   api::JobPtr getJob(const std::string& in_jobId, const system::User& in_user) const;
+   api::JobPtr getJob(const std::string& in_jobId, const system::User& in_user = system::User()) const;
 
    /**
     * @brief Gets all jobs belonging to the specified user.
     *
     * If the user object represents "all users", all jobs will be returned.
     *
-    * @param in_user    The user for whom to retrieve all jobs.
+    * @param in_user    The user for whom to retrieve all jobs. Default: All users.
     *
     * @return All of the jobs belonging to the specified user.
     */
-   api::JobList getJobs(const system::User& in_user) const;
+   api::JobList getJobs(const system::User& in_use = system::User()) const;
 
    /**
     * @brief Initializes the JobRepository.

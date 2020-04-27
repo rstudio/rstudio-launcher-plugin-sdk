@@ -251,7 +251,7 @@ struct AbstractPluginApi::Impl
             in_request->getId(),
             ErrorResponse::Type::UNKNOWN,
             "Internal Request Handling Error.");
-      
+
       if (!JobSource)
       {
          logging::logErrorMessage("Request received before JobSource was initialized.", ERROR_LOCATION);
@@ -309,14 +309,14 @@ PRIVATE_IMPL_DELETER_IMPL(AbstractPluginApi)
 
 Error AbstractPluginApi::initialize()
 {
-   // Create the job source.
-   m_abstractPluginImpl->JobSource = createJobSource();
-
    // Create the job repository.
    m_abstractPluginImpl->JobRepo = createJobRepository(m_abstractPluginImpl->Notifier);
    Error error = m_abstractPluginImpl->JobRepo->initialize();
    if (error)
       return error;
+
+   // Create the job source.
+   m_abstractPluginImpl->JobSource = createJobSource(m_abstractPluginImpl->JobRepo, m_abstractPluginImpl->Notifier);
 
    m_abstractPluginImpl->StreamMgr.reset(
       new StreamManager(
