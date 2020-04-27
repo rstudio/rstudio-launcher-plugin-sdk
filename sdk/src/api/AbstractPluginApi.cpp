@@ -316,7 +316,9 @@ Error AbstractPluginApi::initialize()
       return error;
 
    // Create the job source.
-   m_abstractPluginImpl->JobSource = createJobSource(m_abstractPluginImpl->JobRepo, m_abstractPluginImpl->Notifier);
+   m_abstractPluginImpl->JobSource = createJobSource(
+      m_abstractPluginImpl->JobRepo,
+      m_abstractPluginImpl->Notifier);
 
    m_abstractPluginImpl->StreamMgr.reset(
       new StreamManager(
