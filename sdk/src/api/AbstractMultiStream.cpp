@@ -83,10 +83,11 @@ struct AbstractMultiStream<R, Args...>::Impl
    StreamSequences getSequences(std::set<uint64_t> in_requestIds)
    {
       StreamSequences sequences;
-      for (auto& sequence : Sequences)
+      for (auto& requestId : in_requestIds)
       {
-         if (in_requestIds.count(sequence.first) > 0)
-            sequences.emplace_back(sequence.first, sequence.second++);
+         auto itr = Sequences.find(requestId);
+         if (itr != Sequences.end())
+            sequences.emplace_back(itr->first, itr->second);
       }
 
       return sequences;
