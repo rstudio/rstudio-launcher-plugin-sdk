@@ -90,6 +90,8 @@ PRIVATE_IMPL_DELETER_IMPL(AbstractLauncherCommunicator)
 
 void AbstractLauncherCommunicator::registerRequestHandler(std::unique_ptr<RequestHandler>&& in_requestHandler)
 {
+   if (m_baseImpl->RequestHandlerPtr != nullptr)
+      logging::logDebugMessage("Overwriting request handler", ERROR_LOCATION);
    m_baseImpl->RequestHandlerPtr = std::move(in_requestHandler);
 }
 

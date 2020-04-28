@@ -227,12 +227,9 @@ TEST_CASE("Register request handler for same request type")
    comms->registerRequestHandler(std::move(handler));
    comms->receiveData(convertHeader(requestMsg.size()).append(requestMsg));
 
-   std::ostringstream expectedStr;
-   expectedStr << "request type " << api::Request::Type::BOOTSTRAP;
-
    REQUIRE(mockLog->getSize() == 1);
    CHECK(mockLog->peek().Level == logging::LogLevel::DEBUG);
-   CHECK(mockLog->pop().Message.find(expectedStr.str()) != std::string::npos);
+   CHECK(mockLog->pop().Message.find("Overwriting request handler") != std::string::npos);
 
 }
 
