@@ -50,7 +50,7 @@ public:
    /**
     * @brief Starts the job status watcher.
     */
-   virtual void start() = 0;
+   virtual Error start() = 0;
 
    /**
     * @brief Stops the job status watcher.
