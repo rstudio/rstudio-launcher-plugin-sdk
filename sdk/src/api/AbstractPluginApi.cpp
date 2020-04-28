@@ -243,15 +243,8 @@ struct AbstractPluginApi::Impl
     * @param in_type        The type of request handler which should be invoked.
     * @param in_request     The request to handle.
     */
-   void handleRequest(Request::Type in_handlerType, const std::shared_ptr<Request>& in_request)
+   void handleRequest(const std::shared_ptr<Request>& in_request)
    {
-      // This should be impossible. It would effectively be an internal server error.
-      if (in_handlerType != in_request->getType())
-         return sendErrorResponse(
-            in_request->getId(),
-            ErrorResponse::Type::UNKNOWN,
-            "Internal Request Handling Error.");
-
       if (!JobSource)
       {
          logging::logErrorMessage("Request received before JobSource was initialized.", ERROR_LOCATION);
@@ -261,7 +254,7 @@ struct AbstractPluginApi::Impl
             "Internal Request Handling Error.");
       }
 
-      switch (in_handlerType)
+      switch (in_request->getType())
       {
          case Request::Type::HEARTBEAT:
             return handleHeartbeat();
@@ -330,21 +323,9 @@ Error AbstractPluginApi::initialize()
    std::shared_ptr<comms::AbstractLauncherCommunicator>& comms = m_abstractPluginImpl->LauncherCommunicator;
 
    using namespace std::placeholders;
-   comms->registerRequestHandler(
-      Request::Type::BOOTSTRAP,
-      std::bind(&Impl::handleRequest, m_abstractPluginImpl.get(), Request::Type::BOOTSTRAP, _1));
-   comms->registerRequestHandler(
-      Request::Type::HEARTBEAT,
-      std::bind(&Impl::handleRequest, m_abstractPluginImpl.get(), Request::Type::HEARTBEAT, _1));
-   comms->registerRequestHandler(
-      Request::Type::GET_CLUSTER_INFO,
-      std::bind(&Impl::handleRequest, m_abstractPluginImpl.get(), Request::Type::GET_CLUSTER_INFO, _1));
-   comms->registerRequestHandler(
-      Request::Type::GET_JOB,
-      std::bind(&Impl::handleRequest, m_abstractPluginImpl.get(), Request::Type::GET_JOB, _1));
-   comms->registerRequestHandler(
-      Request::Type::GET_JOB_STATUS,
-      std::bind(&Impl::handleRequest, m_abstractPluginImpl.get(), Request::Type::GET_JOB_STATUS, _1));
+   std::unique_ptr<comms::RequestHandler> handler(
+      new comms::RequestHandler(std::bind(&Impl::handleRequest, m_abstractPluginImpl.get(), _1)));
+   comms->registerRequestHandler(std::move(handler));
 
    // Make the heartbeat event.
    WeakThis weakThis = shared_from_this();

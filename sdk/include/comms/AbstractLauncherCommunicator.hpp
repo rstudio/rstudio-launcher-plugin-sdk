@@ -65,12 +65,11 @@ public:
    virtual ~AbstractLauncherCommunicator() = default;
 
    /**
-    * @brief Registers a request handler for the specified type. Only one handler may be registered per type.
+    * @brief Registers a request handler for all requests.
     *
-    * @param in_requestType         The type of the request.
     * @param in_requestHandler      The handler for the request.
     */
-   void registerRequestHandler(api::Request::Type in_requestType, const RequestHandler& in_requestHandler);
+   void registerRequestHandler(std::unique_ptr<RequestHandler> in_requestHandler);
 
    /**
     * @brief Sends the response to the RStudio Launcher.

@@ -41,8 +41,6 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace comms {
 
-typedef std::map<api::Request::Type, RequestHandler> RequestHandlerMap;
-
 typedef std::shared_ptr<AbstractLauncherCommunicator> SharedThis;
 typedef std::weak_ptr<AbstractLauncherCommunicator> WeakThis;
 
@@ -62,8 +60,21 @@ struct AbstractLauncherCommunicator::Impl
    {
    }
 
+   static void defaultRequestHandler(const SharedThis& in_sharedThis, const std::shared_ptr<api::Request>& in_request)
+   {
+      std::ostringstream msgStream;
+      msgStream << "No request handler found for request type " << in_request->getType() << ".";
+      logging::logDebugMessage(msgStream.str(), ERROR_LOCATION);
+
+      // Send an error response to the launcher.
+      in_sharedThis->sendResponse(api::ErrorResponse(
+         in_request->getId(),
+         api::ErrorResponse::Type::REQUEST_NOT_SUPPORTED,
+         "Request not supported"));
+   }
+
    /** The map of registered request handlers */
-   RequestHandlerMap RequestHandlers;
+   std::unique_ptr<RequestHandler> RequestHandlerPtr;
 
    /** The message handler object which parses and formats messages. */
    MessageHandler MsgHandler;
@@ -77,18 +88,9 @@ struct AbstractLauncherCommunicator::Impl
 
 PRIVATE_IMPL_DELETER_IMPL(AbstractLauncherCommunicator)
 
-void AbstractLauncherCommunicator::registerRequestHandler(
-   api::Request::Type in_requestType,
-   const RequestHandler& in_requestHandler)
+void AbstractLauncherCommunicator::registerRequestHandler(std::unique_ptr<RequestHandler> in_requestHandler)
 {
-   if (m_baseImpl->RequestHandlers.find(in_requestType) != m_baseImpl->RequestHandlers.end())
-   {
-      std::ostringstream msgStream;
-      msgStream << "Overwriting existing request handler for request type " << in_requestType << ".";
-      logging::logDebugMessage(msgStream.str(), ERROR_LOCATION);
-   }
-
-   m_baseImpl->RequestHandlers[in_requestType] = in_requestHandler;
+   m_baseImpl->RequestHandlerPtr.swap(in_requestHandler);
 }
 
 void AbstractLauncherCommunicator::sendResponse(const api::Response& in_response)
@@ -171,23 +173,11 @@ void AbstractLauncherCommunicator::onDataReceived(const char* in_data, size_t in
             return;
          }
 
-         // Send the object to the appropriate handler, or send an error to the launcher.
-         auto itr = sharedThis->m_baseImpl->RequestHandlers.find(request->getType());
-         if (itr == sharedThis->m_baseImpl->RequestHandlers.end())
-         {
-            std::ostringstream msgStream;
-            msgStream << "No request handler found for request type " << request->getType() << ".";
-            logging::logDebugMessage(msgStream.str(), ERROR_LOCATION);
-
-            // Send an error response to the launcher.
-            sharedThis->sendResponse(api::ErrorResponse(
-               request->getId(),
-               api::ErrorResponse::Type::REQUEST_NOT_SUPPORTED,
-               "Request not supported"));
-            return;
-         }
-
-         itr->second(request);
+         // Send the object to the request handler, or send an error to the launcher;
+         if (sharedThis->m_baseImpl->RequestHandlerPtr == nullptr)
+            Impl::defaultRequestHandler(sharedThis, request);
+         else
+            (*sharedThis->m_baseImpl->RequestHandlerPtr)(request);
       };
 
    std::vector<std::string> messages;
