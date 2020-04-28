@@ -38,9 +38,9 @@ namespace api {
 
 class Response;
 
-}
-}
-}
+} // namespace api
+} // namespace launcher_plugins
+} // namespace rstudio
 
 namespace rstudio {
 namespace launcher_plugins {
