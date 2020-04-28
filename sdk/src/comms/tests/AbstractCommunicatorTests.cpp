@@ -126,7 +126,7 @@ TEST_CASE("Receive a simple request")
    requestObj.insert(api::FIELD_MESSAGE_TYPE, json::Value(static_cast<int>(api::Request::Type::BOOTSTRAP)));
    std::string requestMsg = requestObj.write();
 
-   RequestHandler handler = [](const std::shared_ptr<api::Request>& in_request)
+   std::unique_ptr<RequestHandler> handler(new RequestHandler([](const std::shared_ptr<api::Request>& in_request)
    {
       REQUIRE(in_request != nullptr);
       CHECK(in_request->getId() == 33);
@@ -137,10 +137,10 @@ TEST_CASE("Receive a simple request")
       CHECK(bootstrapRequest->getMajorVersion() == 5);
       CHECK(bootstrapRequest->getMinorVersion() == 99);
       CHECK(bootstrapRequest->getPatchNumber() == 26);
-   };
+   }));
 
    CommsPtr comms(new MockCommunicator());
-   comms->registerRequestHandler(api::Request::Type::BOOTSTRAP, handler);
+   comms->registerRequestHandler(std::move(handler));
    comms->receiveData(convertHeader(requestMsg.size()).append(requestMsg));
 
    CHECK(mockLog->getSize() == 0);
@@ -204,12 +204,12 @@ TEST_CASE("Register request handler for same request type")
    requestObj.insert(api::FIELD_MESSAGE_TYPE, json::Value(bootstrapType));
    std::string requestMsg = requestObj.write();
 
-   RequestHandler badHandler = [](const std::shared_ptr<api::Request>&)
+   std::unique_ptr<RequestHandler> badHandler(new RequestHandler([](const std::shared_ptr<api::Request>&)
    {
       CHECK(false);
-   };
+   }));
 
-   RequestHandler handler = [](std::shared_ptr<api::Request> in_request)
+   std::unique_ptr<RequestHandler> handler(new RequestHandler([](std::shared_ptr<api::Request> in_request)
    {
       REQUIRE(in_request != nullptr);
       CHECK(in_request->getId() == 33);
@@ -220,11 +220,11 @@ TEST_CASE("Register request handler for same request type")
       CHECK(bootstrapRequest->getMajorVersion() == 5);
       CHECK(bootstrapRequest->getMinorVersion() == 99);
       CHECK(bootstrapRequest->getPatchNumber() == 26);
-   };
+   }));
 
    CommsPtr comms(new MockCommunicator());
-   comms->registerRequestHandler(api::Request::Type::BOOTSTRAP, badHandler);
-   comms->registerRequestHandler(api::Request::Type::BOOTSTRAP, handler);
+   comms->registerRequestHandler(std::move(badHandler));
+   comms->registerRequestHandler(std::move(handler));
    comms->receiveData(convertHeader(requestMsg.size()).append(requestMsg));
 
    std::ostringstream expectedStr;

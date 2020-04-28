@@ -88,9 +88,9 @@ struct AbstractLauncherCommunicator::Impl
 
 PRIVATE_IMPL_DELETER_IMPL(AbstractLauncherCommunicator)
 
-void AbstractLauncherCommunicator::registerRequestHandler(std::unique_ptr<RequestHandler> in_requestHandler)
+void AbstractLauncherCommunicator::registerRequestHandler(std::unique_ptr<RequestHandler>&& in_requestHandler)
 {
-   m_baseImpl->RequestHandlerPtr.swap(in_requestHandler);
+   m_baseImpl->RequestHandlerPtr = std::move(in_requestHandler);
 }
 
 void AbstractLauncherCommunicator::sendResponse(const api::Response& in_response)

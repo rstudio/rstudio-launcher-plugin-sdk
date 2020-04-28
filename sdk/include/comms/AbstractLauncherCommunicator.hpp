@@ -69,7 +69,7 @@ public:
     *
     * @param in_requestHandler      The handler for the request.
     */
-   void registerRequestHandler(std::unique_ptr<RequestHandler> in_requestHandler);
+   void registerRequestHandler(std::unique_ptr<RequestHandler>&& in_requestHandler);
 
    /**
     * @brief Sends the response to the RStudio Launcher.
