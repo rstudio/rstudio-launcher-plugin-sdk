@@ -393,7 +393,7 @@ void AsyncTimedEvent::cancel()
    END_LOCK_MUTEX
 }
 
-void AsyncTimedEvent::reportError(const Error &in_error)
+void AsyncTimedEvent::reportError(const Error& in_error)
 {
    logging::logError(in_error);
    cancel();
