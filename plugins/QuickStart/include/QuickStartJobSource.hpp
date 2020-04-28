@@ -78,7 +78,7 @@ public:
     *
     * @return Success if the configuration and capabilities for this Job Source could be populated; Error otherwise.
     */
-   virtual Error getConfiguration(
+   Error getConfiguration(
       const system::User& in_user,
       api::JobSourceConfiguration& out_configuration) const override;
 
