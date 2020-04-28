@@ -107,7 +107,7 @@ private:
     *
     * @return Success if the job details could be retrieved and parsed; Error otherwise.
     */
-   virtual Error getJobDetails(const std::string& in_jobId, api::JobPtr& out_job) = 0;
+   virtual Error getJobDetails(const std::string& in_jobId, api::JobPtr& out_job) const = 0;
 
    // The private implementation of AbstractJobStatusWatcher.
    PRIVATE_IMPL(m_baseImpl);

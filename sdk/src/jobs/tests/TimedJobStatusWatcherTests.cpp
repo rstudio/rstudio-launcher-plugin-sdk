@@ -53,7 +53,7 @@ private:
       return Success();
    }
 
-   Error getJobDetails(const std::string&, api::JobPtr&) override
+   Error getJobDetails(const std::string&, api::JobPtr&) const override
    {
       return Error("NotSupported", 1, "NotSupported", ERROR_LOCATION);
    }
@@ -80,7 +80,7 @@ private:
       return Error("WatcherError", 1, "An error message", ERROR_LOCATION);
    }
 
-   Error getJobDetails(const std::string&, api::JobPtr&) override
+   Error getJobDetails(const std::string&, api::JobPtr&) const  override
    {
       return Error("NotSupported", 1, "NotSupported", ERROR_LOCATION);
    }
