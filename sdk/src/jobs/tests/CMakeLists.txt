@@ -57,3 +57,15 @@ target_link_libraries(rlps-job-pruner-tests
    rstudio-launcher-plugin-sdk-lib
    ${RLPS_BOOST_LIBS}
 )
+
+# Timed Job Status Watcher Tests
+add_executable(rlps-timed-job-watcher-tests
+   ${RLPS_JOBS_TEST_MAIN}
+   TimedJobStatusWatcherTests.cpp
+   ${RLPS_HEADER_FILES}
+)
+
+target_link_libraries(rlps-timed-job-watcher-tests
+   rstudio-launcher-plugin-sdk-lib
+   ${RLPS_BOOST_LIBS}
+)

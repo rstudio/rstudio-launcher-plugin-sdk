@@ -44,6 +44,7 @@ set(RLPS_SOURCE_FILES
    src/comms/MessageHandler.cpp
    src/comms/StdIOLauncherCommunicator.cpp
    src/jobs/AbstractJobStatusWatcher.cpp
+   src/jobs/AbstractTimedJobStatusWatcher.cpp
    src/jobs/JobPruner.cpp
    src/jobs/JobRepository.cpp
    src/jobs/JobStatusNotifier.cpp
