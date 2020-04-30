@@ -193,6 +193,8 @@ template                                                                        
 void AbstractMultiStream<R, __VA_ARGS__>::sendResponse(__VA_ARGS__);                               \
 template                                                                                           \
 void AbstractMultiStream<R, __VA_ARGS__>::sendResponse(const std::set<uint64_t>&, __VA_ARGS__);    \
+template                                                                                           \
+void AbstractMultiStream<R,  __VA_ARGS__>::onRemoveRequest(uint64_t in_requestId);                 \
 
 INSTANTIATE_CLASS(JobStatusResponse, api::JobPtr)
 
