@@ -84,7 +84,7 @@ public:
    Error processBytes(const char* in_rawData, size_t in_dataLen, std::vector<std::string>& out_messages);
 
 private:
-   // The private implemenation of MessageHandler.
+   // The private implementation of MessageHandler.
    PRIVATE_IMPL(m_impl);
 
    /**
@@ -96,7 +96,6 @@ private:
     * @return The number of bytes that were processed.
     */
    int processHeader(const char* in_rawData, size_t in_rawDataLength);
-
 };
 
 } // namespace comms
