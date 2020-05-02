@@ -122,8 +122,10 @@ struct AbstractMain::Impl
    void signalShutdown()
    {
       UNIQUE_LOCK_MUTEX(m_mutex)
-      m_exitProcess = true;
-      m_exitConditionVar.notify_all();
+      {
+         m_exitProcess = true;
+         m_exitConditionVar.notify_all();
+      }
       END_LOCK_MUTEX
    }
 
@@ -160,8 +162,10 @@ struct AbstractMain::Impl
    void waitForSignal()
    {
       UNIQUE_LOCK_MUTEX(m_mutex)
-      if (!m_exitProcess)
-         m_exitConditionVar.wait(uniqueLock, [&]{ return m_exitProcess; });
+      {
+         if (!m_exitProcess)
+            m_exitConditionVar.wait(uniqueLock, [&](){ return m_exitProcess; });
+      }
       END_LOCK_MUTEX
    }
 
