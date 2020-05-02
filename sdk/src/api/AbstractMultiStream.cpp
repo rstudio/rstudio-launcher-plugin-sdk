@@ -100,9 +100,9 @@ struct AbstractMultiStream<R, Args...>::Impl
     */
    void removeRequest(uint64_t in_requestId)
    {
-         auto itr = Sequences.find(in_requestId);
-         if (itr != Sequences.end())
-            Sequences.erase(itr);
+      auto itr = Sequences.find(in_requestId);
+      if (itr != Sequences.end())
+         Sequences.erase(itr);
    }
 
    /** The launcher communicator for sending responses. */
