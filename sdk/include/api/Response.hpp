@@ -266,7 +266,7 @@ private:
 };
 
 /**
- * @brief Class which represents a single streamed
+ * @brief Class which represents a JobStatus Stream, either for all jobs or for a specific job.
  */
 class JobStatusResponse final : public MultiStreamResponse
 {
