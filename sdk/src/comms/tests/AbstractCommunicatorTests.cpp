@@ -24,6 +24,7 @@
 #include <TestMain.hpp>
 
 #include <queue>
+#include <sstream>
 
 #include <boost/asio/detail/socket_ops.hpp>
 
@@ -33,7 +34,6 @@
 #include <api/Response.hpp>
 #include <comms/AbstractLauncherCommunicator.hpp>
 #include <json/Json.hpp>
-#include <sstream>
 #include <system/Asio.hpp>
 
 namespace rstudio {
