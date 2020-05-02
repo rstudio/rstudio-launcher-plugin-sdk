@@ -179,22 +179,7 @@ void AbstractMultiStream<R, Args...>::onRemoveRequest(uint64_t in_requestId)
 
 // Template Instantiations =============================================================================================
 #define INSTANTIATE_CLASS(R, ...)                                                                  \
-template                                                                                           \
-void AbstractMultiStream<R, __VA_ARGS__>::ImplDeleter::operator()(AbstractMultiStream::Impl*);     \
-template                                                                                           \
-AbstractMultiStream<R, __VA_ARGS__>::AbstractMultiStream(comms::AbstractLauncherCommunicatorPtr);  \
-template                                                                                           \
-bool AbstractMultiStream<R, __VA_ARGS__>::isEmpty() const;                                         \
-template                                                                                           \
-void AbstractMultiStream<R, __VA_ARGS__>::removeRequest(uint64_t);                                 \
-template                                                                                           \
-void AbstractMultiStream<R, __VA_ARGS__>::onAddRequest(uint64_t);                                  \
-template                                                                                           \
-void AbstractMultiStream<R, __VA_ARGS__>::sendResponse(__VA_ARGS__);                               \
-template                                                                                           \
-void AbstractMultiStream<R, __VA_ARGS__>::sendResponse(const std::set<uint64_t>&, __VA_ARGS__);    \
-template                                                                                           \
-void AbstractMultiStream<R,  __VA_ARGS__>::onRemoveRequest(uint64_t in_requestId);                 \
+template class AbstractMultiStream<R, __VA_ARGS__>;
 
 INSTANTIATE_CLASS(JobStatusResponse, api::JobPtr)
 
