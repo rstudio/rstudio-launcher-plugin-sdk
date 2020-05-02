@@ -49,5 +49,9 @@ if(NOT CMAKE_BUILD_TYPE)
    set(CMAKE_BUILD_TYPE "Debug")
 endif()
 
+# Configure CXX flags
+set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+
 # SDK include folder
 set(RLPS_INCLUDE_DIR "${CMAKE_CURRENT_LIST_DIR}/sdk/include")
