@@ -87,7 +87,7 @@ struct AbstractMultiStream<R, Args...>::Impl
       {
          auto itr = Sequences.find(requestId);
          if (itr != Sequences.end())
-            sequences.emplace_back(itr->first, itr->second);
+            sequences.emplace_back(itr->first, itr->second++);
       }
 
       return sequences;
