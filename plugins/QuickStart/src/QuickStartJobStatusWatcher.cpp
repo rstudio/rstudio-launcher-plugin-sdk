@@ -55,6 +55,6 @@ Error QuickStartJobStatusWatcher::getJobDetails(const std::string& in_jobId, api
       "Method QuickStartJobStatusWatcher::getJobDetails is not implemented.", ERROR_LOCATION);
 }
 
-} // namespace quckstart
+} // namespace quickstart
 } // namespace launcher_plugins
 } // namespace rstudio
