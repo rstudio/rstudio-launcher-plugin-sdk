@@ -147,7 +147,8 @@ struct AbstractPluginApi::Impl
    }
 
    /**
-    * @brief
+    * @brief Handles get requests from the Launcher.
+    * 
     * @param in_getJobRequest
     */
    void handleGetJobRequest(const std::shared_ptr<JobStateRequest>& in_getJobRequest)
