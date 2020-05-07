@@ -84,20 +84,6 @@ protected:
       const std::string& in_statusMessage = "",
       const system::DateTime& in_invocationTime = system::DateTime());
 
-   /**
-    * @brief Updates the job status for the specified job.
-    *
-    * @param in_job                 The job which should be updated.
-    * @param in_newStatus           The new status of the job.
-    * @param in_statusMessage       The new status message of the job, if any.
-    * @param in_invocationTime      The time at which the job was updated, if different from now.
-    */
-   void updateJobStatus(
-      const api::JobPtr& in_job,
-      api::Job::State in_newStatus,
-      const std::string& in_statusMessage = "",
-      const system::DateTime& in_invocationTime = system::DateTime());
-
 private:
    /**
     * @brief Gets the job details for the specified job.

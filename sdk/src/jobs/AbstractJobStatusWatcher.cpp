@@ -75,19 +75,6 @@ Error AbstractJobStatusWatcher::updateJobStatus(
    return Success();
 }
 
-void AbstractJobStatusWatcher::updateJobStatus(
-   const api::JobPtr& in_job,
-   api::Job::State in_newStatus,
-   const std::string& in_statusMessage,
-   const system::DateTime& in_invocationTime)
-{
-   m_baseImpl->Notifier->updateJob(in_job, in_newStatus, in_statusMessage, in_invocationTime);
-}
-
-
-
-
-
 } // namespace jobs
 } // namespace launcher_plugins
 } // namespace rstudio
