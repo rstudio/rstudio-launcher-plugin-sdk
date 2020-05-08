@@ -40,7 +40,7 @@ namespace {
  *
  * @return True if the state is Canceled, Finished, or Failed; false otherwise.
  */
-bool isCompleteState(api::Job::State in_state)
+bool isCompletedState(api::Job::State in_state)
 {
    return (in_state == api::Job::State::CANCELED) ||
       (in_state == api::Job::State::FAILED) ||
@@ -118,7 +118,7 @@ struct JobPruner::Impl: public std::enable_shared_from_this<JobPruner::Impl>
       {
          LOCK_JOB(in_job)
          {
-            if (isCompleteState(in_job->Status))
+            if (isCompletedState(in_job->Status))
             {
                const std::string& jobId = in_job->Id;
                WeakThis weakThis = shared_from_this();
