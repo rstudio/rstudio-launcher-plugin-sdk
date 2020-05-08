@@ -372,6 +372,13 @@ This represents an NFS server mount source. If this field is present in a [Mount
 | maxValue     | The maximum value of the resource type.                                     | String
 | value        | The requested value of the resource.                                        | String
 
+### StreamSequence {#stream-sequence}
+
+|  Field Name  |                                              Description                                             |  Value
+| ------------ | ---------------------------------------------------------------------------------------------------- | -------
+| requestId    | The ID of the request for which this streamed response is being sent.                                | Int
+| sequenceId   | The ordered ID of this stream response in the sequence of stream response for the given 'requestId'. | Int
+
 ### Version {#api-ver}
 
 |  Field Name  |                               Description                                   |  Value
