@@ -686,3 +686,53 @@ Error MarsJobStatusWatcher::getJobDetails(const std::string& in_jobId, api::JobP
   return Success();
 }
 ```
+
+## TODO #11: Adjust the Polling Frequency {#todo-11}
+ 
+TODO Location             Impact
+------------------------  ------------------------
+QuickStartJobSource.cpp   QuickStartJobSource.cpp
+
+The `QuickStartJobStatusWatcher` doesn't actually update any Job statuses, as there is no QuickStart Job Scheduling System to pull jobs from. To reduce the amount of busy-work the QuickStart Plugin will do when run, the polling frequency of the Job Status Watcher is set to 1 minute. In reality, Job statuses should be kept much more up to date, on the order of seconds rather than minutes. 
+
+The Plugin developer may choose a fixed interval, such as 5 seconds, or allow the RStudio Server Pro administrator to decide the number of seconds using a configuration option.
+
+### Example {#todo-11-ex}
+
+The Orchid Organization's Plugin developer may choose to change
+
+```{Rcpp, eval=FALSE}
+
+QuickStartJobSource::QuickStartJobSource(
+   const jobs::JobRepositoryPtr& in_jobRepository,
+   const jobs::JobStatusNotifierPtr& in_jobStatusNotifier) :
+   api::IJobSource(in_jobRepository, in_jobStatusNotifier),
+   m_jobStatusWatcher(
+         new QuickStartJobStatusWatcher(
+               system::TimeDuration::Minutes(1),
+               in_jobRepository,
+               in_jobStatusNotifier))
+{
+   // TODO #11: Adjust the job status watcher frequency.
+}
+```
+
+in `QuickStartJobSource.cpp` to
+
+```{Rcpp, eval=FALSE}
+
+MarsJobSource::MarsJobSource(
+   const jobs::JobRepositoryPtr& in_jobRepository,
+   const jobs::JobStatusNotifierPtr& in_jobStatusNotifier) :
+   api::IJobSource(in_jobRepository, in_jobStatusNotifier),
+   m_jobStatusWatcher(
+         new MarsJobStatusWatcher(
+               system::TimeDuration::Seconds(5),
+               in_jobRepository,
+               in_jobStatusNotifier))
+{
+   // TODO #11: Adjust the job status watcher frequency.
+}
+```
+
+in `MarsJobSource.cpp`.
