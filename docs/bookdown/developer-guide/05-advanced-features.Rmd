@@ -2,6 +2,236 @@
 
 This section describes optional, advanced features of the SDK which are not covered in the RStudio Launcher Plugin SDK QuickStart Guide.
 
+## Error Handling {#errors}
+
+The RStudio Launcher Plugin SDK QuickStart Guide glosses over error handling by creating a new Error with an arbitrary name and code at each location that an error would occur. It is advisable to take a more systematic approach to error handling. The specific implementation is completely at the discretion of the Plugin developer, however this section will discuss one possible organizational strategy.
+
+For each category of error that may occur, create an enum which represents the specific types of errors in that category, and a function (or a few functions) which create `Error` objects with the correct category name.
+
+Error codes must not begin at 0 as that would be considered a 'Success' error code (i.e. not an error). Error codes may be reused across categories.
+
+### Example {#errors-ex}
+
+Suppose that the Orchid Organization's developer determines that there are only two category of error that cannot be covered by a system or unknown error (available in `Error.hpp`): Mars API errors, and internal errors.
+
+The developer might create the file `MarsError.hpp` as follows:
+
+```{Rcpp, eval=FALSE}
+
+#ifndef ORCHID_MARS_ERROR_HPP_
+#define ORCHID_MARS_ERROR_HPP_
+
+namespace rstudio {
+namespace launcher_plugins {
+
+class Error;
+
+} // namespace launcher_plugins
+} // namespace rstudio
+
+
+namespace orchid {
+namespace mars {
+
+enum class InternalError
+{
+  SUCCESS = 0,
+  UNKNOWN = 1,
+  CONVERSION_FAILURE = 2,
+  JOB_NOT_FOUND = 3
+};
+
+/** Enum which represents a Mars API Error. */
+enum class MarsError
+{
+  SUCCESS = 0,
+  UNKNOWN = 1,
+  CONN_TIMEOUT = 2,
+  NOT_AUTHORIZED = 3,
+  UNSUPPORTED_VERSION = 4
+};
+
+Error createMarsError(
+    const mars_api::mars_exception& in_exception,
+    const ErrorLocation& in_location);
+
+Error createMarsError(
+    const mars_api::mars_exception& in_exception,
+    const Error& in_cause,
+    const ErrorLocation& in_location);
+
+Error createVersionError(
+    const std::string& in_supportedVersion,
+    const std::string& in_actualVersion,
+    const ErrorLocation& in_location);
+
+Error createInternalError(
+    InternalError in_code,
+    const std::string& in_message,
+    const ErrorLocation& in_location);
+
+Error createInternalError(
+    InternalError in_code,
+    const std::string& in_message,
+    const Error& in_cause,
+    const ErrorLocation& in_location);
+
+} // namespace mars
+} // namespace orchid
+
+#endif
+
+```
+
+Then `MarsError.cpp` might look like this:
+
+```{Rcpp, eval=FALSE}
+
+#include "MarsError.hpp"
+
+#include <Error.hpp>
+
+namespace orchid {
+namespace mars {
+
+namespace {
+
+constexpr const char* s_internalErrorName = "InternalPluginError";
+constexpr const char* s_marsErrorName = "MarsApiError";
+
+} // anonymous namespace
+
+Error createMarsError(
+    const mars_api::mars_exception& in_exception,
+    const ErrorLocation& in_location)
+{
+  return createMarsError(in_exeption, Success(), in_location);
+}
+
+Error createMarsError(
+    const mars_api::mars_exception& in_exception,
+    const Error& in_cause,
+    const ErrorLocation& in_location)
+{
+  MarsError code = MarsError::UNKNOWN;
+  if (in_exception.code() == 14) // Connection timeout
+    code = MarsError::CONN_TIMEOUT;
+  else if (in_exception.code() == 52) // Not authorized
+    code = MarsError::NOT_AUTHORIZED;
+  
+  if (in_cause == Success())
+    return Error(
+      s_marsErrorName,
+      static_cast<int>(code),
+      in_exception.what(),
+      in_location);
+  
+  return Error(
+    s_marsErrorName,
+    static_cast<int>(code),
+    in_exception.what(),
+    in_cause,
+    in_location);
+}
+
+Error createVersionError(
+    const std::string& in_supportedVersion,
+    const std::string& in_actualVersion,
+    const ErrorLocation& in_location)
+{
+  return Error(
+    s_marsErrorName,
+    static_cast<int>(MarsError::UNSUPPORTED_VERSION),
+    "Mars API is version \"" + 
+      in_actualVersion + 
+      "\" which is not supported. Supported version(s): "
+      + in_supportedVersion,
+    in_location);
+}
+
+Error createInternalError(
+    InternalError in_code,
+    const std::string& in_message,
+    const ErrorLocation& in_location)
+{
+  return Error(
+    s_internalErrorName,
+    static_cast<int>(in_code),
+    in_message,
+    in_location);
+}
+
+Error createInternalError(
+    InternalError in_code,
+    const std::string& in_message,
+    const Error& in_cause,
+    const ErrorLocation& in_location)
+{
+  return Error(
+    s_internalErrorName,
+    static_cast<int>(in_code),
+    in_message,
+    in_cause,
+    in_location);
+}
+
+} // namespace mars
+} // namespace orchid
+
+```
+
+As an example of how these functions might be used, consider the example in TODO #10 of the RStudio Launcher Plugin SDK QuickStart Guide. With this new error handling, the Plugin developer may change the implementation to the following:
+
+```{Rcpp, eval=FALSE}
+Error MarsJobStatusWatcher::getJobDetails(const std::string& in_jobId, api::JobPtr& out_job) const
+{
+  const options::MarsOptions& opts = options::MarsOptions::getInstance();
+  mars_api::job marsJob;
+  try
+  {
+    unsigned long id = std::strtoul(in_jobId);
+    marsJob = mars_api::list_job(opts.getMarsServiceUser(), id);
+  }
+  catch (const std::invalid_argument& e)
+  {
+    return createInternalError(
+      InternalError::CONVERSION_FAILURE, 
+      "Job ID " +
+        in_jobID +
+        " could not be converted to unsigned long: " +
+        e.what(),
+      ERROR_LOCATION);
+  }
+  catch (const std::out_of_range& e)
+  {
+    return createInternalError(
+      InternalError::CONVERSION_FAILURE, 
+      "Job ID " +
+        in_jobID +
+        " is out of range to be converted to unsigned long: " +
+        e.what(),
+      ERROR_LOCATION);
+  }
+  catch (const mars_api::mars_exception& e)
+  {
+    return createMarsError(e, ERROR_LOCATION);
+  }
+
+  // This should only be invoked for Launcher Jobs because of the filtering in pollJobStatus,
+  // so return an error if somehow it's not a Launcher Job.
+  if (job._name.find("[RStudio Launcher]") == std::string::npos)
+    return createInternalError(
+      InternalError::JOB_NOT_FOUND,
+      "Job " + in_jobId + " is not an RStudio Launcher Job.",
+      ERROR_LOCATION);
+    
+  out_job = marsJobToJob(marsJob);
+  return Success();
+}
+```
+
+With this approach, the Plugin developer has created much more consistent and informative errors.
+
 ## Date-Time Support {#date-time}
 
 The SDK provides a utility class for working with `DateTime` objects (`include/system/DateTime.hpp`). Dates and times can be converted from string to `system::DateTime` using `system::DateTime::fromString`, and to string using `system::DateTime::toString`. When converting from string, the default expected time string format will be `YYYY-MM-DDThh:mm:ss.ssssssTZ`, or `%Y-%m-%dT%H:%M:%S%F%ZP` using the supported format specification. This is the ISO 8601 extended time format. When converting to string, the default output format is `YYYY-MM-DDThh:mm:ss.ssssssZ`, or `%Y-%m-%dT%H:%M:%S%FZ`. Note that the default output string is in UTC time.
