@@ -440,7 +440,11 @@ Error MarsJobSource::getConfiguration(
 in `MarsJobSource.cpp`.
   
   
-## TODO #8: Pull all jobs {#todo-8}
+## TODO #8: Pull All Jobs {#todo-8}
+ 
+TODO Location             Impact
+------------------------  ------------------------
+QuickStartJobSource.cpp   QuickStartJobSource.cpp
 
 When the Launcher starts the Plugin, it will send a Bootstrap request to ensure that the Plugin is initialized. During this request, the Plugin SDK will populate the `JobRepository` with any pre-existing Launcher jobs by calling `IJobSource::getJobs`. The Plugin developer needs to override `IJobSource::getJobs` to synchronously pull down the list jobs that are already in the Job Scheduling System.
 
