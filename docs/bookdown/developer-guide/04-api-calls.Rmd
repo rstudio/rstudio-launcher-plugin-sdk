@@ -171,6 +171,43 @@ There are two API requests which return a Job State Response: the Submit Job and
 | messageType     | [See above.](#common-fields)                                                | 2
 | jobs            | The list of jobs that met the request criteria.                             | [Job](#job-object) Array
 
+### Job Status Stream {#job-status-stream}
+
+This API call is responsible for streaming Job status updates as they occur. The SDK maintains an internal cache of all the Jobs in the Job Scheduling System and uses the `JobStatusNotifier` to allow components of the SDK to be notified when a Job's status is updated. Components which wish to be notified of a Job status update may subscribe to the notifier, and components which wish to notify other components about new updates should post the updates to the `JobStatusNotifier`.
+
+The SDK provides `AbstractJobStatusWatcher` and `AbstractTimedJobStatusWatcher` to help facilitate the implementation of keeping Job statuses update within the Plugin. For more details about implementing Job status updates, see the [Job Status Updates](#status-updates) of the [Advanced Features](#advanced-features) chapter, or TODOs #'s 9 - 11 of the RStudio Launcher Plugin SDK QuickStart Guide.
+
+The SDK will manage all Job status streams, including closing them on request. The Plugin developer is only responsible for posting correct Job status updates to the `JobStatusNotifier` either directly or indirectly.
+
+Rather than sending a response per open stream, the Plugin sends the Launcher a response with a field that indicates which stream requests are answered by this response. A sequence ID is kept per request to ensure the Launcher can keep the responses in the right order.
+
+&nbsp
+
+**Job Status Stream Request**
+
+|  Field Name     |                                                              Description                                              |  Value
+| --------------- | --------------------------------------------------------------------------------------------------------------------- | -------
+| messageType     | [See above.](#common-fields)                                                                                          | 4
+| requestId       | [See above.](#common-fields)                                                                                          | Int
+| username        | [See above.](#common-fields)                                                                                          | String
+| requestUsername | [See above.](#common-fields)                                                                                          | String
+| jobId           | The ID of the job to be for which to stream statuses. If this field is '*' the statuses of all jobs will be streamed. | String
+| encodedJobId    | The Launcher generated encoded job ID which contains extra metadata. Provides extra information only.                 | String
+| cancel          | Whether the stream should be started (`false`) or canceled (`true`). Default: `false`.                                | Boolean
+
+&nbsp
+
+**Job Status Stream Request**
+
+|  Field Name     |                                                             Description                                                             |      Value
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ----------------
+| messageType     | [See above.](#common-fields)                                                                                                        | 3
+| sequences       | An array of requests which are waiting for this stream response and the sequence ID of this response, relative to each request ID.  | [StreamSequence](#stream-sequence) Array
+| jobId           | The ID of the job to be for which to stream statuses. If this field is '*' the statuses of all jobs will be streamed.               | String
+| encodedJobId    | The Launcher generated encoded job ID which contains extra metadata. Provides extra information only.                               | String
+| jobName         | The name of the job.                                                                                                                | String
+| status          | The status of the job.                                                                                                              | [JobState](#job-state)
+| statusMessage   | The status message of the job, if any.                                                                                              | String
 
 ### Cluster Info {#cluster-info}
 
