@@ -154,7 +154,7 @@ There are two API requests which return a Job State Response: the Submit Job and
 | requestId       | [See above.](#common-fields)                                                                                                          | Int
 | username        | [See above.](#common-fields)                                                                                                          | String
 | requestUsername | [See above.](#common-fields)                                                                                                          | String
-| jobId           | The ID of the job to be retrieved. If this field is '*' all jobs should be retrieved and filters may be used.                        | String
+| jobId           | The ID of the job to be retrieved. If this field is '*' all jobs should be retrieved and filters may be used.                         | String
 | encodedJobId    | The Launcher generated encoded job ID which contains extra metadata. Provides extra information only.                                 | String
 | tags            | If present, the set of tags by which to filter the jobs. Only jobs which have all these tags will be returned.                        | String Array
 | startTime       | If present, only jobs which were submitted after this UTC time will be returned. Format: `YYYY-MM-DDThh:mm:ss`.                       | String
