@@ -180,7 +180,7 @@ This API call is responsible for reporting the configuration and capabilities of
 
 The Plugin may return an error from this method if it encounters any issues populating the fields on the `JobSourceConfiguration` object. Additionally, the method is provided with a `system::User` object, which represents the user who initiated the Cluster Info request. This optionally allows the Plugin Developer to provide different results on a per-user or per-group basis. This may be useful to allow system administrator to set different maximum and default Resource Limits for different groups of user via the [User Profiles feature](#user-profiles). It also may be useful if the job scheduling system allows administrators to make similar rule sets.
 
-For a simple example of implementing this method, see 'TODO: #7' in the RStudio Launcher Plugin SDK QuickStart Guide.
+For a simple example of implementing this method, see 'TODO #7' in the RStudio Launcher Plugin SDK QuickStart Guide.
 
 &nbsp;
 
