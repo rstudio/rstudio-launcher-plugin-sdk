@@ -319,7 +319,7 @@ Error MarsJobSource::initialize()
   {
     mars_api::init(opts.host(), opts.port(), opts.useSsl());
   }
-  catch (const mars_expcetion& e)
+  catch (const mars_api::mars_expcetion& e)
   {
     return Error("MarsApiError", e.code(), e.what(), ERROR_LOCATION);
   }
@@ -415,7 +415,7 @@ Error MarsJobSource::getConfiguration(
     maxCpuCount = mars_api::get_total_cpus();
     maxMemoryMB = mars_api::get_max_memory();
   }
-  catch (const mars_exception& e)
+  catch (const mars_api::mars_exception& e)
   {
     return Error("MarsApiError", e.code(), e.what(), ERROR_LOCATION);
   }
@@ -503,7 +503,7 @@ Error MarsJobSource::getJobs(api::JobList &out_jobs) const
   {
     marsJobs = mars_api::list_jobs(opts.getMarsServiceUser());
   }
-  catch (const mars_exception& e)
+  catch (const mars_api::mars_exception& e)
   {
     return Error("MarsApiError", e.code(), e.what(), ERROR_LOCATION);
   }
