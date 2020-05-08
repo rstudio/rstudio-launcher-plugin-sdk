@@ -71,7 +71,7 @@ Error AbstractJobStatusWatcher::updateJobStatus(
          return error;
    }
 
-   updateJobStatus(job, in_newStatus, in_statusMessage, in_invocationTime);
+   m_baseImpl->Notifier->updateJob(job, in_newStatus, in_statusMessage, in_invocationTime);
    return Success();
 }
 
