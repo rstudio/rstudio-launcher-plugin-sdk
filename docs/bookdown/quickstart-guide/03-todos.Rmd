@@ -482,7 +482,8 @@ Another special consideration is how to convert from the Job Scheduling System's
 Assume the following:
 
 * The Mars Job Scheduling System API has a `list_jobs` function which takes a username. It retrieves the jobs the specified user has permission to see.
-* The Orchid organization's developer has added a `marsJobToJob` helper function which converts a `mars_api::job` structure to an `rstudio::launcher_plugins::api::Job` structure.
+* The Orchid organization's developer has added a `marsJobToJob` helper function which converts a `mars_api::job` structure to an `rstudio::launcher_plugins::api::Job` structure and has the signature `rstudio::launcher_plugins::api::JobPtr marsJobToJob(const mars_api::job& in_marsJob)`.
+* The Plugin developer plans to append `"[RStudio Launcher]"` to the Job name on submission.
 
 In that case, the Plugin developer might change
 
@@ -513,7 +514,8 @@ Error MarsJobSource::getJobs(api::JobList &out_jobs) const
   }
   
   for (const mars_api::job& job: marsJobs)
-    out_jobs.push_back(marsJobTojob(job));
+    if (job._name.find("[RStudio Launcher]") != std::string::npos)
+      out_jobs.push_back(marsJobTojob(job));
   
   return Success();
 }
