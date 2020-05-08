@@ -621,3 +621,68 @@ Error MarsJobStatusWatcher::pollJobStatus()
 ```
 
 in `MarsJobStatusWatcher.cpp`.
+
+## TODO #10: Get the Missing Job Details {#todo-10}
+
+TODO Location                     Impact
+--------------------------------  --------------------------------
+QuickStartJobStatusWatcher.cpp    QuickStartJobStatusWatcher.cpp
+
+If a `AbstractJobStatusWatcher::updateJobStatus` is invoked for a Job which is not in the Job Repository, the SDK will call `AbstractJobStatusWatcher::getJobDetails` to populate a `Job` object with all of the details of the Job, and then add it to the Job Repository. Since `AbstractJobStatusWatcher::getJobDetails` should get the full details of the Job just like `IJobSource::getJobs()` does, it may be advisable to make a shared implementation for getting and/or parsing Jobs from the Job Scheduling System.
+
+This method should return an error if it is unable to populate the Job details.
+
+### Example {#todo-10-ex}
+
+In addition to the assumptions from previous examples, assume the following:
+
+* The `mars_api` has a `list_job` function which lists a specific Job by ID.
+
+In that case, the plugin developer might change
+
+```{Rcpp, eval=FALSE}
+Error QuickStartJobStatusWatcher::getJobDetails(const std::string& in_jobId, api::JobPtr& out_job) const
+{
+   // TODO #10: Get the full details of the requested job from the Job Scheduling System, and remove the placeholder
+   //           error below.
+   return Error(
+      "NotImplemented",
+      1,
+      "Method QuickStartJobStatusWatcher::getJobDetails is not implemented.", ERROR_LOCATION);
+}
+```
+
+in `QuickStartJobStatusWatcher.cpp` to 
+
+```{Rcpp, eval=FALSE}
+Error MarsJobStatusWatcher::getJobDetails(const std::string& in_jobId, api::JobPtr& out_job) const
+{
+  const options::MarsOptions& opts = options::MarsOptions::getInstance();
+  mars_api::job marsJob;
+  try
+  {
+    unsigned long id = std::strtoul(in_jobId);
+    marsJob = mars_api::list_job(opts.getMarsServiceUser(), id);
+  }
+  catch (const std::invalid_argument& e)
+  {
+    return Error("InternalError", 1, e.what(), ERROR_LOCATION);
+  }
+  catch (const std::out_of_range& e)
+  {
+    return Error("InternalError", 2, e.what(), ERROR_LOCATION);
+  }
+  catch (const mars_api::mars_exception& e)
+  {
+    return Error("MarsApiError", e.code(), e.what(), ERROR_LOCATION);
+  }
+
+  // This should only be invoked for Launcher Jobs because of the filtering in pollJobStatus,
+  // so return an error if somehow it's not a Launcher Job.
+  if (job._name.find("[RStudio Launcher]") == std::string::npos)
+    return Error("JobNotFound", 1, "Job " + in_jobId + " is not an RStudio Launcher Job.", ERROR_LOCATION);
+    
+  out_job = marsJobToJob(marsJob);
+  return Success();
+}
+```
