@@ -164,6 +164,12 @@ struct StreamManager::Impl
    /** The map of Job IDs to their active job streams. */
    JobStatusStreamMap ActiveJobStreams;
 
+   /** The mutex to protect the map of active Job status streams. */
+   std::mutex ActiveStreamsMutex;
+
+   /** The mutex to protect the All Jobs status stream. */
+   std::mutex AllJobsMutex;
+
    /** The stream for "all jobs" stream requests. */
    std::shared_ptr<AllJobStatusStream> AllJobsStream;
 
@@ -175,9 +181,6 @@ struct StreamManager::Impl
 
    /** The job status notifier. */
    jobs::JobStatusNotifierPtr Notifier;
-
-   /** The mutex to protect shared state. */
-   std::mutex Mutex;
 };
 
 PRIVATE_IMPL_DELETER_IMPL(StreamManager)
@@ -196,16 +199,20 @@ StreamManager::StreamManager(
 
 Error StreamManager::handleStreamRequest(const std::shared_ptr<JobStatusRequest>& in_jobStatusRequest)
 {
-   LOCK_MUTEX(m_impl->Mutex)
+   if (in_jobStatusRequest->getJobId() == "*")
    {
-      if (in_jobStatusRequest->getJobId() == "*")
+      LOCK_MUTEX(m_impl->AllJobsMutex)
       {
          if (in_jobStatusRequest->isCancelRequest())
             m_impl->cancelAllJobsStream(in_jobStatusRequest->getId());
          else
             return m_impl->addAllJobsStream(in_jobStatusRequest->getId(), in_jobStatusRequest->getUser());
       }
-      else
+      END_LOCK_MUTEX
+   }
+   else
+   {
+      LOCK_MUTEX(m_impl->ActiveStreamsMutex)
       {
          if (in_jobStatusRequest->isCancelRequest())
             m_impl->cancelJobStream(in_jobStatusRequest->getId(), in_jobStatusRequest->getJobId());
@@ -215,8 +222,8 @@ Error StreamManager::handleStreamRequest(const std::shared_ptr<JobStatusRequest>
                in_jobStatusRequest->getJobId(),
                in_jobStatusRequest->getUser());
       }
+      END_LOCK_MUTEX
    }
-   END_LOCK_MUTEX
 
    return Success();
 }
