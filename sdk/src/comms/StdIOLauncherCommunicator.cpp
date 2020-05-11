@@ -71,6 +71,8 @@ Error StdIOLauncherCommunicator::start()
       return error;
 
    startReading();
+
+   return Success();
 }
 
 void StdIOLauncherCommunicator::stop()

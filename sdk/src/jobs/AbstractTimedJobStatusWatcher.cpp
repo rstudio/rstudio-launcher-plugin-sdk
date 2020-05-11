@@ -80,6 +80,8 @@ Error AbstractTimedJobStatusWatcher::start()
       }
    };
    m_timedBaseImpl->TimedEvent.start(m_timedBaseImpl->Frequency, onTimer);
+
+   return Success();
 }
 
 void AbstractTimedJobStatusWatcher::stop()
