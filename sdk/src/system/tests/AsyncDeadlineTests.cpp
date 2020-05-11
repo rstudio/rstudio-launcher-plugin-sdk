@@ -43,7 +43,7 @@ TEST_CASE("Deadline")
    DateTime threeSecLater = DateTime() + TimeDuration::Seconds(3),
             oneHourLater = DateTime() + TimeDuration::Hours(1);
 
-   std::atomic<uint64_t> count;
+   std::atomic<uint64_t> count = {0};
    AsyncDeadlineEvent immediate(
       [&count]()
       {
