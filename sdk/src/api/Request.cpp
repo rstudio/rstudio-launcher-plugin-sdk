@@ -107,7 +107,7 @@ struct Request::Impl
    explicit Impl(Type in_requestType) :
       Id(0),
       RequestType(in_requestType),
-      IsValid(true)
+      ErrorType(RequestError::SUCCESS)
    {
    }
 
@@ -117,8 +117,11 @@ struct Request::Impl
    /** The type of the request. */
    Type RequestType;
 
-   /** Whether the request is valid. */
-   bool IsValid;
+   /** The type of error that occurred, if any. */
+   RequestError ErrorType;
+
+   /** The error message, if any. */
+   std::string ErrorMessage;
 };
 
 PRIVATE_IMPL_DELETER_IMPL(Request)
@@ -152,27 +155,18 @@ Error Request::fromJson(const json::Object& in_requestJson, std::shared_ptr<Requ
       case Type::GET_CLUSTER_INFO:
       {
          std::shared_ptr<UserRequest> userRequest(new UserRequest(Type::GET_CLUSTER_INFO, in_requestJson));
-         if (userRequest->getUser().isEmpty())
-            return requestError(RequestError::INVALID_USER, in_requestJson.writeFormatted(), ERROR_LOCATION);
-
          out_request = userRequest;
          break;
       }
       case Type::GET_JOB:
       {
          std::shared_ptr<JobStateRequest> jobStateRequest(new JobStateRequest(in_requestJson));
-         if (jobStateRequest->getUser().isEmpty())
-            return requestError(RequestError::INVALID_USER, in_requestJson.writeFormatted(), ERROR_LOCATION);
-
          out_request = jobStateRequest;
          break;
       }
       case Type::GET_JOB_STATUS:
       {
          std::shared_ptr<JobStatusRequest> jobStatusRequest(new JobStatusRequest(in_requestJson));
-         if (jobStatusRequest->getUser().isEmpty())
-            return requestError(RequestError::INVALID_USER, in_requestJson.writeFormatted(), ERROR_LOCATION);
-
          out_request = jobStatusRequest;
          break;
       }
@@ -187,9 +181,10 @@ Error Request::fromJson(const json::Object& in_requestJson, std::shared_ptr<Requ
       }
    }
 
-   if (!out_request->m_baseImpl->IsValid)
-      return requestError(RequestError::INVALID_REQUEST,
-         in_requestJson.writeFormatted(),
+   if (out_request->m_baseImpl->ErrorType != RequestError::SUCCESS)
+      return requestError(out_request->m_baseImpl->ErrorType,
+         (out_request->m_baseImpl->ErrorMessage.empty() ? out_request->m_baseImpl->ErrorMessage + ": " : "") +
+            in_requestJson.writeFormatted(),
          ERROR_LOCATION);
 
    return Success();
@@ -215,7 +210,7 @@ Request::Request(Type in_requestType, const json::Object& in_requestJson) :
    if (error)
    {
       logging::logError(error);
-      m_baseImpl->IsValid = false;
+      m_baseImpl->ErrorType = RequestError::INVALID_REQUEST;
       return;
    }
 }
@@ -255,7 +250,7 @@ UserRequest::UserRequest(Request::Type in_type, const json::Object& in_requestJs
    if (error)
    {
       logging::logError(error);
-      m_baseImpl->IsValid = false;
+      m_baseImpl->ErrorType = RequestError::INVALID_REQUEST;
       return;
    }
 
@@ -268,7 +263,8 @@ UserRequest::UserRequest(Request::Type in_type, const json::Object& in_requestJs
       {
          logging::logError(error);
          m_userImpl->EffectiveUser = system::User(true);
-         m_baseImpl->IsValid = false;
+         m_baseImpl->ErrorType = RequestError::INVALID_USER;
+         m_baseImpl->ErrorMessage = "Could not find details for user \"" + realUsername + "\"";
          return;
       }
    }
@@ -309,7 +305,7 @@ JobIdRequest::JobIdRequest(Request::Type in_type, const json::Object& in_request
    if (error)
    {
       logging::logError(error);
-      m_baseImpl->IsValid = false;
+      m_baseImpl->ErrorType = RequestError::INVALID_REQUEST;
    }
 }
 
@@ -348,7 +344,7 @@ BootstrapRequest::BootstrapRequest(const json::Object& in_requestJson) :
    if (error)
    {
       logging::logError(error);
-      m_baseImpl->IsValid = false;
+      m_baseImpl->ErrorType = RequestError::INVALID_REQUEST;
       return;
    }
 
@@ -360,7 +356,7 @@ BootstrapRequest::BootstrapRequest(const json::Object& in_requestJson) :
    if (error)
    {
       logging::logError(error);
-      m_baseImpl->IsValid = false;
+      m_baseImpl->ErrorType = RequestError::INVALID_REQUEST;
    }
 }
 
@@ -483,7 +479,7 @@ JobStateRequest::JobStateRequest(const json::Object& in_requestJson) :
    if (error)
    {
       logging::logError(error);
-      m_baseImpl->IsValid = false;
+      m_baseImpl->ErrorType = RequestError::INVALID_REQUEST;
       return;
    }
 
@@ -514,7 +510,7 @@ JobStatusRequest::JobStatusRequest(const json::Object& in_requestJson) :
    if (error)
    {
       logging::logError(error);
-      m_baseImpl->IsValid = false;
+      m_baseImpl->ErrorType = RequestError::INVALID_REQUEST;
    }
 
    m_impl->IsCancelRequest = isCancel.getValueOr(false);
