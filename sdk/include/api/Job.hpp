@@ -603,19 +603,19 @@ struct ResourceLimit
     *
     * @brief The type of resource limit.
     */
-   enum class Type
+   struct Type
    {
       /** The required number of CPUs for a job. */
-      CPU_COUNT,
+      static const char* const CPU_COUNT;
 
       /** The required amount of CPU time for a job, in seconds. */
-      CPU_TIME,
+      static const char* const CPU_TIME;
 
       /** The required amount of memory for a job, in MB. */
-      MEMORY,
+      static const char* const MEMORY;
 
       /** The required amount of swap space for a job, in MB. */
-      MEMORY_SWAP
+      static const char* const MEMORY_SWAP;
    };
 
    /**
@@ -630,7 +630,7 @@ struct ResourceLimit
     * @param in_maxValue        The maximum value of the resource limit. Default: no maximum.
     * @param in_defaultValue    The default value of the resource limit. Default: no default.
     */
-   explicit ResourceLimit(Type in_limitType, std::string in_maxValue = "", std::string in_defaultValue = "");
+   explicit ResourceLimit(std::string in_limitType, std::string in_maxValue = "", std::string in_defaultValue = "");
 
    /**
     * @brief Constructs a ResourceLimit from a JSON object which represents the resource limit.
@@ -650,7 +650,7 @@ struct ResourceLimit
    json::Object toJson() const;
 
    /** The type of resource to limit. */
-   Type ResourceType;
+   std::string ResourceType;
 
    /** The value of the resource limit. */
    std::string Value;

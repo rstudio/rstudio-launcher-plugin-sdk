@@ -117,10 +117,6 @@ constexpr char const* PLACEMENT_CONSTRAINT_VALUE      = "value";
 constexpr char const* RESOURCE_LIMIT_DEFAULT          = "defaultValue";
 constexpr char const* RESOURCE_LIMIT_MAX              = "maxValue";
 constexpr char const* RESOURCE_LIMIT_TYPE             = "type";
-constexpr char const* RESOURCE_LIMIT_TYPE_CPU_COUNT   = "cpuCount";
-constexpr char const* RESOURCE_LIMIT_TYPE_CPU_TIME    = "cpuTime";
-constexpr char const* RESOURCE_LIMIT_TYPE_MEMORY      = "memory";
-constexpr char const* RESOURCE_LIMIT_TYPE_MEMORY_SWAP = "memorySwap";
 constexpr char const* RESOURCE_LIMIT_VALUE            = "value";
 
 enum class JobParseError
@@ -1061,8 +1057,13 @@ json::Object PlacementConstraint::toJson() const
 }
 
 // Resource Limit ======================================================================================================
-ResourceLimit::ResourceLimit(Type in_limitType,  std::string in_maxValue, std::string in_defaultValue) :
-   ResourceType(in_limitType),
+const char* const ResourceLimit::Type::CPU_COUNT   = "cpuCount";
+const char* const ResourceLimit::Type::CPU_TIME    = "cpuTime";
+const char* const ResourceLimit::Type::MEMORY      = "memory";
+const char* const ResourceLimit::Type::MEMORY_SWAP = "memorySwap";
+
+ResourceLimit::ResourceLimit(std::string in_limitType,  std::string in_maxValue, std::string in_defaultValue) :
+   ResourceType(std::move(in_limitType)),
    MaxValue(std::move(in_maxValue)),
    DefaultValue(std::move(in_defaultValue))
 {
@@ -1070,30 +1071,12 @@ ResourceLimit::ResourceLimit(Type in_limitType,  std::string in_maxValue, std::s
 
 Error ResourceLimit::fromJson(const json::Object& in_json, ResourceLimit& out_resourceLimit)
 {
-   std::string strType;
    Error error = json::readObject(in_json,
-      RESOURCE_LIMIT_TYPE, strType,
+      RESOURCE_LIMIT_TYPE, out_resourceLimit.ResourceType,
       RESOURCE_LIMIT_VALUE, out_resourceLimit.Value);
 
    if (error)
       return updateError(JOB_RESOURCE_LIMITS, in_json, error);
-
-   boost::trim(strType);
-   if (strType == RESOURCE_LIMIT_TYPE_CPU_COUNT)
-      out_resourceLimit.ResourceType = Type::CPU_COUNT;
-   else if (strType == RESOURCE_LIMIT_TYPE_CPU_TIME)
-      out_resourceLimit.ResourceType = Type::CPU_TIME;
-   else if (strType == RESOURCE_LIMIT_TYPE_MEMORY)
-      out_resourceLimit.ResourceType = Type::MEMORY;
-   else if (strType == RESOURCE_LIMIT_TYPE_MEMORY_SWAP)
-      out_resourceLimit.ResourceType = Type::MEMORY_SWAP;
-   else
-      return jobParseError(
-         JobParseError::INVALID_VALUE,
-         quoteStr(RESOURCE_LIMIT_TYPE) + " " + quoteStr(strType) + " is not supported",
-         JOB_RESOURCE_LIMITS,
-         in_json,
-         ERROR_LOCATION);
 
    return Success();
 }
@@ -1102,34 +1085,7 @@ json::Object ResourceLimit::toJson() const
 {
    json::Object limitObj;
 
-   switch (ResourceType)
-   {
-      case Type::CPU_COUNT:
-      {
-         limitObj[RESOURCE_LIMIT_TYPE] = RESOURCE_LIMIT_TYPE_CPU_COUNT;
-         break;
-      }
-      case Type::CPU_TIME:
-      {
-         limitObj[RESOURCE_LIMIT_TYPE] = RESOURCE_LIMIT_TYPE_CPU_TIME;
-         break;
-      }
-      case Type::MEMORY:
-      {
-         limitObj[RESOURCE_LIMIT_TYPE] = RESOURCE_LIMIT_TYPE_MEMORY;
-         break;
-      }
-      case Type::MEMORY_SWAP:
-      {
-         limitObj[RESOURCE_LIMIT_TYPE] = RESOURCE_LIMIT_TYPE_MEMORY_SWAP;
-         break;
-      }
-      default:
-      {
-         // This should only happen if a resource type is added and this method isn't updated.
-         assert(false);
-      }
-   }
+   limitObj[RESOURCE_LIMIT_TYPE] = ResourceType;
 
    if (!Value.empty())
       limitObj[RESOURCE_LIMIT_VALUE] = Value;
