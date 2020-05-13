@@ -152,22 +152,24 @@ Error Request::fromJson(const json::Object& in_requestJson, std::shared_ptr<Requ
          out_request.reset(new BootstrapRequest(in_requestJson));
          break;
       }
+      case Type::SUBMIT_JOB:
+      {
+         out_request.reset(new SubmitJobRequest(in_requestJson));
+         break;
+      }
       case Type::GET_JOB:
       {
-         std::shared_ptr<JobStateRequest> jobStateRequest(new JobStateRequest(in_requestJson));
-         out_request = jobStateRequest;
+         out_request.reset(new JobStateRequest(in_requestJson));
          break;
       }
       case Type::GET_JOB_STATUS:
       {
-         std::shared_ptr<JobStatusRequest> jobStatusRequest(new JobStatusRequest(in_requestJson));
-         out_request = jobStatusRequest;
+         out_request.reset(new JobStatusRequest(in_requestJson));
          break;
       }
       case Type::GET_CLUSTER_INFO:
       {
-         std::shared_ptr<UserRequest> userRequest(new UserRequest(Type::GET_CLUSTER_INFO, in_requestJson));
-         out_request = userRequest;
+         out_request.reset(new UserRequest(Type::GET_CLUSTER_INFO, in_requestJson));
          break;
       }
       default:
@@ -373,6 +375,42 @@ int BootstrapRequest::getMinorVersion() const
 int BootstrapRequest::getPatchNumber() const
 {
    return m_impl->Patch;
+}
+
+// Submit Job ==========================================================================================================
+struct SubmitJobRequest::Impl
+{
+   Impl() : SubmittedJob(new Job()) { }
+
+   JobPtr SubmittedJob;
+};
+
+PRIVATE_IMPL_DELETER_IMPL(SubmitJobRequest)
+
+JobPtr SubmitJobRequest::getJob()
+{
+   return m_impl->SubmittedJob;
+}
+
+SubmitJobRequest::SubmitJobRequest(const json::Object& in_requestJson) :
+   UserRequest(Type::SUBMIT_JOB, in_requestJson),
+   m_impl(new Impl())
+{
+   json::Object jobObj;
+   Error error = json::readObject(in_requestJson, FIELD_JOB, jobObj);
+   if (error)
+   {
+      logging::logError(error);
+      m_baseImpl->ErrorType = RequestError::INVALID_REQUEST;
+      return;
+   }
+
+   error = Job::fromJson(jobObj, *m_impl->SubmittedJob);
+   if (error)
+   {
+      logging::logError(error);
+      m_baseImpl->ErrorType = RequestError::INVALID_REQUEST;
+   }
 }
 
 // Job State ===========================================================================================================
