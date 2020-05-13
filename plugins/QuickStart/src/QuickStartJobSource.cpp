@@ -63,6 +63,15 @@ Error QuickStartJobSource::getJobs(api::JobList &out_jobs) const
    return Success();
 }
 
+Error QuickStartJobSource::submitJob(api::JobPtr io_job) const
+{
+   return Error(
+      "NotImplemented",
+      1,
+      "Method QuickStartJobSource::submitJob is not implemented.",
+      ERROR_LOCATION);
+}
+
 } // namespace quickstart
 } // namespace launcher_plugins
 } // namespace rstudio

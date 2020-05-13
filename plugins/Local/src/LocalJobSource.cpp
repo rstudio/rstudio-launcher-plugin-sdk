@@ -59,6 +59,15 @@ Error LocalJobSource::getJobs(api::JobList& out_jobs) const
    return m_jobStorage.loadJobs(out_jobs);
 }
 
+Error LocalJobSource::submitJob(api::JobPtr io_job) const
+{
+   return Error(
+      "NotImplemented",
+      1,
+      "Method LocalJobSource::submitJob is not implemented.",
+      ERROR_LOCATION);
+}
+
 } // namespace local
 } // namespace launcher_plugins
 } // namespace rstudio

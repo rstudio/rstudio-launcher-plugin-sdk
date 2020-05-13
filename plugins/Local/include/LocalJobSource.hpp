@@ -88,6 +88,15 @@ public:
     */
     Error getJobs(api::JobList& out_jobs) const override;
 
+   /**
+    * @brief Runs a job on the local instance.
+    *
+    * @param io_job     The Job to be submitted.
+    *
+    * @return Success if the job could be submitted to the Job Scheduling System; Error otherwise.
+    */
+   Error submitJob(api::JobPtr io_job) const override;
+
 private:
    /** The job storage. */
    job_store::LocalJobStorage m_jobStorage;

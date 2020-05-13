@@ -140,6 +140,17 @@ public:
     */
    virtual Error getJobs(JobList& out_jobs) const = 0;
 
+   /**
+    * @brief Submits a job to the Job Scheduling System.
+    *
+    * @param io_job     The Job to be submitted. On successful submission, the Job should be updated with relevant
+    *                   details, such as the ID of the job, the Submission time, the actual Job Queue (if applicable),
+    *                   and the current status.
+    *
+    * @return Success if the job could be submitted to the Job Scheduling System; Error otherwise.
+    */
+   virtual Error submitJob(JobPtr io_job) const = 0;
+
 protected:
    /**
     * @brief Constructor.
