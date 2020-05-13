@@ -65,6 +65,7 @@ Error QuickStartJobSource::getJobs(api::JobList &out_jobs) const
 
 Error QuickStartJobSource::submitJob(api::JobPtr io_job) const
 {
+   // TODO #12: Submit and then update the job.
    return Error(
       "NotImplemented",
       1,
