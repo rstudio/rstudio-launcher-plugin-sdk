@@ -602,7 +602,11 @@ TEST_CASE("Parse Submit Job Request")
       CHECK(parsedJob->Command == job->Command);
       CHECK(parsedJob->Arguments == job->Arguments);
       CHECK(parsedJob->Name == job->Name);
-      CHECK(parsedJob->ResourceLimits == job->ResourceLimits);
+      REQUIRE(parsedJob->ResourceLimits.size() == 2);
+      CHECK(parsedJob->ResourceLimits[0].ResourceType == ResourceLimit::Type::CPU_COUNT);
+      CHECK(parsedJob->ResourceLimits[0].Value == "2");
+      CHECK(parsedJob->ResourceLimits[1].ResourceType == ResourceLimit::Type::MEMORY);
+      CHECK(parsedJob->ResourceLimits[1].Value == "250");
       CHECK(parsedJob->Exe.empty());
       CHECK(parsedJob->Id.empty());
       CHECK(parsedJob->Status == Job::State::UNKNOWN);
@@ -641,8 +645,12 @@ TEST_CASE("Parse Submit Job Request")
       CHECK(parsedJob->Exe == job->Exe);
       CHECK(parsedJob->Arguments == job->Arguments);
       CHECK(parsedJob->Name == job->Name);
-      CHECK(parsedJob->ResourceLimits == job->ResourceLimits);
-      CHECK(parsedJob->PlacementConstraints == job->PlacementConstraints);
+      REQUIRE(parsedJob->ResourceLimits.size() == 1);
+      CHECK(parsedJob->ResourceLimits[0].ResourceType == ResourceLimit::Type::CPU_COUNT);
+      CHECK(parsedJob->ResourceLimits[0].Value == "1");
+      REQUIRE(parsedJob->PlacementConstraints.size() == 1);
+      CHECK(parsedJob->PlacementConstraints[0].Name == "Processor Type");
+      CHECK(parsedJob->PlacementConstraints[0].Value == "x86");
       CHECK(parsedJob->Command.empty());
       CHECK(parsedJob->Id.empty());
       CHECK(parsedJob->Status == Job::State::UNKNOWN);
