@@ -578,6 +578,8 @@ TEST_CASE("Parse Submit Job Request")
       job->Arguments.emplace_back("-e");
       job->Arguments.emplace_back("Hello!");
       job->Name = "New job";
+      job->User = system::User();
+      job->Status = Job::State::UNKNOWN;
 
       ResourceLimit limit1(ResourceLimit::Type::CPU_COUNT), limit2(ResourceLimit::Type::MEMORY);
       limit1.Value = "2";
@@ -602,6 +604,7 @@ TEST_CASE("Parse Submit Job Request")
       CHECK(parsedJob->Command == job->Command);
       CHECK(parsedJob->Arguments == job->Arguments);
       CHECK(parsedJob->Name == job->Name);
+      CHECK(parsedJob->User.isAllUsers());
       REQUIRE(parsedJob->ResourceLimits.size() == 2);
       CHECK(parsedJob->ResourceLimits[0].ResourceType == ResourceLimit::Type::CPU_COUNT);
       CHECK(parsedJob->ResourceLimits[0].Value == "2");
@@ -622,6 +625,8 @@ TEST_CASE("Parse Submit Job Request")
       job->Arguments.emplace_back("-c");
       job->Arguments.emplace_back("\"echo -e Hello!\"");
       job->Name = "Other job";
+      job->User = user3;
+      job->Status = Job::State::UNKNOWN;
 
       ResourceLimit limit1(ResourceLimit::Type::CPU_COUNT);
       limit1.Value = "1";
@@ -645,6 +650,7 @@ TEST_CASE("Parse Submit Job Request")
       CHECK(parsedJob->Exe == job->Exe);
       CHECK(parsedJob->Arguments == job->Arguments);
       CHECK(parsedJob->Name == job->Name);
+      CHECK(parsedJob->User == user3);
       REQUIRE(parsedJob->ResourceLimits.size() == 1);
       CHECK(parsedJob->ResourceLimits[0].ResourceType == ResourceLimit::Type::CPU_COUNT);
       CHECK(parsedJob->ResourceLimits[0].Value == "1");
@@ -666,6 +672,7 @@ TEST_CASE("Parse Submit Job Request")
       job->Arguments.emplace_back("-c");
       job->Arguments.emplace_back("\"echo -e Hello!\"");
       job->Name = "Other job";
+      job->Status = Job::State::UNKNOWN;
 
       ResourceLimit limit1(ResourceLimit::Type::CPU_COUNT);
       limit1.Value = "1";
@@ -701,7 +708,6 @@ TEST_CASE("Parse Submit Job Request")
       std::shared_ptr<Request> request;
       REQUIRE(Request::fromJson(requestObj, request));
    }
-
 }
 
 
