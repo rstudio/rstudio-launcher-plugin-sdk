@@ -152,12 +152,6 @@ Error Request::fromJson(const json::Object& in_requestJson, std::shared_ptr<Requ
          out_request.reset(new BootstrapRequest(in_requestJson));
          break;
       }
-      case Type::GET_CLUSTER_INFO:
-      {
-         std::shared_ptr<UserRequest> userRequest(new UserRequest(Type::GET_CLUSTER_INFO, in_requestJson));
-         out_request = userRequest;
-         break;
-      }
       case Type::GET_JOB:
       {
          std::shared_ptr<JobStateRequest> jobStateRequest(new JobStateRequest(in_requestJson));
@@ -168,6 +162,12 @@ Error Request::fromJson(const json::Object& in_requestJson, std::shared_ptr<Requ
       {
          std::shared_ptr<JobStatusRequest> jobStatusRequest(new JobStatusRequest(in_requestJson));
          out_request = jobStatusRequest;
+         break;
+      }
+      case Type::GET_CLUSTER_INFO:
+      {
+         std::shared_ptr<UserRequest> userRequest(new UserRequest(Type::GET_CLUSTER_INFO, in_requestJson));
+         out_request = userRequest;
          break;
       }
       default:
