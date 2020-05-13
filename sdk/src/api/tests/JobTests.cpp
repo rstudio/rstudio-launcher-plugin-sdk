@@ -814,10 +814,20 @@ TEST_CASE("To JSON: Placement Constraint")
 {
    json::Object constraintObj;
    constraintObj["name"] = "someName";
-   constraintObj["value"] = "a-value";
 
-   PlacementConstraint constraint("someName", "a-value");
-   REQUIRE(constraint.toJson() == constraintObj);
+   SECTION("Free form")
+   {
+      PlacementConstraint constraint("someName");
+      REQUIRE(constraint.toJson() == constraintObj);
+   }
+
+   SECTION("Not free form")
+   {
+      constraintObj["value"] = "a-value";
+
+      PlacementConstraint constraint("someName", "a-value");
+      REQUIRE(constraint.toJson() == constraintObj);
+   }
 }
 
 // Job::State  =========================================================================================================

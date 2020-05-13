@@ -566,6 +566,17 @@ struct PlacementConstraint
    /**
     * @brief Constructor.
     *
+    * Creates a free-form placement constraint, which allows the user to enter any text value.
+    *
+    * @param in_name        The name of the placement constraint.
+    */
+   explicit PlacementConstraint(std::string in_name);
+
+   /**
+    * @brief Constructor.
+    *
+    * Creates an enumeration placement constraint, which allows to
+    *
     * @param in_name        The name of the placement constraint.
     * @param in_value       One of the possible values for the placement constraint with the specified name.
     */

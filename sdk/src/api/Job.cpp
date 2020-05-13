@@ -1029,6 +1029,11 @@ json::Object NfsMountSource::toJson() const
 }
 
 // Placement Constraint ================================================================================================
+PlacementConstraint::PlacementConstraint(std::string in_name) :
+   Name(std::move(in_name))
+{
+}
+
 PlacementConstraint::PlacementConstraint(std::string in_name, std::string in_value) :
    Name(std::move(in_name)),
    Value(std::move(in_value))
@@ -1051,7 +1056,8 @@ json::Object PlacementConstraint::toJson() const
 {
    json::Object constraintObj;
    constraintObj[PLACEMENT_CONSTRAINT_NAME] = Name;
-   constraintObj[PLACEMENT_CONSTRAINT_VALUE] = Value;
+   if (!Value.empty())
+      constraintObj[PLACEMENT_CONSTRAINT_VALUE] = Value;
 
    return constraintObj;
 }
