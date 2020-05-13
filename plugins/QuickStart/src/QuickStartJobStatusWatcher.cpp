@@ -52,7 +52,8 @@ Error QuickStartJobStatusWatcher::getJobDetails(const std::string& in_jobId, api
    return Error(
       "NotImplemented",
       1,
-      "Method QuickStartJobStatusWatcher::getJobDetails is not implemented.", ERROR_LOCATION);
+      "Method QuickStartJobStatusWatcher::getJobDetails is not implemented.",
+      ERROR_LOCATION);
 }
 
 } // namespace quickstart
