@@ -357,14 +357,15 @@ This section will describe the questions which need to be answered to correctly 
     + pull down the list of queues from the job scheduling system, or otherwise determine the list available queues, and add each queue to `JobSourceConfiguration::Queues`.
     
 * Does the job scheduling system support setting resource limits on a job?
-    + determine the type of resource limits that are supported by the job scheduling system. The SDK allows the following resource types: Cpu Count, Cpu Time, Memory, and Memory Swap. For each supported type add a `ResourceLimit` object of that type to `JobSourceConfiguration::ResourceLimits`, optionally setting the maximum and default values of that resource limit type.
+    + determine the type of resource limits that are supported by the job scheduling system. The SDK supports the following resource types by default: Cpu Count, Cpu Time, Memory, and Memory Swap. More types can be added by setting the `ResourceLimit::ResourceType` field to the name of the desired type. For each type add a `ResourceLimit` object of that type to `JobSourceConfiguration::ResourceLimits`, optionally setting the maximum and default values of that resource limit type.
 
     &nbsp;
 
     > Info: The existing RStudio Launcher Plugins allow system administrators to configure the maximum and default values for each resource type on a per-user or per-group basis through the User Profiles feature. From an exampleof what that looks like, see a sample `launcher.<plugin name>.profiles.conf` [Job Launcher Plugin Configuration section of the RStudio Job Launcher Administrator's Guide](https://docs.rstudio.com/job-launcher/index.html#job-launcher-plugin-configuration).
 
-* Does the job scheduling system support other placement constraints that are important to surface? It is not necessary to surface every placement constraint supported by the job scheduling system; however if any constraints are commonly used or otherwise important to the end user, they may be surfaced through this feature. Examples of such constraints may be other types of resource limits (e.g. disk space, GPU count, GPU time, etc.), or other types of constraints entirely (e.g. disk type, region of a cloud service, etc.). If yes:
-    + for each placement constraint type, add one `PlacementConstraint` object to `JobSourceConfiguration::PlacementConstraints` for each possible value of that constraint.
+* Does the job scheduling system support other placement constraints that are important to surface? It is not necessary to surface every placement constraint supported by the job scheduling system; however if any constraints are commonly used or otherwise important to the end user, they may be surfaced through this feature. Examples of such constraints may be other types of resource limits (e.g. disk space, GPU type, Processor Type, etc.), or other types of constraints entirely (e.g. disk type, region of a cloud service, etc.). Placement constraints can either be an enumeration style set of possible values or a free-form text value. If yes:
+    + for each enumeration-style placement constraint, add one `PlacementConstraint` object to `JobSourceConfiguration::PlacementConstraints` for each possible value of that constraint.
+    + for each free-form placement constraint, add one `PlacementConstraint` object to `JobSourceConfiguration::PlacementConstraints` with no value.
 
 > Important: Whether or not to use the `system::User` parameter provided to each of the capabilities methods is at the discretion of the Plugin Developer. If the Plugin Developer does not wish to support User Profiles and does not have another method to determine per-user or per-group rules, the `system::User` parameter may simply be ignored.
 
@@ -379,6 +380,8 @@ Assume that the Mars scheduling system has the following capabilities:
 * no default container image
 * no way to specify unknown images
 * a way to set a limit on the number of CPUs, the amount of Memory, and the number of GPUs, and a way to check the maximum possible values that can be requested
+* a way to choose between the processor type: `x86` or `ARM`
+* optionally, a way to select which host(s) the Mars scheduler can use to run the job
 * job queues
 
 The Plugin developer can report this support by changing
@@ -420,18 +423,24 @@ Error MarsJobSource::getConfiguration(
     return Error("MarsApiError", e.code(), e.what(), ERROR_LOCATION);
   }
   
-  // Populate placement constraints with one constraint value for gpu_count for each integer
-  // less than or equal to the maximum gpu_count value.
-  for (int i = 0; i <= maxCpuCount; ++i)
-    out_configuration.PlacementConstraints.emplace_back("gpu_count", std::toString(i));
-  
   // Populate the resource limits.
   out_configuration.ResourceLimits.emplace_back(
     api::ResourceLimit::Type::CPU_COUNT,
-    std::toString(maxCpuCount));
+    std::to_string(maxCpuCount));
   out_configuration.ResourceLimits.emplace_back(
     api::ResourceLimit::Type::MEMORY,
-    std::toString((double)maxMemoryMB));
+    std::to_string((double)maxMemoryMB));
+  out_configuration.ResourceLimits.emplace_back(
+    "GPUs",
+    std::to_string(maxGpuCount),
+    "0");
+  
+  // Populate the placement constraints
+  out_configuration.PlacementConstraints.emplace_back("Processor Type", "x86");
+  out_configuration.PlacementConstraints.emplace_back("Processor Type", "ARM");
+  out_configuration.PlacementConstraints.emplace_back("Processor Type", "Any");
+  
+  out_configuration.PlacementConstraints.emplace_back("Hostname");
   
   return Success();
 }
@@ -661,7 +670,7 @@ Error MarsJobStatusWatcher::getJobDetails(const std::string& in_jobId, api::JobP
   mars_api::job marsJob;
   try
   {
-    unsigned long id = std::strtoul(in_jobId);
+    unsigned long id = std::strtoul();
     marsJob = mars_api::list_job(opts.getMarsServiceUser(), id);
   }
   catch (const std::invalid_argument& e)

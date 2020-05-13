@@ -361,7 +361,7 @@ This represents an NFS server mount source. If this field is present in a [Mount
 |  Field Name  |                               Description                                   |  Value
 | ------------ | --------------------------------------------------------------------------- | -------
 | name         | The name of the placement constraint.                                       | String
-| value        | One of the possible values of the placement constraint.                     | String
+| value        | One of the possible values of the placement constraint. Optional.           | String
 
 ### ResourceLimit {#limit}
 
