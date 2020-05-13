@@ -242,7 +242,7 @@ TEST_CASE("Parse get job request")
    CHECK(jobStateRequest->getUser().isAllUsers());
    CHECK(jobStateRequest->getRequestUsername() == USER_TWO);
    CHECK(jobStateRequest->getJobId() == "2588");
-   CHECK(jobStateRequest->getEncodedJobId() == "");
+   CHECK(jobStateRequest->getEncodedJobId().empty());
    CHECK((!jobStateRequest->getEndTime(endTime) && !endTime));
    CHECK_FALSE(jobStateRequest->getFieldSet());
    CHECK((!jobStateRequest->getStartTime(startTime) && !startTime));
@@ -558,6 +558,144 @@ TEST_CASE("Parse JobStatusRequest")
       CHECK(jobStatusRequest->isCancelRequest());
    }
 }
+
+TEST_CASE("Parse Submit Job Request")
+{
+   system::User user3;
+   REQUIRE_FALSE(system::User::getUserFromIdentifier(USER_THREE, user3));
+
+   json::Object requestObj;
+   requestObj[FIELD_MESSAGE_TYPE] = static_cast<int>(Request::Type::SUBMIT_JOB);
+   requestObj[FIELD_REQUEST_ID] = 68;
+
+   SECTION("Admin user")
+   {
+      requestObj[FIELD_REAL_USER] = "*";
+      requestObj[FIELD_REQUEST_USERNAME] = USER_TWO;
+
+      JobPtr job(new Job());
+      job->Command = "echo";
+      job->Arguments.emplace_back("-e");
+      job->Arguments.emplace_back("Hello!");
+      job->Name = "New job";
+
+      ResourceLimit limit1(ResourceLimit::Type::CPU_COUNT), limit2(ResourceLimit::Type::MEMORY);
+      limit1.Value = "2";
+      limit2.Value = "250";
+
+      job->ResourceLimits.push_back(limit1);
+      job->ResourceLimits.push_back(limit2);
+
+      requestObj[FIELD_JOB] = job->toJson();
+
+      std::shared_ptr<Request> request;
+      REQUIRE_FALSE(Request::fromJson(requestObj, request));
+      CHECK(request->getType() == Request::Type::SUBMIT_JOB);
+      CHECK(request->getId() == 68);
+
+      std::shared_ptr<SubmitJobRequest> submitJobRequest = std::static_pointer_cast<SubmitJobRequest>(request);
+      CHECK(submitJobRequest->getUser().isAllUsers());
+      CHECK(submitJobRequest->getRequestUsername() == USER_TWO);
+
+      JobPtr parsedJob = submitJobRequest->getJob();
+      REQUIRE(parsedJob != nullptr);
+      CHECK(parsedJob->Command == job->Command);
+      CHECK(parsedJob->Arguments == job->Arguments);
+      CHECK(parsedJob->Name == job->Name);
+      CHECK(parsedJob->ResourceLimits == job->ResourceLimits);
+      CHECK(parsedJob->Exe.empty());
+      CHECK(parsedJob->Id.empty());
+      CHECK(parsedJob->Status == Job::State::UNKNOWN);
+   }
+
+   SECTION("Non-admin user")
+   {
+      requestObj[FIELD_REAL_USER] = USER_THREE;
+      requestObj[FIELD_REQUEST_USERNAME] = USER_THREE;
+
+      JobPtr job(new Job());
+      job->Exe = "/bin/bash";
+      job->Arguments.emplace_back("-c");
+      job->Arguments.emplace_back("\"echo -e Hello!\"");
+      job->Name = "Other job";
+
+      ResourceLimit limit1(ResourceLimit::Type::CPU_COUNT);
+      limit1.Value = "1";
+      job->ResourceLimits.push_back(limit1);
+
+      job->PlacementConstraints.emplace_back("Processor Type", "x86");
+
+      requestObj[FIELD_JOB] = job->toJson();
+
+      std::shared_ptr<Request> request;
+      REQUIRE_FALSE(Request::fromJson(requestObj, request));
+      CHECK(request->getType() == Request::Type::SUBMIT_JOB);
+      CHECK(request->getId() == 68);
+
+      std::shared_ptr<SubmitJobRequest> submitJobRequest = std::static_pointer_cast<SubmitJobRequest>(request);
+      CHECK(submitJobRequest->getUser() == user3);
+      CHECK(submitJobRequest->getRequestUsername() == USER_THREE);
+
+      JobPtr parsedJob = submitJobRequest->getJob();
+      REQUIRE(parsedJob != nullptr);
+      CHECK(parsedJob->Exe == job->Exe);
+      CHECK(parsedJob->Arguments == job->Arguments);
+      CHECK(parsedJob->Name == job->Name);
+      CHECK(parsedJob->ResourceLimits == job->ResourceLimits);
+      CHECK(parsedJob->PlacementConstraints == job->PlacementConstraints);
+      CHECK(parsedJob->Command.empty());
+      CHECK(parsedJob->Id.empty());
+      CHECK(parsedJob->Status == Job::State::UNKNOWN);
+   }
+
+   SECTION("Empty user")
+   {
+      requestObj[FIELD_REAL_USER] = "";
+      requestObj[FIELD_REQUEST_USERNAME] = "";
+
+      JobPtr job(new Job());
+      job->Exe = "/bin/bash";
+      job->Arguments.emplace_back("-c");
+      job->Arguments.emplace_back("\"echo -e Hello!\"");
+      job->Name = "Other job";
+
+      ResourceLimit limit1(ResourceLimit::Type::CPU_COUNT);
+      limit1.Value = "1";
+      job->ResourceLimits.push_back(limit1);
+
+      job->PlacementConstraints.emplace_back("Processor Type", "x86");
+
+      requestObj[FIELD_JOB] = job->toJson();
+
+      std::shared_ptr<Request> request;
+      REQUIRE(Request::fromJson(requestObj, request));
+   }
+
+   SECTION("No Job")
+   {
+      requestObj[FIELD_REAL_USER] = USER_FOUR;
+      requestObj[FIELD_REQUEST_USERNAME] = USER_FOUR;
+
+      std::shared_ptr<Request> request;
+      REQUIRE(Request::fromJson(requestObj, request));
+   }
+
+   SECTION("Bad Job")
+   {
+      requestObj[FIELD_REAL_USER] = USER_FOUR;
+      requestObj[FIELD_REQUEST_USERNAME] = USER_FOUR;
+
+      JobPtr job(new Job());
+      job->Exe = "/bin/bash";
+      job->Command = "echo";
+      job->Name = "Bad Job";
+
+      std::shared_ptr<Request> request;
+      REQUIRE(Request::fromJson(requestObj, request));
+   }
+
+}
+
 
 } // namespace api
 } // namespace launcher_plugins
