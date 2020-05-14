@@ -131,15 +131,17 @@ struct AbstractPluginApi::Impl
    void handleSubmitJobRequest(const std::shared_ptr<SubmitJobRequest>& in_submitJobRequest)
    {
       const system::User& requestUser = in_submitJobRequest->getUser();
-      if ((requestUser != in_submitJobRequest->getJob()->User) && !requestUser.isAllUsers())
+      if (!requestUser.isAllUsers())
+      {
+         if (in_submitJobRequest->getJob()->User.isEmpty())
+            in_submitJobRequest->getJob()->User = requestUser;
+      }
+
+      if (in_submitJobRequest->getJob()->User.isEmpty())
          return sendErrorResponse(
             in_submitJobRequest->getId(),
             ErrorResponse::Type::INVALID_REQUEST,
-            "Job user ("  +
-               in_submitJobRequest->getJob()->User.getUsername() +
-               ") does not match request user (" +
-               requestUser.getUsername() +
-               ")");
+            "User must not be empty.");
 
       Error error = JobSource->submitJob(in_submitJobRequest->getJob());
       if (error)
