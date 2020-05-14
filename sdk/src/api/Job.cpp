@@ -496,7 +496,7 @@ Error Job::fromJson(const json::Object& in_json, Job& out_job)
 {
    // Everything but the name is optional.
    Job result;
-   std::string submitTime;
+   Optional<std::string> submitTime;
    Optional<std::vector<std::string> > arguments;
    Optional<std::set<std::string> > queues, tags;
    Optional<std::string> cluster, command, exe, host, id, lastUpTime, stdIn, stdErr, stdOut, status, statusMessage,
@@ -563,7 +563,7 @@ Error Job::fromJson(const json::Object& in_json, Job& out_job)
 
    if (!user || user.getValueOr("").empty())
    {
-      return jobParseError(JobParseError::MISSING_VALUE, JOB_USER, "job", in_json, ERROR_LOCATION);
+      result.User = system::User(true); // Make an empty user. Possible on Job submission.
    }
    else if (user.getValueOr("") == "*")
       result.User = system::User(); // Default user is all users.
@@ -647,12 +647,12 @@ Error Job::fromJson(const json::Object& in_json, Job& out_job)
       result.LastUpdateTime = lastUpdateTime;
    }
 
-   system::DateTime submissionTime;
-   error = system::DateTime::fromString(submitTime, submissionTime);
-   if (error)
-      return updateError("submissionTime", in_json, error);
-
-   result.SubmissionTime = submissionTime;
+   if (submitTime)
+   {
+      error = system::DateTime::fromString(submitTime.getValueOr(""), result.SubmissionTime);
+      if (error)
+         return updateError("submissionTime", in_json, error);
+   }
 
    out_job = result;
    return Success();
