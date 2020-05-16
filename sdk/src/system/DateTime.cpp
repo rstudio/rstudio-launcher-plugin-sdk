@@ -77,9 +77,16 @@ TimeDuration::TimeDuration(TimeDuration&& in_other) noexcept :
 {
 }
 
+TimeDuration TimeDuration::Infinity()
+{
+   TimeDuration inf;
+   inf.m_impl->Time = boost::posix_time::not_a_date_time;
+   return inf;
+}
+
 TimeDuration TimeDuration::Hours(int64_t in_hours)
 {
-   return TimeDuration( in_hours);
+   return TimeDuration(in_hours);
 }
 
 TimeDuration TimeDuration::Minutes(int64_t in_minutes)
@@ -125,9 +132,9 @@ TimeDuration& TimeDuration::operator=(TimeDuration&& in_other) noexcept
 
 bool TimeDuration::operator==(const TimeDuration& in_other) const
 {
-   if ((this == &in_other) || ((m_impl == nullptr) && (in_other.m_impl == nullptr)))
+   if ((this == &in_other) || (isInfinity() && in_other.isInfinity()))
       return true;
-   else if ((m_impl == nullptr) || (in_other.m_impl == nullptr))
+   else if (isInfinity() || in_other.isInfinity())
       return false;
 
    return m_impl->Time == in_other.m_impl->Time;
@@ -138,9 +145,14 @@ bool TimeDuration::operator!=(const TimeDuration& in_other) const
    return !(*this == in_other);
 }
 
+bool TimeDuration::isInfinity() const
+{
+   return (m_impl == nullptr) || (m_impl->Time.is_not_a_date_time());
+}
+
 int64_t TimeDuration::getHours() const
 {
-   if (m_impl == nullptr)
+   if (isInfinity())
       return 0;
 
    return m_impl->Time.hours();
@@ -148,7 +160,7 @@ int64_t TimeDuration::getHours() const
 
 int64_t TimeDuration::getMinutes() const
 {
-   if (m_impl == nullptr)
+   if (isInfinity())
       return 0;
 
    return m_impl->Time.minutes();
@@ -156,7 +168,7 @@ int64_t TimeDuration::getMinutes() const
 
 int64_t TimeDuration::getSeconds() const
 {
-   if (m_impl == nullptr)
+   if (isInfinity())
       return 0;
 
    return m_impl->Time.seconds();
@@ -164,7 +176,7 @@ int64_t TimeDuration::getSeconds() const
 
 int64_t TimeDuration::getMicroseconds() const
 {
-   if (m_impl == nullptr)
+   if (isInfinity())
       return 0;
 
    return m_impl->Time.fractional_seconds();

@@ -84,6 +84,13 @@ public:
    ~TimeDuration() = default;
 
    /**
+    * @brief Constructs a TimeDuration which represents "any amount of time". Use with caution.
+    *
+    * @return The new TimeDuration.
+    */
+   static TimeDuration Infinity();
+
+   /**
     * @brief Constructs an TimeDuration which represents the specified number of hours.
     *
     * @param in_hours       The number of hours which should be represented by the TimeDuration.
@@ -158,11 +165,17 @@ public:
    bool operator!=(const TimeDuration& in_other) const;
 
    /**
+    * @brief Checks whether this TimeDuration represents "any amount of time".
+    *
+    * @return True if this TimeDuration is "Infinity"; false otherwise.
+    */
+   bool isInfinity() const;
+
+   /**
     * @brief Gets the number of hours in this TimeDuration.
     *
     * @return The number of hours in this TimeDuration.
     */
-
    int64_t getHours() const;
 
    /**
