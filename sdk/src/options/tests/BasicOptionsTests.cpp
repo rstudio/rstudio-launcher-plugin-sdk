@@ -30,6 +30,9 @@ namespace options {
 
 TEST_CASE("basic options")
 {
+   system::User user3;
+   REQUIRE_FALSE(system::User::getUserFromIdentifier(USER_THREE, user3));
+
    SECTION("read options")
    {
       constexpr const char* argv[] = {};
@@ -37,26 +40,25 @@ TEST_CASE("basic options")
 
       Options& opts = Options::getInstance();
       Error error = opts.readOptions(argc, argv, system::FilePath("conf-files/Basic.conf"));
-      REQUIRE(!error);
+      REQUIRE_FALSE(error);
    }
 
    SECTION("check values")
    {
       Options& opts = Options::getInstance();
+
+      CHECK(opts.getJobExpiryHours() == system::TimeDuration::Hours(11));
+      CHECK(opts.getHeartbeatIntervalSeconds() == system::TimeDuration::Seconds(4));
+      CHECK(opts.getLogLevel() == logging::LogLevel::ERR);
+      CHECK(opts.getRSandboxPath().getAbsolutePath() == "/usr/local/bin/rsandbox");
+      CHECK(opts.getScratchPath().getAbsolutePath() == "/home/rlpstestusrthree/temp/");
+
+      CHECK(opts.getThreadPoolSize() == 6);
+
       system::User serverUser;
       Error error = opts.getServerUser(serverUser);
-
-      REQUIRE(error);
-      REQUIRE(error.getProperty("description") == "Failed to get user details.");
-      REQUIRE(error.getProperty("user-value") == "aUser");
-      REQUIRE(error.getCode() == 13);
-      REQUIRE(error.getName() == systemError(1, ErrorLocation()).getName());
-
-      REQUIRE(opts.getJobExpiryHours() == system::TimeDuration::Hours(11));
-      REQUIRE(opts.getHeartbeatIntervalSeconds() == system::TimeDuration::Seconds(4));
-      REQUIRE(opts.getLogLevel() == logging::LogLevel::ERR);
-      REQUIRE(opts.getScratchPath().getAbsolutePath() == "/home/aUser/temp/");
-      REQUIRE(opts.getThreadPoolSize() == 6);
+      REQUIRE_FALSE(error);
+      CHECK(serverUser == user3);
    }
 }
 

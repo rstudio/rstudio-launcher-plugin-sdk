@@ -42,8 +42,8 @@ TEST_CASE("command line options with conflicts")
       constexpr int argc = 4;
 
       Options& opts = Options::getInstance();
-      Error error = opts.readOptions(argc, argv, system::FilePath("./conf-files/MissingOptional.conf"));
-      REQUIRE(!error);
+      Error error = opts.readOptions(argc, argv, system::FilePath("./conf-files/CmdLineConflict.conf"));
+      REQUIRE_FALSE(error);
    }
 
    SECTION("check values")
@@ -52,17 +52,18 @@ TEST_CASE("command line options with conflicts")
       system::User serverUser;
       Error error = opts.getServerUser(serverUser);
 
-      REQUIRE(error);
-      REQUIRE(error.getProperty("description") == "Failed to get user details.");
-      REQUIRE(error.getProperty("user-value") == "aUser");
-      REQUIRE(error.getCode() == 13);
-      REQUIRE(error.getName() == systemError(1, ErrorLocation()).getName());
+      CHECK(error);
+      CHECK(error.getProperty("description") == "Failed to get user details.");
+      CHECK(error.getProperty("user-value") == "aUser");
+      CHECK(error.getCode() == 13);
+      CHECK(error.getName() == systemError(1, ErrorLocation()).getName());
 
-      REQUIRE(opts.getJobExpiryHours() == system::TimeDuration::Hours(24));
-      REQUIRE(opts.getHeartbeatIntervalSeconds() == system::TimeDuration::Seconds(8));
-      REQUIRE(opts.getLogLevel() == logging::LogLevel::DEBUG);
-      REQUIRE(opts.getScratchPath().getAbsolutePath() == "/home/aUser/temp/");
-      REQUIRE(opts.getThreadPoolSize() == 6);
+      CHECK(opts.getJobExpiryHours() == system::TimeDuration::Hours(24));
+      CHECK(opts.getHeartbeatIntervalSeconds() == system::TimeDuration::Seconds(8));
+      CHECK(opts.getLogLevel() == logging::LogLevel::DEBUG);
+      CHECK(opts.getRSandboxPath().getAbsolutePath() == "/usr/lib/rstudio-server/bin/rsandbox");
+      CHECK(opts.getScratchPath().getAbsolutePath() == "/var/lib/rstudio-launcher/");
+      CHECK(opts.getThreadPoolSize() == 6);
    }
 }
 
