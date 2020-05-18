@@ -151,6 +151,9 @@ namespace options {
 
 namespace {
 
+constexpr char const* s_defaultSandboxPath = "/usr/lib/rstudio-server/bin/rsandbox";
+constexpr char const* s_defaultScratchPath = "/var/lib/rstudio-launcher/";
+
 enum class OptionsError
 {
    SUCCESS = 0,
@@ -304,16 +307,17 @@ struct Options::Impl
             ("plugin-name",
                value<std::string>(&PluginName)->default_value(""),
                "the name of this plugin")
+            ("rsandbox-path",
+               value<system::FilePath>(&RSandboxPath)->default_value(system::FilePath(s_defaultSandboxPath)),
+               "path to rsandbox executable")
             ("scratch-path",
-               value<system::FilePath>(&ScratchPath)->default_value(
-                  system::FilePath("/var/lib/rstudio-launcher/")),
+               value<system::FilePath>(&ScratchPath)->default_value(system::FilePath(s_defaultScratchPath)),
                "scratch path where logs and job state data are stored")
             ("server-user",
                value<std::string>(&ServerUser)->default_value("rstudio-server"),
                "user to run the plugin as")
             ("thread-pool-size",
-               value<size_t>(&ThreadPoolSize)->default_value(
-                  std::max<size_t>(4, std::thread::hardware_concurrency())),
+               value<size_t>(&ThreadPoolSize)->default_value(std::max<size_t>(4, std::thread::hardware_concurrency())),
                "the number of threads in the thread pool");
 
          IsInitialized = true;
@@ -337,6 +341,7 @@ struct Options::Impl
    logging::LogLevel MaxLogLevel;
    size_t MaxMessageSize;
    std::string PluginName;
+   system::FilePath RSandboxPath;
    system::FilePath ScratchPath;
    std::string ServerUser;
    size_t ThreadPoolSize;
@@ -494,6 +499,11 @@ logging::LogLevel Options::getLogLevel() const
 size_t Options::getMaxMessageSize() const
 {
    return m_impl->MaxMessageSize;
+}
+
+const system::FilePath& Options::getRSandboxPath() const
+{
+   return m_impl->RSandboxPath;
 }
 
 const system::FilePath& Options::getScratchPath() const

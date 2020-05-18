@@ -51,15 +51,6 @@ public:
    size_t getNodeConnectionTimeoutSeconds() const;
 
    /**
-    * @brief Gets the path to the rsandbox executable provided by the RStudio Server Pro installation.
-    *
-    * If RStudio Server Pro is installed to the default location, this value does not need to be set.
-    *
-    * @return The path to the rsandbox executable.
-    */
-   const system::FilePath& getRsandboxPath() const;
-
-   /**
     * @brief Gets the secure cookie key file to use for decrypting PAM passwords.
     *
     * @return The secure cookie key file to use for decrypting PAM passwords.
@@ -115,15 +106,9 @@ private:
    bool m_useUnprivilegedMode;
 
    /**
-    * The path to the rsandbox executable provided by the RStudio Server Pro installation.
-    */
-   system::FilePath m_rsandboxPath;
-
-   /**
     * The secure cookie key file to use for decrypting PAM passwords.
     */
    system::FilePath m_secureCookieKeyFile;
-
 };
 
 } // namespace local

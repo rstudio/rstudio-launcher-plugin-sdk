@@ -28,10 +28,6 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace local {
 
-namespace {
-constexpr char const* s_defaultSandboxPath = "/usr/lib/rstudio-server/bin/rsandbox";
-}
-
 LocalOptions& LocalOptions::getInstance()
 {
    static LocalOptions options;
@@ -41,11 +37,6 @@ LocalOptions& LocalOptions::getInstance()
 size_t LocalOptions::getNodeConnectionTimeoutSeconds() const
 {
    return m_nodeConnectionTimeoutSeconds;
-}
-
-const system::FilePath& LocalOptions::getRsandboxPath() const
-{
-   return m_rsandboxPath;
 }
 
 const system::FilePath& LocalOptions::getSecureCookieKeyFile() const
@@ -70,9 +61,6 @@ void LocalOptions::initialize()
       ("unprivileged-mode",
        Value<bool>(m_useUnprivilegedMode).setDefaultValue(false),
        "special unprivileged mode - does not change user, runs without root, no impersonation, single user")
-      ("rsandbox-path",
-       Value<FilePath>(m_rsandboxPath).setDefaultValue(FilePath(s_defaultSandboxPath)),
-       "path to rsandbox executable")
       ("secure-cookie-key-file",
        Value<FilePath>(m_secureCookieKeyFile).setDefaultValue(FilePath()),
        "amount of seconds to allow for outgoing connections to other nodes in a load balanced cluster or 0 to use "

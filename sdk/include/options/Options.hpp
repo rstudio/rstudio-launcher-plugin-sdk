@@ -246,6 +246,15 @@ public:
     */
    const std::string& getPluginName() const;
 
+   /**
+    * @brief Gets the path to the rsandbox executable provided by the RStudio Server Pro installation.
+    *
+    * If RStudio Server Pro is installed to the default location, this value does not need to be set.
+    *
+    * @return The path to the rsandbox executable.
+    */
+   const system::FilePath& getRSandboxPath() const;
+
   /**
    * @brief Gets the scratch path to which log files and other plugin data may be written.
    *
