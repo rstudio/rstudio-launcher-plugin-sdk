@@ -76,7 +76,7 @@ addUser()
   fi
 
 
-  sudo useradd -p "" -g "$MAIN_GRP" $SUPP_GRPS "$USER" > /dev/null
+  sudo useradd -m -p "" -g "$MAIN_GRP" $SUPP_GRPS "$USER" > /dev/null
   if [[ $? -ne 0 ]]; then
     echo "Failed."
     exit 1
