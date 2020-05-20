@@ -59,6 +59,7 @@ set(RLPS_SOURCE_FILES
    src/system/DateTime.cpp
    src/system/FilePath.cpp
    src/system/PosixSystem.cpp
+   src/system/Process.cpp
    src/system/ReaderWriterMutex.cpp
    src/system/User.cpp
    src/utils/ErrorUtils.cpp
