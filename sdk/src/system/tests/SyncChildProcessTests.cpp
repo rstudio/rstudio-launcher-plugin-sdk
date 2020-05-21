@@ -27,6 +27,8 @@
 #include <system/FilePath.hpp>
 #include <system/Process.hpp>
 
+#include "../PosixSystem.hpp"
+
 namespace rstudio {
 namespace launcher_plugins {
 namespace system {
@@ -41,15 +43,26 @@ TEST_CASE("Create Processes")
          nullptr,
          system::FilePath("conf-files/Empty.conf")));
 
-   SECTION("No redirection")
+   // Get all the users for future user.
+   system::User user1, user2, user3, user4, user5;
+   REQUIRE_FALSE(system::User::getUserFromIdentifier(USER_ONE, user1));
+   REQUIRE_FALSE(system::User::getUserFromIdentifier(USER_TWO, user2));
+   REQUIRE_FALSE(system::User::getUserFromIdentifier(USER_THREE, user3));
+   REQUIRE_FALSE(system::User::getUserFromIdentifier(USER_FOUR, user4));
+   REQUIRE_FALSE(system::User::getUserFromIdentifier(USER_FIVE, user5));
+
+   // Results/input used across multiple sections.
+   static const std::string stdOutExpected = "multiple\nlines\nof\nouptut\nwith a slash \\";
+   static const std::string stdErrExpected = "/bin/sh: 1: fakecmd: not found\n";
+
+   SECTION("No redirection, Success")
    {
       ProcessOptions opts;
-      opts.Executable = "echo";
+      opts.Executable = "/bin/echo";
       opts.Arguments.emplace_back("-n");
       opts.Arguments.emplace_back("output");
-      opts.IsShellCommand = true;
-
-      REQUIRE_FALSE(system::User::getUserFromIdentifier(USER_FOUR, opts.RunAsUser));
+      opts.IsShellCommand = false;
+      opts.RunAsUser = user4;
 
       ProcessResult result;
       SyncChildProcess child(opts);
@@ -57,6 +70,122 @@ TEST_CASE("Create Processes")
       CHECK(result.ExitCode == 0);
       CHECK(result.StdError == "");
       CHECK(result.StdOut == "output");
+   }
+
+   SECTION("No redirection, Bad Command")
+   {
+      ProcessOptions opts;
+      opts.Executable = "grep";
+      opts.Arguments.emplace_back("-x");
+      opts.IsShellCommand = true;
+      opts.RunAsUser = user3;
+
+      ProcessResult result;
+      SyncChildProcess child(opts);
+      REQUIRE_FALSE(child.run(result));
+      CHECK(result.ExitCode == 2);
+      CHECK(result.StdError == "Usage: grep [OPTION]... PATTERN [FILE]...\n"
+                               "Try 'grep --help' for more information.\n");
+      CHECK(result.StdOut == "");
+   }
+
+   SECTION("No redirection, missing user")
+   {
+      ProcessOptions opts;
+      opts.Executable = "grep";
+      opts.Arguments.emplace_back("-x");
+      opts.IsShellCommand = true;
+
+      ProcessResult result;
+      SyncChildProcess child(opts);
+      REQUIRE_FALSE(child.run(result));
+      CHECK(result.ExitCode == 1);
+      CHECK(result.StdError.substr(21) ==
+         "[rsandbox] ERROR Required option username not specified; LOGGED FROM: bool"
+         " rstudio::core::program_options::{anonymous}::validateOptionsProvided(const"
+         " rstudio_boost::program_options::variables_map&, const"
+         " rstudio_boost::program_options::options_description&, const string&)"
+         " src/cpp/core/ProgramOptions.cpp:46\n");
+      CHECK(result.StdOut == "");
+   }
+
+   SECTION("Stdout redirection")
+   {
+      ProcessOptions opts;
+      opts.Executable = "/bin/echo";
+      opts.Arguments.emplace_back("-ne");
+      opts.Arguments.emplace_back(stdOutExpected);
+      opts.IsShellCommand = true;
+      opts.RunAsUser = user1;
+      opts.StandardOutputFile = user1.getHomePath().completeChildPath("test-out.txt");
+
+      ProcessResult result;
+      SyncChildProcess child(opts);
+      REQUIRE_FALSE(child.run(result));
+      CHECK(result.ExitCode == 0);
+      CHECK(result.StdError == "");
+      CHECK(result.StdOut == "");
+   }
+
+   SECTION("Stderr redirection")
+   {
+      ProcessOptions opts;
+      opts.Executable = "fakecmd";
+      opts.Arguments.emplace_back("-n");
+      opts.Arguments.emplace_back("-e");
+      opts.Arguments.emplace_back(stdOutExpected);
+      opts.IsShellCommand = true;
+      opts.RunAsUser = user1;
+      opts.StandardErrorFile = user1.getHomePath().completeChildPath("test-err.txt");
+
+      ProcessResult result;
+      SyncChildProcess child(opts);
+      REQUIRE_FALSE(child.run(result));
+      CHECK(result.ExitCode == 127);
+      CHECK(result.StdError == "");
+      CHECK(result.StdOut == "");
+   }
+
+   SECTION("Open file descriptors in parent, working dir")
+   {
+      int pipe[2];
+      REQUIRE_FALSE(posix::posixCall<int>(std::bind(::pipe, pipe), ERROR_LOCATION));
+
+      ProcessOptions opts;
+      opts.Executable = "cat";
+      opts.Arguments.emplace_back("test-out.txt");
+      opts.Arguments.emplace_back("test-err.txt");
+      opts.IsShellCommand = true;
+      opts.RunAsUser = user1;
+      opts.WorkingDirectory = user1.getHomePath();
+
+      ProcessResult result;
+      SyncChildProcess child(opts);
+      REQUIRE_FALSE(child.run(result));
+      CHECK(result.ExitCode == 0);
+      CHECK(result.StdError == "");
+      CHECK(result.StdOut == stdOutExpected + stdErrExpected);
+
+      ::close(pipe[0]);
+      ::close(pipe[1]);
+   }
+
+   SECTION("Env variables")
+   {
+
+      ProcessOptions opts;
+      opts.Executable = "./test.sh";
+      opts.IsShellCommand = false;
+      opts.Environment.emplace_back("VAR", "Hello, world!");
+      opts.RunAsUser = user3;
+      opts.WorkingDirectory = FilePath::safeCurrentPath(FilePath());
+
+      ProcessResult result;
+      SyncChildProcess child(opts);
+      REQUIRE_FALSE(child.run(result));
+      CHECK(result.ExitCode == 0);
+      CHECK(result.StdError == "");
+      CHECK(result.StdOut == "Hello, world!");
    }
 }
 
