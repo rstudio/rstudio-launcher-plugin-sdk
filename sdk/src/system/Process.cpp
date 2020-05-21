@@ -431,8 +431,24 @@ struct AbstractChildProcess::Impl
    {
       RSandbox = options::Options::getInstance().getRSandboxPath().getAbsolutePath();
       Arguments.push_back(RSandbox);
-      createSandboxArguments(in_options);
+      createEnvironmentVars(in_options);
       createLaunchProfile(in_options);
+      createSandboxArguments(in_options);
+   }
+
+   void createEnvironmentVars(const ProcessOptions& in_options)
+   {
+      bool pathFound = false;
+      for (const api::EnvVariable& envVar: in_options.Environment)
+      {
+         if (envVar.first == "PATH")
+            pathFound = true;
+
+         Environment.emplace_back(envVar.first + "=" + envVar.second);
+      }
+
+      if (!pathFound)
+         Environment.emplace_back("PATH=" + posix::getEnvironmentVariable("PATH"));
    }
 
    void createLaunchProfile(const ProcessOptions& in_options)
