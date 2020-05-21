@@ -68,7 +68,6 @@ Error restorePrivilegesImpl(uid_t in_uid)
       return systemError(EACCES, ERROR_LOCATION);
 
    return Success();
-
 }
 
 } // anonymous namespace
