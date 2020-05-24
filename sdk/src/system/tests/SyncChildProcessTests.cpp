@@ -28,6 +28,7 @@
 #include <system/Process.hpp>
 
 #include "../PosixSystem.hpp"
+#include "../../tests/MockLogDestination.hpp"
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -172,7 +173,6 @@ TEST_CASE("Create Processes")
 
    SECTION("Env variables")
    {
-
       ProcessOptions opts;
       opts.Executable = "./test.sh";
       opts.IsShellCommand = false;
@@ -186,6 +186,33 @@ TEST_CASE("Create Processes")
       CHECK(result.ExitCode == 0);
       CHECK(result.StdError == "");
       CHECK(result.StdOut == "Hello, world!");
+   }
+
+   SECTION("Password logging")
+   {
+      logging::MockLogPtr mockLog = logging::getMockLogDest();
+
+      ProcessOptions opts;
+      opts.Executable = "./test.sh";
+      opts.IsShellCommand = false;
+      opts.Environment.emplace_back("VAR", "Hello, world!");
+      opts.Environment.emplace_back("VAR2", "Something else!");
+      opts.RunAsUser = user2;
+      opts.Password = "test-pwd";
+      opts.WorkingDirectory = FilePath::safeCurrentPath(FilePath());
+
+      ProcessResult result;
+      SyncChildProcess child(opts);
+      REQUIRE_FALSE(child.run(result));
+      CHECK(result.ExitCode == 0);
+      CHECK(result.StdError == "");
+      CHECK(result.StdOut == "Hello, world!");
+
+      // Check the log.
+      REQUIRE(mockLog->getSize() == 1);
+      CHECK(mockLog->peek().Level == logging::LogLevel::DEBUG);
+      CHECK(mockLog->peek().Message.find("test-pwd") == std::string::npos);
+      CHECK(mockLog->pop().Message.find(R"("password":"<redacted>")") != std::string::npos);
    }
 }
 
