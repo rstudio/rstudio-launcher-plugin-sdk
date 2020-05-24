@@ -52,29 +52,53 @@ const int s_threadSafeExitError = 153;
 const int s_readPipe = 0;
 const int s_writePipe = 1;
 
+/**
+ * @brief Structure that holds the FDs of the pipes that will be opened for parent/child communication.
+ */
 struct FileDescriptors
 {
+   /** The FDs of the pipe that will be used for standard input transfer (parent -> child). */
    int Input[2] = {0, 0};
+
+   /** The FDs of the pipe that will be used for standard output transfer (parent <- child). */
    int Output[2] = {0, 0};
+
+   /** The FDs of the pipe that will be used for standard error transfer (parent <- child). */
    int Error[2] = {0, 0};
+
+   /** The FDs of the pipe that will be used for open FD transfer (parent -> child). */
    int CloseFd[2] = {0, 0};
 };
 
+/**
+ * @brief A memory managed list of C-style strings.
+ */
 class CStringList final
 {
 public:
+   /**
+    * @brief Constructor.
+    */
    CStringList() :
       m_length(0),
       m_data(nullptr)
    {
    }
 
+   /**
+    * @brief Constructor.
+    *
+    * @param in_vector      The C++-style vector of strings to be converted to a C-style list of strings.
+    */
    explicit CStringList(const std::vector<std::string>& in_vector) :
       CStringList()
    {
       setData(in_vector);
    }
 
+   /**
+    * @brief Destructor.
+    */
    ~CStringList() noexcept
    {
       try
@@ -87,22 +111,42 @@ public:
       }
    }
 
+   /**
+    * @brief Gets a pointer to the list of strings.
+    *
+    * @return The list of strings.
+    */
    char** getData() const
    {
       return !isEmpty() ? m_data : nullptr;
    }
 
+   /**
+    * @brief Gets the number of elements in the list of strings.
+    *
+    * @return The number of elements in the list of strings.
+    */
    size_t getSize() const
    {
       return m_length;
    }
 
+   /**
+    * @brief Checks whether this list of strings is empty or not.
+    *
+    * @return True if this list of strings is empty; False otherwise.
+    */
    bool isEmpty() const
    {
       return m_length == 0;
    }
 
 private:
+   /**
+    * @brief Clears the buffer and populates it with the new vector of strings.
+    *
+    * @param in_vector      The vector of strings with which to populate the buffer.
+    */
    void setData(const std::vector<std::string>& in_vector)
    {
       free();
@@ -124,6 +168,9 @@ private:
       m_data[m_length] = nullptr;
    }
 
+   /**
+    * @brief Frees the buffer.
+    */
    void free()
    {
       if (m_data != nullptr)
@@ -135,10 +182,18 @@ private:
       delete[] m_data;
    }
 
+   /** The number of elements in m_data. */
    size_t m_length;
+
+   /** The buffer to hold the list of strings. */
    char** m_data;
 };
 
+/**
+ * @brief Clears the signal mask of the current process.
+ *
+ * @return 0 on success; an error number otherwise.
+ */
 int clearSignalMask()
 {
    sigset_t emptyMask;
@@ -146,6 +201,11 @@ int clearSignalMask()
    return ::pthread_sigmask(SIG_SETMASK, &emptyMask, nullptr);
 }
 
+/**
+ * @brief Closes the specified file descriptor.
+ *
+ * @param in_fd     The file descriptor to close.
+ */
 void closeFd(uint32_t in_fd)
 {
    // Keep trying to close the file descriptor if the operation was interrupted. Otherwise, an error means the
@@ -157,6 +217,12 @@ void closeFd(uint32_t in_fd)
    }
 }
 
+/**
+ * @brief Closes the specified pipe file descriptor.
+ *
+ * @param in_pipeFd             The FD of the pipe to close.
+ * @param in_errorLocation      The calling location.
+ */
 void closePipe(int in_pipeFd, const ErrorLocation& in_errorLocation)
 {
    Error error = posix::posixCall<int>(std::bind(::close, in_pipeFd), in_errorLocation);
@@ -164,12 +230,26 @@ void closePipe(int in_pipeFd, const ErrorLocation& in_errorLocation)
       logging::logError(error);
 }
 
+
+/**
+ * @brief Closes both ends of the specified pie.
+ *
+ * @param in_pipeFds            Both of the FDs of the pipe to close.
+ * @param in_errorLocation      The calling location.
+ */
 void closePipe(int* in_pipeFds, const ErrorLocation& in_errorLocation)
 {
    closePipe(in_pipeFds[s_readPipe], in_errorLocation);
    closePipe(in_pipeFds[s_writePipe], in_errorLocation);
 }
 
+/**
+ * @brief Closes the file descriptors that were inherited from the parent process.
+ *
+ * @param in_pipeFd     The FD of the read-end of the CloseFD pipe.
+ * @param in_maxFd      The maximum possible FD. Used if there is a problem reading the list of open FDs from the
+ *                      CloseFD pipe.
+ */
 void closeParentFds(int in_pipeFd, rlim_t in_maxFd)
 {
    // The parent process will send its open FDs on in_pipeFd. Read them and close them (except the pipe).
@@ -216,6 +296,13 @@ void closeParentFds(int in_pipeFd, rlim_t in_maxFd)
    }
 }
 
+/**
+ * @brief Creates the pipes that will be needed for parent/child communications.
+ *
+ * @param out_fds   The created FDs.
+ *
+ * @return Success if all of the FDs could be created; Error otherwise.
+ */
 Error createPipes(FileDescriptors& out_fds)
 {
    Error error = posix::posixCall<int>(std::bind(::pipe, out_fds.Input), ERROR_LOCATION);
@@ -249,17 +336,39 @@ Error createPipes(FileDescriptors& out_fds)
    return error;
 }
 
-std::string escape(const std::string& arg)
+/**
+ * @brief Shell escapes a string.
+ *
+ * @param in_string     The string to escape.
+ *
+ * @return The escaped string.
+ */
+std::string escape(const std::string& in_string)
 {
    boost::regex pattern("'");
-   return "'" + boost::regex_replace(arg, pattern, R"('"'"')") + "'";
+   return "'" + boost::regex_replace(in_string, pattern, R"('"'"')") + "'";
 }
 
-std::string escape(const FilePath &path)
+/**
+ * @brief Shell escapes a FilePath.
+ *
+ * @param in_filePath   The FilePath to escape.
+ *
+ * @return The escaped FilePath, as a string.
+ */
+std::string escape(const FilePath& in_filePath)
 {
-   return escape(path.getAbsolutePath());
+   return escape(in_filePath.getAbsolutePath());
 }
 
+/**
+ * @brief Gets the system limits for FDs.
+ *
+ * @param out_softLimit     The soft FD limit.
+ * @param out_hardLimit     The hard FD limit.
+ *
+ * @return Success if the limits could be retrieved; Error otherwise.
+ */
 Error getFilesLimit(rlim_t& out_softLimit, rlim_t& out_hardLimit)
 {
    struct rlimit fileLimit;
@@ -271,6 +380,14 @@ Error getFilesLimit(rlim_t& out_softLimit, rlim_t& out_hardLimit)
    return Success();
 }
 
+/**
+ * @brief Get the list of open FDs for the specified process.
+ *
+ * @param in_pid        The ID of the process for which to retrieve its FDs.
+ * @param out_fds       The list of open FDs for the specified process.
+ *
+ * @return Success if the FDs could be read; Error otherwise.
+ */
 Error getOpenFds(pid_t in_pid, std::vector<uint32_t>& out_fds)
 {
    std::string pidStr = std::to_string(in_pid);
@@ -325,6 +442,15 @@ Error getOpenFds(pid_t in_pid, std::vector<uint32_t>& out_fds)
    return Success();
 }
 
+/**
+ * @brief Reads a string from the specified pipe.
+ *
+ * @param in_fd         The FD of the pipe to read from.
+ * @param out_data      The data that was read.
+ * @param out_eof       Denotes whether there is more data to read (false) or not (true). Stands of end of file.
+ *
+ * @return Success if the pipe could be read from; Error otherwise.
+ */
 Error readFromPipe(int in_fd, std::string& out_data, bool* out_eof = nullptr)
 {
    if (out_eof != nullptr)
@@ -361,13 +487,21 @@ Error readFromPipe(int in_fd, std::string& out_data, bool* out_eof = nullptr)
    return Success();
 }
 
-Error sendFileDescriptors(int closeFd, pid_t in_childPid)
+/**
+ * @brief Sends a list of file descriptors to the specified pipe FD.
+ *
+ * @param in_fd     The FD of the pipe to which to write the list of open FDs.
+ * @param in_pid    The PID of the process for which to list FDs.
+ *
+ * @return Success if the FDs could be read and written to the pipe; Error otherwise.
+ */
+Error sendFileDescriptors(int in_fd, pid_t in_pid)
 {
    size_t bytesWritten = 0;
 
    // Get list of FileDescriptors open in the child process.
    std::vector<uint32_t> openFds;
-   Error error = getOpenFds(in_childPid, openFds);
+   Error error = getOpenFds(in_pid, openFds);
    if (error)
       logging::logError(error);
    else
@@ -376,7 +510,7 @@ Error sendFileDescriptors(int closeFd, pid_t in_childPid)
       for (uint32_t openFd : openFds)
       {
          error = posix::posixCall<size_t>(
-            std::bind(::write, closeFd, &openFd, 4),
+            std::bind(::write, in_fd, &openFd, 4),
             ERROR_LOCATION,
             &bytesWritten);
 
@@ -387,7 +521,7 @@ Error sendFileDescriptors(int closeFd, pid_t in_childPid)
 
    int streamEnd = -1;
    Error lastWriteError = posix::posixCall<size_t>(
-      std::bind(::write, closeFd, &streamEnd, 4),
+      std::bind(::write, in_fd, &streamEnd, 4),
       ERROR_LOCATION,
       &bytesWritten);
 
@@ -397,6 +531,15 @@ Error sendFileDescriptors(int closeFd, pid_t in_childPid)
    return Success();
 }
 
+/**
+ * @brief Writes the specified data to the given FD.
+ *
+ * @param in_fd         The FD of the pipe to which to write.
+ * @param in_data       The data to write.
+ * @param in_eof        Indicates whether this is the last data to write (true) or not (false). Stands for end of file.
+ *
+ * @return Success if all of the data could be written. Error otherwise.
+ */
 Error writeToPipe(int in_fd, const std::string& in_data, bool in_eof)
 {
    size_t bytesWritten = 0;
@@ -423,6 +566,10 @@ Error writeToPipe(int in_fd, const std::string& in_data, bool in_eof)
 // AbstractChildProcess ================================================================================================
 struct AbstractChildProcess::Impl
 {
+   /**
+    * @brief Constructor.
+    * @param in_options     The options for this child process.
+    */
    explicit Impl(const ProcessOptions& in_options) :
       Pid(-1),
       StdErrFd(-1),
@@ -436,6 +583,13 @@ struct AbstractChildProcess::Impl
       createSandboxArguments(in_options);
    }
 
+   /**
+    * @brief Creates a C-style list of environment variables from the process options.
+    *
+    * If PATH is not present, the current PATH will be added.
+    *
+    * @param in_options     The options for this child process.
+    */
    void createEnvironmentVars(const ProcessOptions& in_options)
    {
       bool pathFound = false;
@@ -451,6 +605,13 @@ struct AbstractChildProcess::Impl
          Environment.emplace_back("PATH=" + posix::getEnvironmentVariable("PATH"));
    }
 
+   /**
+    * @brief Creates an RSandbox launch profile.
+    *
+    * Also creates a sterilized version for logging.
+    *
+    * @param in_options     The options for this child process.
+    */
    void createLaunchProfile(const ProcessOptions& in_options)
    {
       json::Object contextObj;
@@ -480,8 +641,19 @@ struct AbstractChildProcess::Impl
       profileObj["config"] = configObj;
 
       StandardInput = profileObj.write();
+
+      if (!in_options.Password.empty())
+      {
+         profileObj["password"] = "<redacted>";
+         SafeStdin = profileObj.write();
+      }
    }
 
+   /**
+    * @brief Creates the RSandbox arguments from the given process options.
+    *
+    * @param in_options     The options for this child process.
+    */
    void createSandboxArguments(const ProcessOptions& in_options)
    {
       std::string shellCommand = in_options.Executable;
@@ -541,6 +713,19 @@ struct AbstractChildProcess::Impl
       Arguments.emplace_back(shellCommand);
    }
 
+   /**
+    * @brief Prepares the child process by closing uncessary FDs and then invokes ::execv[e].
+    *
+    * This method should only be invoked from the child process.
+    *
+    * @param in_fds             The currently open FDs for parent-child communication.
+    * @param in_maxFd           The maximum possible FD for the system.
+    * @param in_arguments       The process arguments.
+    * @param in_environment     The process environment.
+    *
+    * @return Error if a failure occurred before or during the call to ::execv[e]. This method should not return on
+    *         successful ::execv[e].
+    */
    Error execChild(
       const FileDescriptors& in_fds,
       rlim_t in_maxFd,
@@ -589,71 +774,46 @@ struct AbstractChildProcess::Impl
       ::_exit(s_threadSafeExitError);
    }
 
+   /**
+    * @brief Logs a process spawn at the debug level.
+    */
    void logProcessSpawn()
    {
-      // Before logging, take out the password from the standard input, if any.
-      std::string strippedStdin;
-
-      static const int beforeLen = 12;
-      int startPos1 = StandardInput.find(R"("password":")");
-      int startPos2 = startPos1 + beforeLen;
-
-      bool wasEmpty = true;
-      if (startPos1 != std::string::npos)
-      {
-         while (true)
-         {
-            startPos2 = StandardInput.find('"', startPos2);
-            // This shouldn't be possible.
-            assert(startPos2 != std::string::npos);
-
-            // If the password field was empty, don't redact.
-            wasEmpty = (startPos2 == (startPos1 + beforeLen));
-            if (wasEmpty)
-               break;
-
-            int lastSlashPos = startPos2 - 1;
-            while (lastSlashPos > (startPos1 + beforeLen))
-            {
-               if (StandardInput[lastSlashPos] == '\\')
-                  --lastSlashPos;
-               else
-                  break;
-            }
-
-            if ((startPos2 - lastSlashPos) % 2 == 0)
-               break;
-         }
-
-         // Again, not possible - we must have formed the launch profile incorrectly.
-         assert(startPos2 != std::string::npos);
-
-         if (wasEmpty)
-            strippedStdin = StandardInput;
-         else
-            strippedStdin =
-               StandardInput.substr(0, (startPos1 + beforeLen)) + "<redacted>" + StandardInput.substr(startPos2);
-      }
-
+      // If SafeStdin is empty, that means there was no sensitive data to sterilize, so just log the regular
+      // rdrStandardInput.
       logging::logDebugMessage(
-         "Launching rsandbox. \nArgs " + boost::algorithm::join(Arguments, " ") + "\nLaunch Profile: " + strippedStdin,
+         "Launching rsandbox. \nArgs " +
+            boost::algorithm::join(Arguments, " ") +
+            "\nLaunch Profile: " +
+            (SafeStdin.empty() ? StandardInput : SafeStdin),
          ERROR_LOCATION);
    }
 
+   /** The list of RSandbox arguments. */
    std::vector<std::string> Arguments;
 
+   /** The environment to send to the RSandbox process. */
    std::vector<std::string> Environment;
 
+   /** A sterilized version of StandardInput for logging purposes. */
+   std::string SafeStdin;
+
+   /** The launch profile to send to the RSandbox process via standard input. */
    std::string StandardInput;
 
+   /** The read end of the Standard Error FD for the parent process. */
    int StdErrFd;
 
+   /** The write end of the Standard Input FD for the parent process. */
    int StdInFd;
 
+   /** The read end of the Standard Output FD for the parent process. */
    int StdOutFd;
 
+   /** The PID of the child process. */
    pid_t Pid;
 
+   /** The RSandbox executable path. */
    std::string RSandbox;
 };
 
