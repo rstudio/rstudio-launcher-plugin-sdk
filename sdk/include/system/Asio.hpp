@@ -152,7 +152,10 @@ public:
     * This method is thread safe. Each provided block of data will be written to the stream in full before a new one
     * begins.
     */
-   void writeBytes(const std::string& in_data, const OnError& in_onError);
+   void writeBytes(
+      const std::string& in_data,
+      const OnError& in_onError,
+      const AsioFunction& in_onFinishedWriting = AsioFunction());
 
 private:
    // The private implementation of AsioStream.
