@@ -193,7 +193,7 @@ public:
     *
     * @return Success if the child process was terminated; Error otherwise.
     */
-   Error terminate();
+   virtual Error terminate();
 
 protected:
    /**
