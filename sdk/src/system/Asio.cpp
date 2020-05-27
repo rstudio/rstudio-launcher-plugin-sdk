@@ -177,14 +177,32 @@ struct AsioStream::Impl : public std::enable_shared_from_this<AsioStream::Impl>
     * @param in_streamHandle    The handle of the stream to open.
     */
    explicit Impl(boost::asio::posix::stream_descriptor::native_handle_type in_streamHandle) :
-         StreamDescriptor(getIoService(), in_streamHandle)
+      StreamDescriptor(getIoService())
    {
+      try
+      {
+         StreamDescriptor.assign(in_streamHandle);
+      }
+      catch (const boost::system::system_error& ec)
+      {
+         CreationError = utils::createErrorFromBoostError(ec.code(), ec.what(), ERROR_LOCATION);
+      }
+      catch (const std::exception& e)
+      {
+         CreationError = unknownError(e.what(), ERROR_LOCATION);
+      }
    }
 
 
    void startWriting(const std::unique_lock<std::mutex>& in_lock, const OnError& in_onError)
    {
       BOOST_ASSERT(in_lock.owns_lock());
+
+      if (CreationError)
+      {
+         in_onError(CreationError);
+         return;
+      }
 
       if (WriteBuffer.empty())
          return;

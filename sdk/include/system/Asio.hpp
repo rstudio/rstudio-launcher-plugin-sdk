@@ -129,9 +129,14 @@ public:
    explicit AsioStream(int in_streamHandle);
 
    /**
+    * @brief Destructor. Closes the stream.
+    */
+   ~AsioStream() noexcept;
+
+   /**
     * @brief Closes the stream. Nothing may be read from or written to the stream after this is called.
     */
-   void close();
+   void close() noexcept;
 
    /**
     * @brief Attempts to read bytes from this ASIO stream.
