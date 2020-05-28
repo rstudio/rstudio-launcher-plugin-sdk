@@ -210,7 +210,7 @@ protected:
     */
    Error run();
 
-   // The private implemenation of AbstractChildProcess.
+   // The private implementation of AbstractChildProcess.
    PRIVATE_IMPL(m_baseImpl);
 };
 
