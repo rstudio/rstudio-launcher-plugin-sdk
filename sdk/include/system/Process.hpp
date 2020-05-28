@@ -237,31 +237,26 @@ public:
    Error run(ProcessResult& out_result);
 };
 
-class AsyncChildProcess
-{
-public:
-   explicit AsyncChildProcess(const ProcessOptions& in_process);
-
-   Error run(AsyncProcessCallbacks& out_result);
-
-private:
-   PRIVATE_IMPL(m_impl);
-};
-
 class ProcessSupervisor final : public Noncopyable
 {
+public:
    static ProcessSupervisor& getInstance();
 
    bool hasRunningChildren() const;
 
-   Error runProcess(
+   Error runAsyncProcess(
       const ProcessOptions& in_process,
       const AsyncProcessCallbacks& in_callbacks,
-      AsyncChildProcess* out_childProcess);
+      std::shared_ptr<AbstractChildProcess>& out_childProcess);
 
    void terminateAllChildren(bool in_forceKill);
 
    bool waitForExit(const TimeDuration& in_maxWaitTime = TimeDuration::Infinity());
+
+private:
+   ProcessSupervisor() = default;
+
+   PRIVATE_IMPL(m_impl);
 };
 
 } // namespace process

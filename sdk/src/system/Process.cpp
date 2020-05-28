@@ -25,14 +25,16 @@
 
 #include <cstring>
 #include <dirent.h>
+#include <fcntl.h>
 #include <sys/resource.h>
 #include <sys/wait.h>
 
 #include <boost/regex.hpp>
+#include <boost/algorithm/string/join.hpp>
 
 #include <json/Json.hpp>
 #include <options/Options.hpp>
-#include <boost/algorithm/string/join.hpp>
+#include <system/Asio.hpp>
 
 #include "PosixSystem.hpp"
 #include "../utils/ErrorUtils.hpp"
@@ -361,6 +363,18 @@ std::string escape(const FilePath& in_filePath)
 }
 
 /**
+ * @brief Gets the process exit code from its exit status.
+ *
+ * @param in_status     The status returned by the process on exit.
+ *
+ * @return The appropriate exit code, based on the status.
+ */
+int getExitCodeFromStatus(int in_status)
+{
+   return WIFEXITED(in_status) ? WEXITSTATUS(in_status) : in_status;
+}
+
+/**
  * @brief Gets the system limits for FDs.
  *
  * @param out_softLimit     The soft FD limit.
@@ -528,6 +542,18 @@ Error sendFileDescriptors(int in_fd, pid_t in_pid)
       return error;
 
    return Success();
+}
+
+/**
+ * @brief Sets the non-blocking flag on the specified pipe FD.
+ *
+ * @param in_pipeFd     The FD of the pipe to make non-blocking.
+ */
+void setPipeNonBlocking(int in_pipeFd)
+{
+   int flags = ::fcntl(in_pipeFd, F_GETFL);
+   if ( (flags != -1) && !(flags & O_NONBLOCK) )
+      ::fcntl(in_pipeFd, F_SETFL, flags | O_NONBLOCK);
 }
 
 /**
@@ -940,7 +966,7 @@ Error SyncChildProcess::run(ProcessResult& out_result)
       error = readFromPipe(m_baseImpl->StdErrFd, out_result.StdError);
 
    // Wait for the process to exit and record the exit code.
-   int status;
+   int status = 0;
    pid_t result = posix::posixCall<pid_t>(std::bind(::waitpid, m_baseImpl->Pid, &status, 0));
 
    if (result == -1)
@@ -955,9 +981,364 @@ Error SyncChildProcess::run(ProcessResult& out_result)
       return systemError(errno, ERROR_LOCATION);
    }
    else
-      out_result.ExitCode = WIFEXITED(status) ? WEXITSTATUS(status) : status;
+      out_result.ExitCode = getExitCodeFromStatus(status);
 
    return Success();
+}
+
+// AsyncChildProcess ===================================================================================================
+/**
+ * @brief An asynchronous rsandbox process.
+ */
+class AsyncChildProcess final : public AbstractChildProcess, public std::enable_shared_from_this<AsyncChildProcess>
+{
+   typedef std::shared_ptr<AsyncChildProcess> SharedThis;
+   typedef std::weak_ptr<AsyncChildProcess> WeakThis;
+
+public:
+   /**
+    * @brief Constructor.
+    *
+    * @param in_options     The options for the child process.
+    */
+   explicit AsyncChildProcess(const ProcessOptions& in_options);
+
+   /**
+    * @brief Checks whether this child process has exited.
+    *
+    * @return True if this child process has exited; false otherwise.
+    */
+   bool hasExited() const;
+
+   /**
+    * @brief Runs the process. May only be called once.
+    *
+    * @param in_callbacks   Optional callbacks to be invoked on certain events.
+    *
+    * @return Success if the process could be run; Error otherwise.
+    */
+   Error run(const AsyncProcessCallbacks& in_callbacks);
+
+   /**
+    * @brief Terminates the process.
+    *
+    * @return Success if the process could be terminated; Error otherwise.
+    */
+   Error terminate() override;
+
+private:
+   /**
+    * @brief Starts a timed event to check for process exit every 20 milliseconds until time time limit is reached.
+    *
+    * @param in_sharedThis      A shared pointer to this.
+    * @param in_waitTime        The maximum amount of time to wait for the process to exit.
+    * @param in_forceExit       True if the exit should be forced; false otherwise.
+    * @param in_error           The error that initiated this check for exit, if any.
+    * @param in_startTime       The time at which this check started. Default: invocation time.
+    */
+   static void startCheckingExit(
+      const SharedThis& in_sharedThis,
+      const system::TimeDuration& in_waitTime = system::TimeDuration::Infinity(),
+      bool in_forceExit = false,
+      const Error& in_error = Success(),
+      const system::DateTime& in_startTime = system::DateTime());
+
+   /**
+    * @brief Checks whether this process has exited, canceling the timed event if the time limit is reached.
+    *
+    * @param in_sharedThis      A shared pointer to this.
+    * @param in_waitTime        The maximum amount of time to wait for the process to exit.
+    * @param in_forceExit       True if the exit should be forced; false otherwise.
+    * @param in_error           The error that initiated this check for exit, if any.
+    * @param in_startTime       The time at which this check started. Default: invocation time.
+    */
+   void checkExited(
+      const system::TimeDuration& in_waitTime = system::TimeDuration::Infinity(),
+      bool in_forceExit = false,
+      const Error& in_error = Success(),
+      const system::DateTime& in_startTime = system::DateTime());
+
+   /**
+    * @brief Waits for the other output stream to fail, if one of them has failed, for up to 5 seconds.
+    *
+    * @param in_error           The error that occrued when the stream failed.
+    * @param in_startTime       The time at which waiting has started. Default: invocation time.
+    */
+   void waitForOtherStreamFailure(
+      const Error& in_error,
+      const system::DateTime& in_startTime = system::DateTime());
+
+   /** The callbacks to be invoked when certain events occur (such as process exit or stdout output). */
+   AsyncProcessCallbacks m_callbacks;
+
+   /** Whether the stream has exited. */
+   bool m_hasExited;
+
+   /** Whether the stderr stream has failed. */
+   bool m_stdErrFailure;
+
+   /** Whether the stdout stream has failed. */
+   bool m_stdOutFailure;
+
+   /** The stderr stream. */
+   std::unique_ptr<AsioStream> m_stdErrStream;
+
+   /** The stdin stream. */
+   std::unique_ptr<AsioStream> m_stdInStream;
+
+   /** The stdout stream. */
+   std::unique_ptr<AsioStream> m_stdOutStream;
+
+   /** Timer that watches for process exit or stream failure. */
+   std::unique_ptr<AsyncTimedEvent> m_exitWatcher;
+
+   /** Mutex to protect shared state. */
+   std::mutex m_mutex;
+};
+
+AsyncChildProcess::AsyncChildProcess(const ProcessOptions& in_options) :
+   AbstractChildProcess(in_options),
+   m_hasExited(false),
+   m_stdErrFailure(false),
+   m_stdOutFailure(false)
+{
+}
+
+bool AsyncChildProcess::hasExited() const
+{
+   return m_hasExited;
+}
+
+Error AsyncChildProcess::run(const AsyncProcessCallbacks& in_callbacks)
+{
+   m_callbacks = in_callbacks;
+
+   Error error = AbstractChildProcess::run();
+   if (error)
+      return error;
+
+   // Make the pipes non-blocking.
+   setPipeNonBlocking(m_baseImpl->StdErrFd);
+   setPipeNonBlocking(m_baseImpl->StdInFd);
+   setPipeNonBlocking(m_baseImpl->StdOutFd);
+
+   WeakThis weakThis = weak_from_this();
+   if (!m_baseImpl->StandardInput.empty())
+   {
+      m_stdInStream.reset(new AsioStream(m_baseImpl->StdInFd));
+
+      AsioFunction onFinishedWriting = [weakThis]()
+      {
+         if (SharedThis sharedThis = weakThis.lock())
+            sharedThis->m_stdInStream->close();
+      };
+
+      m_stdInStream->writeBytes(m_baseImpl->StandardInput, in_callbacks.OnError, onFinishedWriting);
+   }
+
+   auto onRead = [](const OnOutputCallback& in_onOutput, const char* in_data, size_t in_length)
+   {
+      std::string strData(in_data, in_length);
+      in_onOutput(strData);
+   };
+
+   auto streamFailureWatch = [weakThis](const Error& in_error, const system::DateTime& in_startTime)
+   {
+      if (SharedThis sharedThis = weakThis.lock())
+      {
+         sharedThis->waitForOtherStreamFailure(in_error, in_startTime);
+      }
+   };
+
+   auto onReadError = [weakThis, streamFailureWatch](bool is_stdOut, const Error& in_error)
+   {
+      if (SharedThis sharedThis = weakThis.lock())
+      {
+         if (is_stdOut)
+            sharedThis->m_stdOutFailure = true;
+         else
+            sharedThis->m_stdErrFailure = true;
+
+         // Start watching for the other stream to fail in 20 millisecond intervals, for at most 5 seconds, only if
+         // there isn't another timer already running (we don't want to interrupt an actual exit watcher from terminate).
+         LOCK_MUTEX(sharedThis->m_mutex)
+         {
+            if (sharedThis->m_exitWatcher == nullptr)
+            {
+               sharedThis->m_exitWatcher.reset(new AsyncTimedEvent());
+               sharedThis->m_exitWatcher->start(
+                  system::TimeDuration::Microseconds(20000),
+                  std::bind(streamFailureWatch, in_error, system::DateTime()));
+            }
+         }
+         END_LOCK_MUTEX
+      }
+   };
+
+   m_stdOutStream.reset(new AsioStream(m_baseImpl->StdOutFd));
+   m_stdErrStream.reset(new AsioStream(m_baseImpl->StdErrFd));
+
+   {
+      using namespace std::placeholders;
+      m_stdOutStream->readBytes(
+         std::bind(onRead, in_callbacks.OnStandardOutput, _1, _2),
+         std::bind(onReadError, true, _1));
+      m_stdErrStream->readBytes(
+         std::bind(onRead, in_callbacks.OnStandardError, _1, _2),
+         std::bind(onReadError, false, _1));
+   }
+
+   return Success();
+}
+
+Error AsyncChildProcess::terminate()
+{
+   if (m_hasExited)
+      return Success();
+
+   Error error = AsyncChildProcess::terminate();
+   if (!error)
+   {
+      // Wait up to 30 seconds for the process to exit. If it fails to exit within this time, there's likely something
+      // wrong. At this point, it's best not to let the child process impact the parent, so invoke the onExit callback
+      // and continue as if it had exited.
+      startCheckingExit(shared_from_this(), system::TimeDuration::Seconds(30), true);
+   }
+
+   return error;
+}
+
+void AsyncChildProcess::startCheckingExit(
+   const SharedThis& in_sharedThis,
+   const system::TimeDuration& in_waitTime,
+   bool in_forceExit,
+   const Error& in_error,
+   const system::DateTime& in_startTime)
+{
+   WeakThis weakThis = in_sharedThis;
+   auto onTimer = [weakThis, in_waitTime, in_forceExit, in_error, in_startTime]()
+   {
+      if (SharedThis sharedThis = weakThis.lock())
+      {
+         sharedThis->checkExited(in_waitTime, in_forceExit, in_error, in_startTime);
+      }
+   };
+
+   LOCK_MUTEX(in_sharedThis->m_mutex)
+   {
+      if (in_sharedThis->m_exitWatcher != nullptr)
+         in_sharedThis->m_exitWatcher->cancel();
+
+      in_sharedThis->m_exitWatcher.reset(new AsyncTimedEvent());
+      in_sharedThis->m_exitWatcher->start(system::TimeDuration::Microseconds(20000), onTimer);
+   }
+   END_LOCK_MUTEX
+}
+
+void AsyncChildProcess::checkExited(
+   const system::TimeDuration& in_waitTime,
+   bool in_forceExit,
+   const Error& in_error,
+   const system::DateTime& in_startTime)
+{
+   // Don't bother checking for exit if one of the output/error streams still hasn't exited, unless exit is being
+   // forced.
+   if (!in_forceExit && (!m_stdOutFailure || !m_stdErrFailure))
+      return;
+
+   int exitCode = -1;
+
+   LOCK_MUTEX(m_mutex)
+   {
+      if (m_hasExited)
+         return;
+
+      // Perform a non-blocking wait for the process to fully exit. Check back periodically until the maximum wait time
+      // is reached.
+      int status = 0;
+      pid_t result = posix::posixCall<pid_t>(std::bind(::waitpid, m_baseImpl->Pid, &status, WNOHANG));
+
+      // If the result is 0, the process hasn't exited. Otherwise, set the exit code appropriately.
+      if (result != 0)
+      {
+         m_hasExited = true;
+
+         if (result > 0)
+            exitCode = getExitCodeFromStatus(status);
+      }
+      else if (!in_waitTime.isInfinity() && (system::DateTime() < (in_startTime + in_waitTime)))
+      {
+         // If we haven't hit the maximum wait time, keep waiting.
+         return;
+      }
+
+      // If we should be forcing exit, act like the process has exited anyway.
+      if (in_forceExit && !m_hasExited)
+         m_hasExited = true;
+
+      if (m_hasExited ||
+         (!in_waitTime.isInfinity() &&
+            (system::DateTime() > (in_startTime + in_waitTime)) &&
+            (m_exitWatcher != nullptr)))
+      {
+         // If we have hit the maximum wait time or if we've already exited, cancel the timer.
+         m_exitWatcher->cancel();
+         return;
+      }
+   }
+   END_LOCK_MUTEX
+
+   // Here we make explicit copies of the bound functions to ensure they won't be cleaned up off the stack if this
+   // object is destroyed before the function is allocated a thread to run on.
+   if (m_hasExited && m_callbacks.OnExit)
+   {
+      AsioFunction onExitHandler = std::bind(m_callbacks.OnExit, exitCode);
+      AsioService::post(onExitHandler);
+   }
+   else if (in_error)
+   {
+      if (m_callbacks.OnError)
+      {
+         AsioFunction onErrorHandler = std::bind(m_callbacks.OnError, in_error);
+         AsioService::post(onErrorHandler);
+      }
+      else
+         logging::logError(in_error, ERROR_LOCATION);
+
+      // At this point, the output streams have both failed but the child process hasn't exited. Force terminate it.
+      // This can't be a recursive call because we shouldn't get to this block if in_forceExit is true.
+      assert(!in_forceExit);
+      Error error = terminate();
+      if (error)
+         logging::logError(error, ERROR_LOCATION);
+   }
+}
+
+void AsyncChildProcess::waitForOtherStreamFailure(const Error& in_error, const system::DateTime& in_startTime)
+{
+   // If both have failed, start checking for exit.
+   system::TimeDuration fiveSeconds = system::TimeDuration::Seconds(5);
+   if (m_stdOutFailure && m_stdErrFailure)
+   {
+      startCheckingExit(
+         shared_from_this(),
+         fiveSeconds,
+         false,
+         in_error,
+         in_startTime);
+   }
+
+   // One of the streams has failed
+   system::DateTime now;
+   if (now >= (in_startTime + fiveSeconds))
+   {
+      if (m_callbacks.OnError)
+         m_callbacks.OnError(in_error);
+      else
+         logging::logError(in_error, ERROR_LOCATION);
+
+      terminate();
+   }
 }
 
 } // namespace process
