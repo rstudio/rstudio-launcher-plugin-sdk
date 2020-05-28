@@ -58,16 +58,16 @@ const int s_writePipe = 1;
 struct FileDescriptors
 {
    /** The FDs of the pipe that will be used for standard input transfer (parent -> child). */
-   int Input[2] = {0, 0};
+   int Input[2] = { 0, 0 };
 
    /** The FDs of the pipe that will be used for standard output transfer (parent <- child). */
-   int Output[2] = {0, 0};
+   int Output[2] = { 0, 0 };
 
    /** The FDs of the pipe that will be used for standard error transfer (parent <- child). */
-   int Error[2] = {0, 0};
+   int Error[2] = { 0, 0 };
 
    /** The FDs of the pipe that will be used for open FD transfer (parent -> child). */
-   int CloseFd[2] = {0, 0};
+   int CloseFd[2] = { 0, 0 };
 };
 
 /**
@@ -105,7 +105,7 @@ public:
       {
          free();
       }
-      catch(...)
+      catch (...)
       {
          // Swallow exceptions for an exception-safe destructor.
       }
@@ -210,7 +210,7 @@ void closeFd(uint32_t in_fd)
 {
    // Keep trying to close the file descriptor if the operation was interrupted. Otherwise, an error means the
    // FD isn't open so just ignore it and exit.
-   while(::close(in_fd) == -1)
+   while (::close(in_fd) == -1)
    {
       if (errno != EINTR)
          break;
@@ -229,7 +229,6 @@ void closePipe(int in_pipeFd, const ErrorLocation& in_errorLocation)
    if (error)
       logging::logError(error);
 }
-
 
 /**
  * @brief Closes both ends of the specified pie.
@@ -399,7 +398,7 @@ Error getOpenFds(pid_t in_pid, std::vector<uint32_t>& out_fds)
    // there aren't many details on this, but see https://svn.boost.org/trac10/ticket/10450
 
    // Scan the directory non-recursively.
-   struct dirent **nameList;
+   struct dirent** nameList;
    int childCount = ::scandir(
       filePath.getAbsolutePath().c_str(),
       &nameList,
@@ -616,7 +615,7 @@ struct AbstractChildProcess::Impl
    {
       json::Object contextObj;
       contextObj["username"] = (in_options.RunAsUser.isAllUsers() || in_options.RunAsUser.isEmpty()) ?
-         "" : in_options.RunAsUser.getUsername();
+                               "" : in_options.RunAsUser.getUsername();
       contextObj["project"] = "";
       contextObj["id"] = "";
 
@@ -661,10 +660,10 @@ struct AbstractChildProcess::Impl
          shellCommand.append(" ").append(escape(arg));
 
       bool redirectStdout = !in_options.StandardOutputFile.isEmpty(),
-           redirectStderr = !in_options.StandardErrorFile.isEmpty(),
-           redirectToSame = redirectStdout &&
-              redirectStderr &&
-              (in_options.StandardOutputFile == in_options.StandardErrorFile);
+         redirectStderr = !in_options.StandardErrorFile.isEmpty(),
+         redirectToSame = redirectStdout &&
+                          redirectStderr &&
+                          (in_options.StandardOutputFile == in_options.StandardErrorFile);
 
       if (in_options.IsShellCommand && (redirectStdout || redirectStderr))
          shellCommand = "(" + shellCommand.append(")");
@@ -701,10 +700,11 @@ struct AbstractChildProcess::Impl
          {
             Arguments.emplace_back("--mount");
             Arguments.emplace_back(
-               escape(mount.HostSourcePath.getValueOr(api::HostMountSource()).Path +
-               ":" +
-               mount.DestinationPath +
-               (mount.IsReadOnly ? ":ro" : "")));
+               escape(
+                  mount.HostSourcePath.getValueOr(api::HostMountSource()).Path +
+                  ":" +
+                  mount.DestinationPath +
+                  (mount.IsReadOnly ? ":ro" : "")));
          }
       }
 
