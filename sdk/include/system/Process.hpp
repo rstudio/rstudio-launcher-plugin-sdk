@@ -237,26 +237,64 @@ public:
    Error run(ProcessResult& out_result);
 };
 
+/**
+ * @brief Creates and manages non-blocking child processes.
+ */
 class ProcessSupervisor final : public Noncopyable
 {
 public:
-   static ProcessSupervisor& getInstance();
 
-   bool hasRunningChildren() const;
+   /**
+    * @brief Checks whether the supervisor is tracking any processes which have not exited yet.
+    *
+    * @return True if there are any children running; false otherwise.
+    */
+   static bool hasRunningChildren();
 
-   Error runAsyncProcess(
-      const ProcessOptions& in_process,
+   /**
+    * @brief Runs a child process asynchronously.
+    *
+    * @param in_options         The options for the child process.
+    * @param in_callbacks       The callbacks to invoke when output is written, an error occurs, or the process exits.
+    * @param out_childProcess   The child process, if no error occurs on startup.
+    *
+    * @return Success if the child process could be started; Error otherwise.
+    */
+   static Error runAsyncProcess(
+      const ProcessOptions& in_options,
       const AsyncProcessCallbacks& in_callbacks,
       std::shared_ptr<AbstractChildProcess>& out_childProcess);
 
-   void terminateAllChildren(bool in_forceKill);
+   /**
+    * @brief Terminates all running children forcefully.
+    */
+   static void terminateAll();
 
-   bool waitForExit(const TimeDuration& in_maxWaitTime = TimeDuration::Infinity());
+   /**
+    * @brief Waits for all child processes to exit.
+    *
+    * @param in_maxWaitTime     The maximum amount of time to wait for the child processes to exit. Default: no limit.
+    *
+    * @return True if the function exited because the timeout was reached; false if the function exited because all
+    *         child processes exited.
+    */
+   static bool waitForExit(const TimeDuration& in_maxWaitTime = TimeDuration::Infinity());
 
 private:
-   ProcessSupervisor() = default;
+   /**
+    * @brief Gets the single Process Supervisor for this process.
+    *
+    * @return The single Process Supervisor for this process.
+    */
+   static ProcessSupervisor& getInstance();
 
-   PRIVATE_IMPL(m_impl);
+   /**
+    * @brief Constructor.
+    */
+   ProcessSupervisor();
+
+   // The private implementation of ProcessSupervisor.
+   PRIVATE_IMPL_SHARED(m_impl);
 };
 
 } // namespace process

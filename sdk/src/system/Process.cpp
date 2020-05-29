@@ -23,6 +23,7 @@
 
 #include <system/Process.hpp>
 
+#include <condition_variable>
 #include <cstring>
 #include <dirent.h>
 #include <fcntl.h>
@@ -31,6 +32,7 @@
 
 #include <boost/regex.hpp>
 #include <boost/algorithm/string/join.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 #include <json/Json.hpp>
 #include <options/Options.hpp>
@@ -1339,6 +1341,164 @@ void AsyncChildProcess::waitForOtherStreamFailure(const Error& in_error, const s
 
       terminate();
    }
+}
+
+// ProcessSupervisor ===================================================================================================
+struct ProcessSupervisor::Impl : public std::enable_shared_from_this<Impl>
+{
+   typedef std::weak_ptr<Impl> WeakThis;
+   typedef std::shared_ptr<Impl> SharedThis;
+
+   /**
+    * @brief Checks whether any children has exited and removes from the list of children if they have.
+    */
+   void cleanExitedChildren()
+   {
+      LOCK_MUTEX(Mutex)
+      {
+         for (auto itr = Children.begin(); itr != Children.end();)
+         {
+            if ((*itr)->hasExited())
+               itr = Children.erase(itr);
+            else
+               ++itr;
+         }
+
+         if (Children.empty())
+            ExitCondition.notify_all();
+      }
+      END_LOCK_MUTEX
+   }
+
+   /**
+    * @brief Wrapper for the caller's onExit callback that triggers a cleanup call.
+    *
+    * @param in_onExit      The caller's onExit callback.
+    * @param in_exitCode    The exit code of the process.
+    */
+   void exitHandler(const OnExitCallback& in_onExit, int in_exitCode)
+   {
+      WeakThis weakThis = weak_from_this();
+      auto cleanup = [weakThis]()
+      {
+         if (SharedThis sharedThis = weakThis.lock())
+            sharedThis->cleanExitedChildren();
+      };
+
+      LOCK_MUTEX(Mutex)
+      {
+         AsioService::post(cleanup);
+      }
+      END_LOCK_MUTEX
+
+      if (in_onExit)
+         in_onExit(in_exitCode);
+   }
+
+   /** The running child processes. */
+   std::vector<std::shared_ptr<AsyncChildProcess> > Children;
+
+   /** Condition variable that will be notified if Children becomes empty. */
+   std::condition_variable ExitCondition;
+
+   /** Mutex to protect Children. */
+   std::mutex Mutex;
+};
+
+ProcessSupervisor& ProcessSupervisor::getInstance()
+{
+   static ProcessSupervisor supervisor;
+   return supervisor;
+}
+
+bool ProcessSupervisor::hasRunningChildren()
+{
+   // First purge any exited children.
+   getInstance().m_impl->cleanExitedChildren();
+   return !getInstance().m_impl->Children.empty();
+}
+
+Error ProcessSupervisor::runAsyncProcess(
+   const ProcessOptions& in_options,
+   const AsyncProcessCallbacks& in_callbacks,
+   std::shared_ptr<AbstractChildProcess>& out_childProcess)
+{
+   ProcessSupervisor& instance = getInstance();
+
+   // Wrap the exit call back so we can keep track of when a child exits.
+   OnExitCallback onExit = in_callbacks.OnExit;
+   Impl::WeakThis weakThis = instance.m_impl;
+   auto onExitWrapper = [weakThis, onExit](int in_exitCode)
+   {
+      if (Impl::SharedThis sharedThis = weakThis.lock())
+         sharedThis->exitHandler(onExit, in_exitCode);
+   };
+
+   AsyncProcessCallbacks wrappedCallbacks = in_callbacks;
+   wrappedCallbacks.OnExit = onExitWrapper;
+
+   // Run the process.
+   std::shared_ptr<AsyncChildProcess> child(new AsyncChildProcess(in_options));
+   Error error = child->run(in_callbacks);
+   if (error)
+      return error;
+
+   LOCK_MUTEX(instance.m_impl->Mutex)
+   {
+      instance.m_impl->Children.push_back(child);
+   }
+   END_LOCK_MUTEX
+
+   out_childProcess = child;
+   return Success();
+}
+
+void ProcessSupervisor::terminateAll()
+{
+   ProcessSupervisor& instance = getInstance();
+   LOCK_MUTEX(instance.m_impl->Mutex)
+   {
+      for (const auto& child: instance.m_impl->Children)
+      {
+         Error error = child->terminate();
+         if (error)
+            logging::logError(error, ERROR_LOCATION);
+      }
+   }
+   END_LOCK_MUTEX
+}
+
+bool ProcessSupervisor::waitForExit(const TimeDuration& in_maxWaitTime)
+{
+   ProcessSupervisor& instance = getInstance();
+
+   // Set up the callback that checks whether we've reached the time limit.
+   system::DateTime startTime;
+   auto isPastTimeout = [in_maxWaitTime, startTime]()
+   {
+      if (in_maxWaitTime.isInfinity())
+         return false;
+
+      return system::DateTime() > (startTime + in_maxWaitTime);
+   };
+
+   // Wait on the condition variable, up to the timeout length.
+   UNIQUE_LOCK_MUTEX(instance.m_impl->Mutex)
+   {
+      if (hasRunningChildren())
+      {
+         instance.m_impl->ExitCondition.wait(uniqueLock, isPastTimeout);
+      }
+   }
+   END_LOCK_MUTEX
+
+   // If there are still running children when we get here, we timed out.
+   return hasRunningChildren();
+}
+
+ProcessSupervisor::ProcessSupervisor() :
+   m_impl(new Impl())
+{
 }
 
 } // namespace process
