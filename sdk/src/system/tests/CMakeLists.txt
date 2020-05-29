@@ -74,6 +74,7 @@ target_link_libraries(rlps-date-tests
 # Process Tests
 add_executable(rlps-process-tests
    ${RLPS_SYSTEM_TEST_MAIN}
+   AsyncChildProcessTests.cpp
    SyncChildProcessTests.cpp
    ${RLPS_HEADER_FILES}
 )
