@@ -100,13 +100,13 @@ void AsioService::setSignalHandler(const OnSignal& in_onSignal)
 {
    std::shared_ptr<Impl> sharedThis = getAsioService().m_impl;
    UNIQUE_LOCK_MUTEX(sharedThis->Mutex)
-
+   {
       if (!sharedThis->IsSignalSetInit)
       {
          sharedThis->IsSignalSetInit = true;
          sharedThis->SignalSet.async_wait(std::bind(in_onSignal, std::placeholders::_2));
       }
-
+   }
    END_LOCK_MUTEX
 }
 
@@ -115,7 +115,7 @@ void AsioService::startThreads(size_t in_numThreads)
    std::shared_ptr<Impl> sharedThis = getAsioService().m_impl;
 
    UNIQUE_LOCK_MUTEX(sharedThis->Mutex)
-
+   {
       if (sharedThis->IsRunning)
       {
          for (size_t i = 0; i < in_numThreads; ++i)
@@ -127,7 +127,7 @@ void AsioService::startThreads(size_t in_numThreads)
                }));
          }
       }
-
+   }
    END_LOCK_MUTEX
 }
 
@@ -135,14 +135,14 @@ void AsioService::stop()
 {
    std::shared_ptr<Impl> sharedThis = getAsioService().m_impl;
 
-   LOCK_MUTEX(sharedThis->Mutex)
-
+   UNIQUE_LOCK_MUTEX(sharedThis->Mutex)
+   {
       if (sharedThis->IsRunning)
       {
          sharedThis->IoService.stop();
          sharedThis->IsRunning = false;
       }
-
+   }
    END_LOCK_MUTEX
 }
 
@@ -396,7 +396,7 @@ struct AsyncTimedEvent::Impl
          return;
 
       UNIQUE_LOCK_MUTEX(sharedThis->Mutex)
-
+      {
          // If this is no longer running, there's nothing to do.
          if (!sharedThis->Running)
             return;
@@ -406,7 +406,7 @@ struct AsyncTimedEvent::Impl
          sharedThis->Timer->expires_from_now(in_intervalSeconds);
          sharedThis->Timer->async_wait(
             std::bind(runEvent, in_weakThis, in_intervalSeconds, in_event, std::placeholders::_1));
-
+      }
       END_LOCK_MUTEX
    }
 
@@ -448,11 +448,11 @@ void AsyncTimedEvent::start(const TimeDuration& in_timeDuration, const AsioFunct
 void AsyncTimedEvent::cancel()
 {
    UNIQUE_LOCK_MUTEX(m_impl->Mutex)
-
+   {
       m_impl->Running = false;
       if (m_impl->Timer)
          m_impl->Timer->cancel();
-
+   }
    END_LOCK_MUTEX
 }
 
