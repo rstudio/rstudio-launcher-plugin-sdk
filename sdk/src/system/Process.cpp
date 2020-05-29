@@ -1421,7 +1421,7 @@ bool ProcessSupervisor::hasRunningChildren()
 Error ProcessSupervisor::runAsyncProcess(
    const ProcessOptions& in_options,
    const AsyncProcessCallbacks& in_callbacks,
-   std::shared_ptr<AbstractChildProcess>& out_childProcess)
+   std::shared_ptr<AbstractChildProcess>* out_childProcess)
 {
    ProcessSupervisor& instance = getInstance();
 
@@ -1449,7 +1449,8 @@ Error ProcessSupervisor::runAsyncProcess(
    }
    END_LOCK_MUTEX
 
-   out_childProcess = child;
+   if (out_childProcess != nullptr)
+      *out_childProcess = child;
    return Success();
 }
 

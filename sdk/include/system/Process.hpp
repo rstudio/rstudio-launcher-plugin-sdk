@@ -263,7 +263,7 @@ public:
    static Error runAsyncProcess(
       const ProcessOptions& in_options,
       const AsyncProcessCallbacks& in_callbacks,
-      std::shared_ptr<AbstractChildProcess>& out_childProcess);
+      std::shared_ptr<AbstractChildProcess>* out_childProcess = nullptr);
 
    /**
     * @brief Terminates all running children forcefully.
