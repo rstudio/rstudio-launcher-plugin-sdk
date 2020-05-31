@@ -1231,9 +1231,6 @@ void AsyncChildProcess::startCheckingExit(
 
    UNIQUE_LOCK_MUTEX(in_sharedThis->m_mutex)
    {
-      if (in_sharedThis->m_exitWatcher != nullptr)
-         in_sharedThis->m_exitWatcher->cancel();
-
       in_sharedThis->m_exitWatcher.reset(new AsyncTimedEvent());
       in_sharedThis->m_exitWatcher->start(system::TimeDuration::Microseconds(20000), onTimer);
    }
