@@ -1201,7 +1201,7 @@ Error AsyncChildProcess::terminate()
    if (m_hasExited)
       return Success();
 
-   Error error = AsyncChildProcess::terminate();
+   Error error = AbstractChildProcess::terminate();
    if (!error)
    {
       // Wait up to 30 seconds for the process to exit. If it fails to exit within this time, there's likely something
