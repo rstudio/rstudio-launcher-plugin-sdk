@@ -23,6 +23,8 @@
 
 #include <TestMain.hpp>
 
+#include <AsioRaii.hpp>
+
 #include <options/Options.hpp>
 #include <system/Process.hpp>
 
@@ -33,11 +35,43 @@ namespace launcher_plugins {
 namespace system {
 namespace process {
 
-#define OUTPUT_CALLBACK(in_buffer) \
-   [&in_buffer](const std::string& in_string) { in_buffer.append(in_string); }
+AsioRaii s_asioInit;
 
-#define EXIT_CALLBACK(in_expectedCode) \
-   [](int in_exitCode) { CHECK(in_exitCode == in_expectedCode); }
+struct TestCallbacks
+{
+   explicit TestCallbacks() :
+      ExitCode(-12345)
+   {
+      int& exitCode = ExitCode;
+      Callbacks.OnExit = [&exitCode](int in_exitCode)
+      {
+         exitCode = in_exitCode;
+      };
+
+      Callbacks.OnError = [](const Error& in_error)
+      {
+         FAIL(in_error);
+      };
+
+      std::string& stdErr = StdErr;
+      Callbacks.OnStandardError = [&stdErr](const std::string& in_str)
+      {
+         stdErr.append(in_str);
+      };
+
+      std::string& stdOut = StdOut;
+      Callbacks.OnStandardOutput = [&stdOut](const std::string& in_str)
+      {
+         stdOut.append(in_str);
+      };
+   }
+
+   AsyncProcessCallbacks Callbacks;
+
+   int ExitCode;
+   std::string StdOut;
+   std::string StdErr;
+};
 
 TEST_CASE("Create Async Processes")
 {
@@ -71,18 +105,13 @@ TEST_CASE("Create Async Processes")
       opts.IsShellCommand = false;
       opts.RunAsUser = user4;
 
-      std::string stdErr, stdOut;
+      TestCallbacks cbs;
 
-      AsyncProcessCallbacks callbacks;
-      callbacks.OnError = failOnError;
-      callbacks.OnStandardError = OUTPUT_CALLBACK(stdErr);
-      callbacks.OnStandardOutput = OUTPUT_CALLBACK(stdOut);
-      callbacks.OnExit = EXIT_CALLBACK(0);
-
-      CHECK_FALSE(ProcessSupervisor::runAsyncProcess(opts, callbacks));
-      CHECK_FALSE(ProcessSupervisor::waitForExit(TimeDuration::Seconds(5))); // Wait at most 5 seconds for exit.
-      CHECK(stdErr == "");
-      CHECK(stdOut == "output");
+      CHECK_FALSE(ProcessSupervisor::runAsyncProcess(opts, cbs.Callbacks));
+      CHECK_FALSE(ProcessSupervisor::waitForExit(TimeDuration::Seconds(30)));
+      CHECK(cbs.StdErr == "");
+      CHECK(cbs.StdOut == "output");
+      CHECK(cbs.ExitCode == 0);
    }
 
    SECTION("Many processes")
@@ -94,12 +123,7 @@ TEST_CASE("Create Async Processes")
       o1.IsShellCommand = true;
       o1.RunAsUser = user3;
 
-      std::string stdErr1, stdOut1;
-      AsyncProcessCallbacks cb1;
-      cb1.OnError = failOnError;
-      cb1.OnStandardError = OUTPUT_CALLBACK(stdErr1);
-      cb1.OnStandardOutput = OUTPUT_CALLBACK(stdOut1);
-      cb1.OnExit = EXIT_CALLBACK(2);
+      TestCallbacks cb1;
 
       // 2. No redirection, missing user
       ProcessOptions o2;
@@ -107,12 +131,7 @@ TEST_CASE("Create Async Processes")
       o2.Arguments.emplace_back("-x");
       o2.IsShellCommand = true;
 
-      std::string stdErr2, stdOut2;
-      AsyncProcessCallbacks cb2;
-      cb2.OnError = failOnError;
-      cb2.OnStandardError = OUTPUT_CALLBACK(stdErr2);
-      cb2.OnStandardOutput = OUTPUT_CALLBACK(stdOut2);
-      cb2.OnExit = EXIT_CALLBACK(1);
+      TestCallbacks cb2;
 
       // 3. Stdout redirection
       ProcessOptions o3;
@@ -123,12 +142,7 @@ TEST_CASE("Create Async Processes")
       o3.RunAsUser = user1;
       o3.StandardOutputFile = user1.getHomePath().completeChildPath("async-test-out.txt");
 
-      std::string stdErr3, stdOut3;
-      AsyncProcessCallbacks cb3;
-      cb3.OnError = failOnError;
-      cb3.OnStandardError = OUTPUT_CALLBACK(stdErr3);
-      cb3.OnStandardOutput = OUTPUT_CALLBACK(stdOut3);
-      cb3.OnExit = EXIT_CALLBACK(0);
+      TestCallbacks cb3;
 
       // 4. Stderr redirection
       ProcessOptions o4;
@@ -139,14 +153,9 @@ TEST_CASE("Create Async Processes")
       o4.IsShellCommand = true;
       o4.RunAsUser = user1;
       o4.StandardErrorFile = user1.getHomePath().completeChildPath("async-test-err.txt");
-
-      std::string stdErr4, stdOut4;
-      AsyncProcessCallbacks cb4;
-      cb4.OnError = failOnError;
-      cb4.OnStandardError = OUTPUT_CALLBACK(stdErr4);
-      cb4.OnStandardOutput = OUTPUT_CALLBACK(stdOut4);
-      cb4.OnExit = EXIT_CALLBACK(127);
       
+      TestCallbacks cb4;
+
       // 5. Environment variables
       ProcessOptions o5;
       o5.Executable = "./test.sh";
@@ -154,47 +163,47 @@ TEST_CASE("Create Async Processes")
       o5.Environment.emplace_back("VAR", "Hello, world!");
       o5.RunAsUser = user3;
       o5.WorkingDirectory = FilePath::safeCurrentPath(FilePath());
-      
-      std::string stdErr5, stdOut5;
-      AsyncProcessCallbacks cb5;
-      cb5.OnError = failOnError;
-      cb5.OnStandardError = OUTPUT_CALLBACK(stdErr5);
-      cb5.OnStandardOutput = OUTPUT_CALLBACK(stdOut5);
-      cb5.OnExit = EXIT_CALLBACK(0);
+
+      TestCallbacks cb5;
 
       // Run all the processes and wait for them all to exit.
-      CHECK_FALSE(ProcessSupervisor::runAsyncProcess(o1, cb1));
-      CHECK_FALSE(ProcessSupervisor::runAsyncProcess(o2, cb2));
-      CHECK_FALSE(ProcessSupervisor::runAsyncProcess(o3, cb3));
-      CHECK_FALSE(ProcessSupervisor::runAsyncProcess(o4, cb4));
-      CHECK_FALSE(ProcessSupervisor::runAsyncProcess(o5, cb5));
-      CHECK_FALSE(ProcessSupervisor::waitForExit(TimeDuration::Seconds(5))); // Wait at most 5 seconds for exit.
+      CHECK_FALSE(ProcessSupervisor::runAsyncProcess(o1, cb1.Callbacks));
+      CHECK_FALSE(ProcessSupervisor::runAsyncProcess(o2, cb2.Callbacks));
+      CHECK_FALSE(ProcessSupervisor::runAsyncProcess(o3, cb3.Callbacks));
+      CHECK_FALSE(ProcessSupervisor::runAsyncProcess(o4, cb4.Callbacks));
+      CHECK_FALSE(ProcessSupervisor::runAsyncProcess(o5, cb5.Callbacks));
+      CHECK_FALSE(ProcessSupervisor::waitForExit(TimeDuration::Seconds(30)));
 
       // 1. No redirection, bad command
-      CHECK(stdErr1 == "Usage: grep [OPTION]... PATTERN [FILE]...\n"
+      CHECK(cb1.StdErr == "Usage: grep [OPTION]... PATTERN [FILE]...\n"
                        "Try 'grep --help' for more information.\n");
-      CHECK(stdOut1 == "");
+      CHECK(cb1.StdOut == "");
+      CHECK(cb1.ExitCode == 2);
 
       // 2. No redirection, missing user
-      CHECK(stdErr2.substr(21) ==
+      CHECK((!cb2.StdErr.empty() && (cb2.StdErr.substr(21) ==
             "[rsandbox] ERROR Required option username not specified; LOGGED FROM: bool"
             " rstudio::core::program_options::{anonymous}::validateOptionsProvided(const"
             " rstudio_boost::program_options::variables_map&, const"
             " rstudio_boost::program_options::options_description&, const string&)"
-            " src/cpp/core/ProgramOptions.cpp:46\n");
-      CHECK(stdOut2 == "");
+            " src/cpp/core/ProgramOptions.cpp:46\n")));
+      CHECK(cb2.StdOut == "");
+      CHECK(cb2.ExitCode == 1);
 
       // 3. Stdout redirection
-      CHECK(stdErr3 == "");
-      CHECK(stdOut3 == "");
+      CHECK(cb3.StdErr == "");
+      CHECK(cb3.StdOut == "");
+      CHECK(cb3.ExitCode == 0);
 
       // 4. Stderr redirection
-      CHECK(stdErr4 == "");
-      CHECK(stdOut4 == "");
+      CHECK(cb4.StdErr == "");
+      CHECK(cb4.StdOut == "");
+      CHECK(cb4.ExitCode == 127);
 
       // 5. Environment variables
-      CHECK(stdErr4 == "");
-      CHECK(stdOut4 == "Hello, world!");
+      CHECK(cb5.StdErr == "");
+      CHECK(cb5.StdOut == "Hello, world!");
+      CHECK(cb5.ExitCode == 0);
    }
 
    SECTION("Open file descriptors in parent, working dir")
@@ -210,16 +219,13 @@ TEST_CASE("Create Async Processes")
       opts.RunAsUser = user1;
       opts.WorkingDirectory = user1.getHomePath();
 
-      std::string stdErr, stdOut;
-      AsyncProcessCallbacks callbacks;
-      callbacks.OnError = failOnError;
-      callbacks.OnStandardError = OUTPUT_CALLBACK(stdErr);
-      callbacks.OnStandardOutput = OUTPUT_CALLBACK(stdOut);
-      callbacks.OnExit = EXIT_CALLBACK(0);
+      TestCallbacks cb;
 
-      CHECK_FALSE(ProcessSupervisor::runAsyncProcess(opts, callbacks));
-      CHECK(stdErr == "");
-      CHECK(stdOut == stdOutExpected + stdErrExpected);
+      CHECK_FALSE(ProcessSupervisor::runAsyncProcess(opts, cb.Callbacks));
+      CHECK_FALSE(ProcessSupervisor::waitForExit(TimeDuration::Seconds(30)));
+      CHECK(cb.StdErr == "");
+      CHECK(cb.StdOut == stdOutExpected + stdErrExpected);
+      CHECK(cb.ExitCode == 0);
 
       ::close(pipe[0]);
       ::close(pipe[1]);
