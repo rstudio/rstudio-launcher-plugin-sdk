@@ -1472,7 +1472,7 @@ Error ProcessSupervisor::runAsyncProcess(
 
    // Run the process.
    std::shared_ptr<AsyncChildProcess> child(new AsyncChildProcess(in_options));
-   Error error = child->run(in_callbacks);
+   Error error = child->run(wrappedCallbacks);
    if (error)
       return error;
 
