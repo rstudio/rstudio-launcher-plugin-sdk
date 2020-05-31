@@ -1229,7 +1229,7 @@ void AsyncChildProcess::startCheckingExit(
       }
    };
 
-   LOCK_MUTEX(in_sharedThis->m_mutex)
+   UNIQUE_LOCK_MUTEX(in_sharedThis->m_mutex)
    {
       if (in_sharedThis->m_exitWatcher != nullptr)
          in_sharedThis->m_exitWatcher->cancel();
@@ -1253,7 +1253,7 @@ void AsyncChildProcess::checkExited(
 
    int exitCode = -1;
 
-   LOCK_MUTEX(m_mutex)
+   UNIQUE_LOCK_MUTEX(m_mutex)
    {
       if (m_hasExited)
          return;
@@ -1446,7 +1446,7 @@ Error ProcessSupervisor::runAsyncProcess(
    if (error)
       return error;
 
-   LOCK_MUTEX(instance.m_impl->Mutex)
+   UNIQUE_LOCK_MUTEX(instance.m_impl->Mutex)
    {
       instance.m_impl->Children.push_back(child);
    }
@@ -1460,7 +1460,7 @@ Error ProcessSupervisor::runAsyncProcess(
 void ProcessSupervisor::terminateAll()
 {
    ProcessSupervisor& instance = getInstance();
-   LOCK_MUTEX(instance.m_impl->Mutex)
+   UNIQUE_LOCK_MUTEX(instance.m_impl->Mutex)
    {
       for (const auto& child: instance.m_impl->Children)
       {
