@@ -1278,13 +1278,16 @@ void AsyncChildProcess::checkExited(
       if (in_forceExit && !m_hasExited)
          m_hasExited = true;
 
-      if (m_hasExited ||
-         (!in_waitTime.isInfinity() &&
+      if (m_hasExited || (!in_waitTime.isInfinity() &&
             (system::DateTime() > (in_startTime + in_waitTime)) &&
             (m_exitWatcher != nullptr)))
       {
-         // If we have hit the maximum wait time or if we've already exited, cancel the timer.
-         m_exitWatcher->cancel();
+         // If we have hit the maximum wait time or we have already exited, cancel the timer.
+         m_exitWatcher.reset();
+      }
+      else
+      {
+         // Otherwise keep waiting.
          return;
       }
    }
