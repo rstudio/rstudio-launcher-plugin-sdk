@@ -1094,7 +1094,10 @@ private:
    /** The stdout stream. */
    std::unique_ptr<AsioStream> m_stdOutStream;
 
-   /** Timer that watches for process exit or stream failure. */
+   /** Event which should log an error if the other stream doesn't fail before it ends. */
+   std::unique_ptr<AsyncDeadlineEvent> m_streamFailureEvent;
+
+   /** Timer that watches for process exit. */
    std::unique_ptr<AsyncTimedEvent> m_exitWatcher;
 
    /** Mutex to protect shared state. */
@@ -1321,29 +1324,42 @@ void AsyncChildProcess::checkExited(
 
 void AsyncChildProcess::waitForOtherStreamFailure(const Error& in_error, const system::DateTime& in_startTime)
 {
-   // If both have failed, start checking for exit.
    system::TimeDuration fiveSeconds = system::TimeDuration::Seconds(5);
-   if (m_stdOutFailure && m_stdErrFailure)
+   WeakThis weakThis;
+   auto onTimeout = [weakThis, in_error]()
    {
-      startCheckingExit(
-         shared_from_this(),
-         fiveSeconds,
-         false,
-         in_error,
-         in_startTime);
-   }
+      if (SharedThis sharedThis = weakThis.lock())
+      {
+         sharedThis->m_callbacks.OnError(in_error);
+         sharedThis->terminate();
+      }
+   };
 
-   // One of the streams has failed
-   system::DateTime now;
-   if (now >= (in_startTime + fiveSeconds))
+   UNIQUE_LOCK_MUTEX(m_mutex)
    {
-      if (m_callbacks.OnError)
-         m_callbacks.OnError(in_error);
+      // If both have failed, start checking for exit.
+      if (m_stdOutFailure && m_stdErrFailure)
+      {
+            if (m_streamFailureEvent != nullptr)
+               m_streamFailureEvent->cancel();
+      }
       else
-         logging::logError(in_error, ERROR_LOCATION);
+      {
+         assert(m_streamFailureEvent == nullptr);
+         assert(m_stdOutFailure || m_stdErrFailure);
+         m_streamFailureEvent.reset(new AsyncDeadlineEvent(onTimeout, in_startTime + fiveSeconds));
+         return m_streamFailureEvent->start();
+      }
 
-      terminate();
    }
+   END_LOCK_MUTEX
+
+   startCheckingExit(
+      shared_from_this(),
+      fiveSeconds,
+      false,
+      in_error,
+      in_startTime);
 }
 
 // ProcessSupervisor ===================================================================================================
