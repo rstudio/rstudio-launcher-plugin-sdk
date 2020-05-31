@@ -1371,22 +1371,19 @@ struct ProcessSupervisor::Impl : public std::enable_shared_from_this<Impl>
    /**
     * @brief Checks whether any children has exited and removes from the list of children if they have.
     */
-   void cleanExitedChildren()
+   void cleanExitedChildren(const std::unique_lock<std::mutex>& in_lock)
    {
-      LOCK_MUTEX(Mutex)
+      assert(in_lock.owns_lock());
+      for (auto itr = Children.begin(); itr != Children.end();)
       {
-         for (auto itr = Children.begin(); itr != Children.end();)
-         {
-            if ((*itr)->hasExited())
-               itr = Children.erase(itr);
-            else
-               ++itr;
-         }
-
-         if (Children.empty())
-            ExitCondition.notify_all();
+         if ((*itr)->hasExited())
+            itr = Children.erase(itr);
+         else
+            ++itr;
       }
-      END_LOCK_MUTEX
+
+      if (Children.empty())
+         ExitCondition.notify_all();
    }
 
    /**
@@ -1401,17 +1398,27 @@ struct ProcessSupervisor::Impl : public std::enable_shared_from_this<Impl>
       auto cleanup = [weakThis]()
       {
          if (SharedThis sharedThis = weakThis.lock())
-            sharedThis->cleanExitedChildren();
+         {
+            UNIQUE_LOCK_MUTEX(sharedThis->Mutex)
+            {
+               sharedThis->cleanExitedChildren(uniqueLock);
+            }
+            END_LOCK_MUTEX
+         }
       };
 
-      LOCK_MUTEX(Mutex)
-      {
-         AsioService::post(cleanup);
-      }
-      END_LOCK_MUTEX
+      AsioService::post(cleanup);
 
       if (in_onExit)
          in_onExit(in_exitCode);
+   }
+
+   bool hasRunningChildren(const std::unique_lock<std::mutex>& in_lock)
+   {
+      assert(in_lock.owns_lock());
+      cleanExitedChildren(in_lock);
+      return !Children.empty();
+
    }
 
    /** The running child processes. */
@@ -1432,9 +1439,16 @@ ProcessSupervisor& ProcessSupervisor::getInstance()
 
 bool ProcessSupervisor::hasRunningChildren()
 {
-   // First purge any exited children.
-   getInstance().m_impl->cleanExitedChildren();
-   return !getInstance().m_impl->Children.empty();
+   ProcessSupervisor& instance = getInstance();
+   UNIQUE_LOCK_MUTEX(instance.m_impl->Mutex)
+   {
+      // Try to get the lock so that we can purge exited children before returning the state.
+      return instance.m_impl->hasRunningChildren(uniqueLock);
+   }
+   END_LOCK_MUTEX
+
+   // If we fail to get the lock, just return the current state.
+   return !instance.m_impl->Children.empty();
 }
 
 Error ProcessSupervisor::runAsyncProcess(
@@ -1492,22 +1506,22 @@ bool ProcessSupervisor::waitForExit(const TimeDuration& in_maxWaitTime)
 {
    ProcessSupervisor& instance = getInstance();
 
-   // Set up the callback that checks whether we've reached the time limit.
-   system::DateTime startTime;
-   auto isPastTimeout = [in_maxWaitTime, startTime]()
-   {
-      if (in_maxWaitTime.isInfinity())
-         return false;
-
-      return system::DateTime() > (startTime + in_maxWaitTime);
-   };
-
    // Wait on the condition variable, up to the timeout length.
    UNIQUE_LOCK_MUTEX(instance.m_impl->Mutex)
    {
-      if (hasRunningChildren())
+      if (instance.m_impl->hasRunningChildren(uniqueLock))
       {
-         instance.m_impl->ExitCondition.wait(uniqueLock, isPastTimeout);
+         if (in_maxWaitTime.isInfinity())
+            instance.m_impl->ExitCondition.wait(uniqueLock);
+         else
+         {
+            std::chrono::microseconds waitTime(
+               (in_maxWaitTime.getHours() * 60 * 60 * 1000000) +
+                  (in_maxWaitTime.getMinutes() * 60 * 1000000) +
+                  (in_maxWaitTime.getSeconds() * 1000000) +
+                  in_maxWaitTime.getMicroseconds());
+            instance.m_impl->ExitCondition.wait_for(uniqueLock, waitTime);
+         }
       }
    }
    END_LOCK_MUTEX
