@@ -57,7 +57,7 @@ mkdir -p temp
 RSP_VERSION="1.3.959-1"
 TAR_DIR="rsp-monitor-connect-$OS_NAME-$RSP_VERSION"
 TAR_FILE="$TAR_DIR.tar.gz"
-wget "https://s3.amazonaws.com://rstudio-ide-build/monitor/centos8/$TAR_FILE" -O "temp/$TAR_FILE"
+wget "https://s3.amazonaws.com://rstudio-ide-build/monitor/$OS_NAME/$TAR_FILE" -O "temp/$TAR_FILE"
 
 tar -xzf "temp/$TAR_FILE" -C "temp/"
 sudo mkdir -p /usr/lib/rstudio-server/bin
