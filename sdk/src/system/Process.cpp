@@ -910,6 +910,9 @@ Error AbstractChildProcess::run()
    // Otherwise, this is still the parent.
    else
    {
+      // Record the PID
+      m_baseImpl->Pid = pid;
+
       // Close the unused pipes from the parent's perspective.
       closePipe(fds.Input[s_readPipe], ERROR_LOCATION);
       closePipe(fds.Output[s_writePipe], ERROR_LOCATION);
