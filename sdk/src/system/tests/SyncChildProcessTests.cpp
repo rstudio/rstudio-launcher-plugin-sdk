@@ -101,12 +101,12 @@ TEST_CASE("Create Processes")
       SyncChildProcess child(opts);
       REQUIRE_FALSE(child.run(result));
       CHECK(result.ExitCode == 1);
-      CHECK(result.StdError.substr(21) ==
+      CHECK((!result.StdError.empty() && (result.StdError.substr(21) ==
          "[rsandbox] ERROR Required option username not specified; LOGGED FROM: bool"
          " rstudio::core::program_options::{anonymous}::validateOptionsProvided(const"
          " rstudio_boost::program_options::variables_map&, const"
          " rstudio_boost::program_options::options_description&, const string&)"
-         " src/cpp/core/ProgramOptions.cpp:46\n");
+         " src/cpp/core/ProgramOptions.cpp:46\n")));
       CHECK(result.StdOut == "");
    }
 
