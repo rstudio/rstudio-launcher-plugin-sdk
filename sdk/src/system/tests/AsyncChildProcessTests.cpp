@@ -93,6 +93,8 @@ TEST_CASE("Create Async Processes")
    // Results/input used across multiple sections.
    static const std::string stdOutExpected = "multiple\nlines\nof\nouptut\nwith a slash \\";
    static const std::string stdErrExpected = "/bin/sh: 1: fakecmd: not found\n";
+   static const std::string stdErrAltExpected = "/bin/sh: fakecmd: command not found\n";
+
 
    const auto failOnError = [](const Error& in_error) { FAIL(in_error.getSummary()); };
 
@@ -224,7 +226,8 @@ TEST_CASE("Create Async Processes")
       CHECK_FALSE(ProcessSupervisor::runAsyncProcess(opts, cb.Callbacks));
       CHECK_FALSE(ProcessSupervisor::waitForExit(TimeDuration::Seconds(30)));
       CHECK(cb.StdErr == "");
-      CHECK(cb.StdOut == stdOutExpected + stdErrExpected);
+      CHECK(((cb.StdOut == stdOutExpected + stdErrExpected) ||
+             (cb.StdOut == stdOutExpected + stdErrAltExpected)));
       CHECK(cb.ExitCode == 0);
 
       ::close(pipe[0]);

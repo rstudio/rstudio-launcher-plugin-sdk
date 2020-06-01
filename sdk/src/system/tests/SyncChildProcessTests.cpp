@@ -54,7 +54,8 @@ TEST_CASE("Create Processes")
 
    // Results/input used across multiple sections.
    static const std::string stdOutExpected = "multiple\nlines\nof\nouptut\nwith a slash \\";
-   static const std::string stdErrExpected = "/bin/sh: 1: fakecmd: not found\n";
+   static const std::string stdErrExpected = "/bin/sh: 1: fakecmd: nost found\n";
+   static const std::string stdErrAltExpected = "/bin/sh: fakecmd: command not found\n";
 
    SECTION("No redirection, Success")
    {
@@ -165,7 +166,8 @@ TEST_CASE("Create Processes")
       REQUIRE_FALSE(child.run(result));
       CHECK(result.ExitCode == 0);
       CHECK(result.StdError == "");
-      CHECK(result.StdOut == stdOutExpected + stdErrExpected);
+      CHECK(((result.StdOut == stdOutExpected + stdErrExpected) ||
+             (result.StdOut == stdOutExpected + stdErrAltExpected)));
 
       ::close(pipe[0]);
       ::close(pipe[1]);
