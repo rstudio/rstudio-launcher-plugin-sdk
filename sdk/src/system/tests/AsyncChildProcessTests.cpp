@@ -91,7 +91,7 @@ TEST_CASE("Create Async Processes")
    REQUIRE_FALSE(system::User::getUserFromIdentifier(USER_FIVE, user5));
 
    // Results/input used across multiple sections.
-   static const std::string stdOutExpected = "multiple\nlines\nof\nouptut\nwith a slash \\";
+   static const std::string stdOutExpected = "multiple\nlines\nof\noutput\nwith a slash \\";
    static const std::string stdErrExpected = "/bin/sh: 1: fakecmd: not found\n";
    static const std::string stdErrAltExpected = "/bin/sh: fakecmd: command not found\n";
 
@@ -226,8 +226,14 @@ TEST_CASE("Create Async Processes")
       CHECK_FALSE(ProcessSupervisor::runAsyncProcess(opts, cb.Callbacks));
       CHECK_FALSE(ProcessSupervisor::waitForExit(TimeDuration::Seconds(30)));
       CHECK(cb.StdErr == "");
-      CHECK(((cb.StdOut == stdOutExpected + stdErrExpected) ||
-             (cb.StdOut == stdOutExpected + stdErrAltExpected)));
+
+      std::string expected = stdOutExpected;
+      if (cb.StdOut.find("command") != std::string::npos)
+         expected.append(stdErrAltExpected);
+      else
+         expected.append(stdErrExpected);
+
+      CHECK(cb.StdOut == expected);
       CHECK(cb.ExitCode == 0);
 
       ::close(pipe[0]);
