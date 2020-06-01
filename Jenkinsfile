@@ -149,7 +149,7 @@ try {
             }
           }
           stage('Build and Test') {
-            container.inside() {
+            container.inside("--privileged") {
               stage('Compile Source') {
                 build_source("${current_container.flavor}")
               }
