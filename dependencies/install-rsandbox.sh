@@ -35,7 +35,7 @@ if [[ -z $1 ]]; then
   echo "Usage: ./install-rsandbox <os name>"
   echo "Valid os names:"
   echo "  centos8"
-  echo "  bionic"
+  echo "  debian9"
   exit 1
 else
   OS_NAME="$1"
@@ -55,7 +55,12 @@ fi
 
 mkdir -p temp
 RSP_VERSION="1.3.959-1"
-TAR_DIR="rsp-monitor-connect-$OS_NAME-$RSP_VERSION"
+if [[ $OS_NAME -eq "debian9" ]]; then
+  TAR_DIR="rsp-monitor-connect--$RSP_VERSION"
+else
+  TAR_DIR="rsp-monitor-connect-$OS_NAME-$RSP_VERSION"
+fi
+
 TAR_FILE="$TAR_DIR.tar.gz"
 wget "https://s3.amazonaws.com://rstudio-ide-build/monitor/$OS_NAME/$TAR_FILE" -O "temp/$TAR_FILE"
 

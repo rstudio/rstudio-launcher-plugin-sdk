@@ -2,7 +2,7 @@ FROM ubuntu:bionic
 
 COPY dependencies/*.sh /tmp/
 RUN apt update && apt install -y sudo && /tmp/install-dependencies.sh --core
-RUN /tmp/install-rsandbox.sh bionic
+RUN /tmp/install-rsandbox.sh debian9
 
 ARG JENKINS_GID=999
 ARG JENKINS_UID=999
