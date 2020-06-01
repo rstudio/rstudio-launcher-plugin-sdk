@@ -55,7 +55,7 @@ fi
 
 mkdir -p temp
 RSP_VERSION="1.3.959-1"
-if [[ $OS_NAME -eq "debian9" ]]; then
+if [[ "$OS_NAME" == "debian9" ]]; then
   TAR_DIR="rsp-monitor-connect--$RSP_VERSION"
 else
   TAR_DIR="rsp-monitor-connect-$OS_NAME-$RSP_VERSION"
