@@ -722,11 +722,10 @@ struct AbstractChildProcess::Impl
          {
             Arguments.emplace_back("--mount");
             Arguments.emplace_back(
-               escape(
                   mount.HostSourcePath.getValueOr(api::HostMountSource()).Path +
                   ":" +
                   mount.DestinationPath +
-                  (mount.IsReadOnly ? ":ro" : "")));
+                  (mount.IsReadOnly ? ":ro" : ""));
          }
       }
 
