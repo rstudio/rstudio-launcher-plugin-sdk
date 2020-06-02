@@ -883,11 +883,10 @@ Error AbstractChildProcess::run()
       return error;
 
    // Now fork the process.
-   pid_t pid;
-   error = posix::posixCall<pid_t>(::fork, ERROR_LOCATION, &pid);
+   error = posix::posixCall<pid_t>(::fork, ERROR_LOCATION, &m_baseImpl->Pid);
 
    // If this is the child process, execute the requested process.
-   if (pid == 0)
+   if (m_baseImpl->Pid == 0)
       m_baseImpl->execChild(
          fds,
          hardLimit,
@@ -895,9 +894,6 @@ Error AbstractChildProcess::run()
    // Otherwise, this is still the parent.
    else
    {
-      // Record the PID
-      m_baseImpl->Pid = pid;
-
       // Close the unused pipes from the parent's perspective.
       closePipe(fds.Input[s_readPipe], ERROR_LOCATION);
       closePipe(fds.Output[s_writePipe], ERROR_LOCATION);
@@ -910,7 +906,7 @@ Error AbstractChildProcess::run()
       m_baseImpl->StdErrFd = fds.Error[s_readPipe];
 
       // Send the list of the child's open pipes to it.
-      error = sendFileDescriptors(fds.CloseFd[s_writePipe], pid);
+      error = sendFileDescriptors(fds.CloseFd[s_writePipe], m_baseImpl->Pid);
       closePipe(fds.CloseFd[s_writePipe], ERROR_LOCATION);
 
       return error;
