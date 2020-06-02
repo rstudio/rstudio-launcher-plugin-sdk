@@ -29,6 +29,39 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace local {
 
+static const std::string s_errorName = "LocalPluginError";
+
+enum class ErrorCode
+{
+   SUCCESS              = 0,
+   INVALID_MOUNT_TYPE   = 1,
+};
+
+Error createError(
+   ErrorCode in_code,
+   const std::string& in_message,
+   const Error& in_cause,
+   const ErrorLocation& in_errorLocation)
+{
+   return Error(s_errorName, static_cast<int>(in_code), in_message, in_cause, in_errorLocation);
+}
+
+Error createError(ErrorCode in_code, const std::string& in_message, const ErrorLocation& in_errorLocation)
+{
+   return Error(s_errorName, static_cast<int>(in_code), in_message, in_errorLocation);
+}
+
+Error createError(ErrorCode in_code, const Error& in_cause, const ErrorLocation& in_errorLocation)
+{
+   return Error(s_errorName, static_cast<int>(in_code), in_cause, in_errorLocation);
+}
+
+Error createError(ErrorCode in_code, const ErrorLocation& in_errorLocation)
+{
+   return Error(s_errorName, static_cast<int>(in_code), in_errorLocation);
+}
+
+
 LocalJobSource::LocalJobSource(
    std::string in_hostname,
    jobs::JobRepositoryPtr in_jobRepository,
