@@ -59,8 +59,9 @@ Error LocalJobSource::getJobs(api::JobList& out_jobs) const
    return m_jobStorage.loadJobs(out_jobs);
 }
 
-Error LocalJobSource::submitJob(api::JobPtr io_job) const
+Error LocalJobSource::submitJob(api::JobPtr io_job, api::ErrorResponse::Type& out_errorType) const
 {
+   out_errorType = api::ErrorResponse::Type::REQUEST_NOT_SUPPORTED;
    return Error(
       "NotImplemented",
       1,

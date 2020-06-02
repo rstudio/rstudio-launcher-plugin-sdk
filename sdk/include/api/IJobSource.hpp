@@ -26,6 +26,7 @@
 #define LAUNCHER_PLUGINS_IJOBSOURCE_HPP
 
 #include "Job.hpp"
+#include "Response.hpp"
 
 #include <set>
 
@@ -143,13 +144,16 @@ public:
    /**
     * @brief Submits a job to the Job Scheduling System.
     *
-    * @param io_job     The Job to be submitted. On successful submission, the Job should be updated with relevant
-    *                   details, such as the ID of the job, the Submission time, the actual Job Queue (if applicable),
-    *                   and the current status.
+    * @param io_job             The Job to be submitted. On successful submission, the Job should be updated with
+    *                           relevant details, such as the ID of the job, the Submission time, the actual Job Queue
+    *                           (if applicable), and the current status.
+    * @param out_errorType      The type of error that occurred, with respect to the Launcher Plugin API error types. If
+    *                           not set when an error occurs, an ErrorResponse with type UNKNOWN will be returned to the
+    *                           Launcher.
     *
     * @return Success if the job could be submitted to the Job Scheduling System; Error otherwise.
     */
-   virtual Error submitJob(JobPtr io_job) const = 0;
+   virtual Error submitJob(JobPtr io_job, ErrorResponse::Type& out_errorType) const = 0;
 
 protected:
    /**
