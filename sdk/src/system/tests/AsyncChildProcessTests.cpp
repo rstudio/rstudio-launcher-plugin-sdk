@@ -240,6 +240,34 @@ TEST_CASE("Create Async Processes")
       ::close(pipe[1]);
    }
 
+   SECTION("Mount path")
+   {
+      const FilePath& mountedPath = user5.getHomePath();
+
+      api::HostMountSource mountSource;
+      mountSource.Path = FilePath::safeCurrentPath(FilePath()).getAbsolutePath();
+      api::Mount mount;
+      mount.DestinationPath = mountedPath.getAbsolutePath();
+      mount.IsReadOnly = true;
+      mount.HostSourcePath = mountSource;
+
+      ProcessOptions opts;
+      opts.Executable = "./test.sh";
+      opts.IsShellCommand = false;
+      opts.Environment.emplace_back("VAR", "Mount test passed!");
+      opts.Mounts.push_back(mount);
+      opts.RunAsUser = user5;
+      opts.WorkingDirectory = mountedPath;
+
+      TestCallbacks cbs;
+
+      REQUIRE_FALSE(ProcessSupervisor::runAsyncProcess(opts, cbs.Callbacks));
+      CHECK_FALSE(ProcessSupervisor::waitForExit(TimeDuration::Seconds(5)));
+      CHECK(cbs.ExitCode == 0);
+      CHECK(cbs.StdErr == "");
+      CHECK(cbs.StdOut == "Mount test passed!");
+   }
+
    ProcessSupervisor::terminateAll();
    ProcessSupervisor::waitForExit();
 }

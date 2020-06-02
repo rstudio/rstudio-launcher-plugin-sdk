@@ -222,6 +222,33 @@ TEST_CASE("Create Processes")
       CHECK(mockLog->peek().Message.find("test-pwd") == std::string::npos);
       CHECK(mockLog->pop().Message.find(R"("password":"<redacted>")") != std::string::npos);
    }
+
+   SECTION("Mount path")
+   {
+      const FilePath& mountedPath = user5.getHomePath();
+
+      api::HostMountSource mountSource;
+      mountSource.Path = FilePath::safeCurrentPath(FilePath()).getAbsolutePath();
+      api::Mount mount;
+      mount.DestinationPath = mountedPath.getAbsolutePath();
+      mount.IsReadOnly = true;
+      mount.HostSourcePath = mountSource;
+
+      ProcessOptions opts;
+      opts.Executable = "./test.sh";
+      opts.IsShellCommand = false;
+      opts.Environment.emplace_back("VAR", "Mount test passed!");
+      opts.Mounts.push_back(mount);
+      opts.RunAsUser = user5;
+      opts.WorkingDirectory = mountedPath;
+
+      ProcessResult result;
+      SyncChildProcess child(opts);
+      REQUIRE_FALSE(child.run(result));
+      CHECK(result.ExitCode == 0);
+      CHECK(result.StdError == "");
+      CHECK(result.StdOut == "Mount test passed!");
+   }
 }
 
 } // namespace process
