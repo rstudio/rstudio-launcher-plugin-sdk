@@ -605,31 +605,8 @@ struct AbstractChildProcess::Impl
    {
       RSandbox = options::Options::getInstance().getRSandboxPath().getAbsolutePath();
       Arguments.push_back(RSandbox);
-      createEnvironmentVars(in_options);
       createLaunchProfile(in_options);
       createSandboxArguments(in_options);
-   }
-
-   /**
-    * @brief Creates a C-style list of environment variables from the process options.
-    *
-    * If PATH is not present, the current PATH will be added.
-    *
-    * @param in_options     The options for this child process.
-    */
-   void createEnvironmentVars(const ProcessOptions& in_options)
-   {
-      bool pathFound = false;
-      for (const api::EnvVariable& envVar: in_options.Environment)
-      {
-         if (envVar.first == "PATH")
-            pathFound = true;
-
-         Environment.emplace_back(envVar.first + "=" + envVar.second);
-      }
-
-      if (!pathFound)
-         Environment.emplace_back("PATH=" + posix::getEnvironmentVariable("PATH"));
    }
 
    /**
@@ -647,9 +624,26 @@ struct AbstractChildProcess::Impl
       contextObj["project"] = "";
       contextObj["id"] = "";
 
+      json::Array args;
+      for (const std::string& arg: in_options.Arguments)
+         args.push_back(arg);
+
+      bool pathFound = false;
+      json::Object env;
+      for (const auto& envVar: in_options.Environment)
+      {
+         if (envVar.first == "PATH")
+            pathFound = true;
+
+         env[envVar.first] = envVar.second;
+      }
+
+      if (!pathFound)
+         env["PATH"] = posix::getEnvironmentVariable("PATH");
+
       json::Object configObj;
-      configObj["args"] = json::Array();
-      configObj["environment"] = json::Object();
+      configObj["args"] = args;
+      configObj["environment"] = env;
       configObj["stdInput"] = in_options.StandardInput;
       configObj["stdStreamBehavior"] = 2; // Inherit
       configObj["priority"] = 0;
@@ -742,23 +736,21 @@ struct AbstractChildProcess::Impl
    }
 
    /**
-    * @brief Prepares the child process by closing uncessary FDs and then invokes ::execv[e].
+    * @brief Prepares the child process by closing unecessary FDs and then invokes ::execv.
     *
     * This method should only be invoked from the child process.
     *
     * @param in_fds             The currently open FDs for parent-child communication.
     * @param in_maxFd           The maximum possible FD for the system.
     * @param in_arguments       The process arguments.
-    * @param in_environment     The process environment.
     *
-    * @return Error if a failure occurred before or during the call to ::execv[e]. This method should not return on
-    *         successful ::execv[e].
+    * @return Error if a failure occurred before or during the call to ::execv. This method should not return on
+    *         successful ::execv.
     */
    Error execChild(
       const FileDescriptors& in_fds,
       rlim_t in_maxFd,
-      const CStringList& in_arguments,
-      const CStringList& in_environment) const
+      const CStringList& in_arguments) const
    {
       // Set up the parent group id to ensure all children of this child process will belong to its process group, and
       // as such can be cleaned up by the parent.
@@ -793,10 +785,7 @@ struct AbstractChildProcess::Impl
       closeParentFds(in_fds.CloseFd[s_readPipe], in_maxFd);
       ::close(in_fds.CloseFd[s_readPipe]);
 
-      if (in_environment.isEmpty())
-         ::execv(RSandbox.c_str(), in_arguments.getData());
-      else
-         ::execve(RSandbox.c_str(), in_arguments.getData(), in_environment.getData());
+      ::execv(RSandbox.c_str(), in_arguments.getData());
 
       // If we get here the execv(e) call failed.
       ::_exit(s_threadSafeExitError);
@@ -819,9 +808,6 @@ struct AbstractChildProcess::Impl
 
    /** The list of RSandbox arguments. */
    std::vector<std::string> Arguments;
-
-   /** The environment to send to the RSandbox process. */
-   std::vector<std::string> Environment;
 
    /** A sterilized version of StandardInput for logging purposes. */
    std::string SafeStdin;
@@ -905,8 +891,7 @@ Error AbstractChildProcess::run()
       m_baseImpl->execChild(
          fds,
          hardLimit,
-         CStringList(m_baseImpl->Arguments),
-         CStringList(m_baseImpl->Environment));
+         CStringList(m_baseImpl->Arguments));
    // Otherwise, this is still the parent.
    else
    {
