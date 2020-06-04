@@ -25,6 +25,7 @@
 
 #include <csignal>
 #include <grp.h>
+#include <memory.h>
 #include <pwd.h>
 #include <sys/prctl.h>
 
