@@ -1,7 +1,7 @@
 /*
  * User.cpp
  * 
- * Copyright (C) 2019-20 by RStudio, PBC
+ * Copyright (C) 2020 by RStudio, PBC
  *
  * Unless you have received this program directly from RStudio pursuant to the terms of a commercial license agreement
  * with RStudio, then this program is licensed to you under the following terms:
@@ -53,7 +53,7 @@ struct User::Impl
 
       // Get the maximum size of a passwd for this system.
       long buffSize = ::sysconf(_SC_GETPW_R_SIZE_MAX);
-      if (buffSize == 1)
+      if (buffSize < 0)
          buffSize = 4096; // some systems return -1, be conservative!
 
       std::vector<char> buffer(buffSize);
