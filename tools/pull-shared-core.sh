@@ -337,4 +337,4 @@ if [[ -e "${ROOT_DIR}/sdk/src/json/rapidjson" ]]; then
 fi
 cp -r temp/rstudio-clone/src/cpp/shared_core/include/shared_core/json/rapidjson "${ROOT_DIR}/sdk/src/json/rapidjson"
 
-#sudo rm -r temp/
+sudo rm -r temp/
