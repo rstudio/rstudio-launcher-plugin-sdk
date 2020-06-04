@@ -4,7 +4,7 @@ This section describes optional, advanced features of the SDK which are not cove
 
 ## Error Handling {#errors}
 
-The RStudio Launcher Plugin SDK QuickStart Guide glosses over error handling by creating a new Error with an arbitrary name and code at each location that an error would occur. It is advisable to take a more systematic approach to error handling. The specific implementation is completely at the discretion of the Plugin developer, however this section will discuss one possible organizational strategy.
+The RStudio Launcher Plugin SDK QuickStart Guide creates a new Error with an arbitrary name and code at each location that an error would occur. It is advisable to take a more systematic approach to error handling. The specific implementation is completely at the discretion of the Plugin developer, however this section will discuss one possible organizational strategy.
 
 For each category of error that may occur, create an enum which represents the specific types of errors in that category, and a function (or a few functions) which create `Error` objects with the correct category name.
 
