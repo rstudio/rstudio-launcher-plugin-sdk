@@ -24,6 +24,8 @@ project(rstudio_launcher_plugin_sdk)
 
 set(CMAKE_CXX_STANDARD 11)
 
+find_library(PTHREAD_LIBS pthread)
+
 # include files
 file(GLOB_RECURSE RLPS_HEADER_FILES "*.h*")
 
@@ -70,6 +72,7 @@ set(RLPS_SOURCE_FILES
 include_directories(
    include
    src
+   ${OPENSSL_INCLUDE_DIR}
 )
 
 # define library
@@ -78,18 +81,10 @@ add_library(rstudio-launcher-plugin-sdk-lib STATIC
    ${RLPS_HEADER_FILES}
 )
 
-set(RLPS_BOOST_LIBS
-   Boost::filesystem
-   Boost::program_options
-   Boost::regex
-   Boost::thread
-)
-
-find_library(PTHREAD_LIBS pthread)
-
 target_link_libraries(rstudio-launcher-plugin-sdk-lib
    ${RLPS_BOOST_LIBS}
    ${PTHREAD_LIBS}
+   ${OPENSSL_LIBRARIES}
 )
 
 # define executables for unit tests

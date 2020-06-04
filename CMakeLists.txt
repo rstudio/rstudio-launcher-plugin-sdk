@@ -25,8 +25,6 @@ project(rlp_sdk_all)
 # include globals
 include(CMakeGlobals.txt)
 
-message(${RLPS_INCLUDE_DIR})
-
 set(CMAKE_CXX_STANDARD 11)
 
 # include boost
@@ -35,13 +33,26 @@ if (NOT RLPS_BOOST_REQUESTED_VERSION)
 endif()
 set(Boost_NO_BOOST_CMAKE      OFF)
 set(Boost_USE_STATIC_LIBS     ON)
-set(RLPS_BOOST_LIBS
+find_package(Boost ${RLPS_BOOST_REQUESTED_VERSION} REQUIRED COMPONENTS
    filesystem
    program_options
    regex
-   thread)
-find_package(Boost ${RLPS_BOOST_REQUESTED_VERSION} REQUIRED COMPONENTS ${RLPS_BOOST_LIBS})
+   thread
+)
 
+set(RLPS_BOOST_LIBS
+   Boost::filesystem
+   Boost::program_options
+   Boost::regex
+   Boost::thread
+)
+
+# include openssl
+find_package(OpenSSL 1.1.1 REQUIRED COMPONENTS)
+
+set(OPENSSL_INCLUDE_DIR ${OPENSSL_ROOT_DIR}/include)
+
+# add the subdirectories
 add_subdirectory("sdk")
 add_subdirectory("plugins/Local")
 add_subdirectory("plugins/QuickStart")
