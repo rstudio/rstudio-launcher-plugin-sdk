@@ -317,6 +317,8 @@ for I in "${!SRC_SOURCES[@]}"; do
 
     if [[ "$SRC_FILE" == "system/Crypto.cpp" ]]; then
         replace "$DEST_PATH" "(\n}[ \t]*//[ \t]*anonymous[ \t]*namespace\n)(([^\n]*\n)*[ \t]*boost::system::errc::bad_message[^\n]*\n[^\n]*\n[^\n]*\n[^\n]*\n)" "\2\1"
+        replace "$DEST_PATH" "(return\s*)system(Error\(\s*\n\s*)boost::system::errc::not_supported" "\1\2\"OpenSSLError\",\n         -1"
+        replace "$DEST_PATH" "(return\s*)system(Error\(\s*\n\s*)boost::system::errc::bad_message" "\1\2\"OpenSSLError\",\n      ec"
     fi
 
     if [[ "$SRC_FILE" == "system/PosixSystem.cpp" ]]; then

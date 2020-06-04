@@ -76,8 +76,9 @@ Error getLastCryptoError(const ErrorLocation& in_location)
    if (ec == 0)
    {
       logging::logWarningMessage("getLastCrytpoError called with no pending error");
-      return systemError(
-         boost::system::errc::not_supported,
+      return Error(
+         "OpenSSLError",
+         -1,
          "lastCrytpoError called with no pending error",
          in_location);
    }
@@ -88,8 +89,9 @@ Error getLastCryptoError(const ErrorLocation& in_location)
    ::ERR_error_string_n(ec, errorBuffer, ERR_BUFF_SIZE);
 
    // return the error
-   return systemError(
-      boost::system::errc::bad_message,
+   return Error(
+      "OpenSSLError",
+      ec,
       errorBuffer,
       in_location);
 }
