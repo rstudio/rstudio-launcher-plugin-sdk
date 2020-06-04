@@ -33,9 +33,12 @@ QuickStartPluginApi::QuickStartPluginApi(std::shared_ptr<comms::AbstractLauncher
 {
 }
 
-std::shared_ptr<api::IJobSource> QuickStartPluginApi::createJobSource() const
+std::shared_ptr<api::IJobSource> QuickStartPluginApi::createJobSource(
+   jobs::JobRepositoryPtr in_jobRepository,
+   jobs::JobStatusNotifierPtr in_jobStatusNotifier) const
 {
-   return std::shared_ptr<api::IJobSource>(new QuickStartJobSource());
+   return std::shared_ptr<api::IJobSource>(
+      new QuickStartJobSource(std::move(in_jobRepository), std::move(in_jobStatusNotifier)));
 }
 
 Error QuickStartPluginApi::doInitialize()

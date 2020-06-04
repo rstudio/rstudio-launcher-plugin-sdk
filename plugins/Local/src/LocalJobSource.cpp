@@ -29,8 +29,12 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace local {
 
-LocalJobSource::LocalJobSource(std::string in_hostname) :
-   m_jobStorage(std::move(in_hostname))
+LocalJobSource::LocalJobSource(
+   std::string in_hostname,
+   jobs::JobRepositoryPtr in_jobRepository,
+   jobs::JobStatusNotifierPtr in_jobStatusNotifier) :
+      api::IJobSource(std::move(in_jobRepository), std::move(in_jobStatusNotifier)),
+      m_jobStorage(std::move(in_hostname))
 {
 }
 

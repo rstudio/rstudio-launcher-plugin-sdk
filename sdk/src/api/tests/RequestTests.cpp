@@ -363,7 +363,7 @@ TEST_CASE("Parse get job request with fields (no id)")
    MockLogPtr logDest = getMockLogDest();
 
    std::set<std::string> expectedFields;
-   expectedFields.insert("id"); // ID is expected anyways.
+   expectedFields.insert("id"); // ID is expected no matter what.
    expectedFields.insert("status");
    expectedFields.insert("statusMessage");
 
@@ -485,6 +485,77 @@ TEST_CASE("Parse invalid get job request")
 
       std::shared_ptr<Request> request;
       CHECK(Request::fromJson(requestObj, request));
+   }
+}
+
+TEST_CASE("Parse JobStatusRequest")
+{
+   system::User user5;
+   REQUIRE_FALSE(system::User::getUserFromIdentifier(USER_FIVE, user5));
+
+   json::Object requestObj;
+   requestObj[FIELD_MESSAGE_TYPE] = static_cast<int>(Request::Type::GET_JOB_STATUS);
+   requestObj[FIELD_REQUEST_ID] = 8;
+
+   SECTION("Specific user, no cancel, all jobs")
+   {
+      requestObj[FIELD_REAL_USER] = USER_FIVE;
+      requestObj[FIELD_JOB_ID] = "*";
+      requestObj[FIELD_ENCODED_JOB_ID] = "";
+
+      std::shared_ptr<Request> request;
+      REQUIRE_FALSE(Request::fromJson(requestObj, request));
+      REQUIRE(request->getType() == Request::Type::GET_JOB_STATUS);
+
+      std::shared_ptr<JobStatusRequest> jobStatusRequest = std::static_pointer_cast<JobStatusRequest>(request);
+      CHECK(jobStatusRequest->getId() == 8);
+      CHECK(jobStatusRequest->getUser() == user5);
+      CHECK(jobStatusRequest->getRequestUsername().empty());
+      CHECK(jobStatusRequest->getJobId() == "*");
+      CHECK(jobStatusRequest->getEncodedJobId().empty());
+      CHECK_FALSE(jobStatusRequest->isCancelRequest());
+   }
+
+   SECTION("All users, cancel (false), specific job")
+   {
+      requestObj[FIELD_REAL_USER] = "*";
+      requestObj[FIELD_REQUEST_USERNAME] = USER_FOUR;
+      requestObj[FIELD_JOB_ID] = "job-182";
+      requestObj[FIELD_ENCODED_JOB_ID] = "Q2x1c3Rlci1qb2ItMTgyCg==";
+      requestObj[FIELD_CANCEL_STREAM] = false;
+
+      std::shared_ptr<Request> request;
+      REQUIRE_FALSE(Request::fromJson(requestObj, request));
+      REQUIRE(request->getType() == Request::Type::GET_JOB_STATUS);
+
+      std::shared_ptr<JobStatusRequest> jobStatusRequest = std::static_pointer_cast<JobStatusRequest>(request);
+      CHECK(jobStatusRequest->getId() == 8);
+      CHECK(jobStatusRequest->getUser().isAllUsers());
+      CHECK(jobStatusRequest->getRequestUsername() == USER_FOUR);
+      CHECK(jobStatusRequest->getJobId() == "job-182");
+      CHECK(jobStatusRequest->getEncodedJobId() == "Q2x1c3Rlci1qb2ItMTgyCg==");
+      CHECK_FALSE(jobStatusRequest->isCancelRequest());
+   }
+
+   SECTION("All users, cancel (true), all jobs")
+   {
+      requestObj[FIELD_REAL_USER] = "*";
+      requestObj[FIELD_REQUEST_USERNAME] = USER_FOUR;
+      requestObj[FIELD_JOB_ID] = "*";
+      requestObj[FIELD_ENCODED_JOB_ID] = "";
+      requestObj[FIELD_CANCEL_STREAM] = true;
+
+      std::shared_ptr<Request> request;
+      REQUIRE_FALSE(Request::fromJson(requestObj, request));
+      REQUIRE(request->getType() == Request::Type::GET_JOB_STATUS);
+
+      std::shared_ptr<JobStatusRequest> jobStatusRequest = std::static_pointer_cast<JobStatusRequest>(request);
+      CHECK(jobStatusRequest->getId() == 8);
+      CHECK(jobStatusRequest->getUser().isAllUsers());
+      CHECK(jobStatusRequest->getRequestUsername() == USER_FOUR);
+      CHECK(jobStatusRequest->getJobId() == "*");
+      CHECK(jobStatusRequest->getEncodedJobId().empty());
+      CHECK(jobStatusRequest->isCancelRequest());
    }
 }
 

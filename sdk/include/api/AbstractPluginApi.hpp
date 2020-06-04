@@ -75,18 +75,28 @@ private:
    /**
     * @brief Creates the job repository which stores any RStudio Launcher jobs currently in the job scheduling system.
     *
-    * This may be overridden if the Plugin implementation requires
+    * This may be overridden if the Plugin implementation requires custom job repository behaviour, such as removing
+    * any persistent Job data when a completed Job expires.
+    *
+    * @param in_jobStatusNotifier       The job status notifier, which is used by the JobRepository to keep track of new
+    *                                   jobs.
     *
     * @return The job repository.
     */
-    virtual std::shared_ptr<jobs::JobRepository> createJobRepository() const;
+    virtual jobs::JobRepositoryPtr createJobRepository(const jobs::JobStatusNotifierPtr& in_jobStatusNotifier) const;
 
    /**
     * @brief Creates the job source which can communicate with this Plugin's job scheduling system.
     *
+    * @param in_jobRepository           The job repository, from which to look up jobs.
+    * @param in_jobStatusNotifier       The job status notifier to which to post or from which to receive job status
+    *                                   updates.
+    *
     * @return The job source for this Plugin implementation.
     */
-   virtual std::shared_ptr<IJobSource> createJobSource() const = 0;
+   virtual std::shared_ptr<IJobSource> createJobSource(
+      jobs::JobRepositoryPtr in_jobRepository,
+      jobs::JobStatusNotifierPtr in_jobStatusNotifier) const = 0;
 
    /**
     * @brief This method is responsible for initializing all components necessary to communicate with the job launching

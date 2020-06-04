@@ -2,6 +2,236 @@
 
 This section describes optional, advanced features of the SDK which are not covered in the RStudio Launcher Plugin SDK QuickStart Guide.
 
+## Error Handling {#errors}
+
+The RStudio Launcher Plugin SDK QuickStart Guide creates a new Error with an arbitrary name and code at each location that an error would occur. It is advisable to take a more systematic approach to error handling. The specific implementation is completely at the discretion of the Plugin developer, however this section will discuss one possible organizational strategy.
+
+For each category of error that may occur, create an enum which represents the specific types of errors in that category, and a function (or a few functions) which create `Error` objects with the correct category name.
+
+Error codes must not begin at 0 as that would be considered a 'Success' error code (i.e. not an error). Error codes may be reused across categories.
+
+### Example {#errors-ex}
+
+Suppose that the Orchid Organization's developer determines that there are only two category of error that cannot be covered by a system or unknown error (available in `Error.hpp`): Mars API errors, and internal errors.
+
+The developer might create the file `MarsError.hpp` as follows:
+
+```{Rcpp, eval=FALSE}
+
+#ifndef ORCHID_MARS_ERROR_HPP_
+#define ORCHID_MARS_ERROR_HPP_
+
+namespace rstudio {
+namespace launcher_plugins {
+
+class Error;
+
+} // namespace launcher_plugins
+} // namespace rstudio
+
+
+namespace orchid {
+namespace mars {
+
+enum class InternalError
+{
+  SUCCESS = 0,
+  UNKNOWN = 1,
+  CONVERSION_FAILURE = 2,
+  JOB_NOT_FOUND = 3
+};
+
+/** Enum which represents a Mars API Error. */
+enum class MarsError
+{
+  SUCCESS = 0,
+  UNKNOWN = 1,
+  CONN_TIMEOUT = 2,
+  NOT_AUTHORIZED = 3,
+  UNSUPPORTED_VERSION = 4
+};
+
+Error createMarsError(
+    const mars_api::mars_exception& in_exception,
+    const ErrorLocation& in_location);
+
+Error createMarsError(
+    const mars_api::mars_exception& in_exception,
+    const Error& in_cause,
+    const ErrorLocation& in_location);
+
+Error createVersionError(
+    const std::string& in_supportedVersion,
+    const std::string& in_actualVersion,
+    const ErrorLocation& in_location);
+
+Error createInternalError(
+    InternalError in_code,
+    const std::string& in_message,
+    const ErrorLocation& in_location);
+
+Error createInternalError(
+    InternalError in_code,
+    const std::string& in_message,
+    const Error& in_cause,
+    const ErrorLocation& in_location);
+
+} // namespace mars
+} // namespace orchid
+
+#endif
+
+```
+
+Then `MarsError.cpp` might look like this:
+
+```{Rcpp, eval=FALSE}
+
+#include "MarsError.hpp"
+
+#include <Error.hpp>
+
+namespace orchid {
+namespace mars {
+
+namespace {
+
+constexpr const char* s_internalErrorName = "InternalPluginError";
+constexpr const char* s_marsErrorName = "MarsApiError";
+
+} // anonymous namespace
+
+Error createMarsError(
+    const mars_api::mars_exception& in_exception,
+    const ErrorLocation& in_location)
+{
+  return createMarsError(in_exeption, Success(), in_location);
+}
+
+Error createMarsError(
+    const mars_api::mars_exception& in_exception,
+    const Error& in_cause,
+    const ErrorLocation& in_location)
+{
+  MarsError code = MarsError::UNKNOWN;
+  if (in_exception.code() == 14) // Connection timeout
+    code = MarsError::CONN_TIMEOUT;
+  else if (in_exception.code() == 52) // Not authorized
+    code = MarsError::NOT_AUTHORIZED;
+  
+  if (in_cause == Success())
+    return Error(
+      s_marsErrorName,
+      static_cast<int>(code),
+      in_exception.what(),
+      in_location);
+  
+  return Error(
+    s_marsErrorName,
+    static_cast<int>(code),
+    in_exception.what(),
+    in_cause,
+    in_location);
+}
+
+Error createVersionError(
+    const std::string& in_supportedVersion,
+    const std::string& in_actualVersion,
+    const ErrorLocation& in_location)
+{
+  return Error(
+    s_marsErrorName,
+    static_cast<int>(MarsError::UNSUPPORTED_VERSION),
+    "Mars API is version \"" + 
+      in_actualVersion + 
+      "\" which is not supported. Supported version(s): "
+      + in_supportedVersion,
+    in_location);
+}
+
+Error createInternalError(
+    InternalError in_code,
+    const std::string& in_message,
+    const ErrorLocation& in_location)
+{
+  return Error(
+    s_internalErrorName,
+    static_cast<int>(in_code),
+    in_message,
+    in_location);
+}
+
+Error createInternalError(
+    InternalError in_code,
+    const std::string& in_message,
+    const Error& in_cause,
+    const ErrorLocation& in_location)
+{
+  return Error(
+    s_internalErrorName,
+    static_cast<int>(in_code),
+    in_message,
+    in_cause,
+    in_location);
+}
+
+} // namespace mars
+} // namespace orchid
+
+```
+
+As an example of how these functions might be used, consider the example in TODO #10 of the RStudio Launcher Plugin SDK QuickStart Guide. With this new error handling, the Plugin developer may change the implementation to the following:
+
+```{Rcpp, eval=FALSE}
+Error MarsJobStatusWatcher::getJobDetails(const std::string& in_jobId, api::JobPtr& out_job) const
+{
+  const options::MarsOptions& opts = options::MarsOptions::getInstance();
+  mars_api::job marsJob;
+  try
+  {
+    unsigned long id = std::strtoul(in_jobId);
+    marsJob = mars_api::list_job(opts.getMarsServiceUser(), id);
+  }
+  catch (const std::invalid_argument& e)
+  {
+    return createInternalError(
+      InternalError::CONVERSION_FAILURE, 
+      "Job ID " +
+        in_jobID +
+        " could not be converted to unsigned long: " +
+        e.what(),
+      ERROR_LOCATION);
+  }
+  catch (const std::out_of_range& e)
+  {
+    return createInternalError(
+      InternalError::CONVERSION_FAILURE, 
+      "Job ID " +
+        in_jobID +
+        " is out of range to be converted to unsigned long: " +
+        e.what(),
+      ERROR_LOCATION);
+  }
+  catch (const mars_api::mars_exception& e)
+  {
+    return createMarsError(e, ERROR_LOCATION);
+  }
+
+  // This should only be invoked for Launcher Jobs because of the filtering in pollJobStatus,
+  // so return an error if somehow it's not a Launcher Job.
+  if (job._name.find("[RStudio Launcher]") == std::string::npos)
+    return createInternalError(
+      InternalError::JOB_NOT_FOUND,
+      "Job " + in_jobId + " is not an RStudio Launcher Job.",
+      ERROR_LOCATION);
+    
+  out_job = marsJobToJob(marsJob);
+  return Success();
+}
+```
+
+With this approach, the Plugin developer has created much more consistent and informative errors.
+
 ## Date-Time Support {#date-time}
 
 The SDK provides a utility class for working with `DateTime` objects (`include/system/DateTime.hpp`). Dates and times can be converted from string to `system::DateTime` using `system::DateTime::fromString`, and to string using `system::DateTime::toString`. When converting from string, the default expected time string format will be `YYYY-MM-DDThh:mm:ss.ssssssTZ`, or `%Y-%m-%dT%H:%M:%S%F%ZP` using the supported format specification. This is the ISO 8601 extended time format. When converting to string, the default output format is `YYYY-MM-DDThh:mm:ss.ssssssZ`, or `%Y-%m-%dT%H:%M:%S%FZ`. Note that the default output string is in UTC time.
@@ -234,3 +464,217 @@ To declare support for a custom job configuration value, create a `JobConfig` ob
 
 When a job is submitted, any custom configuration values that were set on the job can be found on `Job::Config`.
 
+## Job Status Updates {#status-updates}
+
+The Plugin needs to keep an accurate record of all of the Jobs that were submitted to the Job Scheduling System by the Launcher. This can be implemented in any way that suits the Job Scheduling System as long as `JobStatusNotifier::updateJobStatus` is invoked each time the status of a job changes. The `JobStatusNotifier::updateJobStatus` validates that the current status really is an update, so there is no need for the Plugin implementation to do that check.
+
+The two most common ways to implemented this feature are streaming the Job statuses and polling the Job statuses. Both methods can be implemented with the help of the `AbstractJobStatusWatcher` base class; however, streaming is the preferred method, as it should be more efficient than polling.
+
+The `AbstractTimedJobStatusWatcher` class, which extends the `AbstractJobStatusWatcher` class, implements common functionality for polling job statuses. For more details about implementing Job status updates via polling, see TODO #'s 9 - 11 in the RStudio Launcher Plugin SDK QuickStart Guide.
+
+### Streaming {#status-updates-stream}
+
+Streaming is the preferred method for implementing job status updates, as it can be more efficient than polling job statuses. This is because polling requires making a job status request of the Job Scheduling System every interval of time, and may result in reading the same status multiple times before a change is observed. If the Job Scheduling System provides an API that streams Job status changes, the Plugin should only have to process each status change once.
+
+#### Example {#status-updates-stream-ex}
+
+Suppose that the Mars API provides a `stream_statuses` function which takes a callback function as a parameter with the signature `std::function<void(const mars_api::job_status&)>`. Assume that the `mars_api::job_status` structure has the Job ID, the Job name, the Job Status, the last modification time, and the reason for the current Job status. Then the Plugin developer might change the implementation of `MarsJobStatusWatcher` to the following:
+
+
+`MarsJobStatusWatcher.hpp`:
+```{Rcpp,eval=FALSE}
+
+#ifndef ORCHID_MARS_MARS_JOB_STATUS_WATCHER_HPP
+#define ORCHID_MARS_MARS_JOB_STATUS_WATCHER_HPP
+
+#include <jobs/AbstractJobStatusWatcher.hpp>
+
+#include <memory>
+
+namespace orchid {
+namespace mars {
+
+class MarsJobStatusWatcher : 
+  public jobs::AbstractJobStatusWatcher,
+  public std::enable_shared_from_this<MarsJobStatusWatcher>
+{
+public:
+   /**
+    * @brief Constructor.
+    *
+    * @param in_jobRepository           The job repository, from which to look-up jobs.
+    * @param in_jobStatusNotifier       The job status notifier to which to post job updates.
+    */
+   MarsJobStatusWatcher(
+      jobs::JobRepositoryPtr in_jobRepository,
+      jobs::JobStatusNotifierPtr in_jobStatusNotifier);
+
+  /**
+   * @brief Starts the Job status watcher.
+   *
+   * @return Success if the Job status watcher could be started; Error otherwise.
+   */
+  Error start();
+  
+  /**
+   * @brief Stops the Job status watcher.
+   */
+  void stop();
+  
+private:
+   /**
+    * @brief Handles a change in job status when it is reported by the Mars Job Scheduling System.
+    * 
+    * @param in_jobStatus     The new job status.
+    */
+   void onJobStatusUpdate(const mars_api::job_status& in_jobStatus);
+
+   /**
+    * @brief Gets the job details for the specified job.
+    *
+    * @param in_jobId   The ID of the job to retrieve.
+    * @param out_job    The populated Job object.
+    *
+    * @return Success if the job details could be retrieved and parsed; Error otherwise.
+    */
+   Error getJobDetails(const std::string& in_jobId, api::JobPtr& out_job) const override;
+   
+   // The Job status stream.
+   std::unique_ptr<mars_api::status_stream> m_jobStream;
+};
+
+/** Convenience typedef. */
+typedef std::shared_ptr<MarsJobStatusWatcher> MarsJobStatusWatcherPtr;
+
+} // namespace mars
+} // namespace orchid
+
+#endif
+```
+
+`MarsJobStatusWatcher.cpp`:
+```{Rcpp,eval=FALSE}
+#include "MarsJobStatusWatcher.hpp"
+
+namespace orchid {
+namespace mars {
+
+typedef std::shared_ptr<MarsJobStatusWatcher> SharedThis;
+typedef std::weak_ptr<MarsJobStatusWatcher> WeakThis;
+
+MarsJobStatusWatcher::MarsJobStatusWatcher(
+   jobs::JobRepositoryPtr in_jobRepository,
+   jobs::JobStatusNotifierPtr in_jobStatusNotifier) :
+      jobs::AbstractJobStatusWatcher(
+         std::move(in_jobRepository),
+         std::move(in_jobStatusNotifier))
+{
+}
+
+Error MarsJobStatusWatcher::start()
+{
+  WeakThis weakThis = shared_from_this();
+  
+  const options::MarsOptions& opts = options::MarsOptions::getInstance();
+  try
+  {
+    m_jobStream = std::move(mars_api::stream_statuses(
+      [weakThis](const mars_api::job_status& in_jobStatus)
+      {
+        if (SharedThis sharedThis = weakThis.lock)
+          sharedThis->onJobStatusUpdate(in_jobStatus);
+      }));
+  }
+  catch (const mars_api::mars_exception& e)
+  {
+    return createMarsError(e, ERROR_LOCATION);
+  }
+}
+
+void MarsJobStatusWatcher::stop()
+{
+  m_JobStream.reset();
+}
+
+void MarsJobStatusWatcher::onJobStatusUpdate(const mars_api::job_status& in_jobStatus)
+{
+   if (in_jobStatus._name.find("[RStudio Launcher]") != std::string::npos)
+   {
+      system::DateTime lastModified;
+      Error error = system::DateTime::fromString(job._last_modified, lastModified);
+      if (error)
+      {
+        // Use the current time as the invocation time instead, but log an error.
+        logging::logError(error, ERROR_LOCATION);
+        error = updateJobStatus(
+          std::to_string(job._id),
+          marsStatusToStatus(job._status),
+          job._reason);
+      }
+      else
+      {
+        error = updateJobStatus(
+          std::to_string(job._id),
+          marsStatusToStatus(job._status),
+          job._reason,
+          lastModified);
+      }
+      
+      if (error)
+        logging::logError(error, ERROR_LOCATION);
+   }
+}
+
+Error MarsJobStatusWatcher::getJobDetails(const std::string& in_jobId, api::JobPtr& out_job) const
+{
+  const options::MarsOptions& opts = options::MarsOptions::getInstance();
+  mars_api::job marsJob;
+  try
+  {
+    unsigned long id = std::strtoul(in_jobId);
+    marsJob = mars_api::list_job(opts.getMarsServiceUser(), id);
+  }
+  catch (const std::invalid_argument& e)
+  {
+    return createInternalError(
+      InternalError::CONVERSION_FAILURE, 
+      "Job ID " +
+        in_jobID +
+        " could not be converted to unsigned long: " +
+        e.what(),
+      ERROR_LOCATION);
+  }
+  catch (const std::out_of_range& e)
+  {
+    return createInternalError(
+      InternalError::CONVERSION_FAILURE, 
+      "Job ID " +
+        in_jobID +
+        " is out of range to be converted to unsigned long: " +
+        e.what(),
+      ERROR_LOCATION);
+  }
+  catch (const mars_api::mars_exception& e)
+  {
+    return createMarsError(e, ERROR_LOCATION);
+  }
+
+  // This should only be invoked for Launcher Jobs because of the filtering in pollJobStatus,
+  // so return an error if somehow it's not a Launcher Job.
+  if (job._name.find("[RStudio Launcher]") == std::string::npos)
+    return createInternalError(
+      InternalError::JOB_NOT_FOUND,
+      "Job " + in_jobId + " is not an RStudio Launcher Job.",
+      ERROR_LOCATION);
+    
+  out_job = marsJobToJob(marsJob);
+  return Success();
+}
+
+} // namespace mars
+} // namespace orchid
+```
+
+### Other Methods {#status-updates-other}
+
+It is possible that neither streaming nor polling are the best solution for keeping job statuses up to date. The use of an `AbstractJobStatusWatcher` is completely optional, and the Plugin developer may choose to implement this feature in any way that best suits the Job Scheduling System. For example, the provided sample Local Plugin does not use an `AbstractJobStatusWatcher`. Jobs are launched on the local system by forking a new processes and running the requested command in that process. The Local Plugin receives notifications when the child process writes to standard out, standard error, or exits. When the process exits, the Job state is transitioned from `RUNNING` to `FINISHED`. The Local Plugin also keeps track of when the process should transition from `PENDING` to `RUNNING` by checking whether the executable name has changed from `rsandbox` (a utility for launching processes in an isolated environment provided with the RStudio Server Pro installation) to the name of the actual executable for the Job.

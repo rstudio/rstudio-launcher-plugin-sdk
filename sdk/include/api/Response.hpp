@@ -27,12 +27,11 @@
 
 #include <Noncopyable.hpp>
 
-#include <cstdint>
-
 #include <vector>
 
 #include <PImpl.hpp>
 #include <api/Job.hpp>
+#include <api/ResponseTypes.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -123,9 +122,36 @@ private:
 };
 
 /**
+ * @brief Base class for responses which are returned to multiple stream requests.
+ */
+class MultiStreamResponse : public Response
+{
+public:
+   /**
+    * @brief Converts this MultiStreamResponse to a JSON object.
+    *
+    * @return The JSON object which represents this MultiStreamResponse.
+    */
+   json::Object toJson() const override;
+
+protected:
+   /**
+    * @brief Constructor.
+    *
+    * @param in_responseType    The type of the base class.
+    * @param in_sequences       The sequence IDs for which this response should be sent.
+    */
+   MultiStreamResponse(Type in_responseType, StreamSequences in_sequences);
+
+private:
+   // The private implementation of MultiStreamResponse
+   PRIVATE_IMPL(m_streamResponseImpl);
+};
+
+/**
  * @brief Class which represents an error response which can be sent to the Launcher in response to any request.
  */
-class ErrorResponse : public Response
+class ErrorResponse final : public Response
 {
 public:
    /**
@@ -176,7 +202,7 @@ private:
  * @brief Class which represents a heartbeat response which should be sent to the Launcher every configured
  * heartbeat-interval-seconds.
  */
-class HeartbeatResponse : public Response
+class HeartbeatResponse final : public Response
 {
 public:
    /**
@@ -189,7 +215,7 @@ public:
  * @brief Class which represents a bootstrap response which can be sent to the Launcher in response to a bootstrap
  *        request.
  */
-class BootstrapResponse : public Response
+class BootstrapResponse final : public Response
 {
 public:
    /**
@@ -211,7 +237,7 @@ public:
  * @brief Class which represents a job state response which can be sent to the Launcher in response to a get or submit
  *        job request.
  */
-class JobStateResponse : public Response
+class JobStateResponse final : public Response
 {
 public:
    /**
@@ -240,10 +266,36 @@ private:
 };
 
 /**
+ * @brief Class which represents a JobStatus Stream, either for all jobs or for a specific job.
+ */
+class JobStatusResponse final : public MultiStreamResponse
+{
+public:
+   /**
+    * @brief Constructor.
+    *
+    * @param in_sequences   The stream sequences for which this response will be sent.
+    * @param in_job         The job that was updated.
+    */
+   JobStatusResponse(StreamSequences in_sequences, const JobPtr& in_job);
+
+   /**
+    * @brief Converts this job status response to a JSON object.
+    *
+    * @return The JSON object which represents this job status response.
+    */
+   json::Object toJson() const override;
+
+private:
+   // The private implementation of JobStatusResponse.
+   PRIVATE_IMPL(m_impl);
+};
+
+/**
  * @brief Class which represents a cluster info response which should be sent to the Launcher in response to a cluster
  *        info request.
  */
- class ClusterInfoResponse : public Response
+ class ClusterInfoResponse final : public Response
  {
  public:
     /**

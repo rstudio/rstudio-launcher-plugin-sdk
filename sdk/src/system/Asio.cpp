@@ -30,6 +30,7 @@
 #include <boost/asio.hpp>
 
 #include <Error.hpp>
+#include <system/DateTime.hpp>
 #include <utils/ErrorUtils.hpp>
 #include <utils/MutexUtils.hpp>
 
@@ -230,7 +231,7 @@ struct AsioStream::Impl : public std::enable_shared_from_this<AsioStream::Impl>
 
                   // If there was no error, pop the first message and start writing over again.
                   instance->WriteBuffer.pop();
-                  instance->startWriting(lock, in_onError);
+                  instance->startWriting(uniqueLock, in_onError);
 
                END_LOCK_MUTEX
             }
@@ -297,7 +298,7 @@ void AsioStream::writeBytes(const std::string& in_data, const OnError& in_onErro
 
       m_impl->WriteBuffer.push(in_data);
       if (m_impl->WriteBuffer.size() == 1)
-         m_impl->startWriting(lock, in_onError);
+         m_impl->startWriting(uniqueLock, in_onError);
 
    END_LOCK_MUTEX
 }
@@ -362,19 +363,23 @@ AsyncTimedEvent::AsyncTimedEvent() :
 {
 }
 
-void AsyncTimedEvent::start(uint64_t in_intervalSeconds, const AsioFunction& in_event)
+void AsyncTimedEvent::start(const TimeDuration& in_timeDuration, const AsioFunction& in_event)
 {
    // If the interval is 0 there is nothing to do.
-   if (in_intervalSeconds == 0)
+   if (in_timeDuration == TimeDuration())
       return;
 
-   boost::posix_time::time_duration intervalSeconds = boost::posix_time::seconds(in_intervalSeconds);
+   boost::posix_time::time_duration timeDuration(
+      in_timeDuration.getHours(),
+      in_timeDuration.getMinutes(),
+      in_timeDuration.getSeconds(),
+      in_timeDuration.getMicroseconds());
 
    m_impl->Timer.reset(
-      new boost::asio::deadline_timer(getIoService(), intervalSeconds));
+      new boost::asio::deadline_timer(getIoService(), timeDuration));
 
    Impl::WeakImpl weakImpl = m_impl;
-   m_impl->Timer->async_wait(std::bind(&Impl::runEvent, m_impl, intervalSeconds, in_event, std::placeholders::_1));
+   m_impl->Timer->async_wait(std::bind(&Impl::runEvent, m_impl, timeDuration, in_event, std::placeholders::_1));
 }
 
 void AsyncTimedEvent::cancel()
@@ -388,10 +393,70 @@ void AsyncTimedEvent::cancel()
    END_LOCK_MUTEX
 }
 
-void AsyncTimedEvent::reportError(const Error &in_error)
+void AsyncTimedEvent::reportError(const Error& in_error)
 {
    logging::logError(in_error);
    cancel();
+}
+
+// AsyncDeadlineEvent ==================================================================================================
+struct AsyncDeadlineEvent::Impl
+{
+   Impl(AsioFunction in_work, DateTime in_deadline) :
+      Deadline(std::move(in_deadline)),
+      Work(std::move(in_work))
+   {
+
+   }
+
+   DateTime Deadline;
+   std::shared_ptr<boost::asio::deadline_timer> Timer;
+   AsioFunction Work;
+};
+
+AsyncDeadlineEvent::AsyncDeadlineEvent(const AsioFunction& in_work, const DateTime& in_deadlineTime) :
+   m_impl(new Impl(in_work, in_deadlineTime))
+{
+}
+
+AsyncDeadlineEvent::~AsyncDeadlineEvent()
+{
+   cancel();
+}
+
+void AsyncDeadlineEvent::cancel()
+{
+   if (m_impl->Timer != nullptr)
+      m_impl->Timer->cancel();
+}
+
+void AsyncDeadlineEvent::start()
+{
+   DateTime now;
+   if (now >= m_impl->Deadline)
+      AsioService::post(m_impl->Work);
+   else
+   {
+      TimeDuration diff = m_impl->Deadline - now;
+      m_impl->Timer.reset(
+         new boost::asio::deadline_timer(
+            getIoService(),
+            boost::posix_time::time_duration(
+               diff.getHours(),
+               diff.getMinutes(),
+               diff.getSeconds(),
+               diff.getMicroseconds())));
+
+      std::weak_ptr<Impl> weakThis = m_impl;
+      m_impl->Timer->async_wait(
+         [weakThis](boost::system::error_code in_ec)
+         {
+            // Don't do any work if this was canceled or m_impl has been destroyed.
+            std::shared_ptr<Impl> sharedThis = weakThis.lock();
+            if ((in_ec != boost::asio::error::operation_aborted) && sharedThis)
+               sharedThis->Work();
+         });
+   }
 }
 
 } // namespace system

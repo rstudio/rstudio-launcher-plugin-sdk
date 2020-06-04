@@ -52,8 +52,8 @@ TEST_CASE("basic options")
       REQUIRE(error.getCode() == 13);
       REQUIRE(error.getName() == systemError(1, ErrorLocation()).getName());
 
-      REQUIRE(opts.getJobExpiryHours() == 11);
-      REQUIRE(opts.getHeartbeatIntervalSeconds() == 4);
+      REQUIRE(opts.getJobExpiryHours() == system::TimeDuration::Hours(11));
+      REQUIRE(opts.getHeartbeatIntervalSeconds() == system::TimeDuration::Seconds(4));
       REQUIRE(opts.getLogLevel() == logging::LogLevel::ERR);
       REQUIRE(opts.getScratchPath().getAbsolutePath() == "/home/aUser/temp/");
       REQUIRE(opts.getThreadPoolSize() == 6);

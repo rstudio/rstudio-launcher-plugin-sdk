@@ -1,5 +1,5 @@
 /*
- * MutexUtils.hpp
+ * QuickStartJobStatusWatcher.cpp
  *
  * Copyright (C) 2020 by RStudio, PBC
  *
@@ -21,32 +21,40 @@
  *
  */
 
+#include <QuickStartJobStatusWatcher.hpp>
 
-#ifndef LAUNCHER_PLUGINS_MUTEX_UTILS_HPP
-#define LAUNCHER_PLUGINS_MUTEX_UTILS_HPP
+namespace rstudio {
+namespace launcher_plugins {
+namespace quickstart {
 
-#include <mutex>
-#include <system_error>
+QuickStartJobStatusWatcher::QuickStartJobStatusWatcher(
+   system::TimeDuration in_frequency,
+   jobs::JobRepositoryPtr in_jobRepository,
+   jobs::JobStatusNotifierPtr in_jobStatusNotifier) :
+      jobs::AbstractTimedJobStatusWatcher(
+         std::move(in_frequency),
+         std::move(in_jobRepository),
+         std::move(in_jobStatusNotifier))
+{
+}
 
-#include <Error.hpp>
-#include <logging/Logger.hpp>
+Error QuickStartJobStatusWatcher::pollJobStatus()
+{
+   // TODO #9: Poll the Job Scheduling System for job status updates. Invoke AbstractJobStatusWatcher::updateJobStatus
+   //          for each updated job.
+   return Success();
+}
 
-#define LOCK_MUTEX(in_mutex)                       \
-try {                                              \
-   std::lock_guard<std::mutex> lock(in_mutex);     \
+Error QuickStartJobStatusWatcher::getJobDetails(const std::string& in_jobId, api::JobPtr& out_job) const
+{
+   // TODO #10: Get the full details of the requested job from the Job Scheduling System, and remove the placeholder
+   //           error below.
+   return Error(
+      "NotImplemented",
+      1,
+      "Method QuickStartJobStatusWatcher::getJobDetails is not implemented.", ERROR_LOCATION);
+}
 
-#define UNIQUE_LOCK_MUTEX(in_mutex)                \
-try {                                              \
-   std::unique_lock<std::mutex> lock(in_mutex);    \
-
-#define END_LOCK_MUTEX                             \
-}                                                  \
-catch (const std::system_error& e)                 \
-{                                                  \
-   using namespace rstudio::launcher_plugins;      \
-   logging::logError(                              \
-      systemError(e, ERROR_LOCATION));             \
-}                                                  \
-CATCH_UNEXPECTED_EXCEPTION;                        \
-
-#endif
+} // namespace quickstart
+} // namespace launcher_plugins
+} // namespace rstudio

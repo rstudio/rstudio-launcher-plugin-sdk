@@ -319,7 +319,7 @@ Error MarsJobSource::initialize()
   {
     mars_api::init(opts.host(), opts.port(), opts.useSsl());
   }
-  catch (const mars_expcetion& e)
+  catch (const mars_api::mars_expcetion& e)
   {
     return Error("MarsApiError", e.code(), e.what(), ERROR_LOCATION);
   }
@@ -415,7 +415,7 @@ Error MarsJobSource::getConfiguration(
     maxCpuCount = mars_api::get_total_cpus();
     maxMemoryMB = mars_api::get_max_memory();
   }
-  catch (const mars_exception& e)
+  catch (const mars_api::mars_exception& e)
   {
     return Error("MarsApiError", e.code(), e.what(), ERROR_LOCATION);
   }
@@ -440,7 +440,11 @@ Error MarsJobSource::getConfiguration(
 in `MarsJobSource.cpp`.
   
   
-## TODO #8: Pull all jobs {#todo-8}
+## TODO #8: Pull All Jobs {#todo-8}
+ 
+TODO Location             Impact
+------------------------  ------------------------
+QuickStartJobSource.cpp   QuickStartJobSource.cpp
 
 When the Launcher starts the Plugin, it will send a Bootstrap request to ensure that the Plugin is initialized. During this request, the Plugin SDK will populate the `JobRepository` with any pre-existing Launcher jobs by calling `IJobSource::getJobs`. The Plugin developer needs to override `IJobSource::getJobs` to synchronously pull down the list jobs that are already in the Job Scheduling System.
 
@@ -450,11 +454,11 @@ Each job detail must be converted from the format in the Job Scheduling System t
 
 ### Job Fields {#todo-8-fields}
 
-The `Job` object has a field for each detail that the Launcher requires. This document will discuss some of the fields which require special consideration. Because jobs may remain in the system between Plugin restarts, the Plugin must be able to populate each field of the `Job` object exactly as it would have been when it was submitted to the Plugin based on the record of the job in the Job Scheduling System. If any fields cannot be retrieved from the Job Scheduling System, it will most likely be easier to ignore them during this TODO and design a solution during [TODO #10](#todo-10). For more information about each field, see the RStudio Launcher Plugin SDK API Reference.
+The `Job` object has a field for each detail that the Launcher requires. This document will discuss some of the fields which require special consideration. Because jobs may remain in the system between Plugin restarts, the Plugin must be able to populate each field of the `Job` object exactly as it would have been when it was submitted to the Plugin based on the record of the job in the Job Scheduling System. If any fields cannot be retrieved from the Job Scheduling System, it will most likely be easier to ignore them during this TODO and design a solution during [TODO #12](#todo-12). For more information about each field, see the RStudio Launcher Plugin SDK API Reference.
 
 #### Command vs. Exe vs. Container {#todo-8-command-exe}
 
-Depending on whether a Plugin supports containers, there are two or three possible ways a job may be submitted to the Plugin. Without container support, a job may be submitted wither either the `Job::Command` or the `Job::Exe` field set. The difference is that a job submitted with the `Job::Command` field populated should be executed as a shell command (e.g. `/bin/sh -c <Command>`), and a job submitted with the `Job::Exe` field populated should be executed directly. With container support, the job may be submitted with the `Command` and `Container` fields set, with the `Exe` and `Container` fields set, or just with the `Container` field set. In that case, the `Container` field describes the `Container` that should run either the shell command or the executable, or if no command or executable was set, the `Container` itself is the job to be run. Job submission is discussed in more detail in [TODO #10](#todo-10).
+Depending on whether a Plugin supports containers, there are two or three possible ways a job may be submitted to the Plugin. Without container support, a job may be submitted wither either the `Job::Command` or the `Job::Exe` field set. The difference is that a job submitted with the `Job::Command` field populated should be executed as a shell command (e.g. `/bin/sh -c <Command>`), and a job submitted with the `Job::Exe` field populated should be executed directly. With container support, the job may be submitted with the `Command` and `Container` fields set, with the `Exe` and `Container` fields set, or just with the `Container` field set. In that case, the `Container` field describes the `Container` that should run either the shell command or the executable, or if no command or executable was set, the `Container` itself is the job to be run. Job submission is discussed in more detail in [TODO #12](#todo-12).
 
 The Plugin must be able to determine from the Job Scheduling System's record of the job which of the `Job::Command`, `Job::Exe`, and `Job::Container` fields should be populated, and must be able to repopulate those fields exactly as they were when they were submitted to the Plugin.
 
@@ -478,7 +482,8 @@ Another special consideration is how to convert from the Job Scheduling System's
 Assume the following:
 
 * The Mars Job Scheduling System API has a `list_jobs` function which takes a username. It retrieves the jobs the specified user has permission to see.
-* The Orchid organization's developer has added a `marsJobToJob` helper function which converts a `mars_api::job` structure to an `rstudio::launcher_plugins::api::Job` structure.
+* The Orchid organization's developer has added a `marsJobToJob` helper function which converts a `mars_api::job` structure to an `rstudio::launcher_plugins::api::Job` structure and has the signature `rstudio::launcher_plugins::api::JobPtr marsJobToJob(const mars_api::job& in_marsJob)`.
+* The Plugin developer plans to append `"[RStudio Launcher]"` to the Job name on submission.
 
 In that case, the Plugin developer might change
 
@@ -503,15 +508,230 @@ Error MarsJobSource::getJobs(api::JobList &out_jobs) const
   {
     marsJobs = mars_api::list_jobs(opts.getMarsServiceUser());
   }
-  catch (const mars_exception& e)
+  catch (const mars_api::mars_exception& e)
   {
     return Error("MarsApiError", e.code(), e.what(), ERROR_LOCATION);
   }
   
   for (const mars_api::job& job: marsJobs)
-    out_jobs.push_back(marsJobTojob(job));
+    if (job._name.find("[RStudio Launcher]") != std::string::npos)
+      out_jobs.push_back(marsJobTojob(job));
   
   return Success();
+}
+```
+
+in `MarsJobSource.cpp`.
+
+## TODO #9: Poll Job Statuses {#todo-9}
+
+TODO Location                     Impact
+--------------------------------  --------------------------------
+QuickStartJobStatusWatcher.cpp    QuickStartJobStatusWatcher.cpp
+
+Along with the next two TODOs ([#10](#todo-10) and [#11](#todo-11)), this TODO will walk through how to set up a Job Status Watcher that polls the Job Scheduling System for Job status updates. If it is possible to stream Job status updates from the Job Scheduling System, follow the instructions in the 'Streaming' subsection of the 'Job Status Updates' section of the 'Advanced Features' chapter of the RStudio Launcher Plugin SDK Developer Guide and then skip to [TODO #12](#todo-12).
+
+Note that using a Job Status Watcher is optional. If neither polling nor streaming Job status updates is suitable, the Plugin developer may choose to implement the updating of Job statuses however best suits the Job Scheduling System's available functionality. More details can be found in the 'Job Status Updates' section of the 'Advanced Features' chapter of the RStudio Launcher Plugin SDK Developer Guide.
+
+The `AbstractTimedJobStatusWatcher` base class will invoke `pollJobStatus` once every configurable amount of time. When this method is invoked, the Plugin should poll the Job Scheduling System for all the current Job statuses. The SDK will handle verifying whether a status is new, as long as correct information is passed to the `AbstractJobStatusWatcher::updateJobStatus` method. The necessary information is as follows:
+
+* The ID of the Job.
+* The current status of the Job.
+* The current status message of the Job, if any.
+* The current time, or the time at which the Job was last modified, if available.
+
+If clock skew between the Job Scheduling System and the Plugin is a concern, or if the Job Scheduling System provides the last modification time of the Job, it is advisable to provide the last modified time to the `in_invocationTime` parameter of `updateJobStatus`.
+
+The `pollJobStatus` should return an error if and only if it hits an unrecoverable error, such as failing to communicate with the Job Scheduling System. If there is an issue handling a single Job's status update, it may be sufficient to log an error and try again the next time that `pollJobStatus` is invoked.
+
+The Launcher supports load balancing, which means that it is possible that jobs can be submitted to the Job Scheduling System by another instance of the Plugin. Each instance of the Plugin should be able to correctly report all Jobs that were submitted to the Job Scheduling System through the Launcher. Usually, the most straightforward way to implement this is to pick up the new Jobs while polling or streaming Job status updates. If `AbstractJobStatusWatcher::updateJobStatus` is invoked for a Job that is not currently in the Job Repository, it will invoke `AbstractJobStatusWatcher::getJobDetails`. For more details about implementing `AbstractJobStatusWatcher::getJobDetails`, see [TODO #10](#todo-10).
+
+### Example {#todo-9-ex}
+
+In addition to the assumptions from previous examples, assume the following:
+
+* The `mars_api::job` structure has a `_last_modified` field which is a string in the format `YYYY-MM-DDTHH:mm:ss.sssss[+-]HH:mm`. 
+* The `mars_api::job` structure has a `_status` field which is a string, and the Plugin developer has added a `marsStatusToStatus` method which converts the Mars job status to it's applicable SDK status equivalent.
+* The `mars_api::job` structure has a `_reason` field which is a string describing the reason for the current status.
+* The `mars_api::job` structure has an `_id` field which is an unsigned integer, that the Plugin developer has mapped to an SDK `Job::Id` field by converting the integer value to a string.
+
+In that case, the plugin developer might change
+
+```{Rcpp, eval=FALSE}
+
+Error QuickStartJobStatusWatcher::pollJobStatus() 
+{
+   // TODO #9: Poll the Job Scheduling System for job status updates. Invoke AbstractJobStatusWatcher::updateJobStatus
+   //          for each updated job.
+  return Success();
+}
+```
+
+in `QuickStartJobStatusWatcher.cpp` to 
+
+```{Rcpp, eval=FALSE}
+
+Error MarsJobStatusWatcher::pollJobStatus()
+{
+  const options::MarsOptions& opts = options::MarsOptions::getInstance();
+  std::vector<mars_api::job> marsJobs;
+  try
+  {
+    marsJobs = mars_api::list_jobs(opts.getMarsServiceUser());
+  }
+  catch (const mars_api::mars_exception& e)
+  {
+    return Error("MarsApiError", e.code(), e.what(), ERROR_LOCATION);
+  }
+  
+  for (const mars_api::job& job: marsJobs)
+  {
+    if (job._name.find("[RStudio Launcher]") == std::string::npos)
+      continue; // Skip non-Launcher jobs.
+    
+    system::DateTime lastModified;
+    Error error = system::DateTime::fromString(job._last_modified, lastModified);
+    if (error)
+    {
+      // Use the current time as the invocation time instead, but log an error.
+      logging::logError(error, ERROR_LOCATION);
+      error = updateJobStatus(
+        std::to_string(job._id),
+        marsStatusToStatus(job._status),
+        job._reason);
+    }
+    else
+    {
+      error = updateJobStatus(
+        std::to_string(job._id),
+        marsStatusToStatus(job._status),
+        job._reason,
+        lastModified);
+    }
+    
+    if (error)
+    {
+      logging::logErrorMessage("Failed to update job " + std::to_string(job._id), ERROR_LOCATION);
+      logging::logError(error, ERROR_LOCATION);
+    }
+  }
+  
+  return Success();
+}
+```
+
+in `MarsJobStatusWatcher.cpp`.
+
+## TODO #10: Get the Missing Job Details {#todo-10}
+
+TODO Location                     Impact
+--------------------------------  --------------------------------
+QuickStartJobStatusWatcher.cpp    QuickStartJobStatusWatcher.cpp
+
+If a `AbstractJobStatusWatcher::updateJobStatus` is invoked for a Job which is not in the Job Repository, the SDK will call `AbstractJobStatusWatcher::getJobDetails` to populate a `Job` object with all of the details of the Job, and then add it to the Job Repository. Since `AbstractJobStatusWatcher::getJobDetails` should get the full details of the Job just like `IJobSource::getJobs()` does, it may be advisable to make a shared implementation for getting and/or parsing Jobs from the Job Scheduling System.
+
+This method should return an error if it is unable to populate the Job details.
+
+### Example {#todo-10-ex}
+
+In addition to the assumptions from previous examples, assume the following:
+
+* The `mars_api` has a `list_job` function which lists a specific Job by ID.
+
+In that case, the plugin developer might change
+
+```{Rcpp, eval=FALSE}
+Error QuickStartJobStatusWatcher::getJobDetails(const std::string& in_jobId, api::JobPtr& out_job) const
+{
+   // TODO #10: Get the full details of the requested job from the Job Scheduling System, and remove the placeholder
+   //           error below.
+   return Error(
+      "NotImplemented",
+      1,
+      "Method QuickStartJobStatusWatcher::getJobDetails is not implemented.", ERROR_LOCATION);
+}
+```
+
+in `QuickStartJobStatusWatcher.cpp` to 
+
+```{Rcpp, eval=FALSE}
+Error MarsJobStatusWatcher::getJobDetails(const std::string& in_jobId, api::JobPtr& out_job) const
+{
+  const options::MarsOptions& opts = options::MarsOptions::getInstance();
+  mars_api::job marsJob;
+  try
+  {
+    unsigned long id = std::strtoul(in_jobId);
+    marsJob = mars_api::list_job(opts.getMarsServiceUser(), id);
+  }
+  catch (const std::invalid_argument& e)
+  {
+    return Error("InternalError", 1, e.what(), ERROR_LOCATION);
+  }
+  catch (const std::out_of_range& e)
+  {
+    return Error("InternalError", 2, e.what(), ERROR_LOCATION);
+  }
+  catch (const mars_api::mars_exception& e)
+  {
+    return Error("MarsApiError", e.code(), e.what(), ERROR_LOCATION);
+  }
+
+  // This should only be invoked for Launcher Jobs because of the filtering in pollJobStatus,
+  // so return an error if somehow it's not a Launcher Job.
+  if (job._name.find("[RStudio Launcher]") == std::string::npos)
+    return Error("JobNotFound", 1, "Job " + in_jobId + " is not an RStudio Launcher Job.", ERROR_LOCATION);
+    
+  out_job = marsJobToJob(marsJob);
+  return Success();
+}
+```
+
+## TODO #11: Adjust the Polling Frequency {#todo-11}
+ 
+TODO Location             Impact
+------------------------  ------------------------
+QuickStartJobSource.cpp   QuickStartJobSource.cpp
+
+The `QuickStartJobStatusWatcher` doesn't actually update any Job statuses, as there is no QuickStart Job Scheduling System to pull jobs from. To reduce the amount of busy-work the QuickStart Plugin will do when run, the polling frequency of the Job Status Watcher is set to 1 minute. In reality, Job statuses should be kept much more up to date, on the order of seconds rather than minutes. 
+
+The Plugin developer may choose a fixed interval, such as 5 seconds, or allow the RStudio Server Pro administrator to decide the number of seconds using a configuration option.
+
+### Example {#todo-11-ex}
+
+The Orchid Organization's Plugin developer may choose to change
+
+```{Rcpp, eval=FALSE}
+
+QuickStartJobSource::QuickStartJobSource(
+   const jobs::JobRepositoryPtr& in_jobRepository,
+   const jobs::JobStatusNotifierPtr& in_jobStatusNotifier) :
+   api::IJobSource(in_jobRepository, in_jobStatusNotifier),
+   m_jobStatusWatcher(
+         new QuickStartJobStatusWatcher(
+               system::TimeDuration::Minutes(1),
+               in_jobRepository,
+               in_jobStatusNotifier))
+{
+   // TODO #11: Adjust the job status watcher frequency.
+}
+```
+
+in `QuickStartJobSource.cpp` to
+
+```{Rcpp, eval=FALSE}
+
+MarsJobSource::MarsJobSource(
+   const jobs::JobRepositoryPtr& in_jobRepository,
+   const jobs::JobStatusNotifierPtr& in_jobStatusNotifier) :
+   api::IJobSource(in_jobRepository, in_jobStatusNotifier),
+   m_jobStatusWatcher(
+         new MarsJobStatusWatcher(
+               system::TimeDuration::Seconds(5),
+               in_jobRepository,
+               in_jobStatusNotifier))
+{
+   // TODO #11: Adjust the job status watcher frequency.
 }
 ```
 

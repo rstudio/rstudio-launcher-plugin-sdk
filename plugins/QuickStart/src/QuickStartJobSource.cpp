@@ -29,10 +29,24 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace quickstart {
 
+QuickStartJobSource::QuickStartJobSource(
+   const jobs::JobRepositoryPtr& in_jobRepository,
+   const jobs::JobStatusNotifierPtr& in_jobStatusNotifier) :
+   api::IJobSource(in_jobRepository, in_jobStatusNotifier),
+   m_jobStatusWatcher(
+         new QuickStartJobStatusWatcher(
+               system::TimeDuration::Minutes(1),
+               in_jobRepository,
+               in_jobStatusNotifier))
+{
+   // TODO #11: Adjust the job status watcher frequency.
+}
+
 Error QuickStartJobSource::initialize()
 {
    // TODO #6: Initialize communication with the job scheduling system. If communication fails, return an error.
-   return Success();
+   Error error = m_jobStatusWatcher->start();
+   return error;
 }
 
 Error QuickStartJobSource::getConfiguration(

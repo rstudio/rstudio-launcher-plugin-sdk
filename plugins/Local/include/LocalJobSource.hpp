@@ -29,6 +29,8 @@
 #include <vector>
 
 #include <api/Job.hpp>
+#include <jobs/JobRepository.hpp>
+#include <jobs/JobStatusNotifier.hpp>
 
 #include "job_store/LocalJobStorage.hpp"
 
@@ -45,9 +47,15 @@ public:
    /**
     * @brief Constructor.
     *
-    * @param in_hostname    The name of the host running this instance of the Local Plugin.
+    * @param in_hostname                The name of the host running this instance of the Local Plugin.
+    * @param in_jobRepository           The job repository, from which to look up jobs.
+    * @param in_jobStatusNotifier       The job status notifier to which to post or from which to receive job status
+    *                                   updates.
     */
-   explicit LocalJobSource(std::string in_hostname);
+   explicit LocalJobSource(
+      std::string in_hostname,
+      jobs::JobRepositoryPtr in_jobRepository,
+      jobs::JobStatusNotifierPtr in_jobStatusNotifier);
 
    /**
     * @brief Initializes the Local Job Source.

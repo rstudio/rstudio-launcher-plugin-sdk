@@ -26,6 +26,11 @@
 
 #include <api/IJobSource.hpp>
 
+#include <jobs/JobRepository.hpp>
+#include <jobs/JobStatusNotifier.hpp>
+
+#include "QuickStartJobStatusWatcher.hpp"
+
 namespace rstudio {
 namespace launcher_plugins {
 namespace quickstart {
@@ -36,6 +41,17 @@ namespace quickstart {
 class QuickStartJobSource : public api::IJobSource
 {
 public:
+   /**
+    * @brief Constructor.
+    *
+    * @param in_jobRepository           The job repository, from which to look up jobs.
+    * @param in_jobStatusNotifier       The job status notifier to which to post or from which to receive job status
+    *                                   updates.
+    */
+   QuickStartJobSource(
+      const jobs::JobRepositoryPtr& in_jobRepository,
+      const jobs::JobStatusNotifierPtr& in_jobStatusNotifier);
+
    /**
     * @brief Initializes the Job Source.
     *
@@ -62,7 +78,7 @@ public:
     *
     * @return Success if the configuration and capabilities for this Job Source could be populated; Error otherwise.
     */
-   virtual Error getConfiguration(
+   Error getConfiguration(
       const system::User& in_user,
       api::JobSourceConfiguration& out_configuration) const override;
 
@@ -74,6 +90,9 @@ public:
     * @return Success if all jobs could be retrieved; Error otherwise.
     */
    Error getJobs(api::JobList& out_jobs) const override;
+
+private:
+   QuickStartJobStatusWatcherPtr m_jobStatusWatcher;
 };
 
 } // namespace quickstart

@@ -222,14 +222,12 @@ protected:
 private:
    // The private implementation of JobIdRequest.
    PRIVATE_IMPL(m_jobIdImpl);
-
-   friend class Request;
 };
 
 /**
  * @brief Represents a bootstrap request received from the Launcher.
  */
-class BootstrapRequest: public Request
+class BootstrapRequest final : public Request
 {
 public:
    /**
@@ -270,7 +268,7 @@ private:
 /**
  * @brief Represents a job state request received from the Launcher.
  */
-class JobStateRequest : public JobIdRequest
+class JobStateRequest final : public JobIdRequest
 {
 public:
    /**
@@ -334,6 +332,33 @@ private:
     * @param in_requestJson     The JSON Object which represents the job state request.
     */
    explicit JobStateRequest(const json::Object& in_requestJson);
+
+   // The private implementation of JobStateRequest
+   PRIVATE_IMPL(m_impl);
+
+   friend class Request;
+};
+
+/**
+ * @brief Request from the launcher to begin or end a Job Status Stream.
+ */
+class JobStatusRequest final : public JobIdRequest
+{
+public:
+   /**
+    * @brief Gets whether the Job Status Stream should be started (false) or ended (true).
+    *
+    * @return
+    */
+   bool isCancelRequest() const;
+
+private:
+   /**
+    * @brief Constructor.
+    *
+    * @param in_requestJson     The JSON Object which represents the job status request.
+    */
+   explicit JobStatusRequest(const json::Object& in_requestJson);
 
    // The private implementation of JobStateRequest
    PRIVATE_IMPL(m_impl);

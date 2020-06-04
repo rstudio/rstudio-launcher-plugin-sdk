@@ -34,9 +34,15 @@ LocalPluginApi::LocalPluginApi(
 {
 }
 
-std::shared_ptr<api::IJobSource> LocalPluginApi::createJobSource() const
+std::shared_ptr<api::IJobSource> LocalPluginApi::createJobSource(
+   jobs::JobRepositoryPtr in_jobRepository,
+   jobs::JobStatusNotifierPtr in_jobStatusNotifier) const
 {
-   return std::shared_ptr<api::IJobSource>(new LocalJobSource(m_hostname));
+   return std::shared_ptr<api::IJobSource>(
+      new LocalJobSource(
+         m_hostname,
+         std::move(in_jobRepository),
+         std::move(in_jobStatusNotifier)));
 }
 
 Error LocalPluginApi::doInitialize()

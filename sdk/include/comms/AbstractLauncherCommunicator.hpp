@@ -38,9 +38,9 @@ namespace api {
 
 class Response;
 
-}
-}
-}
+} // namespace api
+} // namespace launcher_plugins
+} // namespace rstudio
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -65,12 +65,11 @@ public:
    virtual ~AbstractLauncherCommunicator() = default;
 
    /**
-    * @brief Registers a request handler for the specified type. Only one handler may be registered per type.
+    * @brief Registers a request handler for all requests.
     *
-    * @param in_requestType         The type of the request.
     * @param in_requestHandler      The handler for the request.
     */
-   void registerRequestHandler(api::Request::Type in_requestType, const RequestHandler& in_requestHandler);
+   void registerRequestHandler(std::unique_ptr<RequestHandler>&& in_requestHandler);
 
    /**
     * @brief Sends the response to the RStudio Launcher.
@@ -160,6 +159,8 @@ private:
    // The private implementation of AbstractLauncherCommunicator.
    PRIVATE_IMPL(m_baseImpl);
 };
+
+typedef std::shared_ptr<AbstractLauncherCommunicator> AbstractLauncherCommunicatorPtr;
 
 } // namespace comms
 } // namespace launcher_plugins

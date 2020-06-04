@@ -29,6 +29,7 @@
 
 #include "Error.hpp"
 #include "logging/Logger.hpp"
+#include "system/DateTime.hpp"
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -199,14 +200,14 @@ public:
     *
     * @return The number of hours after which finished jobs expire and should be pruned from the plugin.
     */
-   unsigned int getJobExpiryHours() const;
+   system::TimeDuration getJobExpiryHours() const;
 
    /**
     * @brief Gets the number of seconds between heartbeats.
     *
     * @return The number of seconds between heartbeats.
     */
-   unsigned int getHeartbeatIntervalSeconds() const;
+   system::TimeDuration getHeartbeatIntervalSeconds() const;
 
    /**
     * @brief Gets the maximum level of log messages to write.

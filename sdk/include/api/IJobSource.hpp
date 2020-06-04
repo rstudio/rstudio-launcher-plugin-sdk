@@ -30,6 +30,8 @@
 #include <set>
 
 #include <Error.hpp>
+#include <jobs/JobRepository.hpp>
+#include <jobs/JobStatusNotifier.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -137,6 +139,26 @@ public:
     * @return Success if all jobs could be retrieved; Error otherwise.
     */
    virtual Error getJobs(JobList& out_jobs) const = 0;
+
+protected:
+   /**
+    * @brief Constructor.
+    *
+    * @param in_jobRepository           The job repository, from which to look up jobs.
+    * @param in_jobStatusNotifier       The job status notifier to which to post or from which to receive job status
+    *                                   updates.
+    */
+   IJobSource(jobs::JobRepositoryPtr in_jobRepository, jobs::JobStatusNotifierPtr in_jobStatusNotifier) :
+      m_jobRepository(std::move(in_jobRepository)),
+      m_jobStatusNotifier(std::move(in_jobStatusNotifier))
+   {
+   }
+
+   /** The job repository, from which to look up jobs. */
+   jobs::JobRepositoryPtr m_jobRepository;
+
+   /** The job status notifier to which to post or from which to receive job status updates. */
+   jobs::JobStatusNotifierPtr m_jobStatusNotifier;
 };
 
 } // namespace api

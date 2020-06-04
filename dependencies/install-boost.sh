@@ -33,7 +33,7 @@ BOOST_VERSION_NUMBER="1.70.0"
 BOOST_VERSION="boost_$(echo "$BOOST_VERSION_NUMBER" | tr "." "_")"
 BOOST_TAR="$BOOST_VERSION.tar.bz2"
 BOOST_BUILD_DIR="boost-build"
-BOOST_URL="https://dl.bintray.com/boostorg/release/$BOOST_VERSION_NUMBER/source/$BOOST_TAR"
+BOOST_URL="https://s3.amazonaws.com/rstudio-buildtools/Boost/$BOOST_TAR"
 BOOST_DEFAULT_DIR="/usr/local/lib/boost/$BOOST_VERSION"
 
 # Install if not already installed.

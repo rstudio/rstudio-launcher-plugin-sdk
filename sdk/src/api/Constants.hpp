@@ -29,52 +29,63 @@ namespace launcher_plugins {
 namespace api {
 
 // The RStudio Launcher Plugin API implemented by this SDK version.
-constexpr int API_VERSION_MAJOR = 1;
-constexpr int API_VERSION_MINOR = 2;
-constexpr int API_VERSION_PATCH = 0;
+constexpr int API_VERSION_MAJOR                    = 1;
+constexpr int API_VERSION_MINOR                    = 2;
+constexpr int API_VERSION_PATCH                    = 0;
 
 // Common fields for all requests and responses.
-constexpr char const* FIELD_MESSAGE_TYPE = "messageType";
-constexpr char const* FIELD_REQUEST_ID = "requestId";
+constexpr char const* FIELD_MESSAGE_TYPE           = "messageType";
+constexpr char const* FIELD_REQUEST_ID             = "requestId";
 
 // Common fields for all responses.
-constexpr char const* FIELD_RESPONSE_ID = "responseId";
+constexpr char const* FIELD_RESPONSE_ID            = "responseId";
 
 // Common fields for requests which require a username.
-constexpr char const* FIELD_REAL_USER = "username";
-constexpr char const* FIELD_REQUEST_USERNAME = "requestUsername";
+constexpr char const* FIELD_REAL_USER              = "username";
+constexpr char const* FIELD_REQUEST_USERNAME       = "requestUsername";
 
 // Common fields for requests which require a job ID.
-constexpr char const* FIELD_JOB_ID = "jobId";
-constexpr char const* FIELD_ENCODED_JOB_ID = "encodedJobId";
+constexpr char const* FIELD_JOB_ID                 = "jobId";
+constexpr char const* FIELD_ENCODED_JOB_ID         = "encodedJobId";
+
+// Common fields for stream and multi-stream responses.
+constexpr char const* FIELD_CANCEL_STREAM          = "cancel";
+constexpr char const* FIELD_SEQUENCE_ID            = "seqId";
+constexpr char const* FIELD_SEQUENCES              = "sequences";
 
 // Error response fields.
-constexpr char const* FIELD_ERROR_CODE = "errorCode";
-constexpr char const* FIELD_ERROR_MESSAGE = "errorMessage";
+constexpr char const* FIELD_ERROR_CODE             = "errorCode";
+constexpr char const* FIELD_ERROR_MESSAGE          = "errorMessage";
 
 // Bootstrap request and response fields.
-constexpr char const* FIELD_VERSION = "version";
-constexpr char const* FIELD_VERSION_MAJOR = "major";
-constexpr char const* FIELD_VERSION_MINOR = "minor";
-constexpr char const* FIELD_VERSION_PATCH = "patch";
+constexpr char const* FIELD_VERSION                = "version";
+constexpr char const* FIELD_VERSION_MAJOR          = "major";
+constexpr char const* FIELD_VERSION_MINOR          = "minor";
+constexpr char const* FIELD_VERSION_PATCH          = "patch";
 
 // JobState request and response fields.
-constexpr char const* FIELD_JOB_FIELDS = "fields";
-constexpr char const* FIELD_JOB_END_TIME = "endTime";
-constexpr char const* FIELD_JOB_START_TIME = "startTime";
-constexpr char const* FIELD_JOB_STATUSES = "statuses";
-constexpr char const* FIELD_JOB_TAGS = "tags";
-constexpr char const* FIELD_JOBS = "jobs";
+constexpr char const* FIELD_JOB_FIELDS             = "fields";
+constexpr char const* FIELD_JOB_END_TIME           = "endTime";
+constexpr char const* FIELD_JOB_START_TIME         = "startTime";
+constexpr char const* FIELD_JOB_STATUSES           = "statuses";
+constexpr char const* FIELD_JOB_TAGS               = "tags";
+constexpr char const* FIELD_JOBS                   = "jobs";
+
+// JobStatus response fields.
+constexpr char const* FIELD_ID                     = "id";
+constexpr char const* FIELD_JOB_NAME               = "name";
+constexpr char const* FIELD_JOB_STATUS             = "status";
+constexpr char const* FIELD_JOB_STATUS_MESSAGE     = "statusMessage";
 
 // ClusterInfo response fields.
-constexpr char const* FIELD_ALLOW_UNKNOWN_IMAGES = "allowUnknownImages";
-constexpr char const* FIELD_CONFIG = "config";
-constexpr char const* FIELD_CONTAINER_SUPPORT = "supportsContainers";
-constexpr char const* FIELD_DEFAULT_IMAGE = "defaultImage";
-constexpr char const* FIELD_IMAGES = "images";
-constexpr char const* FIELD_PLACEMENT_CONSTRAINTS = "placementConstraints";
-constexpr char const* FIELD_QUEUES = "queues";
-constexpr char const* FIELD_RESOURCE_LIMITS = "resourceLimits";
+constexpr char const* FIELD_ALLOW_UNKNOWN_IMAGES   = "allowUnknownImages";
+constexpr char const* FIELD_CONFIG                 = "config";
+constexpr char const* FIELD_CONTAINER_SUPPORT      = "supportsContainers";
+constexpr char const* FIELD_DEFAULT_IMAGE          = "defaultImage";
+constexpr char const* FIELD_IMAGES                 = "images";
+constexpr char const* FIELD_PLACEMENT_CONSTRAINTS  = "placementConstraints";
+constexpr char const* FIELD_QUEUES                 = "queues";
+constexpr char const* FIELD_RESOURCE_LIMITS        = "resourceLimits";
 
 } // namespace api
 } // namespace launcher_plugins

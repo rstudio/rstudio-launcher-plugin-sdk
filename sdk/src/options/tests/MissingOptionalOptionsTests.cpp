@@ -52,8 +52,8 @@ TEST_CASE("missing optional options")
       REQUIRE(error.getCode() == 13);
       REQUIRE(error.getName() == systemError(1, ErrorLocation()).getName());
 
-      REQUIRE(opts.getJobExpiryHours() == 24);
-      REQUIRE(opts.getHeartbeatIntervalSeconds() == 5);
+      REQUIRE(opts.getJobExpiryHours() == system::TimeDuration::Hours(24));
+      REQUIRE(opts.getHeartbeatIntervalSeconds() == system::TimeDuration::Seconds(5));
       REQUIRE(opts.getLogLevel() == logging::LogLevel::DEBUG);
       REQUIRE(opts.getScratchPath().getAbsolutePath() == "/home/aUser/temp/");
       REQUIRE(opts.getThreadPoolSize() == 6);

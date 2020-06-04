@@ -29,19 +29,39 @@ include_directories(
    ../../tests
 )
 
-set(RLPS_SYSTEM_TEST_SOURCES
-   AsyncTimerTests.cpp
-   DateTimeTests.cpp
-)
-
-# Abstract Communicator Tests
-add_executable(rlps-system-tests
+# AsyncDeadlineEvent Tests
+add_executable(rlps-async-deadline-tests
    ${RLPS_SYSTEM_TEST_MAIN}
-   ${RLPS_SYSTEM_TEST_SOURCES}
+   AsyncDeadlineTests.cpp
    ${RLPS_HEADER_FILES}
 )
 
-target_link_libraries(rlps-system-tests
+target_link_libraries(rlps-async-deadline-tests
+   rstudio-launcher-plugin-sdk-lib
+   ${RLPS_BOOST_LIBS}
+)
+
+
+# AsyncTimedEvent Tests
+add_executable(rlps-async-timer-tests
+   ${RLPS_SYSTEM_TEST_MAIN}
+   AsyncTimerTests.cpp
+   ${RLPS_HEADER_FILES}
+)
+
+target_link_libraries(rlps-async-timer-tests
+   rstudio-launcher-plugin-sdk-lib
+   ${RLPS_BOOST_LIBS}
+)
+
+# DateTime Tests
+add_executable(rlps-date-tests
+   ${RLPS_SYSTEM_TEST_MAIN}
+   DateTimeTests.cpp
+   ${RLPS_HEADER_FILES}
+)
+
+target_link_libraries(rlps-date-tests
    rstudio-launcher-plugin-sdk-lib
    ${RLPS_BOOST_LIBS}
 )

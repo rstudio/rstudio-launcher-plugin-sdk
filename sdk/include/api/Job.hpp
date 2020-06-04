@@ -34,6 +34,7 @@
 #include <PImpl.hpp>
 #include <system/DateTime.hpp>
 #include <system/User.hpp>
+#include <utils/MutexUtils.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -661,6 +662,13 @@ struct ResourceLimit
    std::string DefaultValue;
 };
 
+#define LOCK_JOB(in_job)                                    \
+try                                                         \
+{                                                           \
+   rstudio::launcher_plugins::api::JobLock jobLock(in_job); \
+
+
+#define END_LOCK_JOB END_LOCK_MUTEX
 
 } // namespace api
 } // namespace launcher_plugins

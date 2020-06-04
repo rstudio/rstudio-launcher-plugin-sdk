@@ -35,6 +35,10 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace system {
 
+// Forward declarations
+class DateTime;
+class TimeDuration;
+
 /**
  * @brief Callback function which will be invoked asynchronously by the AsioService.
  */
@@ -53,7 +57,7 @@ typedef std::function<void(int)> OnSignal;
 /**
  * @brief Async input/output class which may be used to manage ASIO operations.
  */
-class AsioService : public Noncopyable
+class AsioService final : public Noncopyable
 {
 public:
 
@@ -114,7 +118,7 @@ private:
 /**
  * @brief Class which allows reading from or writing to streams asynchronously.
  */
-class AsioStream
+class AsioStream final
 {
 public:
    /**
@@ -153,7 +157,7 @@ private:
 /**
  * @brief Class which performs an action asynchronously every specified number of seconds.
  */
-class AsyncTimedEvent
+class AsyncTimedEvent final
 {
 public:
    /**
@@ -162,15 +166,15 @@ public:
    AsyncTimedEvent();
 
    /**
-    * @brief Starts performing the specified event every in_intervalSeconds seconds.
+    * @brief Starts performing the specified event every in_timeDuration.
     *
     * This function may only be called once per instance. Restarting a canceled or otherwise stopped timed event will
     * not work. Instead, a new instance should be created and started.
     *
-    * @param in_intervalSeconds     The number of seconds to wait between each event.
-    * @param in_event               The action to perform every in_intervalSeconds seconds.
+    * @param in_timeDuration    The amount of time to wait between each event.
+    * @param in_event           The action to perform every in_timeDuration.
     */
-   void start(uint64_t in_intervalSeconds, const AsioFunction& in_event);
+   void start(const TimeDuration& in_timeDuration, const AsioFunction& in_event);
 
    /**
     * @brief Cancels the timed event.
@@ -190,6 +194,40 @@ public:
 private:
 
    // The private implementation of AsyncTimedEvent.
+   PRIVATE_IMPL_SHARED(m_impl);
+};
+
+/**
+ * @brief Class which may be used to post async work to be performed at a later time.
+ */
+class AsyncDeadlineEvent final
+{
+public:
+   /**
+    * @brief Constructor.
+    *
+    * @param in_work            The work to be performed when the deadline time is reached.
+    * @param in_deadlineTime    The time at which the work should be performed.
+    */
+   AsyncDeadlineEvent(const AsioFunction& in_work, const DateTime& in_deadlineTime);
+
+   /**
+    * @brief Destructor. The event will be canceled if this invoked before the deadline time.
+    */
+   ~AsyncDeadlineEvent();
+
+   /**
+    * @brief Cancels the event, if invoked before the deadline time.
+    */
+   void cancel();
+
+   /**
+    * @brief Starts waiting for the event.
+    */
+   void start();
+
+private:
+   // The private implementation of AsioDeadlineEvent.
    PRIVATE_IMPL_SHARED(m_impl);
 };
 

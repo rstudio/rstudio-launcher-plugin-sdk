@@ -58,8 +58,8 @@ TEST_CASE("command line options with conflicts")
       REQUIRE(error.getCode() == 13);
       REQUIRE(error.getName() == systemError(1, ErrorLocation()).getName());
 
-      REQUIRE(opts.getJobExpiryHours() == 24);
-      REQUIRE(opts.getHeartbeatIntervalSeconds() == 8);
+      REQUIRE(opts.getJobExpiryHours() == system::TimeDuration::Hours(24));
+      REQUIRE(opts.getHeartbeatIntervalSeconds() == system::TimeDuration::Seconds(8));
       REQUIRE(opts.getLogLevel() == logging::LogLevel::DEBUG);
       REQUIRE(opts.getScratchPath().getAbsolutePath() == "/home/aUser/temp/");
       REQUIRE(opts.getThreadPoolSize() == 6);

@@ -24,9 +24,9 @@
 #ifndef LAUNCHER_PLUGINS_DATE_TIME_HPP
 #define LAUNCHER_PLUGINS_DATE_TIME_HPP
 
-#include <PImpl.hpp>
-
 #include <string>
+
+#include <PImpl.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -41,8 +41,160 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace system {
 
+// Forward Declaration
+class DateTime;
+
+/**
+ * @brief Represents an duration of time (e.g. 5 hours, 43 minutes, and 21 seconds) as opposed to a point in time.
+ */
+class TimeDuration final
+{
+public:
+   /**
+    * @brief Constructor.
+    *
+    * @param in_hours           The number of hours in this TimeDuration.
+    * @param in_minutes         The number of minutes in this TimeDuration.
+    * @param in_seconds         The number of seconds in this TimeDuration.
+    * @param in_microseconds    The number of microseconds in this TimeDuration.
+    */
+   explicit TimeDuration(
+      int64_t in_hours = 0,
+      int64_t in_minutes = 0,
+      int64_t in_seconds = 0,
+      int64_t in_microseconds = 0);
+
+   /**
+    * @brief Copy constructor.
+    *
+    * @param in_other   The TimeDuration to copy into this TimeDuration.
+    */
+   TimeDuration(const TimeDuration& in_other);
+
+   /**
+    * @brief Move constructor.
+    *
+    * @param in_other   The TimeDuration to move into this TimeDuration.
+    */
+   TimeDuration(TimeDuration&& in_other) noexcept;
+
+   /**
+    * @brief Destructor.
+    */
+   ~TimeDuration() = default;
+
+   /**
+    * @brief Constructs an TimeDuration which represents the specified number of hours.
+    *
+    * @param in_hours       The number of hours which should be represented by the TimeDuration.
+    *
+    * @return The new TimeDuration.
+    */
+   static TimeDuration Hours(int64_t in_hours);
+
+   /**
+    * @brief Constructs an TimeDuration which represents the specified number of minutes.
+    *
+    * @param in_minutes     The number of minutes which should be represented by the TimeDuration.
+    *
+    * @return The new TimeDuration.
+    */
+   static TimeDuration Minutes(int64_t in_minutes);
+
+   /**
+    * @brief Constructs an TimeDuration which represents the specified number of seconds.
+    *
+    * @param in_seconds     The number of seconds which should be represented by the TimeDuration.
+    *
+    * @return The new TimeDuration.
+    */
+   static TimeDuration Seconds(int64_t in_seconds);
+
+   /**
+    * @brief Constructs an TimeDuration which represents the specified number of microseconds.
+    *
+    * @param in_microseconds        The number of microseconds which should be represented by the TimeDuration.
+    *
+    * @return The new TimeDuration.
+    */
+   static TimeDuration Microseconds(int64_t in_microseconds);
+
+   /**
+    * @brief Assignment operator.
+    *
+    * @param in_other   The TimeDuration to copy into this TimeDuration.
+    *
+    * @return A reference to this TimeDuration.
+    */
+   TimeDuration& operator=(const TimeDuration& in_other);
+
+   /**
+    * @brief Move operator.
+    *
+    * @param in_other   The TimeDuration to move into this TimeDuration.
+    *
+    * @return A reference to this TimeDuration.
+    */
+
+   TimeDuration& operator=(TimeDuration&& in_other) noexcept;
+
+   /**
+    * @brief Equality comparison operator.
+    *
+    * @param in_other   The TimeDuration to compare against.
+    *
+    * @return True if in_other has the same values as this TimeDuration; false otherwise.
+    */
+   bool operator==(const TimeDuration& in_other) const;
+
+
+   /**
+    * @brief Inequality comparison operator.
+    *
+    * @param in_other   The TimeDuration to compare against.
+    *
+    * @return False if in_other has the same values as this TimeDuration; true otherwise.
+    */
+   bool operator!=(const TimeDuration& in_other) const;
+
+   /**
+    * @brief Gets the number of hours in this TimeDuration.
+    *
+    * @return The number of hours in this TimeDuration.
+    */
+
+   int64_t getHours() const;
+
+   /**
+    * @brief Gets the number of minutes in this TimeDuration.
+    *
+    * @return The number of minutes in this TimeDuration.
+    */
+   int64_t getMinutes() const;
+
+   /**
+    * @brief Gets the number of seconds in this TimeDuration.
+    *
+    * @return The number of seconds in this TimeDuration.
+    */
+   int64_t getSeconds() const;
+
+   /**
+    * @brief Gets the number of days in this TimeDuration.
+    *
+    * @return The number of days in this TimeDuration.
+    */
+   int64_t getMicroseconds() const;
+
+private:
+   // The private implementation of interval time.
+   PRIVATE_IMPL(m_impl);
+
+   friend class DateTime;
+};
+
 /** @brief Class which represents a date and time in UTC. */
-class DateTime
+class DateTime final
 {
 public:
    /**
@@ -91,6 +243,60 @@ public:
     * @return A reference to this DateTime.
     */
    DateTime& operator=(const DateTime& in_other);
+
+   /**
+    * @brief Move operator.
+    *
+    * @param in_other   The DateTime to move to this.
+    *
+    * @return A reference to this DateTime.
+    */
+   DateTime& operator=(DateTime&& in_other) noexcept;
+
+   /**
+    * @brief Subtracts two DateTimes to produce an TimeDuration.
+    *
+    * @param in_other       The date time to subtract from this.
+    *
+    * @return An interval time representing the difference between this DateTime and in_other.
+    */
+   TimeDuration operator-(const DateTime& in_other) const;
+
+   /**
+    * @brief Subtracts the given TimeDuration from a copy of this DateTime.
+    *
+    * @param in_intervalTime    The interval time to subtract from this DateTime.
+    *
+    * @return A reference to this DateTime.
+    */
+   DateTime operator-(const TimeDuration& in_intervalTime) const;
+
+   /**
+    * @brief Subtracts the given TimeDuration from this DateTime.
+    *
+    * @param in_intervalTime    The interval time to subtract from this DateTime.
+    *
+    * @return The new DateTime, which is this value of DateTime minus the specified TimeDuration.
+    */
+   DateTime& operator-=(const TimeDuration& in_intervalTime);
+
+   /**
+    * @brief Adds the given TimeDuration to a copy of this DateTime.
+    *
+    * @param in_intervalTime    The interval time to add to this DateTime.
+    *
+    * @return The new DateTime, which is this value of DateTime plus the specified TimeDuration.
+    */
+   DateTime operator+(const TimeDuration& in_intervalTime) const;
+
+   /**
+    * @brief Adds the given TimeDuration to this DateTime.
+    *
+    * @param in_intervalTime    The interval time to add to this DateTime.
+    *
+    * @return A reference to this DateTime.
+    */
+   DateTime& operator+=(const TimeDuration& in_intervalTime);
 
    /**
     * @brief Equality operator.
