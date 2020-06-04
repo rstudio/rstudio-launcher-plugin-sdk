@@ -671,9 +671,8 @@ Error MarsJobStatusWatcher::getJobDetails(const std::string& in_jobId, api::JobP
   return Success();
 }
 
-} // namespace quickstart
-} // namespace launcher_plugins
-} // namespace rstudio
+} // namespace mars
+} // namespace orchid
 ```
 
 ### Other Methods {#status-updates-other}
