@@ -23,6 +23,7 @@
 
 #include <logging/Logger.hpp>
 
+#include <cassert>
 #include <sstream>
 
 #include <Noncopyable.hpp>
