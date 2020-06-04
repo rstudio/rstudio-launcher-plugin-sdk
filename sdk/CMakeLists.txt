@@ -58,6 +58,7 @@ set(RLPS_SOURCE_FILES
    src/options/AbstractUserProfiles.cpp
    src/options/Options.cpp
    src/system/Asio.cpp
+   src/system/Crypto.cpp
    src/system/DateTime.cpp
    src/system/FilePath.cpp
    src/system/PosixSystem.cpp
