@@ -468,7 +468,7 @@ When a job is submitted, any custom configuration values that were set on the jo
 
 The Plugin needs to keep an accurate record of all of the Jobs that were submitted to the Job Scheduling System by the Launcher. This can be implemented in any way that suits the Job Scheduling System as long as `JobStatusNotifier::updateJobStatus` is invoked each time the status of a job changes. The `JobStatusNotifier::updateJobStatus` validates that the current status really is an update, so there is no need for the Plugin implementation to do that check.
 
-The two most common ways to implemented this feature are streaming the Job statuses and polling the Job statuses. Both methods can be implemented with the help of the `AbstractJobStatusWatcher` base class, however streaming is the preferred method, as it should be more efficient than polling.
+The two most common ways to implemented this feature are streaming the Job statuses and polling the Job statuses. Both methods can be implemented with the help of the `AbstractJobStatusWatcher` base class; however, streaming is the preferred method, as it should be more efficient than polling.
 
 The `AbstractTimedJobStatusWatcher` class, which extends the `AbstractJobStatusWatcher` class, implements common functionality for polling job statuses. For more details about implementing Job status updates via polling, see TODO #'s 9 - 11 in the RStudio Launcher Plugin SDK QuickStart Guide.
 
