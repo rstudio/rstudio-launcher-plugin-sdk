@@ -299,8 +299,8 @@ for I in "${!SRC_SOURCES[@]}"; do
 
     if [[ "$SRC_FILE" == "Logger.cpp" ]]; then
         replace "$DEST_PATH" "<system/ReaderWriterMutex.hpp>" "\"../system/ReaderWriterMutex.hpp\""
-        replace "$DEST_PATH" "(#include <Noncopyable.hpp>\n#include <Optional.hpp>\n\n)(#include <sstream>\n\n)" "\2\1"
-        replace "$DEST_PATH" "(#include <system/DateTime.hpp>\n)(#include <Error.hpp>\n#include <logging/ILogDestination.hpp>\n)" "\2\1"
+        replace "$DEST_PATH" "(#include <sstream>\n\n)" "\1#include <boost/algorithm/string.hpp>\n\n"
+        replace "$DEST_PATH" "(#include <Noncopyable.hpp>\n#include <Optional.hpp>\n)\n(#include <system/DateTime.hpp>\n)(#include <Error.hpp>\n)(#include <logging/ILogDestination.hpp>\n)" "\3\1\4\2"
         replace "$DEST_PATH" "using\s*namespace\s*boost::posix_time;\n\s*ptime[^;]*;\n\n\s*oss[^,]*,\s*([^)]*)\)" "oss << system::DateTime().toString(\1)"
         replace "$DEST_PATH" "[^\n]*\n[^\n]*\n([ \t]*static\s*Logger)\*\s*(logger)\s*=\s*new\s*Logger\(\s*\);" "\1 \2;"
         replace "$DEST_PATH" "return\s*\*\s*logger;" "return logger;"

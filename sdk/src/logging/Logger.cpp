@@ -26,10 +26,11 @@
 #include <cassert>
 #include <sstream>
 
-#include <Noncopyable.hpp>
-#include <Optional.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include <Error.hpp>
+#include <Noncopyable.hpp>
+#include <Optional.hpp>
 #include <logging/ILogDestination.hpp>
 #include <system/DateTime.hpp>
 #include "../system/ReaderWriterMutex.hpp"
