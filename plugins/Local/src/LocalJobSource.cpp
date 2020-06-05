@@ -29,6 +29,8 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace local {
 
+namespace {
+
 static const std::string s_errorName = "LocalPluginError";
 
 enum class ErrorCode
@@ -61,6 +63,8 @@ Error createError(ErrorCode in_code, const ErrorLocation& in_errorLocation)
    return Error(s_errorName, static_cast<int>(in_code), in_errorLocation);
 }
 
+
+} // anonymous namespace
 
 LocalJobSource::LocalJobSource(
    std::string in_hostname,
