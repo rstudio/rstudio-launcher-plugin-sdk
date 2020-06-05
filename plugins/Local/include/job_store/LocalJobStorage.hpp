@@ -71,8 +71,8 @@ public:
 
    /**
     * @brief Saves a job to disk.
-    * @param in_job
-    * @return
+    *
+    * @param in_job     The job to be saved.
     */
    void saveJob(api::JobPtr in_job);
 
