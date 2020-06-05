@@ -175,7 +175,6 @@ Error LocalJobSource::submitJob(api::JobPtr io_job, ErrorType& out_errorType) co
    io_job->SubmissionTime = system::DateTime();
    io_job->Host = m_hostname;
 
-
    std::string pamProfile = io_job->getJobConfigValue(s_pamProfile).getValueOr("");
    if (!pamProfile.empty())
    {
@@ -187,7 +186,6 @@ Error LocalJobSource::submitJob(api::JobPtr io_job, ErrorType& out_errorType) co
          return error;
       }
    }
-
 
    return Success();
 }
