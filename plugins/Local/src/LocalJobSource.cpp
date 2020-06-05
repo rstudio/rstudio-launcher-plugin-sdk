@@ -101,6 +101,10 @@ Error LocalJobSource::initialize()
 {
    // TODO: Initialize communications with the other local plugins, if any, and make sure we can read and write to the
    //       file that will store job information.
+   Error error = m_secureCookie.initialize();
+   if (error)
+      return error;
+
    return m_jobStorage.initialize();
 }
 

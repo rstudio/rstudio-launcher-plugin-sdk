@@ -33,6 +33,7 @@
 #include <jobs/JobStatusNotifier.hpp>
 
 #include "job_store/LocalJobStorage.hpp"
+#include "LocalSecureCookie.hpp"
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -106,6 +107,9 @@ private:
 
    /** The job storage. */
    job_store::LocalJobStorage m_jobStorage;
+
+   /** The secure cookie. */
+   LocalSecureCookie m_secureCookie;
 };
 
 } // namespace local
