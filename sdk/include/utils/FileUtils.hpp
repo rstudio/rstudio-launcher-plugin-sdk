@@ -44,7 +44,26 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace utils {
 
+/**
+ * @brief Reads the entire contents of the specified file into a single string.
+ *
+ * @param in_file               The file from which to read.
+ * @param out_fileContents      The contents of the file, as a string.
+ *
+ * @return Success if the file exists and could be read; Error otherwise.
+ */
 Error readFileIntoString(const system::FilePath& in_file, std::string& out_fileContents);
+
+/**
+ * @brief Writes a string to a file, optionally appending to any existing content in the file (rather than overwriting).
+ *
+ * @param in_contents       The data to write to the file.
+ * @param in_file           The file to which to write the data.
+ * @param in_truncate       Whether to truncate any existing data in the file. Default: true.
+ *
+ * @return Success if the data was written to the file; Error otherwise.
+ */
+Error writeStringToFile(const std::string& in_contents, const system::FilePath& in_file, bool in_truncate = true);
 
 } // namespace utils
 } // namespace launcher_plugins

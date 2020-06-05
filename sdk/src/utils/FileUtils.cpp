@@ -32,6 +32,8 @@
 #include <Error.hpp>
 #include <system/FilePath.hpp>
 
+#include "ErrorUtils.hpp"
+
 namespace rstudio {
 namespace launcher_plugins {
 namespace utils {
@@ -61,6 +63,31 @@ Error readFileIntoString(const system::FilePath& in_file, std::string& out_fileC
    }
 
    out_fileContents = oStrStream.str();
+
+   return Success();
+}
+
+Error writeStringToFile(const std::string& in_contents, const system::FilePath& in_file, bool in_truncate)
+{
+   std::shared_ptr<std::ostream> ofs;
+   Error error = in_file.openForWrite(ofs, in_truncate);
+   if (error)
+      return error;
+
+   try
+   {
+      ofs->exceptions(std::ostream::failbit | std::ostream::badbit);
+
+      std::istringstream sstream(in_contents);
+      boost::iostreams::copy(sstream, ofs);
+   }
+   catch (const std::exception& e)
+   {
+      Error error = createErrorFromBoostError(boost::system::errc::io_error, ERROR_LOCATION);
+      error.addProperty("what", e.what());
+      error.addProperty("path", in_file.getAbsolutePath());
+      return error;
+   }
 
    return Success();
 }
