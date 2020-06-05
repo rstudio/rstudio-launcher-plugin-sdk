@@ -71,7 +71,8 @@ LocalJobSource::LocalJobSource(
    jobs::JobRepositoryPtr in_jobRepository,
    jobs::JobStatusNotifierPtr in_jobStatusNotifier) :
       api::IJobSource(std::move(in_jobRepository), std::move(in_jobStatusNotifier)),
-      m_jobStorage(std::move(in_hostname))
+      m_hostname(std::move(in_hostname)),
+      m_jobStorage(m_hostname)
 {
 }
 

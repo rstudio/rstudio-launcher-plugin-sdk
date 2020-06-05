@@ -52,7 +52,7 @@ public:
     * @param in_jobStatusNotifier       The job status notifier to which to post or from which to receive job status
     *                                   updates.
     */
-   explicit LocalJobSource(
+   LocalJobSource(
       std::string in_hostname,
       jobs::JobRepositoryPtr in_jobRepository,
       jobs::JobStatusNotifierPtr in_jobStatusNotifier);
@@ -101,6 +101,9 @@ public:
    Error submitJob(api::JobPtr io_job, api::ErrorResponse::Type&) const override;
 
 private:
+   /** The hostname of the machine running this instance of the Local Launcher Plugin. */
+   const std::string m_hostname;
+
    /** The job storage. */
    job_store::LocalJobStorage m_jobStorage;
 };
