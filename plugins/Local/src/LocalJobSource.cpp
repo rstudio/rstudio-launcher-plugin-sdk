@@ -23,7 +23,10 @@
 
 #include <LocalJobSource.hpp>
 
+#include <boost/algorithm/string.hpp>
+
 #include <Error.hpp>
+#include <system/Crypto.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -63,6 +66,24 @@ Error createError(ErrorCode in_code, const ErrorLocation& in_errorLocation)
    return Error(s_errorName, static_cast<int>(in_code), in_errorLocation);
 }
 
+Error generateJobId(std::string& out_id)
+{
+   // The ID just needs to be unique, so generate some random data and then base-64 encode it so it's writable to file
+   // and to be used in a file name.
+   std::vector<unsigned char> randomData;
+   Error error = system::crypto::random(16, randomData);
+   if (error)
+      return error;
+
+   std::string id;
+   error = system::crypto::base64Encode(randomData, id);
+   if (error)
+      return error;
+
+   // Don't allow / in the ID, as it will be used as part of a file name.
+   out_id = boost::replace_all_copy(id, "/", "-");
+   return Success();
+}
 
 } // anonymous namespace
 
@@ -99,12 +120,16 @@ Error LocalJobSource::getJobs(api::JobList& out_jobs) const
 
 Error LocalJobSource::submitJob(api::JobPtr io_job, api::ErrorResponse::Type& out_errorType) const
 {
-   out_errorType = api::ErrorResponse::Type::REQUEST_NOT_SUPPORTED;
-   return Error(
-      "NotImplemented",
-      1,
-      "Method LocalJobSource::submitJob is not implemented.",
-      ERROR_LOCATION);
+   // Give the job an ID.
+   Error error = generateJobId(io_job->Id);
+   if (error)
+      return error;
+
+   // Set the submission time and the hostname.
+   io_job->SubmissionTime = system::DateTime();
+   io_job->Host = m_hostname;
+
+   return Success();
 }
 
 } // namespace local
