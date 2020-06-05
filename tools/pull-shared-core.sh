@@ -170,7 +170,9 @@ copyFile()
     replace "$DEST" "#include <boost/thread/recursive_mutex.hpp>" "#include <mutex>"
     replace "$DEST" "#include <boost/thread/condition_variable.hpp>" "#include <condition_variable>"
     replace "$DEST" "BOOST_CURRENT_FUNCTION" "__FUNCTION__"
-    replace "$DEST_PATH" "\n\n\n" "\n\n"
+    replace "$DEST" "#include <gsl/gsl>\n" ""
+    replace "$DEST" "gsl::narrow_cast" "static_cast"
+    replace "$DEST" "\n\n\n" "\n\n"
 
     # Fix includes
     for I in "${!SRC_INCLUDES[@]}"; do
