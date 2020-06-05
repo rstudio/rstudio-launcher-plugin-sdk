@@ -27,6 +27,7 @@
 #include <iostream>
 #include <sstream>
 
+#include <boost/regex.hpp>
 #include <boost/iostreams/copy.hpp>
 
 #include <Error.hpp>
@@ -78,8 +79,13 @@ Error writeStringToFile(const std::string& in_contents, const system::FilePath& 
    {
       ofs->exceptions(std::ostream::failbit | std::ostream::badbit);
 
-      std::istringstream sstream(in_contents);
-      boost::iostreams::copy(sstream, ofs);
+      // Normalize the line endings to posix line endings, just in case.
+      std::string normalizedContents = in_contents;
+      boost::regex_replace(normalizedContents, boost::regex("\\r?\\n|\\r|\\xE2\\x80[\\xA8\\xA9]"), "\n");
+
+      // Then write the normalized data to the file.
+      std::istringstream ss(normalizedContents);
+      boost::iostreams::copy(ss, *ofs);
    }
    catch (const std::exception& e)
    {
