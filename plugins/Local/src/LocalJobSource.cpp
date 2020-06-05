@@ -32,14 +32,21 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace local {
 
+using ErrorType = api::ErrorResponse::Type;
+
 namespace {
 
-static const std::string s_errorName = "LocalPluginError";
+/** Constants used by the Local Plugin. */
+const constexpr char* s_errorName = "LocalPluginError";
+const constexpr char* s_pamProfile = "pamProfile";
+const constexpr char* s_encryptedPassword = "encryptedPassword";
+const constexpr char* s_initializationVector = "s_initializationVector";
 
 enum class ErrorCode
 {
    SUCCESS              = 0,
    INVALID_MOUNT_TYPE   = 1,
+   INVALID_JOB_CONFIG   = 2,
 };
 
 Error createError(
@@ -64,6 +71,39 @@ Error createError(ErrorCode in_code, const Error& in_cause, const ErrorLocation&
 Error createError(ErrorCode in_code, const ErrorLocation& in_errorLocation)
 {
    return Error(s_errorName, static_cast<int>(in_code), in_errorLocation);
+}
+
+Error decryptPassword(const api::JobPtr& in_job, const std::string& in_key, std::string& out_password)
+{
+   Optional<std::string> encryptedPasswordOpt = in_job->getJobConfigValue(s_encryptedPassword);
+   if (!encryptedPasswordOpt)
+   {
+      std::string encryptedPassword = encryptedPasswordOpt.getValueOr("");
+
+      Optional<std::string> initVectorOpt = in_job->getJobConfigValue(s_initializationVector);
+      if (!initVectorOpt)
+         return createError(
+            ErrorCode::INVALID_JOB_CONFIG,
+            "required field 'initializationVector' missing",
+            ERROR_LOCATION);
+
+      std::string iv = initVectorOpt.getValueOr("");
+      if (iv.size() < 8)
+         return createError(
+            ErrorCode::INVALID_JOB_CONFIG,
+            "required field 'initializationVector' is too short - must be at least 8 bytes",
+            ERROR_LOCATION);
+
+      Error error = system::crypto::decryptAndBase64Decode(encryptedPassword, in_key, iv, out_password);
+      if (error)
+         return createError(
+            ErrorCode::INVALID_JOB_CONFIG,
+            "'encryptedPassword' field or 'initializationVector' field has invalid format",
+            error,
+            ERROR_LOCATION);
+   }
+
+   return Success();
 }
 
 Error generateJobId(std::string& out_id)
@@ -110,9 +150,11 @@ Error LocalJobSource::initialize()
 
 Error LocalJobSource::getConfiguration(const system::User&, api::JobSourceConfiguration& out_configuration) const
 {
-   static const api::JobConfig::Type strType = api::JobConfig::Type::STRING;
-   out_configuration.CustomConfig.emplace_back("pamProfile", strType);
-   out_configuration.CustomConfig.emplace_back("encryptedPassword", strType);
+   static const api::JobConfig::Type& strType = api::JobConfig::Type::STRING;
+
+   out_configuration.CustomConfig.emplace_back(s_pamProfile, strType);
+   out_configuration.CustomConfig.emplace_back(s_encryptedPassword, strType);
+   out_configuration.CustomConfig.emplace_back(s_initializationVector, strType);
 
    return Success();
 }
@@ -122,7 +164,7 @@ Error LocalJobSource::getJobs(api::JobList& out_jobs) const
    return m_jobStorage.loadJobs(out_jobs);
 }
 
-Error LocalJobSource::submitJob(api::JobPtr io_job, api::ErrorResponse::Type& out_errorType) const
+Error LocalJobSource::submitJob(api::JobPtr io_job, ErrorType& out_errorType) const
 {
    // Give the job an ID.
    Error error = generateJobId(io_job->Id);
@@ -132,6 +174,20 @@ Error LocalJobSource::submitJob(api::JobPtr io_job, api::ErrorResponse::Type& ou
    // Set the submission time and the hostname.
    io_job->SubmissionTime = system::DateTime();
    io_job->Host = m_hostname;
+
+
+   std::string pamProfile = io_job->getJobConfigValue(s_pamProfile).getValueOr("");
+   if (!pamProfile.empty())
+   {
+      std::string password;
+      error = decryptPassword(io_job, m_secureCookie.getKey(), password);
+      if (error)
+      {
+         out_errorType = ErrorType::INVALID_REQUEST;
+         return error;
+      }
+   }
+
 
    return Success();
 }
