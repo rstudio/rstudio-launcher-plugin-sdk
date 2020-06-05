@@ -41,9 +41,9 @@ namespace job_store {
 
 namespace {
 
-constexpr const char* JOB_FILE_EXT     = ".job";
-constexpr const char* ROOT_JOBS_DIR    = "jobs";
-constexpr const char* ROOT_OUTPUT_DIR  = "output";
+constexpr const char* JOB_FILE_EXT = ".job";
+constexpr const char* ROOT_JOBS_DIR = "jobs";
+constexpr const char* ROOT_OUTPUT_DIR = "output";
 
 inline Error createDirectory(const FilePath& in_directory, FileMode in_fileMode = FileMode::USER_READ_WRITE_EXECUTE)
 {
@@ -52,6 +52,11 @@ inline Error createDirectory(const FilePath& in_directory, FileMode in_fileMode 
       return error;
 
    return in_directory.changeFileMode(in_fileMode);
+}
+
+inline FilePath getJobFilePath(const std::string& in_id, const system::FilePath& in_jobsPath)
+{
+   return in_jobsPath.completeChildPath(in_id + JOB_FILE_EXT);
 }
 
 inline Error readJobFromFile(const FilePath& in_jobFile, api::JobPtr& out_job)
@@ -119,6 +124,20 @@ Error LocalJobStorage::loadJobs(api::JobList& out_jobs) const
    logging::logInfoMessage("Loaded " + std::to_string(out_jobs.size())  + " jobs from file");
 
    return Success();
+}
+
+void LocalJobStorage::saveJob(api::JobPtr in_job)
+{
+   LOCK_JOB(in_job)
+   {
+      if (m_hostname == in_job->Host)
+      {
+         Error error = utils::writeStringToFile(in_job->toJson().write(), getJobFilePath(in_job->Id, m_jobsPath));
+         if (error)
+            logging::logError(error, ERROR_LOCATION);
+      }
+   }
+   END_LOCK_JOB
 }
 
 } // namespace job_store

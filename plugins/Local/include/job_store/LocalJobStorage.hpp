@@ -69,6 +69,13 @@ public:
     */
    Error loadJobs(api::JobList& out_jobs) const;
 
+   /**
+    * @brief Saves a job to disk.
+    * @param in_job
+    * @return
+    */
+   void saveJob(api::JobPtr in_job);
+
 private:
    /** The name of the host of this Local Pluign instance. */
    const std::string m_hostname;
