@@ -55,7 +55,7 @@ if [[ ( -z $CMAKE_VER ) || ( $CMAKE_MAJOR_VER -lt 3 ) || ( ( $CMAKE_MAJOR_VER -e
 
     if [[ $HAVE_YUM -eq 1 ]]; then
         sudo yum update -y
-        sudo yum install -y wget gcc gcc-c++ make bzip2 libssl-devel
+        sudo yum install -y wget gcc gcc-c++ make bzip2 openssl-devel
     else
         sudo apt update
         sudo apt install -y wget gcc g++ make bzip2 libssl-dev
