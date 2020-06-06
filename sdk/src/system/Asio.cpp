@@ -361,7 +361,18 @@ void AsioStream::writeBytes(
    {
       m_impl->WriteBuffer.push(in_data);
       if (m_impl->WriteBuffer.size() == 1)
-         m_impl->startWriting(uniqueLock, in_onError, in_onFinishedWriting);
+         m_impl->startWriting(
+            uniqueLock,
+            [in_onError](const Error& in_error)
+            {
+               if (in_onError)
+                  in_onError(in_error);
+            },
+            [in_onFinishedWriting]()
+            {
+               if (in_onFinishedWriting)
+                  in_onFinishedWriting();
+            });
    }
    END_LOCK_MUTEX
 }
