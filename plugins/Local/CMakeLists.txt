@@ -29,6 +29,7 @@ file(GLOB_RECURSE LOCAL_HEADER_FILES "*.h*")
 
 # source files
 set(LOCAL_SOURCE_FILES
+   src/LocalJobRunner.cpp
    src/LocalJobSource.cpp
    src/LocalOptions.cpp
    src/LocalPluginApi.cpp

@@ -34,6 +34,7 @@
 
 #include "job_store/LocalJobStorage.hpp"
 #include "LocalSecureCookie.hpp"
+#include "LocalJobRunner.hpp"
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -105,11 +106,11 @@ private:
    /** The hostname of the machine running this instance of the Local Launcher Plugin. */
    const std::string m_hostname;
 
+   /** The job runner. */
+   std::shared_ptr<LocalJobRunner> m_jobRunner;
+
    /** The job storage. */
    job_store::LocalJobStorage m_jobStorage;
-
-   /** The secure cookie. */
-   LocalSecureCookie m_secureCookie;
 };
 
 } // namespace local
