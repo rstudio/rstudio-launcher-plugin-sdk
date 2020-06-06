@@ -127,8 +127,8 @@ Error populateProcessOptions(
    }
 
    // Copy the argument and environment arrays.
-   std::copy(in_job->Arguments.begin(), in_job->Arguments.end(), out_procOpts.Arguments.begin());
-   std::copy(in_job->Environment.begin(), in_job->Environment.end(), out_procOpts.Environment.begin());
+   std:(in_job->Arguments.begin(), in_job->Arguments.end(), std::back_inserter(out_procOpts.Arguments));
+   std::copy(in_job->Environment.begin(), in_job->Environment.end(), std::back_inserter(out_procOpts.Environment));
 
    // Populate the rest of the job details.
    out_procOpts.IsShellCommand = !in_job->Command.empty();
