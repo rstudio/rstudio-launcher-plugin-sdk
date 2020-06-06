@@ -39,6 +39,9 @@ namespace launcher_plugins {
 namespace local {
 namespace job_store {
 
+typedef std::shared_ptr<LocalJobStorage> SharedThis;
+typedef std::weak_ptr<LocalJobStorage> WeakThis;
+
 namespace {
 
 constexpr const char* JOB_FILE_EXT = ".job";
@@ -81,22 +84,37 @@ inline Error readJobFromFile(const FilePath& in_jobFile, api::JobPtr& out_job)
 
 } // anonymous namespace
 
-LocalJobStorage::LocalJobStorage(std::string in_hostname) :
-   m_hostname(std::move(in_hostname)),
+LocalJobStorage::LocalJobStorage(const std::string& in_hostname, jobs::JobStatusNotifierPtr in_notifier) :
+   m_hostname(in_hostname),
    m_jobsRootPath(options::Options::getInstance().getScratchPath().completeChildPath(ROOT_JOBS_DIR)),
    m_jobsPath(m_jobsRootPath.completeChildPath(m_hostname)),
+   m_notifier(std::move(in_notifier)),
    m_saveUnspecifiedOutput(LocalOptions::getInstance().shouldSaveUnspecifiedOutput()),
    m_outputRootPath(options::Options::getInstance().getScratchPath().completeChildPath(ROOT_OUTPUT_DIR))
 {
 }
 
-Error LocalJobStorage::initialize() const
+Error LocalJobStorage::initialize()
 {
    Error error = createDirectory(m_jobsRootPath);
    if (error)
       return error;
 
-   return createDirectory(m_jobsPath);
+   error = createDirectory(m_jobsPath);
+   if (error)
+      return error;
+
+   WeakThis weakThis = weak_from_this();
+   m_subscriptionHandle = m_notifier->subscribe(
+      [weakThis](const api::JobPtr& in_job)
+      {
+         if (SharedThis sharedThis = weakThis.lock())
+         {
+            sharedThis->saveJob(in_job);
+         }
+      });
+
+   return Success();
 }
 
 Error LocalJobStorage::loadJobs(api::JobList& out_jobs) const

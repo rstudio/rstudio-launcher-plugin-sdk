@@ -110,7 +110,7 @@ private:
    std::shared_ptr<LocalJobRunner> m_jobRunner;
 
    /** The job storage. */
-   job_store::LocalJobStorage m_jobStorage;
+   std::shared_ptr<job_store::LocalJobStorage> m_jobStorage;
 };
 
 } // namespace local

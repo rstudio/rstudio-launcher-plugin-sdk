@@ -44,8 +44,7 @@ LocalJobSource::LocalJobSource(
    jobs::JobStatusNotifierPtr in_jobStatusNotifier) :
       api::IJobSource(std::move(in_jobRepository), std::move(in_jobStatusNotifier)),
       m_hostname(std::move(in_hostname)),
-      m_jobRunner(new LocalJobRunner(m_hostname)),
-      m_jobStorage(m_hostname)
+      m_jobStorage(new job_store::LocalJobStorage(m_hostname, m_jobStatusNotifier))
 {
 }
 
@@ -53,7 +52,7 @@ Error LocalJobSource::initialize()
 {
    // TODO: Initialize communications with the other local plugins, if any, and make sure we can read and write to the
    //       file that will store job information.
-   Error error = m_jobStorage.initialize();
+   Error error = m_jobStorage->initialize();
    if (error)
       return error;
 
@@ -73,7 +72,7 @@ Error LocalJobSource::getConfiguration(const system::User&, api::JobSourceConfig
 
 Error LocalJobSource::getJobs(api::JobList& out_jobs) const
 {
-   return m_jobStorage.loadJobs(out_jobs);
+   return m_jobStorage->loadJobs(out_jobs);
 }
 
 Error LocalJobSource::submitJob(api::JobPtr io_job, ErrorType& out_errorType) const

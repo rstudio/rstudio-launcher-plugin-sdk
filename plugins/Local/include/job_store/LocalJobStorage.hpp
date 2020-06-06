@@ -24,7 +24,10 @@
 #ifndef LAUNCHER_PLUGINS_LOCAL_JOB_STORAGE_HPP
 #define LAUNCHER_PLUGINS_LOCAL_JOB_STORAGE_HPP
 
+#include <memory>
+
 #include <api/Job.hpp>
+#include <jobs/JobStatusNotifier.hpp>
 #include <system/FilePath.hpp>
 
 namespace rstudio {
@@ -43,22 +46,23 @@ namespace job_store {
 /**
  * @brief Responsible for job persistence.
  */
-class LocalJobStorage
+class LocalJobStorage : public std::enable_shared_from_this<LocalJobStorage>
 {
 public:
    /**
     * @brief Constructor.
     *
     * @param in_hostname    The hostname of machine which is hosting this instance of the Local Plugin.
+    * @param in_notifier    The job status notifier from which to receive job status update notifications.
     */
-   explicit LocalJobStorage(std::string in_hostname);
+   LocalJobStorage(const std::string& in_hostname, jobs::JobStatusNotifierPtr in_notifier);
 
    /**
     * @brief Initializes the local job storage.
     *
     * @return Success if all local job storage directories could be created; Error otherwise.
     */
-   Error initialize() const;
+   Error initialize();
 
    /**
     * @brief Loads all jobs from disk.
@@ -84,8 +88,8 @@ public:
    Error setJobOutputPaths(api::JobPtr io_job) const;
 
 private:
-   /** The name of the host of this Local Pluign instance. */
-   const std::string m_hostname;
+   /** The name of the host of this Local Plugin instance. */
+   const std::string& m_hostname;
 
    /** The scratch path configured by the system administrator. */
    const system::FilePath m_jobsRootPath;
@@ -93,8 +97,14 @@ private:
    /** The scratch path configured by the system administrator. */
    const system::FilePath m_jobsPath;
 
+   /** The job status notifier, to listen for job changes. */
+   jobs::JobStatusNotifierPtr m_notifier;
+
    /** Whether to save job output when the output location is not specified by the user. */
    const bool m_saveUnspecifiedOutput;
+
+   /** The job subscription handle. */
+   jobs::SubscriptionHandle m_subscriptionHandle;
 
    /** The scratch path configured by the system administrator. */
    const system::FilePath m_outputRootPath;
