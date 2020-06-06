@@ -178,7 +178,12 @@ Error LocalJobRunner::runJob(api::JobPtr& io_job, api::ErrorResponse::Type& out_
    io_job->Host = m_hostname;
 
    // Set the output files for the job, if required.
-   m_jobStorage->setJobOutputPaths(io_job);
+   error = m_jobStorage->setJobOutputPaths(io_job);
+   if (error)
+   {
+      out_errorType = ErrorType::UNKNOWN;
+      return error;
+   }
 
    // Start building the process options.
    system::process::ProcessOptions procOpts;
