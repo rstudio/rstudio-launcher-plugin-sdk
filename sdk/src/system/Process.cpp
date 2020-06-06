@@ -28,17 +28,20 @@
 #include <dirent.h>
 #include <fcntl.h>
 #include <sys/resource.h>
+#include <sys/stat.h>
 #include <sys/wait.h>
 
 #include <boost/regex.hpp>
-#include <boost/algorithm/string/join.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/algorithm/string.hpp>
+#include <boost/range/as_array.hpp>
 
 #include <json/Json.hpp>
 #include <options/Options.hpp>
 #include <system/Asio.hpp>
+#include <utils/FileUtils.hpp>
 
 #include "PosixSystem.hpp"
+#include "../SafeConvert.hpp"
 #include "../utils/ErrorUtils.hpp"
 
 namespace rstudio {
@@ -589,6 +592,82 @@ Error writeToPipe(int in_fd, const std::string& in_data, bool in_eof)
 
 } // anonymous namespace
 
+// Process Info ========================================================================================================
+Error ProcessInfo::getProcessInfo(pid_t in_pid, ProcessInfo& out_info)
+{
+   // Get the proc files needed to populate all the info.
+   FilePath procRoot = FilePath("/proc").completeChildPath(std::to_string(in_pid));
+   FilePath cmdlineFile = procRoot.completeChildPath("cmdline");
+   FilePath statFile = procRoot.completeChildPath("stat");
+   if (!cmdlineFile.exists())
+      return fileNotFoundError(cmdlineFile, ERROR_LOCATION);
+   if (!statFile.exists())
+      return fileNotFoundError(statFile, ERROR_LOCATION);
+
+   // Start by reading the cmdline file.
+   std::string cmdline;
+   Error error = utils::readFileIntoString(cmdlineFile, cmdline);
+   if (error)
+      return error;
+
+   boost::algorithm::trim(cmdline);
+   if (cmdline.empty())
+      return systemError(
+         EPROTO,
+         cmdlineFile.getAbsolutePath() + " file was unexpectedly empty.",
+         ERROR_LOCATION);
+
+   std::vector<std::string> commandVector;
+   boost::algorithm::split(commandVector, cmdline, boost::is_any_of(boost::as_array("\0")));
+   if (commandVector.empty())
+      return systemError(
+         EPROTO,
+         cmdlineFile.getAbsolutePath() + " could not be parsed.",
+         ERROR_LOCATION);
+
+   // Next, read and parse the stat file.
+   std::string statStr;
+   error = utils::readFileIntoString(statFile, statStr);
+
+   std::vector<std::string> statFields;
+   boost::algorithm::split(statFields, statStr, boost::is_any_of(" "), boost::algorithm::token_compress_on);
+
+   if (statFields.size() < 5)
+      return systemError(
+         EPROTO,
+         "Expected at least 5 stat fields but read " + std::to_string(statFields.size()),
+         ERROR_LOCATION);
+
+   // Then figure out the user by stat-ing the cmdline file.
+   struct stat st;
+   if (::stat(cmdlineFile.getAbsolutePath().c_str(), &st) == -1)
+   {
+      error = systemError(errno, ERROR_LOCATION);
+      error.addProperty("path", cmdlineFile.getAbsolutePath());
+      return error;
+   }
+
+   error = User::getUserFromIdentifier(st.st_uid, out_info.Owner);
+   if (error)
+      return error;
+
+   // Now we have everything. Populate the rest of ProcessInfo obj.
+   out_info.Executable = FilePath(commandVector[0]).getAbsolutePath();  // The first element is the command.
+   std::copy(commandVector.begin() + 1, commandVector.end(), out_info.Arguments.begin()); // The rest are the arguments.
+   out_info.State = statFields[2];
+   out_info.Pid = in_pid;
+   out_info.PPid = safe_convert::stringTo<pid_t>(statFields[3], -1);
+   out_info.PGrp = safe_convert::stringTo<pid_t>(statFields[4], -1);
+
+   return Success();
+}
+
+ProcessInfo::ProcessInfo() :
+   PGrp(0),
+   Pid(0),
+   PPid(0)
+{
+}
 
 // AbstractChildProcess ================================================================================================
 struct AbstractChildProcess::Impl

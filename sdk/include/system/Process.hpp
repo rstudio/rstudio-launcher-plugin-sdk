@@ -54,6 +54,48 @@ typedef std::function<void(int)> OnExitCallback;
 typedef std::function<void(const std::string&)> OnOutputCallback;
 
 /**
+ * @brief Represents the details of a process that is running on this machine.
+ */
+struct ProcessInfo
+{
+   /**
+    * @brief Constructor.
+    */
+   ProcessInfo();
+
+   /**
+    * @brief Gets the process information for the process with the specified PID.
+    *
+    * @param in_pid         The PID of the process for which to retrieve the details.
+    * @param out_info       The details of the specified process, if no error occurs.
+    *
+    * @return Success if the process information could be retrieved; Error otherwise.
+    */
+   static Error getProcessInfo(pid_t in_pid, ProcessInfo& out_info);
+
+   /** The arguments that were passed to the process. */
+   std::vector<std::string> Arguments;
+
+   /** The executable that was run. */
+   std::string Executable;
+
+   /** The process' owner. */
+   User Owner;
+
+   /** The process group ID of the process. */
+   pid_t PGrp;
+
+   /** The PID of the process. */
+   pid_t Pid;
+
+   /** The PID of the process' parent process. */
+   pid_t PPid;
+
+   /** The current state of the process. */
+   std::string State;
+};
+
+/**
  * @brief Represents the result of a synchronous child process.
  */
 struct ProcessResult
