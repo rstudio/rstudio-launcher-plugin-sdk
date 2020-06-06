@@ -25,10 +25,17 @@
 #include <LocalSecureCookie.hpp>
 
 #include <Error.hpp>
+#include <options/Options.hpp>
 #include <system/FilePath.hpp>
+#include <system/User.hpp>
 #include <utils/FileUtils.hpp>
 
 #include <LocalOptions.hpp>
+
+// Current dir is plugins/Local/src
+// ONLY INCLUDING PRIVATE SDK HEADER BECAUSE ABSOLUTELY NECESSARY.
+// PRIVATE HEADERS ARE NOT STABLE. THEY CANNOT BE RELIED ON.
+#include "../../../sdk/src/system/PosixSystem.hpp"
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -36,8 +43,31 @@ namespace local {
 
 Error LocalSecureCookie::initialize()
 {
+   // ------------------------------------------------------------------------------------------------------------------
+   // MAINTENANCE NOTE:
+   // We need to elevate privileges here to read the secure-cookie-key file since RSP installs it as owned-by-root.
+   // This is not recommended - for similar use cases it would be better to create any necessary files with server-user
+   // ownership.
+   // DO NOT DO THIS UNLESS ABSOLUTELY NECESSARY.
+   // ------------------------------------------------------------------------------------------------------------------
+   if (!system::posix::realUserIsRoot())
+      return systemError(EPERM, "Local Plugin must be run as the root user.", ERROR_LOCATION);
+
+   Error error = system::posix::restoreRoot();
+   if (error)
+      return error;
+
    const system::FilePath& keyFilePath = LocalOptions::getInstance().getSecureCookieKeyFile();
-   Error error = utils::readFileIntoString(keyFilePath, m_key);
+   error = utils::readFileIntoString(keyFilePath, m_key);
+   if (error)
+      return error;
+
+   system::User serverUser;
+   error = options::Options::getInstance().getServerUser(serverUser);
+   if (error)
+      return error;
+
+   error = system::posix::temporarilyDropPrivileges(serverUser);
    if (error)
       return error;
 
@@ -52,7 +82,7 @@ Error LocalSecureCookie::initialize()
    return Success();
 }
 
-const std::string & LocalSecureCookie::getKey() const
+const std::string& LocalSecureCookie::getKey() const
 {
    return m_key;
 }
