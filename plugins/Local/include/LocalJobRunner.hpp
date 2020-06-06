@@ -28,6 +28,7 @@
 
 #include <api/Job.hpp>
 #include <api/Response.hpp>
+#include <jobs/JobStatusNotifier.hpp>
 
 #include <LocalSecureCookie.hpp>
 
@@ -36,6 +37,19 @@ namespace launcher_plugins {
 
 class Error;
 
+namespace system {
+
+class AsyncDeadlineEvent;
+
+} // namespace system
+
+namespace local {
+namespace job_store {
+
+class LocalJobStorage;
+
+} // namespace job_store
+} // namespace local
 } // namespace launcher_plugins
 } // namespace rstudio
 
@@ -49,14 +63,32 @@ namespace local {
 class LocalJobRunner : std::enable_shared_from_this<LocalJobRunner>
 {
 public:
-   explicit LocalJobRunner(const std::string& in_hostname);
+   LocalJobRunner(
+      const std::string& in_hostname,
+      jobs::JobStatusNotifierPtr in_notifier,
+      std::shared_ptr<job_store::LocalJobStorage> in_jobStorage);
 
    Error initialize();
 
    Error runJob(api::JobPtr& io_job, api::ErrorResponse::Type& out_errorType);
 
 private:
+   typedef std::weak_ptr<LocalJobRunner> WeakLocalJobRunner;
+
+   static void onJobExitCallback(WeakLocalJobRunner in_weakThis, int in_exitCode, api::JobPtr io_job);
+
+   static void onProcessWatchDeadline(WeakLocalJobRunner in_weakThis, int in_count, api::JobPtr io_job);
+
+   /** The name of the host running this job. */
    const std::string& m_hostname;
+
+   /** The job storage. */
+   std::shared_ptr<job_store::LocalJobStorage> m_jobStorage;
+
+   /** The job status notifier, to update the status of the job on exit. */
+   jobs::JobStatusNotifierPtr m_notifier;
+
+   std::shared_ptr<system::AsyncDeadlineEvent> m_processWatchEvent;
 
    /** The secure cookie. */
    LocalSecureCookie m_secureCookie;

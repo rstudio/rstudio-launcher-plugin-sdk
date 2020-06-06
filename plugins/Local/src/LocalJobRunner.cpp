@@ -23,19 +23,28 @@
 
 #include <LocalJobRunner.hpp>
 
+#include <cmath>
+
 #include <boost/algorithm/string.hpp>
 
+#include <json/Json.hpp>
+#include <system/Asio.hpp>
+#include <system/DateTime.hpp>
 #include <system/Crypto.hpp>
 #include <system/Process.hpp>
 
 #include <LocalConstants.hpp>
 #include <LocalError.hpp>
+#include <job_store/LocalJobStorage.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
 namespace local {
 
 using ErrorType = api::ErrorResponse::Type;
+using State = api::Job::State;
+
+typedef std::shared_ptr<LocalJobRunner> SharedThis;
 
 namespace {
 
@@ -91,10 +100,61 @@ Error generateJobId(std::string& out_id)
    return Success();
 }
 
+Error populateProcessOptions(
+   const api::JobPtr& in_job,
+   const std::string& in_secureCookieKey,
+   system::process::ProcessOptions& out_procOpts)
+{
+   // Pam profile and password first, since they can result in an error.
+   out_procOpts.PamProfile = in_job->getJobConfigValue(s_pamProfile).getValueOr("");
+   if (!out_procOpts.PamProfile.empty())
+   {
+      Error error = decryptPassword(in_job, in_secureCookieKey, out_procOpts.Password);
+      if (error)
+         return error;
+   }
+
+   // Deal with mounts next, since there could be an invalid one.
+   for (const api::Mount& mount: in_job->Mounts)
+   {
+      if (mount.NfsSourcePath || !mount.HostSourcePath)
+         return createError(
+            LocalError::INVALID_MOUNT_TYPE,
+            "Invalid mount: " + mount.toJson().write() + " - only host mount types are supported.",
+            ERROR_LOCATION);
+
+      out_procOpts.Mounts.push_back(mount);
+   }
+
+   // Copy the argument and environment arrays.
+   std::copy(in_job->Arguments.begin(), in_job->Arguments.end(), out_procOpts.Arguments.begin());
+   std::copy(in_job->Environment.begin(), in_job->Environment.end(), out_procOpts.Environment.begin());
+
+   // Populate the rest of the job details.
+   out_procOpts.IsShellCommand = !in_job->Command.empty();
+   out_procOpts.Executable = out_procOpts.IsShellCommand ? in_job->Command : in_job->Exe;
+   out_procOpts.RunAsUser = in_job->User;
+   out_procOpts.StandardInput = in_job->StandardIn;
+
+   if (!in_job->StandardErrFile.empty())
+      out_procOpts.StandardErrorFile = system::FilePath(in_job->StandardErrFile);
+   if (!in_job->StandardOutFile.empty())
+      out_procOpts.StandardOutputFile = system::FilePath(in_job->StandardOutFile);
+   if (!in_job->WorkingDirectory.empty())
+      out_procOpts.WorkingDirectory = system::FilePath(in_job->WorkingDirectory);
+
+   return Success();
+}
+
 } // anonymous namespace
 
-LocalJobRunner::LocalJobRunner(const std::string& in_hostname) :
-   m_hostname(in_hostname)
+LocalJobRunner::LocalJobRunner(
+   const std::string& in_hostname,
+   jobs::JobStatusNotifierPtr in_notifier,
+   std::shared_ptr<job_store::LocalJobStorage> in_jobStorage) :
+      m_hostname(in_hostname),
+      m_jobStorage(std::move(in_jobStorage)),
+      m_notifier(std::move(in_notifier))
 {
 }
 
@@ -108,25 +168,157 @@ Error LocalJobRunner::runJob(api::JobPtr& io_job, api::ErrorResponse::Type& out_
    // Give the job an ID.
    Error error = generateJobId(io_job->Id);
    if (error)
+   {
+      out_errorType = ErrorType::UNKNOWN;
       return error;
+   }
 
    // Set the submission time and the hostname.
    io_job->SubmissionTime = system::DateTime();
    io_job->Host = m_hostname;
 
-   std::string pamProfile = io_job->getJobConfigValue(s_pamProfile).getValueOr("");
-   if (!pamProfile.empty())
+   // Set the output files for the job, if required.
+   m_jobStorage->setJobOutputPaths(io_job);
+
+   // Start building the process options.
+   system::process::ProcessOptions procOpts;
+   error = populateProcessOptions(io_job, m_secureCookie.getKey(), procOpts);
+   if (error)
    {
-      std::string password;
-      error = decryptPassword(io_job, m_secureCookie.getKey(), password);
-      if (error)
-      {
-         out_errorType = ErrorType::INVALID_REQUEST;
-         return error;
-      }
+      out_errorType = ErrorType::INVALID_REQUEST;
+      return error;
    }
 
+   // Set up the onExit and onStderr (for logging) callbacks.
+   system::process::AsyncProcessCallbacks callbacks;
+   callbacks.OnExit = std::bind(
+      LocalJobRunner::onJobExitCallback,
+      weak_from_this(),
+      std::placeholders::_1,
+      io_job);
+
+   const std::string& jobId = io_job->Id;
+   callbacks.OnStandardError = [jobId](const std::string& in_output)
+   {
+      logging::logDebugMessage("Standard error for job " + jobId + ": " + in_output);
+   };
+
+   // Run the process. The SDK locks the job before calling submit job, which prevents the job going from non-existent
+   // in the system directly to the FINISHED status if the job is very quick.
+   std::shared_ptr<system::process::AbstractChildProcess> childProcess;
+   error = system::process::ProcessSupervisor::runAsyncProcess(procOpts, callbacks, &childProcess);
+   if (error || (childProcess == nullptr))
+   {
+      out_errorType = ErrorType::UNKNOWN;
+      return createError(
+         LocalError::JOB_LAUNCH_ERROR,
+         "Could not launch process for job " + jobId,
+         error,
+         ERROR_LOCATION);
+   }
+
+   // Set the PID and then notify about the PENDING status update.
+   io_job->Pid = childProcess->getPid();
+   m_notifier->updateJob(io_job, State::PENDING);
+
+   m_processWatchEvent.reset(
+      new system::AsyncDeadlineEvent(
+         std::bind(LocalJobRunner::onProcessWatchDeadline, weak_from_this(), 1, io_job),
+         system::TimeDuration::Microseconds(100000)));
+   m_processWatchEvent->start();
+
    return Success();
+}
+
+void LocalJobRunner::onJobExitCallback(WeakLocalJobRunner in_weakThis, int in_exitCode, api::JobPtr io_job)
+{
+   if (SharedThis sharedThis = in_weakThis.lock())
+   {
+      LOCK_JOB(io_job)
+      {
+         logging::logDebugMessage(
+            "Job " +
+            io_job->Id +
+            "(pid " +
+            std::to_string(io_job->Pid.getValueOr(-1)) +
+            ") exited with code " +
+            std::to_string(in_exitCode));
+
+         io_job->ExitCode = in_exitCode;
+
+         // If the job was explicitly killed, the status doesn't need to be changed so there's no need to notify.
+         // Normally notifying the status update will save the job, so save the job manually this time. Otherwise,
+         // update the status appropriately.
+         if (io_job->Status == State::KILLED)
+         {
+            io_job->LastUpdateTime = system::DateTime();
+            sharedThis->m_jobStorage->saveJob(io_job);
+         }
+         else
+         {
+            // If the job is currently pending (i.e. it exited really quickly, and we never saw the running state),
+            // notify that it is running first.
+            if (io_job->Status == State::PENDING)
+            {
+               sharedThis->m_notifier->updateJob(io_job, State::RUNNING);
+            }
+
+            sharedThis->m_notifier->updateJob(io_job, State::FINISHED);
+         }
+      }
+      END_LOCK_JOB
+   }
+}
+
+void LocalJobRunner::onProcessWatchDeadline(WeakLocalJobRunner in_weakThis, int in_count, api::JobPtr io_job)
+{
+   if (SharedThis sharedThis = in_weakThis.lock())
+   {
+      // Give up at this point.
+      if (in_count > 100)
+      {
+         logging::logErrorMessage(
+            "Job " + io_job->Id + " did not transition to a running state within a reasonable time.");
+         return;
+      }
+
+      LOCK_JOB(io_job)
+      {
+         // Check the job status. If it already exited, just stop watching.
+         if ((io_job->Status == State::KILLED) || (io_job->Status == State::FINISHED))
+            return;
+
+         system::process::ProcessInfo procInfo;
+         Error error = system::process::ProcessInfo::getProcessInfo(io_job->Pid.getValueOr(0), procInfo);
+         if (error)
+         {
+            logging::logError(error, ERROR_LOCATION);
+            return;
+         }
+
+         // If the process name has changed from rsandbox, then the job is running. Update the status and exit.
+         if (procInfo.Executable != "rsandbox")
+         {
+            sharedThis->m_notifier->updateJob(io_job, State::RUNNING);
+            return;
+         }
+      }
+      END_LOCK_JOB
+
+      // If we haven't exited at this point, the job isn't running yet. Retry.
+      // For the first 5 tries, wait (2^in_count) * 100 milliseconds (i.e. 200 milliseconds, then 400 milliseconds,
+      // then 800 milliseconds, then 1.6 seconds, then 3.2 seconds). After that, just wait 5 seconds each time.
+      system::TimeDuration waitTime = (in_count > 5) ?
+         system::TimeDuration::Seconds(5) :
+         system::TimeDuration::Microseconds(::pow(2, in_count) * 100000); // 100 milliseconds = 100000 microseconds.
+
+      sharedThis->m_processWatchEvent.reset(
+         new system::AsyncDeadlineEvent(
+            std::bind(LocalJobRunner::onProcessWatchDeadline, in_weakThis, in_count + 1, io_job),
+            waitTime));
+
+      sharedThis->m_processWatchEvent->start();
+   }
 }
 
 } // namespace local

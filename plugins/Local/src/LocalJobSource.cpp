@@ -46,6 +46,7 @@ LocalJobSource::LocalJobSource(
       m_hostname(std::move(in_hostname)),
       m_jobStorage(new job_store::LocalJobStorage(m_hostname, m_jobStatusNotifier))
 {
+   m_jobRunner.reset(new LocalJobRunner(m_hostname, m_jobStatusNotifier, m_jobStorage));
 }
 
 Error LocalJobSource::initialize()
@@ -77,12 +78,7 @@ Error LocalJobSource::getJobs(api::JobList& out_jobs) const
 
 Error LocalJobSource::submitJob(api::JobPtr io_job, ErrorType& out_errorType) const
 {
-   Error error = m_jobRunner->runJob(io_job, out_errorType);
-   if (error)
-      return error;
-
-   m_jobStorage.saveJob(io_job);
-   return Success();
+   return m_jobRunner->runJob(io_job, out_errorType);
 }
 
 } // namespace local
