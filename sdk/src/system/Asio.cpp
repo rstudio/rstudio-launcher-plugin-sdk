@@ -482,6 +482,11 @@ AsyncDeadlineEvent::AsyncDeadlineEvent(const AsioFunction& in_work, const DateTi
 {
 }
 
+AsyncDeadlineEvent::AsyncDeadlineEvent(const AsioFunction& in_work, const TimeDuration& in_waitTime) :
+   m_impl(new Impl(in_work, DateTime() + in_waitTime))
+{
+}
+
 AsyncDeadlineEvent::~AsyncDeadlineEvent()
 {
    cancel();

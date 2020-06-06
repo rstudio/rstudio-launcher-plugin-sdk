@@ -218,6 +218,13 @@ public:
     * @param in_deadlineTime    The time at which the work should be performed.
     */
    AsyncDeadlineEvent(const AsioFunction& in_work, const DateTime& in_deadlineTime);
+   /**
+    * @brief Constructor.
+    *
+    * @param in_work        The work to be performed when the deadline time is reached.
+    * @param in_waitTime    The amount of time, from the invocation time, that should pass before the work is performed.
+    */
+   AsyncDeadlineEvent(const AsioFunction& in_work, const TimeDuration& in_waitTime);
 
    /**
     * @brief Destructor. The event will be canceled if this invoked before the deadline time.
