@@ -85,5 +85,4 @@ fi
 if [[ $INSTALL_TOOLS -eq 1 ]]; then
     "${ROOT_DIR}/install-doxygen.sh"
     "${ROOT_DIR}/install-bookdown.sh"
-    "${ROOT_DIR}/install-unifdef.sh"
 fi
