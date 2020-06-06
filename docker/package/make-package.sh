@@ -37,5 +37,5 @@ fi
 # exit if archiving fails.
 set -e
 
-# Readmes are ignored, so explicitly include dependences/README.md
+# READMEs are ignored, so explicitly include dependencies/README.md
 tar --exclude-from "docker/package/exclude-from-package.txt" -zcvf "docker/package/${PKG_NAME}" .
