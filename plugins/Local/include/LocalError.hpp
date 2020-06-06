@@ -37,9 +37,10 @@ const constexpr char* s_errorName = "LocalPluginError";
 
 enum class LocalError
 {
-   SUCCESS = 0,
-   INVALID_MOUNT_TYPE = 1,
-   INVALID_JOB_CONFIG = 2,
+   SUCCESS              = 0,
+   INVALID_MOUNT_TYPE   = 1,
+   INVALID_JOB_CONFIG   = 2,
+   JOB_LAUNCH_ERROR     = 3,
 };
 
 Error createError(
