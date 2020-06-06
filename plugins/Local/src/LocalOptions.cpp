@@ -62,7 +62,7 @@ void LocalOptions::initialize()
        Value<bool>(m_useUnprivilegedMode).setDefaultValue(false),
        "special unprivileged mode - does not change user, runs without root, no impersonation, single user")
       ("secure-cookie-key-file",
-       Value<FilePath>(m_secureCookieKeyFile).setDefaultValue(FilePath()),
+       Value<FilePath>(m_secureCookieKeyFile).setDefaultValue(FilePath("/var/lib/rstudio-server/secure-cookie-key")),
        "amount of seconds to allow for outgoing connections to other nodes in a load balanced cluster or 0 to use "
        "the system default");
 }
