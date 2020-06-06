@@ -43,7 +43,6 @@ constexpr char const* ISO_8601_OUTPUT_FORMAT = "%Y-%m-%dT%H:%M:%S%FZ";
 // TimeDuration ========================================================================================================
 struct TimeDuration::Impl
 {
-
    explicit Impl(
       int64_t in_hours = 0,
       int64_t in_minutes = 0,
