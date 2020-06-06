@@ -216,6 +216,7 @@ for I in "${!SRC_INCLUDES[@]}"; do
         replace "$DEST_PATH" "([\\])[ \t]*(\n)" "                \1\2"
         replace "$DEST_PATH" "(ErrorLocation\()[ \t]*([\\])" "\1 \2"
         replace "$DEST_PATH" "([+])[ \t]*([\\])" "\1   \2"
+        replace "$DEST_PATH" "(;     )                ([\\])" "\1\2"
         replace "$DEST_PATH" "(\"Unknown exception\", \"\"\);)[ \t]*([\\])" "\1                 \2"
         replace "$DEST_PATH" "(bool\s*operator==\s*\(\s*const\s*Error&\s*in_other\s*\)\s*const\s*;\s*\n)(.*\n)*\s*bool\s*operator==\s*\(\s*const\s*boost::[^\)]*\)[^\n]*\n\n" "\1"
         replace "$DEST_PATH" "(bool\s*operator!=\s*\(\s*const\s*Error&\s*in_other\s*\)\s*const\s*;\s*\n)(.*\n)*\s*bool\s*operator!=\s*\(\s*const\s*boost::[^\)]*\)[^\n]*\n\n" "\1"

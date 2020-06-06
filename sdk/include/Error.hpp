@@ -638,11 +638,11 @@ Error unknownError(const std::string& in_message, const Error& in_cause, const E
    catch(const std::exception& e)                                                                   \
    {                                                                                                \
       rstudio::launcher_plugins::logging::logErrorMessage(std::string("Unexpected exception: ") +   \
-                        e.what(), "") ;                                                             \
+                        e.what(), ERROR_LOCATION);                                                  \
    }                                                                                                \
    catch(...)                                                                                       \
    {                                                                                                \
-      rstudio::launcher_plugins::logging::logErrorMessage("Unknown exception", "");                 \
+      rstudio::launcher_plugins::logging::logErrorMessage("Unknown exception", ERROR_LOCATION);     \
    }
 
 #endif
