@@ -74,7 +74,14 @@ public:
     *
     * @param in_job     The job to be saved.
     */
-   void saveJob(api::JobPtr in_job);
+   void saveJob(api::JobPtr in_job) const;
+
+   /**
+    * @brief Sets the default output paths for the specified job.
+    *
+    * @param io_job     The job to modify.
+    */
+   Error setJobOutputPaths(api::JobPtr io_job) const;
 
 private:
    /** The name of the host of this Local Pluign instance. */

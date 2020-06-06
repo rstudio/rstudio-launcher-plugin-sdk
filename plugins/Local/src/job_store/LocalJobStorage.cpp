@@ -42,6 +42,8 @@ namespace job_store {
 namespace {
 
 constexpr const char* JOB_FILE_EXT = ".job";
+constexpr const char* ERR_FILE_EXT = ".stderr";
+constexpr const char* OUT_FILE_EXT = ".stdout";
 constexpr const char* ROOT_JOBS_DIR = "jobs";
 constexpr const char* ROOT_OUTPUT_DIR = "output";
 
@@ -126,7 +128,7 @@ Error LocalJobStorage::loadJobs(api::JobList& out_jobs) const
    return Success();
 }
 
-void LocalJobStorage::saveJob(api::JobPtr in_job)
+void LocalJobStorage::saveJob(api::JobPtr in_job) const
 {
    LOCK_JOB(in_job)
    {
@@ -138,6 +140,26 @@ void LocalJobStorage::saveJob(api::JobPtr in_job)
       }
    }
    END_LOCK_JOB
+}
+
+Error LocalJobStorage::setJobOutputPaths(api::JobPtr io_job) const
+{
+   bool outputEmpty = io_job->StandardOutFile.empty(),
+        errorEmpty = io_job->StandardErrFile.empty();
+   if (m_saveUnspecifiedOutput && (outputEmpty || errorEmpty))
+   {
+      const system::FilePath outputDir = m_outputRootPath.completeChildPath(io_job->User.getUsername());
+      Error error = createDirectory(outputDir);
+      if (error)
+         return error;
+
+      if (outputEmpty)
+         io_job->StandardOutFile = outputDir.completeChildPath(io_job->Id + OUT_FILE_EXT).getAbsolutePath();
+      if (errorEmpty)
+         io_job->StandardErrFile = outputDir.completeChildPath(io_job->Id + ERR_FILE_EXT).getAbsolutePath();
+   }
+
+   return Success();
 }
 
 } // namespace job_store
