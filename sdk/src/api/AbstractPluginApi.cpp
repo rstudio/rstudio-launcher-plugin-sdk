@@ -143,14 +143,13 @@ struct AbstractPluginApi::Impl
             ErrorResponse::Type::INVALID_REQUEST,
             "User must not be empty.");
 
-      ErrorResponse::Type errorType = ErrorResponse::Type::UNKNOWN;
-      Error error = JobSource->submitJob(in_submitJobRequest->getJob(), errorType);
+      bool isInvalidRequest = false;
+      Error error = JobSource->submitJob(in_submitJobRequest->getJob(), isInvalidRequest);
       if (error)
          return sendErrorResponse(
             in_submitJobRequest->getId(),
-            errorType,
+            isInvalidRequest ? ErrorResponse::Type::INVALID_REQUEST : ErrorResponse::Type::UNKNOWN,
             error.getSummary());
-
 
       LauncherCommunicator->sendResponse(
          JobStateResponse(

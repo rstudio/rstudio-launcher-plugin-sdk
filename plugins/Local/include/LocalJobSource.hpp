@@ -93,14 +93,13 @@ public:
    /**
     * @brief Runs a job on the local instance.
     *
-    * @param io_job             The Job to be submitted.
-    * @param out_errorType      The type of error that occurred, with respect to the Launcher Plugin API error types. If
-    *                           not set when an error occurs, an ErrorResponse with type UNKNOWN will be returned to the
-    *                           Launcher.
+    * @param io_job                     The Job to be submitted.
+    * @param out_wasInvalidRequest      Whether the requested Job was invalid, based on the features supported by the
+    *                                   Job Scheduling System.
     *
     * @return Success if the job could be submitted to the Job Scheduling System; Error otherwise.
     */
-   Error submitJob(api::JobPtr io_job, api::ErrorResponse::Type&) const override;
+   Error submitJob(api::JobPtr io_job, bool& out_wasInvalidRequest) const override;
 
 private:
    /** The hostname of the machine running this instance of the Local Launcher Plugin. */

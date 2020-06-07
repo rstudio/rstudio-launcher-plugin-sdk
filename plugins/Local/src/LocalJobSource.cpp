@@ -31,13 +31,6 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace local {
 
-using ErrorType = api::ErrorResponse::Type;
-
-namespace {
-
-
-} // anonymous namespace
-
 LocalJobSource::LocalJobSource(
    std::string in_hostname,
    jobs::JobRepositoryPtr in_jobRepository,
@@ -51,8 +44,7 @@ LocalJobSource::LocalJobSource(
 
 Error LocalJobSource::initialize()
 {
-   // TODO: Initialize communications with the other local plugins, if any, and make sure we can read and write to the
-   //       file that will store job information.
+   // TODO: Initialize communications with the other local plugins, if any.
    Error error = m_jobStorage->initialize();
    if (error)
       return error;
@@ -76,9 +68,10 @@ Error LocalJobSource::getJobs(api::JobList& out_jobs) const
    return m_jobStorage->loadJobs(out_jobs);
 }
 
-Error LocalJobSource::submitJob(api::JobPtr io_job, ErrorType& out_errorType) const
+Error LocalJobSource::submitJob(api::JobPtr io_job, bool& out_wasInvalidRequest) const
 {
-   return m_jobRunner->runJob(io_job, out_errorType);
+   out_wasInvalidRequest = false;
+   return m_jobRunner->runJob(io_job, out_wasInvalidRequest);
 }
 
 } // namespace local

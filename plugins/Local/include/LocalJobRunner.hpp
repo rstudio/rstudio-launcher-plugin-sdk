@@ -85,12 +85,12 @@ public:
    /**
     * @brief Runs the specified job.
     *
-    * @param io_job             The Job to be run.
-    * @param out_errorType      The type of error that occurred, if any.
+    * @param io_job                 The Job to be run.
+    * @param out_wasInvalidJob      Whether the error that occurred was because the requested Job was invalid.
     *
     * @return Success if the job could be run; Error otherwise.
     */
-   Error runJob(api::JobPtr& io_job, api::ErrorResponse::Type& out_errorType);
+   Error runJob(api::JobPtr& io_job, bool& out_wasInvalidJob);
 
 private:
    // Convenience typedefs.

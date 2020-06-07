@@ -41,7 +41,6 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace local {
 
-using ErrorType = api::ErrorResponse::Type;
 using State = api::Job::State;
 
 typedef std::shared_ptr<LocalJobRunner> SharedThis;
@@ -163,15 +162,12 @@ Error LocalJobRunner::initialize()
    return m_secureCookie.initialize();
 }
 
-Error LocalJobRunner::runJob(api::JobPtr& io_job, api::ErrorResponse::Type& out_errorType)
+Error LocalJobRunner::runJob(api::JobPtr& io_job, bool& out_wasInvalidJob)
 {
    // Give the job an ID.
    Error error = generateJobId(io_job->Id);
    if (error)
-   {
-      out_errorType = ErrorType::UNKNOWN;
       return error;
-   }
 
    // Set the submission time and the hostname.
    io_job->SubmissionTime = system::DateTime();
@@ -180,17 +176,15 @@ Error LocalJobRunner::runJob(api::JobPtr& io_job, api::ErrorResponse::Type& out_
    // Set the output files for the job, if required.
    error = m_jobStorage->setJobOutputPaths(io_job);
    if (error)
-   {
-      out_errorType = ErrorType::UNKNOWN;
       return error;
-   }
 
    // Start building the process options.
    system::process::ProcessOptions procOpts;
    error = populateProcessOptions(io_job, m_secureCookie.getKey(), procOpts);
    if (error)
    {
-      out_errorType = ErrorType::INVALID_REQUEST;
+      // If the process options couldn't be populated, the job must have been invalid.
+      out_wasInvalidJob = true;
       return error;
    }
 
@@ -213,14 +207,11 @@ Error LocalJobRunner::runJob(api::JobPtr& io_job, api::ErrorResponse::Type& out_
    std::shared_ptr<system::process::AbstractChildProcess> childProcess;
    error = system::process::ProcessSupervisor::runAsyncProcess(procOpts, callbacks, &childProcess);
    if (error || (childProcess == nullptr))
-   {
-      out_errorType = ErrorType::UNKNOWN;
       return createError(
          LocalError::JOB_LAUNCH_ERROR,
          "Could not launch process for job " + jobId,
          error,
          ERROR_LOCATION);
-   }
 
    // Set the PID and then notify about the PENDING status update.
    io_job->Pid = childProcess->getPid();
@@ -355,7 +346,6 @@ void LocalJobRunner::removeWatchEvent(const std::string& in_id)
          m_processWatchEvents.erase(itr);
    }
    END_LOCK_MUTEX
-
 }
 
 } // namespace local

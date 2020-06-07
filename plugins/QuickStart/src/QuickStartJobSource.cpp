@@ -63,10 +63,10 @@ Error QuickStartJobSource::getJobs(api::JobList &out_jobs) const
    return Success();
 }
 
-Error QuickStartJobSource::submitJob(api::JobPtr io_job, api::ErrorResponse::Type& out_errorType) const
+Error QuickStartJobSource::submitJob(api::JobPtr io_job, bool& out_wasInvalidRequest) const
 {
    // TODO #12: Submit and then update the job.
-   out_errorType = api::ErrorResponse::Type::REQUEST_NOT_SUPPORTED;
+   out_wasInvalidRequest = true;
    return Error(
       "NotImplemented",
       1,
