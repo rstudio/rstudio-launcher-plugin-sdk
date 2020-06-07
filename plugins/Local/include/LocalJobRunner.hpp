@@ -115,16 +115,37 @@ private:
     */
    static void onProcessWatchDeadline(WeakLocalJobRunner in_weakThis, int in_count, api::JobPtr io_job);
 
+   /**
+    * @brief Adds or updates a process watch event.
+    *
+    * @param in_id                      The ID of the job for which the event was created.
+    * @param in_processWatchEvent       The process watch event.
+    */
+   void addProcessWatchEvent(
+      const std::string& in_id,
+      const std::shared_ptr<system::AsyncDeadlineEvent>& in_processWatchEvent);
+
+   /**
+    * @brief Removes a process watch event.
+    *
+    * @param in_id      The ID of the job for which the event was created.
+    */
+   void removeWatchEvent(const std::string& in_id);
+
    /** The name of the host running this job. */
    const std::string& m_hostname;
 
    /** The job storage. */
    std::shared_ptr<job_store::LocalJobStorage> m_jobStorage;
 
+   /** The mutex to protect the process watch events. */
+   std::mutex m_mutex;
+
    /** The job status notifier, to update the status of the job on exit. */
    jobs::JobStatusNotifierPtr m_notifier;
 
-   std::shared_ptr<system::AsyncDeadlineEvent> m_processWatchEvent;
+   /** The watch events for each process that has not started running yet. */
+   ProcessWatchEvents m_processWatchEvents;
 
    /** The secure cookie. */
    LocalSecureCookie m_secureCookie;

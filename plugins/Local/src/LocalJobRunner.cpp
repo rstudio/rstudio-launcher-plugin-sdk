@@ -226,11 +226,11 @@ Error LocalJobRunner::runJob(api::JobPtr& io_job, api::ErrorResponse::Type& out_
    io_job->Pid = childProcess->getPid();
    m_notifier->updateJob(io_job, State::PENDING);
 
-   m_processWatchEvent.reset(
-      new system::AsyncDeadlineEvent(
-         std::bind(LocalJobRunner::onProcessWatchDeadline, weak_from_this(), 1, io_job),
-         system::TimeDuration::Microseconds(100000)));
-   m_processWatchEvent->start();
+   auto jobWatchEvent = std::make_shared<system::AsyncDeadlineEvent>(
+      std::bind(LocalJobRunner::onProcessWatchDeadline, weak_from_this(), 1, io_job),
+      system::TimeDuration::Microseconds(100000));
+   addProcessWatchEvent(io_job->Id, jobWatchEvent);
+   jobWatchEvent->start();
 
    return Success();
 }
@@ -291,13 +291,20 @@ void LocalJobRunner::onProcessWatchDeadline(WeakLocalJobRunner in_weakThis, int 
       {
          // Check the job status. If it already exited, just stop watching.
          if ((io_job->Status == State::KILLED) || (io_job->Status == State::FINISHED))
+         {
+            // Remove the watch event to prevent an ever-growing map.
+            sharedThis->removeWatchEvent(io_job->Id);
             return;
+         }
 
          system::process::ProcessInfo procInfo;
          Error error = system::process::ProcessInfo::getProcessInfo(io_job->Pid.getValueOr(0), procInfo);
          if (error)
          {
             logging::logError(error, ERROR_LOCATION);
+
+            // Remove the watch event to prevent an ever-growing map.
+            sharedThis->removeWatchEvent(io_job->Id);
             return;
          }
 
@@ -305,6 +312,9 @@ void LocalJobRunner::onProcessWatchDeadline(WeakLocalJobRunner in_weakThis, int 
          if (procInfo.Executable != "rsandbox")
          {
             sharedThis->m_notifier->updateJob(io_job, State::RUNNING);
+
+            // Remove the watch event to prevent an ever-growing map.
+            sharedThis->removeWatchEvent(io_job->Id);
             return;
          }
       }
@@ -317,13 +327,35 @@ void LocalJobRunner::onProcessWatchDeadline(WeakLocalJobRunner in_weakThis, int 
          system::TimeDuration::Seconds(5) :
          system::TimeDuration::Microseconds(::pow(2, in_count) * 100000); // 100 milliseconds = 100000 microseconds.
 
-      sharedThis->m_processWatchEvent.reset(
-         new system::AsyncDeadlineEvent(
-            std::bind(LocalJobRunner::onProcessWatchDeadline, in_weakThis, in_count + 1, io_job),
-            waitTime));
-
-      sharedThis->m_processWatchEvent->start();
+      auto jobWatchEvent = std::make_shared<system::AsyncDeadlineEvent>(
+         std::bind(LocalJobRunner::onProcessWatchDeadline, in_weakThis, in_count + 1, io_job),
+         waitTime);
+      sharedThis->addProcessWatchEvent(io_job->Id, jobWatchEvent);
+      jobWatchEvent->start();
    }
+}
+
+void LocalJobRunner::addProcessWatchEvent(
+   const std::string& in_id,
+   const std::shared_ptr<system::AsyncDeadlineEvent>& in_processWatchEvent)
+{
+   LOCK_MUTEX(m_mutex)
+   {
+      m_processWatchEvents[in_id] = in_processWatchEvent;
+   }
+   END_LOCK_MUTEX
+}
+
+void LocalJobRunner::removeWatchEvent(const std::string& in_id)
+{
+   LOCK_MUTEX(m_mutex)
+   {
+      auto itr = m_processWatchEvents.find(in_id);
+      if (itr != m_processWatchEvents.end())
+         m_processWatchEvents.erase(itr);
+   }
+   END_LOCK_MUTEX
+
 }
 
 } // namespace local
