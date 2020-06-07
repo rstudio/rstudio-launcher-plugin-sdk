@@ -27,6 +27,7 @@
 #include <json/Json.hpp>
 #include <options/Options.hpp>
 #include <system/FilePath.hpp>
+#include <system/Process.hpp>
 #include <utils/FileUtils.hpp>
 
 #include <LocalOptions.hpp>
@@ -56,6 +57,60 @@ inline Error ensureDirectory(const FilePath& in_directory, FileMode in_fileMode 
       return error;
 
    return in_directory.changeFileMode(in_fileMode);
+}
+
+inline Error ensureUserDirectory( const system::FilePath& in_userDirectory, const system::User& in_user)
+{
+   if (!in_userDirectory.exists())
+   {
+      const std::string& userDir = in_userDirectory.getAbsolutePath();
+
+      system::process::ProcessOptions procOpts;
+      procOpts.Executable = "mkdir " + userDir + " && chmod 700 " + userDir;
+      procOpts.IsShellCommand = true;
+      procOpts.RunAsUser = in_user;
+
+      system::process::ProcessResult result;
+      system::process::SyncChildProcess child(procOpts);
+      Error error = child.run(result);
+
+      const std::string errMsg =
+         "Could not create output directory " +
+            userDir +
+            " for user " +
+            in_user.getUsername();
+
+      if (error)
+      {
+         logging::logErrorMessage(errMsg);
+         return error;
+      }
+
+      if (result.ExitCode != 0)
+      {
+         logging::logErrorMessage(
+            "Creating output directory " +
+               userDir +
+               " for user " +
+               in_user.getUsername() +
+               " exited with non-zero exit code " +
+               std::to_string(result.ExitCode));
+
+         logging::logDebugMessage(
+            "Create directory for user " +
+               in_user.getUsername() +
+               "\n    stdout: \"" +
+               result.StdOut +
+               "\"\n    stderr: \"" +
+               result.StdError +
+               "\"");
+      }
+
+      if (!in_userDirectory.exists())
+         return fileNotFoundError(errMsg, ERROR_LOCATION);
+   }
+
+   return Success();
 }
 
 inline FilePath getJobFilePath(const std::string& in_id, const system::FilePath& in_jobsPath)
@@ -103,7 +158,7 @@ Error LocalJobStorage::initialize()
    if (error)
       return error;
 
-   error = ensureDirectory(m_outputRootPath, FileMode::USER_READ_WRITE_EXECUTE_ALL_READ_EXECUTE);
+   error = ensureDirectory(m_outputRootPath, FileMode::ALL_READ_WRITE_EXECUTE);
    if (error)
       return error;
 
@@ -169,8 +224,8 @@ Error LocalJobStorage::setJobOutputPaths(api::JobPtr io_job) const
         errorEmpty = io_job->StandardErrFile.empty();
    if (m_saveUnspecifiedOutput && (outputEmpty || errorEmpty))
    {
-      const system::FilePath outputDir = m_outputRootPath.completeChildPath(io_job->User.getUsername());
-      Error error = createDirectory(outputDir);
+      system::FilePath outputDir = m_outputRootPath.completeChildPath(io_job->User.getUsername());
+      Error error = ensureUserDirectory(outputDir, io_job->User);
       if (error)
          return error;
 
