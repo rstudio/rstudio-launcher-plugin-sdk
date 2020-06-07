@@ -49,7 +49,7 @@ constexpr const char* OUT_FILE_EXT = ".stdout";
 constexpr const char* ROOT_JOBS_DIR = "jobs";
 constexpr const char* ROOT_OUTPUT_DIR = "output";
 
-inline Error createDirectory(const FilePath& in_directory, FileMode in_fileMode = FileMode::USER_READ_WRITE_EXECUTE)
+inline Error ensureDirectory(const FilePath& in_directory, FileMode in_fileMode = FileMode::USER_READ_WRITE_EXECUTE)
 {
    Error error = in_directory.ensureDirectory();
    if (error)
@@ -95,11 +95,15 @@ LocalJobStorage::LocalJobStorage(const std::string& in_hostname, jobs::JobStatus
 
 Error LocalJobStorage::initialize()
 {
-   Error error = createDirectory(m_jobsRootPath);
+   Error error = ensureDirectory(m_jobsRootPath);
    if (error)
       return error;
 
-   error = createDirectory(m_jobsPath);
+   error = ensureDirectory(m_jobsPath);
+   if (error)
+      return error;
+
+   error = ensureDirectory(m_outputRootPath, FileMode::USER_READ_WRITE_EXECUTE_ALL_READ_EXECUTE);
    if (error)
       return error;
 
