@@ -740,7 +740,6 @@ MarsJobSource::MarsJobSource(
                in_jobRepository,
                in_jobStatusNotifier))
 {
-   // TODO #11: Adjust the job status watcher frequency.
 }
 ```
 
