@@ -63,20 +63,56 @@ namespace local {
 class LocalJobRunner : public std::enable_shared_from_this<LocalJobRunner>
 {
 public:
+   /**
+    * @brief Constructor.
+    *
+    * @param in_hostname        The hostname of the machine on which jobs will be run (this machine).
+    * @param in_notifier        The job status notifier, for posting job status updates.
+    * @param in_jobStorage      The job storage, for saving jobs and job output.
+    */
    LocalJobRunner(
       const std::string& in_hostname,
       jobs::JobStatusNotifierPtr in_notifier,
       std::shared_ptr<job_store::LocalJobStorage> in_jobStorage);
 
+   /**
+    * @brief Initializes the job runner.
+    *
+    * @return Success if the job runner could be initialized; Error otherwise.
+    */
    Error initialize();
 
+   /**
+    * @brief Runs the specified job.
+    *
+    * @param io_job             The Job to be run.
+    * @param out_errorType      The type of error that occurred, if any.
+    *
+    * @return Success if the job could be run; Error otherwise.
+    */
    Error runJob(api::JobPtr& io_job, api::ErrorResponse::Type& out_errorType);
 
 private:
+   // Convenience typedefs.
    typedef std::weak_ptr<LocalJobRunner> WeakLocalJobRunner;
+   typedef std::map<std::string, std::shared_ptr<system::AsyncDeadlineEvent> > ProcessWatchEvents;
 
+   /**
+    * @brief Callback to be invoked when a Job exits.
+    *
+    * @param in_weakThis    A weak pointer to this LocalJobRunner.
+    * @param in_exitCode    The exit code of the Job.
+    * @param io_job         The Job that has exited.
+    */
    static void onJobExitCallback(WeakLocalJobRunner in_weakThis, int in_exitCode, api::JobPtr io_job);
 
+   /**
+    * @brief Callback to be invoked after a set amount of time to check whether the Job is running yet.
+    *
+    * @param in_weakThis    A weak pointer to this LocalJobRunner.
+    * @param in_count       The number of times the callback has been invoked for the specified Job.
+    * @param io_job         The Job which must be watched.
+    */
    static void onProcessWatchDeadline(WeakLocalJobRunner in_weakThis, int in_count, api::JobPtr io_job);
 
    /** The name of the host running this job. */
