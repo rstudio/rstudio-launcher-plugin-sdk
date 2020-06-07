@@ -30,7 +30,6 @@
 #include <utils/FileUtils.hpp>
 
 #include <LocalOptions.hpp>
-#include <json/Json.hpp>
 
 using namespace rstudio::launcher_plugins::system;
 
