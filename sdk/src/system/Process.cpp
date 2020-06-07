@@ -653,7 +653,7 @@ Error ProcessInfo::getProcessInfo(pid_t in_pid, ProcessInfo& out_info)
 
    // Now we have everything. Populate the rest of ProcessInfo obj.
    out_info.Executable = FilePath(commandVector[0]).getAbsolutePath();  // The first element is the command.
-   std::copy(commandVector.begin() + 1, commandVector.end(), out_info.Arguments.begin()); // The rest are the arguments.
+   std::copy(commandVector.begin() + 1, commandVector.end(), std::back_inserter(out_info.Arguments)); // The rest are the arguments.
    out_info.State = statFields[2];
    out_info.Pid = in_pid;
    out_info.PPid = safe_convert::stringTo<pid_t>(statFields[3], -1);
