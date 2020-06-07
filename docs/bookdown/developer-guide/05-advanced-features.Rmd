@@ -4,7 +4,7 @@ This section describes optional, advanced features of the SDK which are not cove
 
 ## Error Handling {#errors}
 
-The RStudio Launcher Plugin SDK QuickStart Guide glosses over error handling by creating a new Error with an arbitrary name and code at each location that an error would occur. It is advisable to take a more systematic approach to error handling. The specific implementation is completely at the discretion of the Plugin developer, however this section will discuss one possible organizational strategy.
+The RStudio Launcher Plugin SDK QuickStart Guide creates a new Error with an arbitrary name and code at each location that an error would occur. It is advisable to take a more systematic approach to error handling. The specific implementation is completely at the discretion of the Plugin developer, however this section will discuss one possible organizational strategy.
 
 For each category of error that may occur, create an enum which represents the specific types of errors in that category, and a function (or a few functions) which create `Error` objects with the correct category name.
 
@@ -468,7 +468,7 @@ When a job is submitted, any custom configuration values that were set on the jo
 
 The Plugin needs to keep an accurate record of all of the Jobs that were submitted to the Job Scheduling System by the Launcher. This can be implemented in any way that suits the Job Scheduling System as long as `JobStatusNotifier::updateJobStatus` is invoked each time the status of a job changes. The `JobStatusNotifier::updateJobStatus` validates that the current status really is an update, so there is no need for the Plugin implementation to do that check.
 
-The two most common ways to implemented this feature are streaming the Job statuses and polling the Job statuses. Both methods can be implemented with the help of the `AbstractJobStatusWatcher` base class, however streaming is the preferred method, as it should be more efficient than polling.
+The two most common ways to implemented this feature are streaming the Job statuses and polling the Job statuses. Both methods can be implemented with the help of the `AbstractJobStatusWatcher` base class; however, streaming is the preferred method, as it should be more efficient than polling.
 
 The `AbstractTimedJobStatusWatcher` class, which extends the `AbstractJobStatusWatcher` class, implements common functionality for polling job statuses. For more details about implementing Job status updates via polling, see TODO #'s 9 - 11 in the RStudio Launcher Plugin SDK QuickStart Guide.
 
@@ -671,9 +671,8 @@ Error MarsJobStatusWatcher::getJobDetails(const std::string& in_jobId, api::JobP
   return Success();
 }
 
-} // namespace quickstart
-} // namespace launcher_plugins
-} // namespace rstudio
+} // namespace mars
+} // namespace orchid
 ```
 
 ### Other Methods {#status-updates-other}

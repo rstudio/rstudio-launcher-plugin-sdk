@@ -175,7 +175,7 @@ There are two API requests which return a Job State Response: the Submit Job and
 
 This API call is responsible for streaming Job status updates as they occur. The SDK maintains an internal cache of all the Jobs in the Job Scheduling System and uses the `JobStatusNotifier` to allow components of the SDK to be notified when a Job's status is updated. Components which wish to be notified of a Job status update may subscribe to the notifier, and components which wish to notify other components about new updates should post the updates to the `JobStatusNotifier`.
 
-The SDK provides `AbstractJobStatusWatcher` and `AbstractTimedJobStatusWatcher` to help facilitate the implementation of keeping Job statuses update within the Plugin. For more details about implementing Job status updates, see the [Job Status Updates](#status-updates) of the [Advanced Features](#advanced-features) chapter, or TODOs #'s 9 - 11 of the RStudio Launcher Plugin SDK QuickStart Guide.
+The SDK provides `AbstractJobStatusWatcher` and `AbstractTimedJobStatusWatcher` to help facilitate the implementation of keeping Job statuses updated within the Plugin. For more details about implementing Job status updates, see the [Job Status Updates](#status-updates) of the [Advanced Features](#advanced-features) chapter, or TODOs #'s 9 - 11 of the RStudio Launcher Plugin SDK QuickStart Guide.
 
 The SDK will manage all Job status streams, including closing them on request. The Plugin developer is only responsible for posting correct Job status updates to the `JobStatusNotifier` either directly or indirectly.
 
