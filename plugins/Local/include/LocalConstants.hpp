@@ -32,7 +32,7 @@ namespace local {
 /** Constants used by the Local Plugin. */
 static const constexpr char* s_pamProfile = "pamProfile";
 static const constexpr char* s_encryptedPassword = "encryptedPassword";
-static const constexpr char* s_initializationVector = "s_initializationVector";
+static const constexpr char* s_initializationVector = "initializationVector";
 
 } // namespace local
 } // namespace launcher_plugins
