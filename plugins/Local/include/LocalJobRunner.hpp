@@ -60,7 +60,7 @@ namespace local {
 /**
  * @brief Runs jobs on the local machine.
  */
-class LocalJobRunner : std::enable_shared_from_this<LocalJobRunner>
+class LocalJobRunner : public std::enable_shared_from_this<LocalJobRunner>
 {
 public:
    LocalJobRunner(
