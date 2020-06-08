@@ -97,6 +97,8 @@ private:
    typedef std::weak_ptr<LocalJobRunner> WeakLocalJobRunner;
    typedef std::map<std::string, std::shared_ptr<system::AsyncDeadlineEvent> > ProcessWatchEvents;
 
+   static void onJobErrorCallback(api::JobPtr in_job, const std::string& in_errorStr);
+
    /**
     * @brief Callback to be invoked when a Job exits.
     *

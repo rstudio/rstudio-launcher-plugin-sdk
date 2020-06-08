@@ -197,10 +197,7 @@ Error LocalJobRunner::runJob(api::JobPtr& io_job, bool& out_wasInvalidJob)
       io_job);
 
    const std::string& jobId = io_job->Id;
-   callbacks.OnStandardError = [jobId](const std::string& in_output)
-   {
-      logging::logDebugMessage("Standard error for job " + jobId + ": " + in_output);
-   };
+   callbacks.OnStandardError = std::bind(LocalJobRunner::onJobErrorCallback, io_job, std::placeholders::_1);
 
    // Run the process. The SDK locks the job before calling submit job, which prevents the job going from non-existent
    // in the system directly to the FINISHED status if the job is very quick.
@@ -224,6 +221,42 @@ Error LocalJobRunner::runJob(api::JobPtr& io_job, bool& out_wasInvalidJob)
    jobWatchEvent->start();
 
    return Success();
+}
+
+void LocalJobRunner::onJobErrorCallback(api::JobPtr in_job, const std::string& in_errorStr)
+{
+   logging::logDebugMessage("Standard error for job " + in_job->Id + ": " + in_errorStr);
+
+   // If there's a stderr file for the job, write the error there as well.
+   if (!in_job->StandardErrFile.empty())
+   {
+      system::process::ProcessOptions procOpts;
+      procOpts.Executable = "echo";
+      procOpts.Arguments = { in_errorStr };
+      procOpts.IsShellCommand = true;
+      procOpts.StandardOutputFile = system::FilePath(in_job->StandardErrFile);
+      procOpts.StandardErrorFile = procOpts.StandardOutputFile;
+
+      system::process::SyncChildProcess childProcess(procOpts);
+      system::process::ProcessResult result;
+
+      Error error = childProcess.run(result);
+
+      std::string errMsg = "Could not write rsandbox error to job output file " + in_job->StandardErrFile;
+      if (error)
+      {
+         error.addProperty("description", errMsg);
+         logging::logError(error, ERROR_LOCATION);
+      }
+
+      if (result.ExitCode != 0)
+      {
+         if (!result.StdError.empty())
+            errMsg.append(" - ").append(result.StdError);
+
+         logging::logErrorMessage(errMsg, ERROR_LOCATION);
+      }
+   }
 }
 
 void LocalJobRunner::onJobExitCallback(WeakLocalJobRunner in_weakThis, int in_exitCode, api::JobPtr io_job)
