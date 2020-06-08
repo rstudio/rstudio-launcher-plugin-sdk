@@ -281,6 +281,13 @@ public:
     */
    size_t getThreadPoolSize() const;
 
+   /**
+    * @brief Gets whether the plugin should run in single-user unprivileged mode.
+    *
+    * @return True if the plugin should run in uprivileged mode; false otherwise.
+    */
+   bool useUnprivilegedMode() const;
+
 private:
    /**
     * @brief Private constructor.

@@ -72,18 +72,6 @@ public:
     */
    bool shouldSaveUnspecifiedOutput() const;
 
-   /**
-    * @brief Gets whether jobs will be run in an unprivileged environment or not.
-    *
-    * Most environments will not require this value to be set to true. It only needs to be set if the job will be run in
-    * an environment where the root cannot take privileged actions, such as within a docker container.
-    *
-    * If this value is set to true the user will not be changed, and the job will be run without root and impersonation.
-    *
-    * @return True if jobs will be run in an unprivileged environment; false otherwise.
-    */
-   bool useUnprivilegedMode() const;
-
 private:
    /**
     * @brief Private constructor to prevent multiple instantiations of this singleton.
@@ -99,11 +87,6 @@ private:
     * Whether to save output for a job when the output path has not been specified.
     */
    bool m_saveUnspecifiedOutput;
-
-   /**
-    * Whether jobs will be run in an unprivileged environment or not.
-    */
-   bool m_useUnprivilegedMode;
 
    /**
     * The secure cookie key file to use for decrypting PAM passwords.

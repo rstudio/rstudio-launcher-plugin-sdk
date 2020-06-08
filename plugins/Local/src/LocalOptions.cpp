@@ -58,9 +58,6 @@ void LocalOptions::initialize()
       ("save-unspecified-output",
        Value<bool>(m_saveUnspecifiedOutput).setDefaultValue(true),
        "whether or not to save output for jobs that don't specify an output path - saved in scratch path")
-      ("unprivileged-mode",
-       Value<bool>(m_useUnprivilegedMode).setDefaultValue(false),
-       "special unprivileged mode - does not change user, runs without root, no impersonation, single user")
       ("secure-cookie-key-file",
        Value<FilePath>(m_secureCookieKeyFile).setDefaultValue(FilePath("/var/lib/rstudio-server/secure-cookie-key")),
        "amount of seconds to allow for outgoing connections to other nodes in a load balanced cluster or 0 to use "
@@ -70,11 +67,6 @@ void LocalOptions::initialize()
 bool LocalOptions::shouldSaveUnspecifiedOutput() const
 {
    return m_saveUnspecifiedOutput;
-}
-
-bool LocalOptions::useUnprivilegedMode() const
-{
-   return m_useUnprivilegedMode;
 }
 
 } // namespace local

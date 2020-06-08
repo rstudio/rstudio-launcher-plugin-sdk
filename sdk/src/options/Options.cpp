@@ -318,7 +318,10 @@ struct Options::Impl
                "user to run the plugin as")
             ("thread-pool-size",
                value<size_t>(&ThreadPoolSize)->default_value(std::max<size_t>(4, std::thread::hardware_concurrency())),
-               "the number of threads in the thread pool");
+               "the number of threads in the thread pool")
+            ("unprivileged-mode",
+               value<bool>(&UseUnprivilegedMode)->default_value(false),
+               "special unprivileged mode - does not change user, runs without root, no impersonation, single user");
 
          IsInitialized = true;
       }
@@ -345,7 +348,7 @@ struct Options::Impl
    system::FilePath ScratchPath;
    std::string ServerUser;
    size_t ThreadPoolSize;
-
+   bool UseUnprivilegedMode;
 };
 
 PRIVATE_IMPL_DELETER_IMPL(Options)
@@ -519,6 +522,11 @@ Error Options::getServerUser(system::User& out_serverUser) const
 size_t Options::getThreadPoolSize() const
 {
    return m_impl->ThreadPoolSize;
+}
+
+bool Options::useUnprivilegedMode() const
+{
+   return m_impl->UseUnprivilegedMode;
 }
 
 Options::Options() :
