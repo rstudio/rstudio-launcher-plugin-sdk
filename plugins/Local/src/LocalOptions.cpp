@@ -59,7 +59,7 @@ void LocalOptions::initialize()
        Value<bool>(m_saveUnspecifiedOutput).setDefaultValue(true),
        "whether or not to save output for jobs that don't specify an output path - saved in scratch path")
       ("secure-cookie-key-file",
-       Value<FilePath>(m_secureCookieKeyFile).setDefaultValue(FilePath("/var/lib/rstudio-server/secure-cookie-key")),
+       Value<FilePath>(m_secureCookieKeyFile).setDefaultValue(FilePath()),
        "amount of seconds to allow for outgoing connections to other nodes in a load balanced cluster or 0 to use "
        "the system default");
 }

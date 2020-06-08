@@ -50,26 +50,38 @@ Error LocalSecureCookie::initialize()
    // ownership.
    // DO NOT DO THIS UNLESS ABSOLUTELY NECESSARY.
    // ------------------------------------------------------------------------------------------------------------------
-   if (!system::posix::realUserIsRoot())
-      return systemError(EPERM, "Local Plugin must be run as the root user.", ERROR_LOCATION);
+   system::FilePath defaultKeyFile;
+   bool runUnprivileged = options::Options::getInstance().useUnprivilegedMode();
+   if (runUnprivileged)
+      defaultKeyFile = system::FilePath("/tmp/rstudio-server/secure-cookie-key");
+   else
+   {
+      defaultKeyFile = system::FilePath("/var/lib/rstudio-server/secure-cookie-key");
+      if (!system::posix::realUserIsRoot())
+         return systemError(EPERM, "Local Plugin must be run as the root user.", ERROR_LOCATION);
 
-   Error error = system::posix::restoreRoot();
-   if (error)
-      return error;
+      Error error = system::posix::restoreRoot();
+      if (error)
+         return error;
+   }
 
    const system::FilePath& keyFilePath = LocalOptions::getInstance().getSecureCookieKeyFile();
-   error = utils::readFileIntoString(keyFilePath, m_key);
+   Error error = utils::readFileIntoString(keyFilePath.isEmpty() ? defaultKeyFile : keyFilePath, m_key);
    if (error)
       return error;
 
-   system::User serverUser;
-   error = options::Options::getInstance().getServerUser(serverUser);
-   if (error)
-      return error;
+   // If we restored root, go back to the server user.
+   if (!runUnprivileged)
+   {
+      system::User serverUser;
+      error = options::Options::getInstance().getServerUser(serverUser);
+      if (error)
+         return error;
 
-   error = system::posix::temporarilyDropPrivileges(serverUser);
-   if (error)
-      return error;
+      error = system::posix::temporarilyDropPrivileges(serverUser);
+      if (error)
+         return error;
+   }
 
    // Ensure the key is at least 256 bits (32 bytes) in strength, for security purposes.
    if (m_key.size() < 32)
