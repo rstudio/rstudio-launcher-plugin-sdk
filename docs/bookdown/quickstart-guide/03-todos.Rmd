@@ -637,7 +637,7 @@ TODO Location                     Impact
 --------------------------------  --------------------------------
 QuickStartJobStatusWatcher.cpp    QuickStartJobStatusWatcher.cpp
 
-If a `AbstractJobStatusWatcher::updateJobStatus` is invoked for a Job which is not in the Job Repository, the SDK will call `AbstractJobStatusWatcher::getJobDetails` to populate a `Job` object with all of the details of the Job, and then add it to the Job Repository. Since `AbstractJobStatusWatcher::getJobDetails` should get the full details of the Job just like `IJobSource::getJobs()` does, it may be advisable to make a shared implementation for getting and/or parsing Jobs from the Job Scheduling System.
+If `AbstractJobStatusWatcher::updateJobStatus` is invoked for a Job which is not in the Job Repository, the SDK will call `AbstractJobStatusWatcher::getJobDetails` to populate a `Job` object with all of the details of the Job, and then add it to the Job Repository. Since `AbstractJobStatusWatcher::getJobDetails` should get the full details of the Job, just like `IJobSource::getJobs()` does, it may be advisable to make a shared implementation for getting and/or parsing Jobs from the Job Scheduling System.
 
 This method should return an error if it is unable to populate the Job details.
 
