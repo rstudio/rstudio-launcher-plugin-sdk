@@ -319,7 +319,7 @@ struct Options::Impl
             ("thread-pool-size",
                value<size_t>(&ThreadPoolSize)->default_value(std::max<size_t>(4, std::thread::hardware_concurrency())),
                "the number of threads in the thread pool")
-            ("unprivileged-mode",
+            ("unprivileged",
                value<bool>(&UseUnprivilegedMode)->default_value(false),
                "special unprivileged mode - does not change user, runs without root, no impersonation, single user");
 
