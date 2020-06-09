@@ -51,6 +51,7 @@ Error SmokeTest::initialize()
    pluginOpts.Executable = m_pluginPath.getAbsolutePath();
    pluginOpts.IsShellCommand = false;
    pluginOpts.CloseStdin = false;
+   pluginOpts.Arguments = { "--heartbeat-interval-seconds=0" };
 
    system::process::AsyncProcessCallbacks callbacks;
    callbacks.OnError = [](const Error& in_error)
