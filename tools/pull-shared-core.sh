@@ -34,15 +34,15 @@ fi
 
 ROOT_DIR="$(readlink -e "$(dirname "${BASH_SOURCE[0]}")/..")"
 
-SRC_INCLUDE="temp/rstudio-clone/src/cpp/shared_core/include/shared_core"
-SRC_SRC="temp/rstudio-clone/src/cpp/shared_core"
+RSTUDIO_CLONE_DIR="$(makeTmpDir "rstudio-clone")"
+
+SRC_INCLUDE="${RSTUDIO_CLONE_DIR}/src/cpp/shared_core/include/shared_core"
+SRC_SRC="${RSTUDIO_CLONE_DIR}/rstudio-clone/src/cpp/shared_core"
 DEST_INCLUDE="${ROOT_DIR}/sdk/include"
 DEST_SRC="${ROOT_DIR}/sdk/src"
 
 # Clone the RStudio repo.
-cd "${ROOT_DIR}/.."
-mkdir -p temp/rstudio-clone
-pushd temp/rstudio-clone
+pushd "${RSTUDIO_CLONE_DIR}"
 
 if git status; then
     git fetch
@@ -52,7 +52,7 @@ else
     git clone --branch "$BRANCH" --origin origin --progress -v https://github.com/rstudio/rstudio.git ./
 fi
 
-# leave temp/rstudio-clone
+# leave /tmp/rstudio-clone
 popd
 
 # Copy the files we want.
@@ -341,5 +341,3 @@ if [[ -e "${ROOT_DIR}/sdk/src/json/rapidjson" ]]; then
     sudo rm -r "${ROOT_DIR}/sdk/src/json/rapidjson"
 fi
 cp -r temp/rstudio-clone/src/cpp/shared_core/include/shared_core/json/rapidjson "${ROOT_DIR}/sdk/src/json/rapidjson"
-
-sudo rm -r temp/
