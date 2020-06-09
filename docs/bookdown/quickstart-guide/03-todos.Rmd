@@ -744,3 +744,270 @@ MarsJobSource::MarsJobSource(
 ```
 
 in `MarsJobSource.cpp`.
+
+## TODO #12: Submit a Job {#todo-12}
+
+TODO Location             Impact
+------------------------  ------------------------
+QuickStartJobSource.cpp   QuickStartJobSource.cpp
+
+When a Job is submitted to the Plugin, the Plugin will be provided with an `Job` object which represents the details of the job. The Plugin must pass the necessary details of the `Job` object to the Job Scheduling System. In addition, the Plugin is responsible for making the following updates to the `Job` object:
+
+* Set the ID of the Job. If the Job Scheduling System does not generate an ID, the Plugin must generate a unique ID for the Job and correctly associate it with the same Job in the Job Scheduling System.
+* Set the `SubmissionTime` field of the `Job` object. This may be either the time that the Plugin invoked the Job Scheduling System's submission method or the time that the Job Scheduling System reports that the Job was submitted, if available.
+
+The SDK will set the initial Job Status to `Job::State::PENDING` if no `Error` is returned from `IJobSource::submitJob`. Additional Job Status updates must be implemented by the Plugin. Ideally, this would be implemented through Job Status Streaming, which is discussed in detail in the 'Job Status Updates' section of the 'Advanced Features' chapter of the RStudio Launcher Plugin SDK Developer's Guide.
+
+### Error Handling {#todo-12-err}
+
+The Plugin should also validate the `Job` object before submitting the Job to the Job Scheduling System. For example, the Job Scheduling System may only support the NFS mount type. If there are any Host mounts set on the `Job` it will not be rejected by the SDK layer, as the SDK has no knowledge of what mount types are supported by the Job Scheduling System. In that case, the Plugin should set the `out_wasInvalidRequest` parameter to `true`, since the user requested an unsupported mount type, and return an `Error` object. The `Error`'s category name, error code, and message will be returned to the Launcher to be sent back to the caller.
+
+If the Job object was valid but it fails to launch for another reason the Plugin should not set `out_wasInvalidRequest`. The SDK layer sets the initial value of the variable to `false`.
+
+### Example {#todo-12-ex}
+
+Recall from [Example #7](#todo-7-ex) that the Mars scheduling system supports containers, queues, resource limits (CPU, Memory, and GPU), a way to select the processor type (`x86` or `ARM`), and a way to select which specific host(s) may run the job. Assume that the Mars job scheduling system also supports mounting an NFS path on job start-up. Finally, assume that the `mars_api` exposes a function with the following signature:
+
+```{Rcpp, eval=FALSE}
+mars_api::job submit_job(
+   const char* exe,
+   const char** args,
+   size_t argc,
+   const char* stdin,
+   mars_api::job_opts opts);
+```
+
+Where `mars_api::job_opts` is defined as follows:
+
+```{Rcpp, eval=FALSE}
+enum proc_type
+{
+  PROC_TYPE_X86,
+  PROC_TYPE_ARM,
+  PROC_TYPE_ANY
+};
+
+struct mount
+{
+   std::string source;
+   std::string dest;
+   std::string host;
+   bool read_only;
+}
+
+struct job_opts
+{
+   job_opts() :
+     max_gpus(0),
+     min_gpus(0),
+     max_cpus(0),
+     min_cpus(0),
+     max_mem_mb(0),
+     min_mem_mb(0),
+     processor_type(PROC_TYPE_ANY)
+   {}
+  
+   std::string name;
+   std::string comment;
+   std::string stdout_file;
+   std::string stderr_file;
+   std::vector<std::string> queues;
+   std::vector<std::string> hosts;
+   std::vector<mount> mounts;
+   int max_gpus;
+   int min_gpus;
+   int max_cpus;
+   int min_cpus;
+   int max_mem_mb;
+   int min_mem_mb;
+   proc_type processor_type;
+};
+```
+
+The Orchid organization's Plugin developer knows from the Mars API documentation that a resource limit with a value of `0` means that there is no limit. The Plugin developer also knows that the comment field can be any UTF-8 text and does not have a maximum length. Then the developer might change
+
+```{Rcpp, eval=FALSE}
+Error QuickStartJobSource::submitJob(api::JobPtr io_job, bool& out_wasInvalidRequest) const
+{
+   // TODO #12: Submit and then update the job.
+   out_wasInvalidRequest = true;
+   return Error(
+      "NotImplemented",
+      1,
+      "Method QuickStartJobSource::submitJob is not implemented.",
+      ERROR_LOCATION);
+}
+```
+
+in `QuickStartJobSource.cpp` to 
+
+```{Rcpp, eval=FALSE}
+
+void replaceSpecialChars(std::string& io_str)
+{
+   // Replace % first so that added %s won't also be replaced.
+   std::regex_replace(io_str, std::regex("%"), "%p");
+   std::regex_replace(io_str, std::regex("="), "%e");
+   std::regex_replace(io_str, std::regex(","), "%c");
+   std::regex_replace(io_str, std::regex(";"), "%s");
+   std::regex_replace(io_str, std::regex("\n"), "%n");
+   std::regex_replace(io_str, std::regex("\r"), "%r");
+   std::regex_replace(io_str, std::regex("|"), "%b");
+}
+
+Error MarsJobSource::submitJob(api::JobPtr io_job, bool& out_wasInvalidRequest) const
+{
+   // Create the job_opts
+   mars_api::job_opts opts;
+   opts.name = io_job->Name;
+   
+   std::string stdInp = "#!/bin/sh\n"
+  
+   // Convert the mounts. If any are not NFS mounts, exit with an error.
+   for (const auto& mount: io_job->Mounts)
+   {
+      if (!mount.NfsMountSource)
+      {
+         out_wasRequestInvalid = true;
+         return Error("MarsPluginError", 1, "Mars Launcher Plugin only supports NFS Mounts.", ERROR_LOCATION);
+      }
+     
+      // Because of the check above, .getValueOr is guaranteed to return a non-empty mount source.
+      NfsMountSource mountSrc = mount.NfsSourcePath.getValueOr(NfsMountSource());
+     
+      mars_api::mount marsMount;
+      marsMount.dest = mount.DestinationPath;
+      marsMount.read_only = mount.IsReadOnly;
+      marsMount.source = mountSrc.Path;
+      marsMount.host = mountSrc.Host;
+      
+      opts.mounts.push_back(mount);
+   }
+   
+   // Set up the resource limits. There shouldn't be any unsupported types, but
+   // if there are, exit with an error.
+   for (const auto& limit: io_job->ResourceLimits)
+   {
+      // For each resource type, request exactly the amount set by the user.
+      if (limit.ResourceType == ResourceLimit::Type::CPU_COUNT)
+      {
+         opts.min_cpus = std::stoi(limit.Value);
+         opts.max_cpus = opts.min_cpus;
+      }
+      else if (limit.ResourceType == ResourceLimit::Type::MEMORY)
+      {
+         opts.min_mem_mb = std::stoi(limit.Value);
+         opts.max_mem_mb = opts.min_mem_mb;
+      }
+      else if (limit.ResourceType == "GPUs")
+      {
+         opts.min_gpus = std::stoi(limit.Value);
+         opts.max_gpus = opts.min_gpus;
+      }
+      else
+      {
+         out_wasRequestInvalid = true;
+         return Error(
+            "MarsPluginError",
+            2,
+            "Mars Launcher Plugin does not support the requested ResourceLimit type: " + limit.ResourceType,
+            ERROR_LOCATION);
+      }
+   }
+   
+   // Copy queues.
+   std::copy(io_job->Queues.begin(), io_job->Queues.end(), std::back_inserter(opts.queues));
+   
+   // Save the environment and the tags in the job comment.
+   std::string tagStr;
+   for (std::string tag: io_job->Tags)
+   {
+      if (!tagStr.empty())
+         tagStr.append(",");
+     
+      replaceSpecialChars(tag);
+      tagStr.append(tag);
+   }
+   
+   if (!tagStr.empty())
+      opts.comment.append("tags=").append(tagStr).append(";");
+   
+   // Also set up the export lines for the shell script that will be passed to
+   // stdin.
+   std::string envStr;
+   for (const auto& env: io_job->Environment)
+   {
+      if (!envStr.empty())
+        envStr.append(",");
+        
+      std::string key = env.first;
+      std::string val = env.second;
+      stdInp.append("export ").append(key).append("=").append(val).append("\n");
+      
+      replaceSpecialChars(key);
+      replaceSpecialChars(val);
+      envStr.append(key).append("|").append(val);
+   }
+   
+   if (!envStr.empty())
+      opts.comment.append("env=").append(envStr).append(";");
+   
+   // Get the hosts
+   std::string hostsStr = io_job->getJobConfigValue("Hostname").getValueOr("");
+   std::sregex_token_iterator itr(hostStr.begin(), hostStr.end(), std::regex(","), -1);
+   std::copy(itr, std::sregex_token_iterator(), std::back_inserter(opts.hosts));
+   
+   // Get the processor type.
+   std::string procType = io_job->getJobConfigValue("Processor Type").getValueOr("");
+   if (procType == "x86")
+     opts.processor_type = PROC_TYPE_X86;
+   else if (procType == "ARM")
+     opts.processor_type = PROC_TYPE_ARM;
+   
+   // Set the output files.
+   opts.stdout_file = io_job->StandardOutFile;
+   opts.stderr_file = io_job->StandardErrFile;
+   
+   // Add the command/exe and arguments to the script. Jobs with both or no 
+   // command/exe will be rejected by the SDK layer.
+   if (!io_job->Command.empty())
+      stdInp.append(system::process::shellEscape(io_job->Command));
+   else
+      stdInp.append(system::process::shellEscape(io_job->Exe));
+   
+   for (const std::string& arg: io_job->Arguments)
+     stdInp.append(" ").append(system::process::shellEscape(arg));
+   
+   // Now add the real stdin, if any. Escape the here-document start with " to
+   // ensure the stdin is interpreted literally.
+   if (!io_job->StandardIn.empty())
+     stdInp.append("<< \"EOF\"\n").append(io_job->StandardIn).append("\nEOF\n");
+   
+   LOCK_JOB(io_job)
+   {
+      // Now submit the job!
+      io_job->SubmissionTime = system::DateTime(); // Set the submission time to now
+      mars_api::job marsJob;
+      try
+      {
+         marsJob = mars_api::submitJob("/bin/sh", { }, 0, stdInp.c_str(), opts);
+      }
+      catch(mars_api::mars_exception& e)
+      {
+         return Error("MarsApiError", e.code(), e.what(), ERROR_LOCATION);
+      }
+   
+      // Success! Update the ID and status and then exit.
+      // Set the job ID
+      io_job->Id = marsJob.id;
+      io_job->Status = marsStatusToStatus(marsJob.state);
+   }
+   END_LOCK_JOB
+     
+   return Success();
+}
+```
+
+in `MarsJobSource.cpp`.
+
+Notice that the Mars API did not provide a way to set environment variables for the job. To compensate, the Plugin developer had to wrap the requested command in a [here-document](https://tldp.org/LDP/abs/html/here-docs.html) which set the requested environment variables.
