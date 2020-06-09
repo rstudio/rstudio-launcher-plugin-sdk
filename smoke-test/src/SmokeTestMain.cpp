@@ -25,6 +25,9 @@
 
 #include <iostream>
 
+#include <system/FilePath.hpp>
+
+using namespace rstudio::launcher_plugins;
 using namespace rstudio::launcher_plugins::smoke_test;
 
 /**
@@ -41,7 +44,19 @@ int main(int in_argc, char** in_argv)
    {
       std::cerr << "Unexpected number of arguments: " << in_argc << std::endl
                 << "Usage: ./rlps-smoke-test <path/to/plugin/exe>" << std::endl;
+      return 1;
    }
+
+   SmokeTest tester((system::FilePath(in_argv[1])));
+   Error error = tester.initialize();
+   if (error)
+   {
+      std::cerr << "An error occurred while initializing: " << std::endl
+                << error.asString() << std::endl;
+      return 1;
+   }
+
+   while(tester.sendRequest());
 
    return 0;
 }

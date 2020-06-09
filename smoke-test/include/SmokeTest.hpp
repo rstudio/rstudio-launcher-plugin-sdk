@@ -37,7 +37,7 @@ namespace smoke_test {
 class SmokeTest
 {
 public:
-   explicit SmokeTest(const system::FilePath& in_pluginPath);
+   explicit SmokeTest(system::FilePath in_pluginPath);
 
    Error initialize();
 
@@ -45,6 +45,7 @@ public:
 
 private:
    std::shared_ptr<system::process::AbstractChildProcess> m_plugin;
+   system::FilePath m_pluginPath;
 };
 
 } // namespace smoke_test

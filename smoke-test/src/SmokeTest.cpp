@@ -28,6 +28,21 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace smoke_test {
 
+SmokeTest::SmokeTest(system::FilePath in_pluginPath) :
+   m_pluginPath(std::move(in_pluginPath))
+{
+}
+
+Error SmokeTest::initialize()
+{
+   return Success();
+}
+
+bool SmokeTest::sendRequest()
+{
+   return false;
+}
+
 } // namespace smoke_test
 } // namespace launcher_plugins
 } // namespace rstudio
