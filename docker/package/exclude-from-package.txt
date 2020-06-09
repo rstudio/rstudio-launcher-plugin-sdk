@@ -1,6 +1,7 @@
 Jenkinsfile
 .idea
 cmake-build*
+dependencies/install-unifdef.sh
 docker
 docs/bookdown
 docs/diagrams
