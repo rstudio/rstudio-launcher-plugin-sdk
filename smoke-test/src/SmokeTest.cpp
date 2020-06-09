@@ -1,5 +1,5 @@
 /*
- * SmokeTestMain.cpp
+ * SmokeTest.cpp
  *
  * Copyright (C) 2020 by RStudio, PBC
  *
@@ -21,27 +21,13 @@
  *
  */
 
+
 #include <SmokeTest.hpp>
 
-#include <iostream>
+namespace rstudio {
+namespace launcher_plugins {
+namespace smoke_test {
 
-using namespace rstudio::launcher_plugins::smoke_test;
-
-/**
- * @brief The main function.
- *
- * @param in_argc      The number of arguments supplied to the program.
- * @param in_argv      The list of arguments supplied to the program.
- *
- * @return 0 on success; non-zero exit code otherwise.
- */
-int main(int in_argc, char** in_argv)
-{
-   if (in_argc != 2)
-   {
-      std::cerr << "Unexpected number of arguments: " << in_argc << std::endl
-                << "Usage: ./rlps-smoke-test <path/to/plugin/exe>" << std::endl;
-   }
-
-   return 0;
-}
+} // namespace smoke_test
+} // namespace launcher_plugins
+} // namespace rstudio
