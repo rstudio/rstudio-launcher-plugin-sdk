@@ -339,6 +339,24 @@ private:
    PRIVATE_IMPL_SHARED(m_impl);
 };
 
+/**
+ * @brief Shell escapes a string.
+ *
+ * @param in_toEscape   The string to escape.
+ *
+ * @return The escaped string.
+ */
+std::string shellEscape(const std::string& in_toEscape);
+
+/**
+ * @brief Shell escapes a FilePath.
+ *
+ * @param in_filePath   The FilePath to escape.
+ *
+ * @return The escaped FilePath, as a string.
+ */
+std::string shellEscape(const FilePath& in_filePath);
+
 } // namespace process
 } // namespace system
 } // namespace launcher_plugins

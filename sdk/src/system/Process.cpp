@@ -343,31 +343,6 @@ Error createPipes(FileDescriptors& out_fds)
 }
 
 /**
- * @brief Shell escapes a string.
- *
- * @param in_string     The string to escape.
- *
- * @return The escaped string.
- */
-std::string escape(const std::string& in_string)
-{
-   boost::regex pattern("'");
-   return "'" + boost::regex_replace(in_string, pattern, R"('"'"')") + "'";
-}
-
-/**
- * @brief Shell escapes a FilePath.
- *
- * @param in_filePath   The FilePath to escape.
- *
- * @return The escaped FilePath, as a string.
- */
-std::string escape(const FilePath& in_filePath)
-{
-   return escape(in_filePath.getAbsolutePath());
-}
-
-/**
  * @brief Gets the process exit code from its exit status.
  *
  * @param in_status     The status returned by the process on exit.
@@ -758,7 +733,7 @@ struct AbstractChildProcess::Impl
    {
       std::string shellCommand = in_options.Executable;
       for (const std::string& arg: in_options.Arguments)
-         shellCommand.append(" ").append(escape(arg));
+         shellCommand.append(" ").append(shellEscape(arg));
 
       bool redirectStdout = !in_options.StandardOutputFile.isEmpty(),
          redirectStderr = !in_options.StandardErrorFile.isEmpty(),
@@ -770,12 +745,12 @@ struct AbstractChildProcess::Impl
          shellCommand = "(" + shellCommand.append(")");
 
       if (redirectStdout)
-         shellCommand.append(" > ").append(escape(in_options.StandardOutputFile));
+         shellCommand.append(" > ").append(shellEscape(in_options.StandardOutputFile));
 
       if (redirectToSame)
          shellCommand.append(" 2>&1");
       else if (redirectStderr)
-         shellCommand.append(" 2> ").append(escape(in_options.StandardErrorFile));
+         shellCommand.append(" 2> ").append(shellEscape(in_options.StandardErrorFile));
 
       if (!in_options.RunAsUser.isAllUsers() && !in_options.RunAsUser.isAllUsers())
       {
@@ -1592,6 +1567,18 @@ bool ProcessSupervisor::waitForExit(const TimeDuration& in_maxWaitTime)
 ProcessSupervisor::ProcessSupervisor() :
    m_impl(new Impl())
 {
+}
+
+// Free Functions ======================================================================================================
+std::string shellEscape(const std::string& in_string)
+{
+   boost::regex pattern("'");
+   return "'" + boost::regex_replace(in_string, pattern, R"('"'"')") + "'";
+}
+
+std::string shellEscape(const FilePath& in_filePath)
+{
+   return shellEscape(in_filePath.getAbsolutePath());
 }
 
 } // namespace process
