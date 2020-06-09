@@ -678,3 +678,11 @@ Error MarsJobStatusWatcher::getJobDetails(const std::string& in_jobId, api::JobP
 ### Other Methods {#status-updates-other}
 
 It is possible that neither streaming nor polling are the best solution for keeping job statuses up to date. The use of an `AbstractJobStatusWatcher` is completely optional, and the Plugin developer may choose to implement this feature in any way that best suits the Job Scheduling System. For example, the provided sample Local Plugin does not use an `AbstractJobStatusWatcher`. Jobs are launched on the local system by forking a new processes and running the requested command in that process. The Local Plugin receives notifications when the child process writes to standard out, standard error, or exits. When the process exits, the Job state is transitioned from `Job::State::RUNNING` to `Job::State::FINISHED`. The Local Plugin also keeps track of when the process should transition from `Job::State::PENDING` to `Job::State::RUNNING` by checking whether the executable name has changed from `rsandbox` (a utility for launching processes in an isolated environment provided with the RStudio Server Pro installation) to the name of the actual executable for the Job.
+
+## Process Launching
+
+Depending on the API exposed by the Job Scheduling System, it may be necessary to launch child processes to perform actions on the Job Scheduling System, such as running a job or listing the jobs in the system. The SDK provides a number of classes and functions for launching child processes in the `system/Process.hpp` header file.
+
+All child processes launched through the SDK provided process module are run through the `rsandbox` process. This is done to ensure that the child process will be run in an isolated environment. 
+
+The SDK process launching module will escape the command, arguments, standard input, the standard output and standard error files, and environment variables as appropriate. The command, arguments and environment values will be treated literally. Bash expansion of them will not take place. Bash expansion may take place within the standard input, however.
