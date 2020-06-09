@@ -58,5 +58,6 @@ int main(int in_argc, char** in_argv)
 
    while(tester.sendRequest());
 
+   tester.stop();
    return 0;
 }

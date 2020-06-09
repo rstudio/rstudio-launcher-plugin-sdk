@@ -21,26 +21,94 @@
  *
  */
 
-
 #include <SmokeTest.hpp>
+
+#include <iostream>
+
+#include <json/Json.hpp>
+#include <system/Asio.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
 namespace smoke_test {
 
+namespace {
+
+} // anonymous namespace
+
 SmokeTest::SmokeTest(system::FilePath in_pluginPath) :
-   m_pluginPath(std::move(in_pluginPath))
+   m_pluginPath(std::move(in_pluginPath)),
+   m_isRunning(false)
 {
 }
 
 Error SmokeTest::initialize()
 {
-   return Success();
+   // There must be at least 2 threads.
+   system::AsioService::startThreads(2);
+
+   system::process::ProcessOptions pluginOpts;
+   pluginOpts.Executable = m_pluginPath.getAbsolutePath();
+   pluginOpts.IsShellCommand = false;
+   pluginOpts.CloseStdin = false;
+
+   system::process::AsyncProcessCallbacks callbacks;
+   callbacks.OnError = [](const Error& in_error)
+   {
+      std::cerr << "Error occurred while communicating with plugin: " << std::endl
+                << in_error.asString() << std::endl;
+   };
+
+   std::atomic_bool& isRunning = m_isRunning;
+   callbacks.OnExit = [&isRunning](int exitCode)
+   {
+      if (isRunning.load())
+      {
+         if (exitCode == 0)
+            std::cout << "Plugin exited normally" << std::endl;
+         else
+            std::cerr << "Plugin exited with code " << exitCode << std::endl;
+
+         isRunning.exchange(false);
+      }
+   };
+
+   callbacks.OnStandardError = [](const std::string& in_string)
+   {
+      std::cerr << in_string << std::endl;
+   };
+
+   std::atomic_bool& responseReceived = m_responseReceived;
+   callbacks.OnStandardOutput = [&responseReceived](const std::string& in_string)
+   {
+      json::Value jsonVal;
+      Error error = jsonVal.parse(in_string);
+      if (error)
+         std::cerr << "Error parsing response from plugin: " << std::endl
+                   << error.asString() << std::endl
+                   << "Response: " << std::endl
+                   << in_string << std::endl;
+      else
+         std::cout << jsonVal.writeFormatted() << std::endl;
+
+      responseReceived.exchange(true);
+   };
+
+   return system::process::ProcessSupervisor::runAsyncProcess(pluginOpts, callbacks, &m_plugin);
 }
 
 bool SmokeTest::sendRequest()
 {
    return false;
+}
+
+void SmokeTest::stop()
+{
+   m_isRunning.exchange(false);
+   system::process::ProcessSupervisor::terminateAll();
+   system::process::ProcessSupervisor::waitForExit(system::TimeDuration::Seconds(30));
+   system::AsioService::stop();
+   system::AsioService::waitForExit();
 }
 
 } // namespace smoke_test

@@ -24,6 +24,7 @@
 #ifndef LAUNCHER_PLUGINS_SMOKETEST_HPP
 #define LAUNCHER_PLUGINS_SMOKETEST_HPP
 
+#include <atomic>
 #include <memory>
 
 #include <Error.hpp>
@@ -43,9 +44,13 @@ public:
 
    bool sendRequest();
 
+   void stop();
+
 private:
    std::shared_ptr<system::process::AbstractChildProcess> m_plugin;
    system::FilePath m_pluginPath;
+   std::atomic_bool m_isRunning;
+   std::atomic_bool m_responseReceived;
 };
 
 } // namespace smoke_test
