@@ -68,15 +68,15 @@ if [[ ${#CMAKE_VER[@]} -ne 3 ]] ||
 fi
 
 # Download Doxygen Source
-mkdir -p temp
+DOWNLOAD_DIR="$(makeTmpDir "doxygen")"
 DOXYGEN_VER="1.8.16"
 DOXYGEN_TAR="doxygen-${DOXYGEN_VER}.src.tar.gz"
-wget "https://s3.amazonaws.com/rstudio-buildtools/doxygen/${DOXYGEN_TAR}" -O "temp/${DOXYGEN_TAR}"
+wget "https://s3.amazonaws.com/rstudio-buildtools/doxygen/${DOXYGEN_TAR}" -O "${DOWNLOAD_DIR}/${DOXYGEN_TAR}"
 
-tar -xzf "temp/${DOXYGEN_TAR}" -C temp/
+tar -xzf "${DOWNLOAD_DIR}/${DOXYGEN_TAR}" -C temp/
 
-mkdir -p "temp/doxygen-${DOXYGEN_VER}/build"
-pushd "temp/doxygen-${DOXYGEN_VER}/build"
+mkdir -p "${DOWNLOAD_DIR}/doxygen-${DOXYGEN_VER}/build"
+pushd "${DOWNLOAD_DIR}/doxygen-${DOXYGEN_VER}/build"
 
 cmake -G "Unix Makefiles" ..
 make
@@ -85,4 +85,4 @@ sudo make install
 
 popd
 
-rm -rf temp
+rm -rf "${DOWNLOAD_DIR}"

@@ -67,8 +67,8 @@ if ! [ -d "${PANDOC_INSTALL_DIR}" ]; then
 
   mkdir -p "${PANDOC_INSTALL_DIR}"
 
-  mkdir -p temp
-  pushd temp
+  DOWNLOAD_DIR="$(makeTmpDir "rlps-pandoc")"
+  pushd "$DOWNLOAD_DIR"
 
   wget "${PANDOC_URL}"
   tar -xzf "${PANDOC_TAR}"

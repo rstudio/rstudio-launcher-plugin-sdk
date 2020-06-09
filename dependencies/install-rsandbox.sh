@@ -44,7 +44,6 @@ else
 fi
 
 if [[ $(haveCommand "yum") -eq 1 ]]; then
-
   sudo yum update -y
   sudo yum install -y wget sudo
 else
@@ -52,7 +51,7 @@ else
   sudo apt install -y wget sudo
 fi
 
-mkdir -p temp
+DOWNLOAD_DIR="$(mkTmpDir rsandbox-dl)"
 RSP_VERSION="1.3.959-1"
 if [[ "$OS_NAME" == "debian9" ]]; then
   TAR_DIR="rsp-monitor-connect--$RSP_VERSION"
@@ -61,10 +60,10 @@ else
 fi
 
 TAR_FILE="$TAR_DIR.tar.gz"
-wget "https://s3.amazonaws.com://rstudio-ide-build/monitor/$OS_NAME/$TAR_FILE" -O "temp/$TAR_FILE"
+wget "https://s3.amazonaws.com://rstudio-ide-build/monitor/$OS_NAME/$TAR_FILE" -O "${DOWNLOAD_DIR}/$TAR_FILE"
 
-tar -xzf "temp/$TAR_FILE" -C "temp/"
+tar -xzf "${DOWNLOAD_DIR}/$TAR_FILE" -C "${DOWNLOAD_DIR}/"
 sudo mkdir -p /usr/lib/rstudio-server/bin
-sudo cp "temp/$TAR_DIR/rsandbox" /usr/lib/rstudio-server/bin
+sudo cp "${DOWNLOAD_DIR}/$TAR_DIR/rsandbox" /usr/lib/rstudio-server/bin
 
 rm -rf temp

@@ -48,3 +48,20 @@ cmakeVersion()
         echo "$CMAKE_VER_MAJOR $CMAKE_VER_MINOR $CMAKE_VER_PATCH"
     fi
 }
+
+makeTmpDir()
+{
+    if [[ -z $1 ]]; then
+        echo "Must include a directory name" 1>&2
+        return 1
+    fi
+
+    RES_DIR="${TMPDIR-/tmp}/$1"
+    mkdir -p "$RES_DIR"
+    if [[ $? -ne 0 ]]; then
+        echo "Could not create directory $RES_DIR" 1>&2
+        return 1
+    fi
+
+    echo "$RES_DIR"
+}
