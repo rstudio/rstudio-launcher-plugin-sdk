@@ -25,6 +25,8 @@
 
 #include <Error.hpp>
 
+#include <LocalConstants.hpp>
+
 namespace rstudio {
 namespace launcher_plugins {
 namespace local {
@@ -34,29 +36,42 @@ LocalJobSource::LocalJobSource(
    jobs::JobRepositoryPtr in_jobRepository,
    jobs::JobStatusNotifierPtr in_jobStatusNotifier) :
       api::IJobSource(std::move(in_jobRepository), std::move(in_jobStatusNotifier)),
-      m_jobStorage(std::move(in_hostname))
+      m_hostname(std::move(in_hostname)),
+      m_jobStorage(new job_store::LocalJobStorage(m_hostname, m_jobStatusNotifier))
 {
+   m_jobRunner.reset(new LocalJobRunner(m_hostname, m_jobStatusNotifier, m_jobStorage));
 }
 
 Error LocalJobSource::initialize()
 {
-   // TODO: Initialize communications with the other local plugins, if any, and make sure we can read and write to the
-   //       file that will store job information.
-   return m_jobStorage.initialize();
+   // TODO: Initialize communications with the other local plugins, if any.
+   Error error = m_jobStorage->initialize();
+   if (error)
+      return error;
+
+   return m_jobRunner->initialize();
 }
 
 Error LocalJobSource::getConfiguration(const system::User&, api::JobSourceConfiguration& out_configuration) const
 {
-   static const api::JobConfig::Type strType = api::JobConfig::Type::STRING;
-   out_configuration.CustomConfig.emplace_back("pamProfile", strType);
-   out_configuration.CustomConfig.emplace_back("encryptedPassword", strType);
+   static const api::JobConfig::Type& strType = api::JobConfig::Type::STRING;
+
+   out_configuration.CustomConfig.emplace_back(s_pamProfile, strType);
+   out_configuration.CustomConfig.emplace_back(s_encryptedPassword, strType);
+   out_configuration.CustomConfig.emplace_back(s_initializationVector, strType);
 
    return Success();
 }
 
 Error LocalJobSource::getJobs(api::JobList& out_jobs) const
 {
-   return m_jobStorage.loadJobs(out_jobs);
+   return m_jobStorage->loadJobs(out_jobs);
+}
+
+Error LocalJobSource::submitJob(api::JobPtr io_job, bool& out_wasInvalidRequest) const
+{
+   out_wasInvalidRequest = false;
+   return m_jobRunner->runJob(io_job, out_wasInvalidRequest);
 }
 
 } // namespace local

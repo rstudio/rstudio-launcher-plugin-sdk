@@ -27,10 +27,13 @@
 #include <iostream>
 #include <sstream>
 
+#include <boost/regex.hpp>
 #include <boost/iostreams/copy.hpp>
 
 #include <Error.hpp>
 #include <system/FilePath.hpp>
+
+#include "ErrorUtils.hpp"
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -61,6 +64,36 @@ Error readFileIntoString(const system::FilePath& in_file, std::string& out_fileC
    }
 
    out_fileContents = oStrStream.str();
+
+   return Success();
+}
+
+Error writeStringToFile(const std::string& in_contents, const system::FilePath& in_file, bool in_truncate)
+{
+   std::shared_ptr<std::ostream> ofs;
+   Error error = in_file.openForWrite(ofs, in_truncate);
+   if (error)
+      return error;
+
+   try
+   {
+      ofs->exceptions(std::ostream::failbit | std::ostream::badbit);
+
+      // Normalize the line endings to posix line endings, just in case.
+      std::string normalizedContents = in_contents;
+      boost::regex_replace(normalizedContents, boost::regex("\\r?\\n|\\r|\\xE2\\x80[\\xA8\\xA9]"), "\n");
+
+      // Then write the normalized data to the file.
+      std::istringstream ss(normalizedContents);
+      boost::iostreams::copy(ss, *ofs);
+   }
+   catch (const std::exception& e)
+   {
+      Error error = createErrorFromBoostError(boost::system::errc::io_error, ERROR_LOCATION);
+      error.addProperty("what", e.what());
+      error.addProperty("path", in_file.getAbsolutePath());
+      return error;
+   }
 
    return Success();
 }

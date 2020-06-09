@@ -1,7 +1,7 @@
 /*
  * User.cpp
  * 
- * Copyright (C) 2019-20 by RStudio, PBC
+ * Copyright (C) 2020 by RStudio, PBC
  *
  * Unless you have received this program directly from RStudio pursuant to the terms of a commercial license agreement
  * with RStudio, then this program is licensed to you under the following terms:
@@ -29,24 +29,13 @@
 
 #include <Error.hpp>
 #include <system/FilePath.hpp>
+
+#include "PosixSystem.hpp"
 #include "../SafeConvert.hpp"
 
 namespace rstudio {
 namespace launcher_plugins {
 namespace system {
-
-namespace {
-
-inline std::string getEnvVariable(const std::string& in_name)
-{
-   char* value = ::getenv(in_name.c_str());
-   if (value)
-      return std::string(value);
-
-   return std::string();
-}
-
-} // anonymous namespace
 
 struct User::Impl
 {
@@ -64,7 +53,7 @@ struct User::Impl
 
       // Get the maximum size of a passwd for this system.
       long buffSize = ::sysconf(_SC_GETPW_R_SIZE_MAX);
-      if (buffSize == 1)
+      if (buffSize < 0)
          buffSize = 4096; // some systems return -1, be conservative!
 
       std::vector<char> buffer(buffSize);
@@ -147,7 +136,7 @@ FilePath User::getUserHomePath(const std::string& in_envOverride)
            it != split_iterator<std::string::const_iterator>();
            ++it)
       {
-         std::string envHomePath = getEnvVariable(boost::copy_range<std::string>(*it));
+         std::string envHomePath = posix::getEnvironmentVariable(boost::copy_range<std::string>(*it));
          if (!envHomePath.empty())
          {
             FilePath userHomePath(envHomePath);
@@ -158,7 +147,7 @@ FilePath User::getUserHomePath(const std::string& in_envOverride)
    }
 
    // otherwise use standard unix HOME
-   return FilePath(getEnvVariable("HOME"));
+   return FilePath(posix::getEnvironmentVariable("HOME"));
 }
 
 User& User::operator=(const User& in_other)

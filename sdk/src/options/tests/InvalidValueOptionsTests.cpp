@@ -40,9 +40,9 @@ TEST_CASE("option with invalid value")
 
       Options& opts = Options::getInstance();
       Error error = opts.readOptions(argc, argv, configFile);
-      REQUIRE(error);
-      REQUIRE(error.getName() == "OptionReadError");
-      REQUIRE(error.getMessage() == expectedMessage);
+      CHECK(error);
+      CHECK(error.getName() == "OptionReadError");
+      CHECK(error.getMessage() == expectedMessage);
    }
 }
 

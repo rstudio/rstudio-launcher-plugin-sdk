@@ -27,10 +27,10 @@
 #include <json/Json.hpp>
 #include <options/Options.hpp>
 #include <system/FilePath.hpp>
+#include <system/Process.hpp>
 #include <utils/FileUtils.hpp>
 
 #include <LocalOptions.hpp>
-#include <json/Json.hpp>
 
 using namespace rstudio::launcher_plugins::system;
 
@@ -39,19 +39,83 @@ namespace launcher_plugins {
 namespace local {
 namespace job_store {
 
+typedef std::shared_ptr<LocalJobStorage> SharedThis;
+typedef std::weak_ptr<LocalJobStorage> WeakThis;
+
 namespace {
 
-constexpr const char* JOB_FILE_EXT     = ".job";
-constexpr const char* ROOT_JOBS_DIR    = "jobs";
-constexpr const char* ROOT_OUTPUT_DIR  = "output";
+constexpr const char* JOB_FILE_EXT = ".job";
+constexpr const char* ERR_FILE_EXT = ".stderr";
+constexpr const char* OUT_FILE_EXT = ".stdout";
+constexpr const char* ROOT_JOBS_DIR = "jobs";
+constexpr const char* ROOT_OUTPUT_DIR = "output";
 
-inline Error createDirectory(const FilePath& in_directory, FileMode in_fileMode = FileMode::USER_READ_WRITE_EXECUTE)
+inline Error ensureDirectory(const FilePath& in_directory, FileMode in_fileMode = FileMode::USER_READ_WRITE_EXECUTE)
 {
    Error error = in_directory.ensureDirectory();
    if (error)
       return error;
 
    return in_directory.changeFileMode(in_fileMode);
+}
+
+inline Error ensureUserDirectory( const system::FilePath& in_userDirectory, const system::User& in_user)
+{
+   if (!in_userDirectory.exists())
+   {
+      const std::string& userDir = in_userDirectory.getAbsolutePath();
+
+      system::process::ProcessOptions procOpts;
+      procOpts.Executable = "mkdir " + userDir + " && chmod 700 " + userDir;
+      procOpts.IsShellCommand = true;
+      procOpts.RunAsUser = in_user;
+
+      system::process::ProcessResult result;
+      system::process::SyncChildProcess child(procOpts);
+      Error error = child.run(result);
+
+      const std::string errMsg =
+         "Could not create output directory " +
+            userDir +
+            " for user " +
+            in_user.getUsername();
+
+      if (error)
+      {
+         logging::logErrorMessage(errMsg);
+         return error;
+      }
+
+      if (result.ExitCode != 0)
+      {
+         logging::logErrorMessage(
+            "Creating output directory " +
+               userDir +
+               " for user " +
+               in_user.getUsername() +
+               " exited with non-zero exit code " +
+               std::to_string(result.ExitCode));
+
+         logging::logDebugMessage(
+            "Create directory for user " +
+               in_user.getUsername() +
+               "\n    stdout: \"" +
+               result.StdOut +
+               "\"\n    stderr: \"" +
+               result.StdError +
+               "\"");
+      }
+
+      if (!in_userDirectory.exists())
+         return fileNotFoundError(errMsg, ERROR_LOCATION);
+   }
+
+   return Success();
+}
+
+inline FilePath getJobFilePath(const std::string& in_id, const system::FilePath& in_jobsPath)
+{
+   return in_jobsPath.completeChildPath(in_id + JOB_FILE_EXT);
 }
 
 inline Error readJobFromFile(const FilePath& in_jobFile, api::JobPtr& out_job)
@@ -74,22 +138,41 @@ inline Error readJobFromFile(const FilePath& in_jobFile, api::JobPtr& out_job)
 
 } // anonymous namespace
 
-LocalJobStorage::LocalJobStorage(std::string in_hostname) :
-   m_hostname(std::move(in_hostname)),
+LocalJobStorage::LocalJobStorage(const std::string& in_hostname, jobs::JobStatusNotifierPtr in_notifier) :
+   m_hostname(in_hostname),
    m_jobsRootPath(options::Options::getInstance().getScratchPath().completeChildPath(ROOT_JOBS_DIR)),
    m_jobsPath(m_jobsRootPath.completeChildPath(m_hostname)),
+   m_notifier(std::move(in_notifier)),
    m_saveUnspecifiedOutput(LocalOptions::getInstance().shouldSaveUnspecifiedOutput()),
    m_outputRootPath(options::Options::getInstance().getScratchPath().completeChildPath(ROOT_OUTPUT_DIR))
 {
 }
 
-Error LocalJobStorage::initialize() const
+Error LocalJobStorage::initialize()
 {
-   Error error = createDirectory(m_jobsRootPath);
+   Error error = ensureDirectory(m_jobsRootPath);
    if (error)
       return error;
 
-   return createDirectory(m_jobsPath);
+   error = ensureDirectory(m_jobsPath);
+   if (error)
+      return error;
+
+   error = ensureDirectory(m_outputRootPath, FileMode::ALL_READ_WRITE_EXECUTE);
+   if (error)
+      return error;
+
+   WeakThis weakThis = weak_from_this();
+   m_subscriptionHandle = m_notifier->subscribe(
+      [weakThis](const api::JobPtr& in_job)
+      {
+         if (SharedThis sharedThis = weakThis.lock())
+         {
+            sharedThis->saveJob(in_job);
+         }
+      });
+
+   return Success();
 }
 
 Error LocalJobStorage::loadJobs(api::JobList& out_jobs) const
@@ -117,6 +200,40 @@ Error LocalJobStorage::loadJobs(api::JobList& out_jobs) const
    }
 
    logging::logInfoMessage("Loaded " + std::to_string(out_jobs.size())  + " jobs from file");
+
+   return Success();
+}
+
+void LocalJobStorage::saveJob(api::JobPtr in_job) const
+{
+   LOCK_JOB(in_job)
+   {
+      if (m_hostname == in_job->Host)
+      {
+         Error error = utils::writeStringToFile(in_job->toJson().write(), getJobFilePath(in_job->Id, m_jobsPath));
+         if (error)
+            logging::logError(error, ERROR_LOCATION);
+      }
+   }
+   END_LOCK_JOB
+}
+
+Error LocalJobStorage::setJobOutputPaths(api::JobPtr io_job) const
+{
+   bool outputEmpty = io_job->StandardOutFile.empty(),
+        errorEmpty = io_job->StandardErrFile.empty();
+   if (m_saveUnspecifiedOutput && (outputEmpty || errorEmpty))
+   {
+      system::FilePath outputDir = m_outputRootPath.completeChildPath(io_job->User.getUsername());
+      Error error = ensureUserDirectory(outputDir, io_job->User);
+      if (error)
+         return error;
+
+      if (outputEmpty)
+         io_job->StandardOutFile = outputDir.completeChildPath(io_job->Id + OUT_FILE_EXT).getAbsolutePath();
+      if (errorEmpty)
+         io_job->StandardErrFile = outputDir.completeChildPath(io_job->Id + ERR_FILE_EXT).getAbsolutePath();
+   }
 
    return Success();
 }

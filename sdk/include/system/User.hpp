@@ -1,7 +1,7 @@
 /*
  * User.hpp
  * 
- * Copyright (C) 2019-20 by RStudio, PBC
+ * Copyright (C) 2020 by RStudio, PBC
  *
  * Unless you have received this program directly from RStudio pursuant to the terms of a commercial license agreement
  * with RStudio, then this program is licensed to you under the following terms:
@@ -25,10 +25,7 @@
 #define LAUNCHER_PLUGINS_USER_HPP
 
 #include <string>
-
-#ifndef _WIN32
 #include <unistd.h>
-#endif
 
 #include <PImpl.hpp>
 
@@ -45,29 +42,12 @@ class FilePath;
 } // namespace launcher_plugins
 } // namespace rstudio
 
-
 namespace rstudio {
 namespace launcher_plugins {
 namespace system {
 
-#ifndef _WIN32
 typedef uid_t  UidType;
 typedef gid_t  GidType;
-#else
-namespace detail {
-
-/**
- * @brief Gets an environment variable with the specified name.
- *
- * @param in_name   The name of the environment variable to retrieve.
- *
- * @return The value of the environment variable.
- */
-std::string getenv(const std::string& name);
-
-} // namespace detail
-
-#endif
 
 /**
  * @brief Class which represents a system user.
@@ -85,8 +65,6 @@ public:
     * @return The user home path, as set in the environment.
     */
    static FilePath getUserHomePath(const std::string& in_envOverride = std::string());
-
-#ifndef _WIN32
 
    /**
     * @brief Constructor.
@@ -240,12 +218,6 @@ public:
 private:
    // The private implementation of User.
    PRIVATE_IMPL(m_impl);
-
-#else
-   // No construction on windows.
-   User() = delete;
-
-#endif
 };
 
 } // namesapce system

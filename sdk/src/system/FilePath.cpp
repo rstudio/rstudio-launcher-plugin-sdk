@@ -1,7 +1,7 @@
 /*
  * FilePath.cpp
  *
- * Copyright (C) 2009-20 by RStudio, PBC
+ * Copyright (C) 2020 by RStudio, PBC
  *
  * Unless you have received this program directly from RStudio pursuant to the terms of a commercial license agreement
  * with RStudio, then this program is licensed to you under the following terms:
@@ -81,6 +81,7 @@ MimeType s_mimeTypes[] =
       { "swf",          "application/x-shockwave-flash" },
       { "ttf",          "application/x-font-ttf" },
       { "woff",         "application/font-woff" },
+      { "woff2",        "application/font-woff2" },
 
       // markdown types
       { "md",           "text/x-markdown" },
@@ -366,7 +367,7 @@ bool FilePath::exists(const std::string& in_filePath)
    {
       return boost::filesystem::exists(p);
    }
-   catch(const boost::filesystem::filesystem_error& e)
+   catch (const boost::filesystem::filesystem_error& e)
    {
       logError(p, e, ERROR_LOCATION);
       return false;
@@ -390,7 +391,7 @@ bool FilePath::isRootPath(const std::string& in_filePath)
    {
       return p.has_root_path();
    }
-   catch(const boost::filesystem::filesystem_error& e)
+   catch (const boost::filesystem::filesystem_error& e)
    {
       logError(p, e, ERROR_LOCATION);
       return false;
@@ -428,7 +429,7 @@ FilePath FilePath::safeCurrentPath(const FilePath& in_revertToPath)
    {
       return FilePath(boost::filesystem::current_path().string());
    }
-   catch(const boost::filesystem::filesystem_error& e)
+   catch (const boost::filesystem::filesystem_error& e)
    {
       if (e.code() != boost::system::errc::no_such_file_or_directory)
          logging::logError(utils::createErrorFromBoostError(e.code(), ERROR_LOCATION));
@@ -447,7 +448,6 @@ FilePath FilePath::safeCurrentPath(const FilePath& in_revertToPath)
 
    return safePath;
 }
-
 
 Error FilePath::tempFilePath(FilePath& out_filePath)
 {
@@ -488,7 +488,7 @@ Error FilePath::uniqueFilePath(const std::string& in_basePath, const std::string
       out_filePath = FilePath(pathStr);
       return Success();
    }
-   catch(const filesystem_error& e)
+   catch (const filesystem_error& e)
    {
       return utils::createErrorFromBoostError(e.code(), ERROR_LOCATION);
    }
@@ -967,11 +967,10 @@ FilePath FilePath::getParent() const
 
 std::string FilePath::getRelativePath(const FilePath& in_parentPath) const
 {
-   path_t relativePath =
-      m_impl->Path.lexically_normal().lexically_relative(
-         in_parentPath.m_impl->Path.lexically_normal());
-
-   return BOOST_FS_PATH2STR(relativePath);
+   path_t self = m_impl->Path.generic_path().lexically_normal();
+   path_t parent = in_parentPath.m_impl->Path.generic_path().lexically_normal();
+   path_t relative = self.lexically_relative(parent);
+   return BOOST_FS_PATH2STR(relative);
 }
 
 uintmax_t FilePath::getSize() const
@@ -1213,7 +1212,7 @@ Error FilePath::move(const FilePath& in_targetPath, MoveType in_type) const
          // device to another; in this case, fall back to copy/delete
          return moveIndirect(in_targetPath);
       }
-      Error error= utils::createErrorFromBoostError(e.code(), ERROR_LOCATION);
+      Error error = utils::createErrorFromBoostError(e.code(), ERROR_LOCATION);
       addErrorProperties(m_impl->Path, &error);
       error.addProperty("target-path", in_targetPath.getAbsolutePath());
       return error;
@@ -1270,7 +1269,6 @@ Error FilePath::openForRead(std::shared_ptr<std::istream>& out_stream) const
       error.addProperty("path", getAbsolutePath());
       return error;
    }
-
 
    return Success();
 }

@@ -25,7 +25,7 @@
 #
 
 # ensure we're in the right directory
-cd $(dirname ${BASH_SOURCE[0]})/../..
+cd "$(readlink -f "$(dirname "${BASH_SOURCE[0]}")/../..")"
 
 # Clean up any old version of this package
 PKG_NAME="RStudioLauncherPluginSDK-${RLP_SDK_VERSION_MAJOR}.${RLP_SDK_VERSION_MINOR}.${RLP_SDK_VERSION_PATCH}.tar.gz"
@@ -37,5 +37,5 @@ fi
 # exit if archiving fails.
 set -e
 
-# Readmes are ignored, so explicitly include dependences/README.md
+# READMEs are ignored, so explicitly include dependencies/README.md
 tar --exclude-from "docker/package/exclude-from-package.txt" -zcvf "docker/package/${PKG_NAME}" .

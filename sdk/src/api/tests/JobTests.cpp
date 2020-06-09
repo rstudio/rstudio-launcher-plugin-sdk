@@ -814,10 +814,20 @@ TEST_CASE("To JSON: Placement Constraint")
 {
    json::Object constraintObj;
    constraintObj["name"] = "someName";
-   constraintObj["value"] = "a-value";
 
-   PlacementConstraint constraint("someName", "a-value");
-   REQUIRE(constraint.toJson() == constraintObj);
+   SECTION("Free form")
+   {
+      PlacementConstraint constraint("someName");
+      REQUIRE(constraint.toJson() == constraintObj);
+   }
+
+   SECTION("Not free form")
+   {
+      constraintObj["value"] = "a-value";
+
+      PlacementConstraint constraint("someName", "a-value");
+      REQUIRE(constraint.toJson() == constraintObj);
+   }
 }
 
 // Job::State  =========================================================================================================
@@ -1495,7 +1505,34 @@ TEST_CASE("From JSON: Job (no user)")
    jobObj["submissionTime"] = "2015-11-30T12:32:44.336688Z";
 
    Job job;
-   REQUIRE(Job::fromJson(jobObj, job));
+   REQUIRE_FALSE(Job::fromJson(jobObj, job));
+   CHECK(job.Arguments.empty());
+   CHECK(job.Cluster.empty());
+   CHECK(job.Command == "echo");
+   CHECK(job.Config.empty());
+   CHECK_FALSE(job.ContainerDetails);
+   CHECK(job.Environment.empty());
+   CHECK(job.Exe.empty());
+   CHECK_FALSE(job.ExitCode);
+   CHECK(job.ExposedPorts.empty());
+   CHECK(job.Host.empty());
+   CHECK(job.Id.empty());
+   CHECK_FALSE(job.LastUpdateTime);
+   CHECK(job.Mounts.empty());
+   CHECK(job.Name  == "job-name");
+   CHECK_FALSE(job.Pid);
+   CHECK(job.PlacementConstraints.empty());
+   CHECK(job.Queues.empty());
+   CHECK(job.ResourceLimits.empty());
+   CHECK(job.StandardIn.empty());
+   CHECK(job.StandardErrFile.empty());
+   CHECK(job.StandardOutFile.empty());
+   CHECK(job.Status == Job::State::UNKNOWN);
+   CHECK(job.StatusMessage.empty());
+   CHECK(job.SubmissionTime.toString() == "2015-11-30T12:32:44.336688Z");
+   CHECK(job.Tags.empty());
+   CHECK(job.User.isEmpty());
+   CHECK(job.WorkingDirectory.empty());
 }
 
 TEST_CASE("From JSON: Job (invalid user)")

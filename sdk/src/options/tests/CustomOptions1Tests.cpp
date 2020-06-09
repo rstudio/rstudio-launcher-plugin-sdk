@@ -41,7 +41,7 @@ TEST_CASE("custom options")
       constexpr int argc = 0;
 
       Error error = opts.readOptions(argc, argv, system::FilePath("./conf-files/Extra.conf"));
-      REQUIRE(!error);
+      REQUIRE_FALSE(error);
    }
 
    SECTION("check values")
@@ -49,19 +49,19 @@ TEST_CASE("custom options")
       Options& opts = Options::getInstance();
       system::User serverUser;
       Error error = opts.getServerUser(serverUser);
+      CHECK(error);
+      CHECK(error.getProperty("description") == "Failed to get user details.");
+      CHECK(error.getProperty("user-value") == "aUser");
+      CHECK(error.getCode() == 13);
+      CHECK(error.getName() == systemError(1, ErrorLocation()).getName());
 
-      REQUIRE(error);
-      REQUIRE(error.getProperty("description") == "Failed to get user details.");
-      REQUIRE(error.getProperty("user-value") == "aUser");
-      REQUIRE(error.getCode() == 13);
-      REQUIRE(error.getName() == systemError(1, ErrorLocation()).getName());
-
-      REQUIRE(opts.getJobExpiryHours() == system::TimeDuration::Hours(11));
-      REQUIRE(opts.getHeartbeatIntervalSeconds() == system::TimeDuration::Seconds(4));
-      REQUIRE(opts.getLogLevel() == logging::LogLevel::DEBUG);
-      REQUIRE(opts.getScratchPath().getAbsolutePath() == "/home/aUser/temp/");
-      REQUIRE(opts.getThreadPoolSize() == 6);
-      REQUIRE(optValue == 2.3f);
+      CHECK(opts.getJobExpiryHours() == system::TimeDuration::Hours(11));
+      CHECK(opts.getHeartbeatIntervalSeconds() == system::TimeDuration::Seconds(4));
+      CHECK(opts.getLogLevel() == logging::LogLevel::DEBUG);
+      CHECK(opts.getRSandboxPath().getAbsolutePath() == "/usr/lib/rstudio-server/bin/rsandbox");
+      CHECK(opts.getScratchPath().getAbsolutePath() == "/home/aUser/temp/");
+      CHECK(opts.getThreadPoolSize() == 6);
+      CHECK(optValue == 2.3f);
    }
 }
 

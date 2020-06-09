@@ -32,3 +32,11 @@ accompanying RStudio Launcher Plugins, such as cmake, gcc, and g++.
 
 This script installs Doxygen, TexLive, Python and other necessary dependencies of Doxygen. It is
 not needed unless you wish to regenerate the Doxygen documentation.
+
+## install-rsandbox.sh
+
+This script installs the `rsandbox` executable from the RStudio Server Pro session components. It is
+required by the RStudio Launcher Plugin SDK to run child processes. Usage: 
+`./install-rsandbox.sh <platform>`. Valid platforms are:
+* `centos8`
+* `debian9`

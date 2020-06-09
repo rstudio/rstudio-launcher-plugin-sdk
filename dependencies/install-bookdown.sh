@@ -24,30 +24,26 @@
 # SOFTWARE.
 #
 
-# Check for yum and R - don't exit on error for this part.
-HAVE_YUM=1
-yum 1>/dev/null 2>/dev/null
-if [[ $? -eq 127 ]]; then
-  HAVE_YUM=0
-fi
+# Exit on failed command
+set -e
 
+# Make sure we're in the directory of this script
+cd "$(readlink -f "$(dirname "${BASH_SOURCE[0]}")")"
+
+# Source common functions.
+. ./base-script.sh
+
+# Check for R.
 INSTALL_R=1
-
-if [ -x "$(command -v R)" ]; then
+if [[ $(haveCommand "R") -ne 0 ]]; then
   R_VER=$(Rscript -e "cat(R.Version()[['major']])")
   if [[ $R_VER -ge 3 ]]; then
     INSTALL_R=0
   fi
 fi
 
-# Exit on failed command
-set -e
-
-# Make sure we're in the directory of this script
-cd "$(readlink "$(dirname "${BASH_SOURCE[0]}")")"
-
 if [[ $INSTALL_R -eq 1 ]]; then
-  if [[ $HAVE_YUM -eq 1 ]]; then
+  if [[ $(haveCommand "yum") -eq 1 ]]; then
     sudo yum update -y
     sudo yum install -y epel-release wget
     sudo yum install -y R
@@ -71,8 +67,8 @@ if ! [ -d "${PANDOC_INSTALL_DIR}" ]; then
 
   mkdir -p "${PANDOC_INSTALL_DIR}"
 
-  mkdir -p temp
-  pushd temp
+  DOWNLOAD_DIR="$(makeTmpDir "rlps-pandoc")"
+  pushd "$DOWNLOAD_DIR"
 
   wget "${PANDOC_URL}"
   tar -xzf "${PANDOC_TAR}"

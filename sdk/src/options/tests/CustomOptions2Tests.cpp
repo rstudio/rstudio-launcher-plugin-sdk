@@ -43,7 +43,7 @@ TEST_CASE("custom options using default value")
       constexpr int argc = 0;
 
       Error error = opts.readOptions(argc, argv, system::FilePath("./conf-files/Empty.conf"));
-      REQUIRE(!error);
+      REQUIRE_FALSE(error);
    }
 
    SECTION("check values")
@@ -51,15 +51,16 @@ TEST_CASE("custom options using default value")
       Options& opts = Options::getInstance();
       system::User serverUser;
       Error error = opts.getServerUser(serverUser);
-      REQUIRE(!error);
+      REQUIRE_FALSE(error);
 
-      REQUIRE(opts.getJobExpiryHours() == system::TimeDuration::Hours(24));
-      REQUIRE(opts.getHeartbeatIntervalSeconds() == system::TimeDuration::Seconds(5));
-      REQUIRE(opts.getLogLevel() == logging::LogLevel::WARN);
-      REQUIRE(opts.getScratchPath().getAbsolutePath() == "/var/lib/rstudio-launcher/");
-      REQUIRE(serverUser.getUsername() == "rstudio-server");
-      REQUIRE(opts.getThreadPoolSize() == std::max<unsigned int>(4, boost::thread::hardware_concurrency()));
-      REQUIRE(optValue == 1.5f);
+      CHECK(opts.getJobExpiryHours() == system::TimeDuration::Hours(24));
+      CHECK(opts.getHeartbeatIntervalSeconds() == system::TimeDuration::Seconds(5));
+      CHECK(opts.getLogLevel() == logging::LogLevel::WARN);
+      CHECK(opts.getRSandboxPath().getAbsolutePath() == "/usr/lib/rstudio-server/bin/rsandbox");
+      CHECK(opts.getScratchPath().getAbsolutePath() == "/var/lib/rstudio-launcher/");
+      CHECK(serverUser.getUsername() == "rstudio-server");
+      CHECK(opts.getThreadPoolSize() == std::max<unsigned int>(4, boost::thread::hardware_concurrency()));
+      CHECK(optValue == 1.5f);
    }
 }
 

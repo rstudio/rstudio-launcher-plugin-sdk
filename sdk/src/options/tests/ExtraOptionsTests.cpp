@@ -41,9 +41,9 @@ TEST_CASE("unrecognized options")
 
       Options& opts = Options::getInstance();
       Error error = opts.readOptions(argc, argv, configFile);
-      REQUIRE(error);
-      REQUIRE(error.getName() == "UnregisteredOption");
-      REQUIRE(error.getMessage() == expectedMessage);
+      CHECK(error);
+      CHECK(error.getName() == "UnregisteredOption");
+      CHECK(error.getMessage() == expectedMessage);
    }
 }
 

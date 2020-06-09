@@ -266,6 +266,33 @@ private:
 };
 
 /**
+ * @brief Represents a submit job request from the Launcher.
+ */
+class SubmitJobRequest final : public UserRequest
+{
+public:
+   /**
+    * @brief Gets the job that should be submitted to the Job Scheduling System.
+    *
+    * @return The job that should be submitted to the Job Scheduling System.
+    */
+   JobPtr getJob();
+
+private:
+   /**
+    * @brief Constructor.
+    *
+    * @param in_requestJson     The JSON Object which represents the submit job request.
+    */
+   explicit SubmitJobRequest(const json::Object& in_requestJson);
+
+   // The private implementation of SubmitJobRequest
+   PRIVATE_IMPL(m_impl);
+
+   friend class Request;
+};
+
+/**
  * @brief Represents a job state request received from the Launcher.
  */
 class JobStateRequest final : public JobIdRequest

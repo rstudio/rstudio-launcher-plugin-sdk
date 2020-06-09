@@ -30,6 +30,9 @@ namespace options {
 
 TEST_CASE("missing optional options")
 {
+   system::User user4;
+   REQUIRE_FALSE(system::User::getUserFromIdentifier(USER_FOUR, user4));
+
    SECTION("read options")
    {
       constexpr const char* argv[] = {};
@@ -43,20 +46,18 @@ TEST_CASE("missing optional options")
    SECTION("check values")
    {
       Options& opts = Options::getInstance();
+
+      CHECK(opts.getJobExpiryHours() == system::TimeDuration::Hours(24));
+      CHECK(opts.getHeartbeatIntervalSeconds() == system::TimeDuration::Seconds(5));
+      CHECK(opts.getLogLevel() == logging::LogLevel::DEBUG);
+      CHECK(opts.getRSandboxPath().getAbsolutePath() == "/usr/lib/rstudio-server/bin/rsandbox");
+      CHECK(opts.getScratchPath().getAbsolutePath() == "/var/lib/rstudio-launcher/");
+      CHECK(opts.getThreadPoolSize() == 6);
+
       system::User serverUser;
       Error error = opts.getServerUser(serverUser);
-
-      REQUIRE(error);
-      REQUIRE(error.getProperty("description") == "Failed to get user details.");
-      REQUIRE(error.getProperty("user-value") == "aUser");
-      REQUIRE(error.getCode() == 13);
-      REQUIRE(error.getName() == systemError(1, ErrorLocation()).getName());
-
-      REQUIRE(opts.getJobExpiryHours() == system::TimeDuration::Hours(24));
-      REQUIRE(opts.getHeartbeatIntervalSeconds() == system::TimeDuration::Seconds(5));
-      REQUIRE(opts.getLogLevel() == logging::LogLevel::DEBUG);
-      REQUIRE(opts.getScratchPath().getAbsolutePath() == "/home/aUser/temp/");
-      REQUIRE(opts.getThreadPoolSize() == 6);
+      REQUIRE_FALSE(error);
+      CHECK(serverUser == user4);
    }
 }
 } // namespace options

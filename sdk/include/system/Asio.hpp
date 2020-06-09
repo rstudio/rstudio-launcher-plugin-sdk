@@ -129,9 +129,14 @@ public:
    explicit AsioStream(int in_streamHandle);
 
    /**
+    * @brief Destructor. Closes the stream.
+    */
+   ~AsioStream() noexcept;
+
+   /**
     * @brief Closes the stream. Nothing may be read from or written to the stream after this is called.
     */
-   void close();
+   void close() noexcept;
 
    /**
     * @brief Attempts to read bytes from this ASIO stream.
@@ -147,7 +152,10 @@ public:
     * This method is thread safe. Each provided block of data will be written to the stream in full before a new one
     * begins.
     */
-   void writeBytes(const std::string& in_data, const OnError& in_onError);
+   void writeBytes(
+      const std::string& in_data,
+      const OnError& in_onError,
+      const AsioFunction& in_onFinishedWriting = AsioFunction());
 
 private:
    // The private implementation of AsioStream.
@@ -210,6 +218,13 @@ public:
     * @param in_deadlineTime    The time at which the work should be performed.
     */
    AsyncDeadlineEvent(const AsioFunction& in_work, const DateTime& in_deadlineTime);
+   /**
+    * @brief Constructor.
+    *
+    * @param in_work        The work to be performed when the deadline time is reached.
+    * @param in_waitTime    The amount of time, from the invocation time, that should pass before the work is performed.
+    */
+   AsyncDeadlineEvent(const AsioFunction& in_work, const TimeDuration& in_waitTime);
 
    /**
     * @brief Destructor. The event will be canceled if this invoked before the deadline time.

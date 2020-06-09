@@ -1,7 +1,7 @@
 /*
  * Error.cpp
  *
- * Copyright (C) 2009-20 by RStudio, PBC
+ * Copyright (C) 2020 by RStudio, PBC
  *
  * Unless you have received this program directly from RStudio pursuant to the terms of a commercial license agreement
  * with RStudio, then this program is licensed to you under the following terms:
@@ -44,7 +44,6 @@ constexpr const char* s_occurredAt = "OCCURRED AT";
 constexpr const char* s_causedBy = "CAUSED BY";
 
 } // anonymous namespace
-
 
 // Error Location ======================================================================================================
 std::ostream& operator<<(std::ostream& in_os, const ErrorLocation& in_location)
@@ -433,7 +432,9 @@ Error systemError(int in_code,
 
 Error systemError(const std::error_code& in_code, const Error& in_cause, const ErrorLocation& in_location)
 {
-   return Error(in_code.category().name(), in_code.value(), in_code.message(), in_cause, in_location);
+   Error error("SystemError", in_code.value(), in_code.message(), in_cause, in_location);
+   error.addProperty("subcategory", in_code.category().name());
+   return error;
 }
 
 Error systemError(const std::system_error& in_error, const Error& in_cause, const ErrorLocation& in_location)

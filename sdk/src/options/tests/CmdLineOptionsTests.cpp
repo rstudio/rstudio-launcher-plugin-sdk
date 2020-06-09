@@ -30,44 +30,46 @@ namespace options {
 
 TEST_CASE("command line options")
 {
+   system::User user5;
+   REQUIRE_FALSE(system::User::getUserFromIdentifier(USER_FIVE, user5));
+
    SECTION("read options")
    {
       constexpr const char * argv[] = {
          "options-test",               // The first element is the name of the process, so make it up.
          "--enable-debug-logging=0",
-         "--server-user=someUser",
+         "--server-user=rlpstestusrfive",
          "--thread-pool-size=1",
          "--job-expiry-hours=33",
          "--log-level=off",
-         "--scratch-path=/home/someUser/logs",
-         "--heartbeat-interval-seconds=27",
+         "--rsandbox-path=/bin/rsandbox",
+         "--scratch-path=/home/rlpstestusrfive/logs",
+         "--heartbeat-interval-seconds=27"
       };
 
-      constexpr int argc = 8;
+      constexpr int argc = 9;
 
       Options& opts = Options::getInstance();
       Error error = opts.readOptions(argc, argv, system::FilePath("./conf-files/Empty.conf"));
 
-      REQUIRE(!error);
+      REQUIRE_FALSE(error);
    }
 
    SECTION("check values")
    {
       Options& opts = Options::getInstance();
+
+      CHECK(opts.getJobExpiryHours() == system::TimeDuration::Hours(33));
+      CHECK(opts.getHeartbeatIntervalSeconds() == system::TimeDuration::Seconds(27));
+      CHECK(opts.getLogLevel() == logging::LogLevel::OFF);
+      CHECK(opts.getRSandboxPath().getAbsolutePath() == "/bin/rsandbox");
+      CHECK(opts.getScratchPath().getAbsolutePath() == "/home/rlpstestusrfive/logs");
+      CHECK(opts.getThreadPoolSize() == 1);
+
       system::User serverUser;
       Error error = opts.getServerUser(serverUser);
-
-      REQUIRE(error);
-      REQUIRE(error.getProperty("description") == "Failed to get user details.");
-      REQUIRE(error.getProperty("user-value") == "someUser");
-      REQUIRE(error.getCode() == 13);
-      REQUIRE(error.getName() == systemError(1, ErrorLocation()).getName());
-
-      REQUIRE(opts.getJobExpiryHours() == system::TimeDuration::Hours(33));
-      REQUIRE(opts.getHeartbeatIntervalSeconds() == system::TimeDuration::Seconds(27));
-      REQUIRE(opts.getLogLevel() == logging::LogLevel::OFF);
-      REQUIRE(opts.getScratchPath().getAbsolutePath() == "/home/someUser/logs");
-      REQUIRE(opts.getThreadPoolSize() == 1);
+      REQUIRE_FALSE(error);
+      CHECK(serverUser == user5);
    }
 }
 

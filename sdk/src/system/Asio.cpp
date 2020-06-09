@@ -100,13 +100,13 @@ void AsioService::setSignalHandler(const OnSignal& in_onSignal)
 {
    std::shared_ptr<Impl> sharedThis = getAsioService().m_impl;
    UNIQUE_LOCK_MUTEX(sharedThis->Mutex)
-
+   {
       if (!sharedThis->IsSignalSetInit)
       {
          sharedThis->IsSignalSetInit = true;
          sharedThis->SignalSet.async_wait(std::bind(in_onSignal, std::placeholders::_2));
       }
-
+   }
    END_LOCK_MUTEX
 }
 
@@ -115,7 +115,7 @@ void AsioService::startThreads(size_t in_numThreads)
    std::shared_ptr<Impl> sharedThis = getAsioService().m_impl;
 
    UNIQUE_LOCK_MUTEX(sharedThis->Mutex)
-
+   {
       if (sharedThis->IsRunning)
       {
          for (size_t i = 0; i < in_numThreads; ++i)
@@ -127,7 +127,7 @@ void AsioService::startThreads(size_t in_numThreads)
                }));
          }
       }
-
+   }
    END_LOCK_MUTEX
 }
 
@@ -135,14 +135,14 @@ void AsioService::stop()
 {
    std::shared_ptr<Impl> sharedThis = getAsioService().m_impl;
 
-   LOCK_MUTEX(sharedThis->Mutex)
-
+   UNIQUE_LOCK_MUTEX(sharedThis->Mutex)
+   {
       if (sharedThis->IsRunning)
       {
          sharedThis->IoService.stop();
          sharedThis->IsRunning = false;
       }
-
+   }
    END_LOCK_MUTEX
 }
 
@@ -177,68 +177,132 @@ struct AsioStream::Impl : public std::enable_shared_from_this<AsioStream::Impl>
     * @param in_streamHandle    The handle of the stream to open.
     */
    explicit Impl(boost::asio::posix::stream_descriptor::native_handle_type in_streamHandle) :
-         StreamDescriptor(getIoService(), in_streamHandle)
+      StreamDescriptor(getIoService())
    {
+      try
+      {
+         StreamDescriptor.assign(in_streamHandle);
+      }
+      catch (const boost::system::system_error& ec)
+      {
+         CreationError = utils::createErrorFromBoostError(ec.code(), ec.what(), ERROR_LOCATION);
+      }
+      catch (const std::exception& e)
+      {
+         CreationError = unknownError(e.what(), ERROR_LOCATION);
+      }
    }
 
-
-   void startWriting(const std::unique_lock<std::mutex>& in_lock, const OnError& in_onError)
+   void startReading(
+      const std::unique_lock<std::mutex>& in_lock,
+      const OnReadBytes& in_onReadBytes,
+      const OnError& in_onError)
    {
       BOOST_ASSERT(in_lock.owns_lock());
 
-      if (WriteBuffer.empty())
+      if (CreationError)
+      {
+         in_onError(CreationError);
          return;
+      }
+
+      WeakThis weakThis = weak_from_this();
+      auto onRead =
+         [=](const boost::system::error_code& in_ec, size_t in_bytesRead)
+         {
+            // If the read was aborted or this object has been destroyed, there's nothing else to do.
+            SharedThis sharedThis = weakThis.lock();
+            if ((in_ec == boost::asio::error::operation_aborted) || !sharedThis)
+               return;
+
+            if (in_ec || (in_bytesRead == 0))
+            {
+               in_onError(
+                  systemError(
+                     in_ec.value(),
+                     "Could not read from stream with descriptor " + std::to_string(sharedThis->StreamDescriptor.native_handle()) + ".",
+                     ERROR_LOCATION));
+               return;
+            }
+
+            in_onReadBytes(sharedThis->ReadBuffer, in_bytesRead);
+            UNIQUE_LOCK_MUTEX(sharedThis->ReadMutex)
+            {
+               sharedThis->startReading(uniqueLock, in_onReadBytes, in_onError);
+            }
+            END_LOCK_MUTEX
+         };
+
+      StreamDescriptor.async_read_some(boost::asio::buffer(ReadBuffer, Impl::READ_BUFFER_SIZE), onRead);
+   }
+
+   void startWriting(
+      const std::unique_lock<std::mutex>& in_lock,
+      const OnError& in_onError,
+      const AsioFunction& in_onFinishedWriting)
+   {
+      BOOST_ASSERT(in_lock.owns_lock());
+
+      if (CreationError)
+      {
+         in_onError(CreationError);
+         return;
+      }
+
+      if (WriteBuffer.empty())
+      {
+         in_onFinishedWriting();
+         return;
+      }
 
       const std::string& nextData = WriteBuffer.front();
 
       std::vector<boost::asio::const_buffer> buffers;
       buffers.emplace_back(nextData.c_str(), nextData.size());
 
-      WeakThis weakThis = std::static_pointer_cast<Impl>(shared_from_this());
+      WeakThis weakThis = weak_from_this();
       auto onWrite =
-         [weakThis, in_onError](const boost::system::error_code& in_ec, size_t in_writtenLength)
+         [weakThis, in_onError, in_onFinishedWriting](const boost::system::error_code& in_ec, size_t in_writtenLength)
          {
             if (SharedThis instance = weakThis.lock())
             {
                // If the operation was aborted, just stop.
                if (in_ec == boost::asio::error::operation_aborted)
+               {
+                  in_onFinishedWriting();
                   return;
+               }
 
-               if (in_ec)
+               if (in_ec || (in_writtenLength == 0))
+               {
                   in_onError(
                      systemError(
                         in_ec.value(),
-                        "Could not write to stream with descriptor " + std::to_string(instance->StreamDescriptor.native_handle()) + ".",
+                        "Could not write to stream with descriptor " +
+                        std::to_string(instance->StreamDescriptor.native_handle()) + ".",
                         ERROR_LOCATION));
 
-               UNIQUE_LOCK_MUTEX(instance->Mutex)
+                  in_onFinishedWriting();
+               }
 
+               UNIQUE_LOCK_MUTEX(instance->WriteMutex)
+               {
+                  // If we didn't write all of the data, push the remainder onto the buffer queue and start over.
                   if (instance->WriteBuffer.front().size() > in_writtenLength)
-                  {
-                     // We failed to write all of the bytes.
-                     in_onError(
-                        Error(
-                           "StreamWriteError",
-                           1,
-                           "Failed to write " +
-                              std::to_string(instance->WriteBuffer.front().size()) +
-                              " bytes to the stream. Wrote " +
-                              std::to_string(in_writtenLength) +
-                              " bytes.",
-                           ERROR_LOCATION));
-                     return;
-                  }
+                     instance->WriteBuffer.push(instance->WriteBuffer.front().substr(in_writtenLength));
 
-                  // If there was no error, pop the first message and start writing over again.
+                  // Pop the first message and start writing over again.
                   instance->WriteBuffer.pop();
-                  instance->startWriting(uniqueLock, in_onError);
-
+                  instance->startWriting(uniqueLock, in_onError, in_onFinishedWriting);
+               }
                END_LOCK_MUTEX
             }
          };
 
       boost::asio::async_write(StreamDescriptor, buffers, onWrite);
    }
+
+   Error CreationError;
 
    /** The size of the buffer for reading data. */
    static const size_t READ_BUFFER_SIZE = 1024;
@@ -252,8 +316,11 @@ struct AsioStream::Impl : public std::enable_shared_from_this<AsioStream::Impl>
    /** The buffer of data to write to the stream. */
    std::queue<std::string> WriteBuffer;
 
+   /** Mutex which ensures only one block of data will be read at a time. */
+   std::mutex ReadMutex;
+
    /** Mutex which ensures only one block of data will be written at a time. */
-   std::mutex Mutex;
+   std::mutex WriteMutex;
 };
 
 AsioStream::AsioStream(int in_streamHandle) :
@@ -261,45 +328,52 @@ AsioStream::AsioStream(int in_streamHandle) :
 {
 }
 
-void AsioStream::close()
+AsioStream::~AsioStream() noexcept
 {
-   m_impl->StreamDescriptor.close();
+   close();
+}
+
+void AsioStream::close() noexcept
+{
+   // We pass the ec variable to invoke the version of close that won't throw an exception on error - either
+   if (m_impl->StreamDescriptor.is_open())
+   {
+      boost::system::error_code ec;
+      m_impl->StreamDescriptor.close(ec);
+   }
 }
 
 void AsioStream::readBytes(const OnReadBytes& in_onReadBytes, const OnError& in_onError)
 {
-   std::shared_ptr<Impl> implPtr = m_impl;
-   auto onRead =
-      [=](const boost::system::error_code& in_ec, size_t in_bytesRead)
-      {
-         // If the read was aborted, there's nothing else to do.
-         if (in_ec == boost::asio::error::operation_aborted)
-            return;
-
-         if (in_ec)
-         {
-            in_onError(
-               systemError(
-                  in_ec.value(),
-                  "Could not read from stream with descriptor " + std::to_string(implPtr->StreamDescriptor.native_handle()) + ".",
-                  ERROR_LOCATION));
-            return;
-         }
-
-         in_onReadBytes(implPtr->ReadBuffer, in_bytesRead);
-      };
-
-   m_impl->StreamDescriptor.async_read_some(boost::asio::buffer(m_impl->ReadBuffer, Impl::READ_BUFFER_SIZE), onRead);
+   UNIQUE_LOCK_MUTEX(m_impl->ReadMutex)
+   {
+      m_impl->startReading(uniqueLock, in_onReadBytes, in_onError);
+   }
+   END_LOCK_MUTEX
 }
 
-void AsioStream::writeBytes(const std::string& in_data, const OnError& in_onError)
+void AsioStream::writeBytes(
+   const std::string& in_data,
+   const OnError& in_onError,
+   const AsioFunction& in_onFinishedWriting)
 {
-   UNIQUE_LOCK_MUTEX(m_impl->Mutex)
-
+   UNIQUE_LOCK_MUTEX(m_impl->WriteMutex)
+   {
       m_impl->WriteBuffer.push(in_data);
       if (m_impl->WriteBuffer.size() == 1)
-         m_impl->startWriting(uniqueLock, in_onError);
-
+         m_impl->startWriting(
+            uniqueLock,
+            [in_onError](const Error& in_error)
+            {
+               if (in_onError)
+                  in_onError(in_error);
+            },
+            [in_onFinishedWriting]()
+            {
+               if (in_onFinishedWriting)
+                  in_onFinishedWriting();
+            });
+   }
    END_LOCK_MUTEX
 }
 
@@ -333,7 +407,7 @@ struct AsyncTimedEvent::Impl
          return;
 
       UNIQUE_LOCK_MUTEX(sharedThis->Mutex)
-
+      {
          // If this is no longer running, there's nothing to do.
          if (!sharedThis->Running)
             return;
@@ -343,7 +417,7 @@ struct AsyncTimedEvent::Impl
          sharedThis->Timer->expires_from_now(in_intervalSeconds);
          sharedThis->Timer->async_wait(
             std::bind(runEvent, in_weakThis, in_intervalSeconds, in_event, std::placeholders::_1));
-
+      }
       END_LOCK_MUTEX
    }
 
@@ -385,11 +459,11 @@ void AsyncTimedEvent::start(const TimeDuration& in_timeDuration, const AsioFunct
 void AsyncTimedEvent::cancel()
 {
    UNIQUE_LOCK_MUTEX(m_impl->Mutex)
-
+   {
       m_impl->Running = false;
       if (m_impl->Timer)
          m_impl->Timer->cancel();
-
+   }
    END_LOCK_MUTEX
 }
 
@@ -416,6 +490,11 @@ struct AsyncDeadlineEvent::Impl
 
 AsyncDeadlineEvent::AsyncDeadlineEvent(const AsioFunction& in_work, const DateTime& in_deadlineTime) :
    m_impl(new Impl(in_work, in_deadlineTime))
+{
+}
+
+AsyncDeadlineEvent::AsyncDeadlineEvent(const AsioFunction& in_work, const TimeDuration& in_waitTime) :
+   m_impl(new Impl(in_work, DateTime() + in_waitTime))
 {
 }
 

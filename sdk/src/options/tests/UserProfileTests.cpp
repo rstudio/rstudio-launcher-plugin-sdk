@@ -34,12 +34,6 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace options {
 
-constexpr char const* USER_ONE   = "rlpstestusrone";
-constexpr char const* USER_TWO   = "rlpstestusrtwo";
-constexpr char const* USER_THREE = "rlpstestusrthree";
-constexpr char const* USER_FOUR  = "rlpstestusrfour";
-constexpr char const* USER_FIVE  = "rlpstestusrfive";
-
 enum class Weekday
 {
    MONDAY,

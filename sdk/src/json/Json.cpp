@@ -1,7 +1,7 @@
 /*
  * Json.cpp
  *
- * Copyright (C) 2019-20 by RStudio, PBC
+ * Copyright (C) 2020 by RStudio, PBC
  *
  * Unless you have received this program directly from RStudio pursuant to the terms of a commercial license agreement
  * with RStudio, then this program is licensed to you under the following terms:
@@ -133,7 +133,7 @@ const char* JsonPointerParseErrorCategory::name() const BOOST_NOEXCEPT
    return "JsonPointerParseError";
 }
 
-std::string JsonPointerParseErrorCategory::message(int ev) const
+std::string JsonPointerParseErrorCategory::message(int /*ev*/) const
 {
    // rapidjson provides no friendly mapping of pointer parse errors
    return "Pointer parse failure - see error code";
@@ -1179,7 +1179,6 @@ void Object::insert(const Member& in_member)
    insert(in_member.getName(), in_member.getValue());
 }
 
-
 bool Object::isEmpty() const
 {
    return m_impl->Document->ObjectEmpty();
@@ -1655,7 +1654,6 @@ std::ostream& operator<<(std::ostream& io_ostream, Type in_type)
 
    return io_ostream;
 }
-
 
 
 template<>

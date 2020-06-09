@@ -251,7 +251,7 @@ public:
    JobStateResponse(
       uint64_t in_requestId,
       JobList in_jobs,
-      Optional<std::set<std::string> > in_jobFields);
+      Optional<std::set<std::string> > in_jobFields = Optional<std::set<std::string> >());
 
    /**
     * @brief Converts this job state response to a JSON object.

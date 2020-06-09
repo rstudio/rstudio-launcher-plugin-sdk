@@ -26,40 +26,82 @@
 
 echo "Adding users..."
 
+addGroup()
+{
+  if [[ -z $1 ]]; then
+    echo "addGroup() requires one parameter."
+    exit 1
+  fi
+
+  echo "Adding $1 group..."
+  sudo groupadd $1 > /dev/null 2>&1
+
+  # Check if it failed because of any reason except that it already exist (error code 9).
+  RES=$?
+  if [[ $RES -ne 0 && $RES -ne 9 ]]; then
+    echo "Failed."
+    exit 1
+  elif [[ $RES -eq 9 ]]; then
+    echo "Group $1 already exists."
+  fi
+
+  echo "Done."
+}
+
+
+addUser()
+{
+  if [[ -z $1 || -z $2 ]]; then
+    echo "addUser() requires at least two parameters."
+    exit 1
+  fi
+
+  USER=$1
+  MAIN_GRP=$2
+  SUPP_GRPS=$3
+
+  if [[ ! -z $SUPP_GRPS ]]; then
+    echo "Adding user $USER with main group $MAIN_GRP and supplemental groups $SUPP_GRPS..."
+    SUPP_GRPS="-G $SUPP_GRPS"
+  else
+    echo "Adding user $USER with main group $MAIN_GRP..."
+  fi
+
+  # Skip the user if it already exists.
+  grep "$USER:" < /etc/passwd > /dev/null 2>&1
+  if [[ $? -eq 0 ]]; then
+    echo "User $USER already exists."
+    echo "Done."
+    return 0
+  fi
+
+
+  sudo useradd -m -p "" -g "$MAIN_GRP" $SUPP_GRPS "$USER" > /dev/null
+  if [[ $? -ne 0 ]]; then
+    echo "Failed."
+    exit 1
+  fi
+
+  echo "Done."
+}
+
 # Create the RStudio Server User, if it does not already exist
 grep rstudio-server < /etc/passwd >/dev/null
 export ADD_USER=$?
-
-set -e # exit on failed commands
 
 if [[ $ADD_USER -ne 0 ]]; then
   echo "Adding rstudio-server user..."
   sudo useradd --system "rstudio-server"
 fi
 
+addGroup "rlpstestgrpone"
+addGroup "rlpstestgrptwo"
+addGroup "rlpstestgrpthree"
 
-echo "Adding rlpstestgrpone group..."
-sudo groupadd "rlpstestgrpone" >/dev/null
-
-echo "Adding rlpstestgrptwo group..."
-sudo groupadd "rlpstestgrptwo" >/dev/null
-
-echo "Adding rlpstestgrpthree group..."
-sudo groupadd "rlpstestgrpthree" >/dev/null
-
-echo "Adding rlpstestusrone user..."
-sudo useradd -p "" -g "rlpstestgrpone" "rlpstestusrone" >/dev/null
-
-echo "Adding rlpstestusrtwo user..."
-sudo useradd -p "" -g "rlpstestgrpone" -G "rlpstestgrptwo,rlpstestgrpthree" "rlpstestusrtwo" >/dev/null
-
-echo "Adding rlpstestusrthree user..."
-sudo useradd -p "" -g "rlpstestgrptwo" "rlpstestusrthree" >/dev/null
-
-echo "Adding rlpstestusrfour user..."
-sudo useradd -p "" -g "rlpstestgrptwo" -G "rlpstestgrpthree" "rlpstestusrfour" >/dev/null
-
-echo "Adding rlpstestusrfive user..."
-sudo useradd -p "" -g "rlpstestgrpone" -G "rlpstestgrpthree" "rlpstestusrfive" >/dev/null
+addUser "rlpstestusrone" "rlpstestgrpone"
+addUser "rlpstestusrtwo" "rlpstestgrpone" "rlpstestgrptwo,rlpstestgrpthree"
+addUser "rlpstestusrthree" "rlpstestgrptwo"
+addUser "rlpstestusrfour" "rlpstestgrptwo" "rlpstestgrpthree"
+addUser "rlpstestusrfive" "rlpstestgrpone" "rlpstestgrpthree"
 
 echo "Succesfully added test users."

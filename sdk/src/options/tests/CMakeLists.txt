@@ -34,6 +34,7 @@ include_directories(
 # Copy configuration files used by the tests.
 set(CONF_INPUT_FILES
     conf-files/Basic.conf
+    conf-files/CmdLineConflict.conf
     conf-files/Empty.conf
     conf-files/Extra.conf
     conf-files/InvalidValue.conf

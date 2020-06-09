@@ -93,7 +93,6 @@ void StdIOLauncherCommunicator::startReading()
       if (SharedThis instance = weakThis.lock())
       {
          instance->onDataReceived(in_data, in_length);
-         instance->startReading();
       }
    };
 

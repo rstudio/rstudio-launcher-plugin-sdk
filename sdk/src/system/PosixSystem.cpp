@@ -1,7 +1,7 @@
 /*
  * PosixSystem.cpp
  *
- * Copyright (C) 2009-20 by RStudio, PBC
+ * Copyright (C) 2020 by RStudio, PBC
  *
  * Unless you have received this program directly from RStudio pursuant to the terms of a commercial license agreement
  * with RStudio, then this program is licensed to you under the following terms:
@@ -68,9 +68,7 @@ Error restorePrivilegesImpl(uid_t in_uid)
       return systemError(EACCES, ERROR_LOCATION);
 
    return Success();
-
 }
-
 } // anonymous namespace
 
 Error enableCoreDumps()
@@ -80,6 +78,15 @@ Error enableCoreDumps()
       return systemError(errno, ERROR_LOCATION);
 
    return Success();
+}
+
+std::string getEnvironmentVariable(const std::string& in_name)
+{
+   char* value = ::getenv(in_name.c_str());
+   if (value)
+      return std::string(value);
+
+   return std::string();
 }
 
 Error ignoreSignal(int in_signal)
@@ -215,7 +222,6 @@ Error temporarilyDropPrivileges(const system::User& in_user)
    if (::getegid() != in_user.getGroupId())
       return systemError(EACCES, ERROR_LOCATION);
 
-
    // set user
 
    // save old EUID
@@ -241,7 +247,6 @@ Error temporarilyDropPrivileges(const system::User& in_user)
 }
 
 #endif
-
 } // namespace posix
 } // namespace system
 } // namespace launcher_plugins

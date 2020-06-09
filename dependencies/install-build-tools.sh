@@ -24,41 +24,35 @@
 # SOFTWARE.
 #
 
-HAVE_YUM=1
-yum 1>/dev/null 2>/dev/null
-if [[ $? -eq 127 ]]; then
-    HAVE_YUM=0
-fi
-
-CMAKE_VER=($(cmake --version 2>/dev/null | cut -d ' ' -f 3))
-CMAKE_VER=${CMAKE_VER[0]}
-CMAKE_MAJOR_VER=${CMAKE_VER%%.*}
-CMAKE_MINOR_VER=${CMAKE_VER%.*}
-CMAKE_MINOR_VER=${CMAKE_MINOR_VER#*.}
-
 set -e
 
+# Make sure we're in the directory of this script
+cd "$(readlink -f "$(dirname "${BASH_SOURCE[0]}")")"
+
+# Source common functions.
+. ./base-script.sh
+
 CPU_COUNT=0
-CPU_CORES_ARR=($(cat /proc/cpuinfo | grep "cores" | cut -d ':' -f 2 | tr -d ' '))
-for I in $CPU_CORES_ARR; do
-    CPU_COUNT=$(expr $CPU_COUNT + $I)
+IFS=" " read -r -a CPU_CORES_ARR <<< "$(grep "cores" /proc/cpuinfo | cut -d ':' -f 2 | tr -d ' ' | tr '\n' ' ')"
+for I in ${CPU_CORES_ARR[0]}; do
+    CPU_COUNT=$((CPU_COUNT + I))
 done
 
 if [[ $CPU_COUNT -gt 1 ]]; then
-  CPU_COUNT=$(expr $CPU_COUNT - 1)
+  CPU_COUNT=$((CPU_COUNT - 1))
 elif [[ $CPU_COUNT -eq 0 ]]; then
   CPU_COUNT=1
 fi
 
+IFS=" " read -r -a CMAKE_VER_ARR <<< "$(cmakeVersion)"
+if [[ ( ${#CMAKE_VER_ARR[@]} -eq 0 ) || ( $CMAKE_MAJOR_VER -lt 3 ) || ( ( $CMAKE_MAJOR_VER -eq 3 ) && ( $CMAKE_MINOR_VER -lt 14 ) ) ]]; then
 
-if [[ ( -z $CMAKE_VER ) || ( $CMAKE_MAJOR_VER -lt 3 ) || ( ( $CMAKE_MAJOR_VER -eq 3 ) && ( $CMAKE_MINOR_VER -lt 14 ) ) ]]; then
-
-    if [[ $HAVE_YUM -eq 1 ]]; then
+    if [[ $(haveCommand "yum") -eq 1 ]]; then
         sudo yum update -y
-        sudo yum install -y wget gcc gcc-c++ make bzip2
+        sudo yum install -y wget gcc gcc-c++ make bzip2 openssl-devel
     else
         sudo apt update
-        sudo apt install -y wget gcc g++ make bzip2
+        sudo apt install -y wget gcc g++ make bzip2 libssl-dev
     fi
 
     CMAKE_VER="3.15.5"

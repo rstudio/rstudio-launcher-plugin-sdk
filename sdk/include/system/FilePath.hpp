@@ -1,7 +1,7 @@
 /*
  * FilePath.hpp
  *
- * Copyright (C) 2009-20 by RStudio, PBC
+ * Copyright (C) 2020 by RStudio, PBC
  *
  * Unless you have received this program directly from RStudio pursuant to the terms of a commercial license agreement
  * with RStudio, then this program is licensed to you under the following terms:
@@ -24,6 +24,8 @@
 #ifndef LAUNCHER_PLUGINS_FILE_PATH_HPP
 #define LAUNCHER_PLUGINS_FILE_PATH_HPP
 
+#include <Noncopyable.hpp>
+
 #include <cstdint>
 #include <ctime>
 
@@ -34,9 +36,8 @@
 #include <vector>
 
 #include <Error.hpp>
-#include <logging/Logger.hpp>
-#include <Noncopyable.hpp>
 #include <PImpl.hpp>
+#include <logging/Logger.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -44,9 +45,9 @@ namespace system {
 
 class User;
 
-}
-}
-}
+} // namespace system
+} // namespace launcher_plugins
+} // namespace rstudio
 
 namespace rstudio {
 namespace launcher_plugins {

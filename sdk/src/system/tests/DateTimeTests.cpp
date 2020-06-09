@@ -43,30 +43,35 @@ TEST_CASE("TimeDuration Construction")
                    i5(54, -71, -114, 100398764);
 
       // i1
+      CHECK(!i1.isInfinity());
       CHECK(i1.getMicroseconds() == 109827);
       CHECK(i1.getSeconds() == 57);
       CHECK(i1.getMinutes() == 24);
       CHECK(i1.getHours() == 5);
 
       // i2
+      CHECK(!i2.isInfinity());
       CHECK(i2.getMicroseconds() == -94821);
       CHECK(i2.getSeconds() == -16);
       CHECK(i2.getMinutes() == -31);
       CHECK(i2.getHours() == -14);
 
       // i3
+      CHECK(!i3.isInfinity());
       CHECK(i3.getMicroseconds() == 680098);
       CHECK(i3.getSeconds() == 46);
       CHECK(i3.getMinutes() == 58);
       CHECK(i3.getHours() == 51);
 
       // i4
+      CHECK(!i4.isInfinity());
       CHECK(i4.getMicroseconds() == -827160);
       CHECK(i4.getSeconds() == -10);
       CHECK(i4.getMinutes() == -26);
       CHECK(i4.getHours() == -43);
 
       // i5 - If one field is negative all are negative (apparently).
+      CHECK(!i5.isInfinity());
       CHECK(i5.getMicroseconds() == -398764);
       CHECK(i5.getSeconds() == -34);
       CHECK(i5.getMinutes() == -14);
@@ -79,12 +84,18 @@ TEST_CASE("TimeDuration Construction")
                    i2(i1),
                    i3(5, 24, 57, 109827);
 
+      CHECK(!i1.isInfinity());
+      CHECK(!i2.isInfinity());
+      CHECK(!i3.isInfinity());
       CHECK(i1 == i2);
       CHECK(i1 == i3);
       CHECK(i2 == i3);
 
       i1 = TimeDuration(5, 10, 12, 49);
 
+      CHECK(!i1.isInfinity());
+      CHECK(!i2.isInfinity());
+      CHECK(!i3.isInfinity());
       CHECK(i1 != i2);
       CHECK(i1 != i3);
       CHECK(i2 == i3);
@@ -96,9 +107,12 @@ TEST_CASE("TimeDuration Construction")
          i2a(15), i2b = TimeDuration::Hours(15),
          i3a(0, 26), i3b = TimeDuration::Minutes(26),
          i4a(0, 0, 48), i4b = TimeDuration::Seconds(48),
-         i5a(0, 0, 0, 150387), i5b = TimeDuration::Microseconds(150387);
+         i5a(0, 0, 0, 150387), i5b = TimeDuration::Microseconds(150387),
+         i6 = TimeDuration::Infinity();
 
       // i1
+      CHECK(!i1a.isInfinity());
+      CHECK(!i1b.isInfinity());
       CHECK(i1a == i1b);
       CHECK(i1b.getHours() == 1);
       CHECK(i1b.getMinutes() == 31);
@@ -106,6 +120,8 @@ TEST_CASE("TimeDuration Construction")
       CHECK(i1b.getMicroseconds() == 0);
 
       // i2
+      CHECK(!i2a.isInfinity());
+      CHECK(!i2b.isInfinity());
       CHECK(i2a == i2b);
       CHECK(i2b.getHours() == 15);
       CHECK(i2b.getMinutes() == 0);
@@ -113,6 +129,8 @@ TEST_CASE("TimeDuration Construction")
       CHECK(i2b.getMicroseconds() == 0);
 
       // i3
+      CHECK(!i3a.isInfinity());
+      CHECK(!i3b.isInfinity());
       CHECK(i3a == i3b);
       CHECK(i3b.getHours() == 0);
       CHECK(i3b.getMinutes() == 26);
@@ -120,6 +138,8 @@ TEST_CASE("TimeDuration Construction")
       CHECK(i3b.getMicroseconds() == 0);
 
       // i4
+      CHECK(!i4a.isInfinity());
+      CHECK(!i4b.isInfinity());
       CHECK(i4a == i4b);
       CHECK(i4b.getHours() == 0);
       CHECK(i4b.getMinutes() == 0);
@@ -127,11 +147,28 @@ TEST_CASE("TimeDuration Construction")
       CHECK(i4b.getMicroseconds() == 0);
 
       // i5
+      CHECK(!i5a.isInfinity());
+      CHECK(!i5b.isInfinity());
       CHECK(i5a == i5b);
       CHECK(i5b.getHours() == 0);
       CHECK(i5b.getMinutes() == 0);
       CHECK(i5b.getSeconds() == 0);
       CHECK(i5b.getMicroseconds() == 150387);
+
+      // i6
+      CHECK(i6.isInfinity());
+      CHECK(i6 != i1a);
+      CHECK(i6 != i1b);
+      CHECK(i6 != i2a);
+      CHECK(i6 != i2b);
+      CHECK(i6 != i3a);
+      CHECK(i6 != i3b);
+      CHECK(i6 != i4a);
+      CHECK(i6 != i4b);
+      CHECK(i6 != i5a);
+      CHECK(i6 != i5b);
+      CHECK(i6 == i6);
+      CHECK(i6 == TimeDuration::Infinity());
    }
 }
 

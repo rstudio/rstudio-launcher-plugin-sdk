@@ -39,7 +39,7 @@ TEST_CASE("log level conflict (INFO -> DEBUG) options")
 
       Options& opts = Options::getInstance();
       Error error = opts.readOptions(argc, argv, system::FilePath("./conf-files/LogLevelConflict2.conf"));
-      REQUIRE(!error);
+      REQUIRE_FALSE(error);
    }
 
    SECTION("check values")
@@ -47,14 +47,15 @@ TEST_CASE("log level conflict (INFO -> DEBUG) options")
       Options& opts = Options::getInstance();
       system::User serverUser;
       Error error = opts.getServerUser(serverUser);
-      REQUIRE(!error);
+      REQUIRE_FALSE(error);
 
-      REQUIRE(opts.getJobExpiryHours() == system::TimeDuration::Hours(24));
-      REQUIRE(opts.getHeartbeatIntervalSeconds() == system::TimeDuration::Seconds(5));
-      REQUIRE(opts.getLogLevel() == logging::LogLevel::DEBUG);
-      REQUIRE(opts.getScratchPath().getAbsolutePath() == "/var/lib/rstudio-launcher/");
-      REQUIRE(serverUser.getUsername() == "rstudio-server");
-      REQUIRE(opts.getThreadPoolSize() == std::max<unsigned int>(4, boost::thread::hardware_concurrency()));
+      CHECK(opts.getJobExpiryHours() == system::TimeDuration::Hours(24));
+      CHECK(opts.getHeartbeatIntervalSeconds() == system::TimeDuration::Seconds(5));
+      CHECK(opts.getLogLevel() == logging::LogLevel::DEBUG);
+      CHECK(opts.getRSandboxPath().getAbsolutePath() == "/usr/lib/rstudio-server/bin/rsandbox");
+      CHECK(opts.getScratchPath().getAbsolutePath() == "/var/lib/rstudio-launcher/");
+      CHECK(serverUser.getUsername() == "rstudio-server");
+      CHECK(opts.getThreadPoolSize() == std::max<unsigned int>(4, boost::thread::hardware_concurrency()));
    }
 }
 

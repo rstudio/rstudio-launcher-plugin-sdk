@@ -51,15 +51,6 @@ public:
    size_t getNodeConnectionTimeoutSeconds() const;
 
    /**
-    * @brief Gets the path to the rsandbox executable provided by the RStudio Server Pro installation.
-    *
-    * If RStudio Server Pro is installed to the default location, this value does not need to be set.
-    *
-    * @return The path to the rsandbox executable.
-    */
-   const system::FilePath& getRsandboxPath() const;
-
-   /**
     * @brief Gets the secure cookie key file to use for decrypting PAM passwords.
     *
     * @return The secure cookie key file to use for decrypting PAM passwords.
@@ -81,18 +72,6 @@ public:
     */
    bool shouldSaveUnspecifiedOutput() const;
 
-   /**
-    * @brief Gets whether jobs will be run in an unprivileged environment or not.
-    *
-    * Most environments will not require this value to be set to true. It only needs to be set if the job will be run in
-    * an environment where the root cannot take privileged actions, such as within a docker container.
-    *
-    * If this value is set to true the user will not be changed, and the job will be run without root and impersonation.
-    *
-    * @return True if jobs will be run in an unprivileged environment; false otherwise.
-    */
-   bool useUnprivilegedMode() const;
-
 private:
    /**
     * @brief Private constructor to prevent multiple instantiations of this singleton.
@@ -110,20 +89,9 @@ private:
    bool m_saveUnspecifiedOutput;
 
    /**
-    * Whether jobs will be run in an unprivileged environment or not.
-    */
-   bool m_useUnprivilegedMode;
-
-   /**
-    * The path to the rsandbox executable provided by the RStudio Server Pro installation.
-    */
-   system::FilePath m_rsandboxPath;
-
-   /**
     * The secure cookie key file to use for decrypting PAM passwords.
     */
    system::FilePath m_secureCookieKeyFile;
-
 };
 
 } // namespace local

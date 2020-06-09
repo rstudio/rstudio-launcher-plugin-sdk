@@ -128,22 +128,33 @@ struct AbstractPluginApi::Impl
       LauncherCommunicator->sendResponse(BootstrapResponse(in_bootstrapRequest->getId()));
    }
 
-   /**
-    * @brief Handles ClusterInfo requests from the Launcher.
-    *
-    * @param in_clusterInfoRequest      The request received from the launcher.
-    */
-   void handleGetClusterInfo(const std::shared_ptr<UserRequest>& in_clusterInfoRequest)
+   void handleSubmitJobRequest(const std::shared_ptr<SubmitJobRequest>& in_submitJobRequest)
    {
-      const system::User& requestUser = in_clusterInfoRequest->getUser();
-      uint64_t requestId = in_clusterInfoRequest->getId();
+      const system::User& requestUser = in_submitJobRequest->getUser();
+      if (!requestUser.isAllUsers())
+      {
+         if (in_submitJobRequest->getJob()->User.isEmpty())
+            in_submitJobRequest->getJob()->User = requestUser;
+      }
 
-      JobSourceConfiguration caps;
-      Error error = JobSource->getConfiguration(requestUser, caps);
+      if (in_submitJobRequest->getJob()->User.isEmpty())
+         return sendErrorResponse(
+            in_submitJobRequest->getId(),
+            ErrorResponse::Type::INVALID_REQUEST,
+            "User must not be empty.");
+
+      bool isInvalidRequest = false;
+      Error error = JobSource->submitJob(in_submitJobRequest->getJob(), isInvalidRequest);
       if (error)
-         return sendErrorResponse(requestId, ErrorResponse::Type::UNKNOWN, error);
+         return sendErrorResponse(
+            in_submitJobRequest->getId(),
+            isInvalidRequest ? ErrorResponse::Type::INVALID_REQUEST : ErrorResponse::Type::UNKNOWN,
+            error.getSummary());
 
-      return LauncherCommunicator->sendResponse(ClusterInfoResponse(in_clusterInfoRequest->getId(), caps));
+      LauncherCommunicator->sendResponse(
+         JobStateResponse(
+            in_submitJobRequest->getId(),
+            { in_submitJobRequest->getJob() }));
    }
 
    /**
@@ -239,6 +250,25 @@ struct AbstractPluginApi::Impl
    }
 
    /**
+    * @brief Handles ClusterInfo requests from the Launcher.
+    *
+    * @param in_clusterInfoRequest      The request received from the launcher.
+    */
+   void handleGetClusterInfo(const std::shared_ptr<UserRequest>& in_clusterInfoRequest)
+   {
+      const system::User& requestUser = in_clusterInfoRequest->getUser();
+      uint64_t requestId = in_clusterInfoRequest->getId();
+
+      JobSourceConfiguration caps;
+      Error error = JobSource->getConfiguration(requestUser, caps);
+      if (error)
+         return sendErrorResponse(requestId, ErrorResponse::Type::UNKNOWN, error);
+
+      return LauncherCommunicator->sendResponse(ClusterInfoResponse(in_clusterInfoRequest->getId(), caps));
+   }
+
+
+   /**
     * @brief Handles a request from the Launcher.
     *
     * @param in_type        The type of request handler which should be invoked.
@@ -261,6 +291,8 @@ struct AbstractPluginApi::Impl
             return handleHeartbeat();
          case Request::Type::BOOTSTRAP:
             return handleBootstrap(std::static_pointer_cast<BootstrapRequest>(in_request));
+         case Request::Type::SUBMIT_JOB:
+            return handleSubmitJobRequest(std::static_pointer_cast<SubmitJobRequest>(in_request));
          case Request::Type::GET_CLUSTER_INFO:
             return handleGetClusterInfo(std::static_pointer_cast<UserRequest>(in_request));
          case Request::Type::GET_JOB:

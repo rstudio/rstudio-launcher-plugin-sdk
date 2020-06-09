@@ -1,7 +1,7 @@
 /*
  * Error.hpp
  *
- * Copyright (C) 2009-20 by RStudio, PBC
+ * Copyright (C) 2020 by RStudio, PBC
  *
  * Unless you have received this program directly from RStudio pursuant to the terms of a commercial license agreement
  * with RStudio, then this program is licensed to you under the following terms:
@@ -28,8 +28,8 @@
 #include <system_error>
 #include <vector>
 
-#include <logging/Logger.hpp>
 #include <PImpl.hpp>
+#include <logging/Logger.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -165,7 +165,6 @@ private:
  */
 typedef std::vector<std::pair<std::string, std::string> > ErrorProperties;
 
-
 /**
  * @brief Class which represents an error.
  *
@@ -205,7 +204,6 @@ public:
     * @param in_location        The location of the error.
     */
    Error(std::string in_name, int in_code, const Error& in_cause, const ErrorLocation& in_location);
-
 
    /**
     * @brief Constructor.
@@ -640,11 +638,11 @@ Error unknownError(const std::string& in_message, const Error& in_cause, const E
    catch(const std::exception& e)                                                                   \
    {                                                                                                \
       rstudio::launcher_plugins::logging::logErrorMessage(std::string("Unexpected exception: ") +   \
-                        e.what(), "") ;                                                             \
+                        e.what(), ERROR_LOCATION);                                                  \
    }                                                                                                \
    catch(...)                                                                                       \
    {                                                                                                \
-      rstudio::launcher_plugins::logging::logErrorMessage("Unknown exception", "");                 \
+      rstudio::launcher_plugins::logging::logErrorMessage("Unknown exception", ERROR_LOCATION);     \
    }
 
 #endif

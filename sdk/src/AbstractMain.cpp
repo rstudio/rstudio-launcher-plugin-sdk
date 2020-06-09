@@ -59,7 +59,10 @@ if (in_error)                             \
 
 namespace {
 
-int configureScratchPath(const system::FilePath& in_scratchPath, const system::User& in_serverUser)
+int configureScratchPath(
+   const system::FilePath& in_scratchPath,
+   const system::User& in_serverUser,
+   bool in_runUnprivilged)
 {
    std::string message;
    if (!in_scratchPath.exists())
@@ -72,7 +75,7 @@ int configureScratchPath(const system::FilePath& in_scratchPath, const system::U
 
    // At this point the scratch path exists and is a directory. Make sure it belongs to the server user.
    // First, check if the real user is root.
-   if (system::posix::realUserIsRoot())
+   if (!in_runUnprivilged && system::posix::realUserIsRoot())
    {
       // If we are, restore root privileges.
       error = system::posix::restoreRoot();
@@ -89,16 +92,16 @@ int configureScratchPath(const system::FilePath& in_scratchPath, const system::U
       // Drop privileges to the server  user.
       error = system::posix::temporarilyDropPrivileges(in_serverUser);
       CHECK_ERROR(error, "Could not lower privilege to server user: " + in_serverUser.getUsername() + ".")
-   }
 
-   // Change the file mode to rwxr-x-r-x so everyone can read the files in the scratch path, but only the server user
-   // has full access.
-   error = in_scratchPath.changeFileMode(system::FileMode::USER_READ_WRITE_EXECUTE_ALL_READ_EXECUTE);
-   CHECK_ERROR(
-      error,
-      "Could not set permission on scratch path (" +
-         in_scratchPath.getAbsolutePath() +
-         ") - it is recommended to set them to rwxr-x-r-x.")
+      // Change the file mode to rwxr-x-r-x so everyone can read the files in the scratch path, but only the server user
+      // has full access.
+      error = in_scratchPath.changeFileMode(system::FileMode::USER_READ_WRITE_EXECUTE_ALL_READ_EXECUTE);
+      CHECK_ERROR(
+         error,
+         "Could not set permission on scratch path (" +
+            in_scratchPath.getAbsolutePath() +
+            ") - it is recommended to set them to rwxr-x-r-x.")
+   }
 
    return 0;
 }
@@ -216,7 +219,7 @@ int AbstractMain::run(int in_argc, char** in_argv)
    CHECK_ERROR(error)
 
    // Ensure the scratch path exists and is configured correctly.
-   int ret = configureScratchPath(options.getScratchPath(), serverUser);
+   int ret = configureScratchPath(options.getScratchPath(), serverUser, options.useUnprivilegedMode()) ;
    if (ret != 0)
       return ret;
 

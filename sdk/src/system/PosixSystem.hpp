@@ -1,7 +1,7 @@
 /*
  * PosixSystem.hpp
  *
- * Copyright (C) 2009-20 by RStudio, PBC
+ * Copyright (C) 2020 by RStudio, PBC
  *
  * Unless you have received this program directly from RStudio pursuant to the terms of a commercial license agreement
  * with RStudio, then this program is licensed to you under the following terms:
@@ -54,6 +54,15 @@ namespace posix {
  * @return Success if core dumps could be enabled; Error otherwise.
  */
 Error enableCoreDumps();
+
+/**
+ * @brief Gets an environment variable from the system.
+ *
+ * @param in_name   The name of the environment variable.
+ *
+ * @return The value of the environment variable.
+ */
+std::string getEnvironmentVariable(const std::string& in_name);
 
 /**
  * @brief Ignores a particular signal for this process.

@@ -33,6 +33,8 @@
 #include <jobs/JobStatusNotifier.hpp>
 
 #include "job_store/LocalJobStorage.hpp"
+#include "LocalSecureCookie.hpp"
+#include "LocalJobRunner.hpp"
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -52,7 +54,7 @@ public:
     * @param in_jobStatusNotifier       The job status notifier to which to post or from which to receive job status
     *                                   updates.
     */
-   explicit LocalJobSource(
+   LocalJobSource(
       std::string in_hostname,
       jobs::JobRepositoryPtr in_jobRepository,
       jobs::JobStatusNotifierPtr in_jobStatusNotifier);
@@ -88,9 +90,26 @@ public:
     */
     Error getJobs(api::JobList& out_jobs) const override;
 
+   /**
+    * @brief Runs a job on the local instance.
+    *
+    * @param io_job                     The Job to be submitted.
+    * @param out_wasInvalidRequest      Whether the requested Job was invalid, based on the features supported by the
+    *                                   Job Scheduling System.
+    *
+    * @return Success if the job could be submitted to the Job Scheduling System; Error otherwise.
+    */
+   Error submitJob(api::JobPtr io_job, bool& out_wasInvalidRequest) const override;
+
 private:
+   /** The hostname of the machine running this instance of the Local Launcher Plugin. */
+   const std::string m_hostname;
+
+   /** The job runner. */
+   std::shared_ptr<LocalJobRunner> m_jobRunner;
+
    /** The job storage. */
-   job_store::LocalJobStorage m_jobStorage;
+   std::shared_ptr<job_store::LocalJobStorage> m_jobStorage;
 };
 
 } // namespace local

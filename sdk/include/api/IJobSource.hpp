@@ -21,15 +21,13 @@
  *
  */
 
-
-#ifndef LAUNCHER_PLUGINS_IJOBSOURCE_HPP
-#define LAUNCHER_PLUGINS_IJOBSOURCE_HPP
-
-#include "Job.hpp"
+#ifndef LAUNCHER_PLUGINS_I_JOB_SOURCE_HPP
+#define LAUNCHER_PLUGINS_I_JOB_SOURCE_HPP
 
 #include <set>
 
 #include <Error.hpp>
+#include <api/Job.hpp>
 #include <jobs/JobRepository.hpp>
 #include <jobs/JobStatusNotifier.hpp>
 
@@ -139,6 +137,19 @@ public:
     * @return Success if all jobs could be retrieved; Error otherwise.
     */
    virtual Error getJobs(JobList& out_jobs) const = 0;
+
+   /**
+    * @brief Submits a job to the Job Scheduling System.
+    *
+    * @param io_job                     The Job to be submitted. On successful submission, the Job should be updated
+    *                                   with relevant details, such as the ID of the job, the Submission time, the
+    *                                   actual Job Queue (if applicable), and the current status.
+    * @param out_wasInvalidRequest      Whether the requested Job was invalid, based on the features supported by the
+    *                                   Job Scheduling System.
+    *
+    * @return Success if the job could be submitted to the Job Scheduling System; Error otherwise.
+    */
+   virtual Error submitJob(JobPtr io_job, bool& out_wasInvalidRequest) const = 0;
 
 protected:
    /**
