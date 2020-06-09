@@ -29,7 +29,7 @@ file(GLOB_RECURSE SMOKE_TEST_HEADER_FILES "*.h*")
 
 # souce files
 set(SMOKE_TEST_SOURCE_FILES
-   src/SmokeTestMain.cpp
+   src/SmokeTest.cpp
 )
 
 # include directory
@@ -39,7 +39,7 @@ include_directories(
 )
 
 # define library
-add_executable(rlps-smoke-test
+add_executable(rlps-smoke-test src/SmokeTestMain.cpp
    ${SMOKE_TEST_HEADER_FILES}
    ${SMOKE_TEST_SOURCE_FILES}
 )

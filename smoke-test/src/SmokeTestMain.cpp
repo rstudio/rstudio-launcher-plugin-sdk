@@ -21,23 +21,23 @@
  *
  */
 
-namespace rstudio {
-namespace launcher_plugins {
-namespace smoke_test {
+#include <iostream>
 
 /**
  * @brief The main function.
  *
- * @param argc      The number of arguments supplied to the program.
- * @param argv      The list of arguments supplied to the program.
+ * @param in_argc      The number of arguments supplied to the program.
+ * @param in_argv      The list of arguments supplied to the program.
  *
  * @return 0 on success; non-zero exit code otherwise.
  */
-int main(int argc, char** argv)
+int main(int in_argc, char** in_argv)
 {
+   if (in_argc != 2)
+   {
+      std::cerr << "Unexpected number of arguments: " << in_argc << std::endl
+                << "Usage: ./rlps-smoke-test <path/to/plugin/exe>" << std::endl;
+   }
+
    return 0;
 }
-
-} // namespace smoke_test
-} // namespace launcher_plugins
-} // namespace rstudio
