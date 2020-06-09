@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #
-# install-unifdef.sh
+# base-script.sh
 #
 # Copyright (C) 2020 by RStudio, PBC
 #
@@ -24,18 +24,27 @@
 # SOFTWARE.
 #
 
-set -e
+haveCommand()
+{
+    if [[ -z $1 ]]; then
+        echo 0
+    elif [[ -x "$(command -v "$1")" ]]; then
+        echo 1
+    else
+        echo 0
+    fi
+}
 
-# Make sure we're in the directory of this script
-cd "$(readlink -f "$(dirname "${BASH_SOURCE[0]}")")"
+cmakeVersion()
+{
+    if [[ $(haveCommand "cmake") -eq 1 ]]; then
+        IFS=" " read -r -a CMAKE_VER_ARR <<< "$(cmake --version)"
+        CMAKE_VER="${CMAKE_VER_ARR[2]}"
+        CMAKE_VER_MAJOR="${CMAKE_VER%%.*}"
+        CMAKE_VER_MINOR="${CMAKE_VER#*.}"
+        CMAKE_VER_MINOR="${CMAKE_VER_MINOR%%.*}"
+        CMAKE_VER_PATCH="${CMAKE_VER##*.}"
 
-# Source common functions.
-. ./base-script.sh
-
-if [[ $(haveCommand "yum") -eq 1 ]]; then
-    sudo yum update -y
-    sudo yum install -y unifdef
-else
-    sudo apt update
-    sudo apt install -y unifdef
-fi
+        echo "$CMAKE_VER_MAJOR $CMAKE_VER_MINOR $CMAKE_VER_PATCH"
+    fi
+}

@@ -24,13 +24,15 @@
 # SOFTWARE.
 #
 
-HAVE_YUM=1
-yum 1>/dev/null 2>/dev/null
-if [[ $? -eq 127 ]]; then
-  HAVE_YUM=0
-fi
-
+# Exit on failed commands
 set -e
+
+# Make sure we're in the directory of this script
+cd "$(readlink -f "$(dirname "${BASH_SOURCE[0]}")")"
+
+# Source common functions.
+. ./base-script.sh
+
 if [[ -z $1 ]]; then
   echo "Usage: ./install-rsandbox <os name>"
   echo "Valid os names:"
@@ -41,10 +43,7 @@ else
   OS_NAME="$1"
 fi
 
-# Ensure we're in the directory of this script.
-cd "$(readlink "$(dirname "${BASH_SOURCE[0]}")")"
-
-if [[ $HAVE_YUM -eq 1 ]]; then
+if [[ $(haveCommand "yum") -eq 1 ]]; then
 
   sudo yum update -y
   sudo yum install -y wget sudo

@@ -62,7 +62,7 @@ if [[ $DO_HELP -ne 0 ]]; then
     exit $ERR
 fi
 
-ROOT_DIR=$(readlink -f $(dirname ${BASH_SOURCE[0]}))
+ROOT_DIR="$(readlink -f "$(dirname "${BASH_SOURCE[0]}")")"
 
 if [[ $INSTALL_ALL -eq 0 ]] &&
    [[ $INSTALL_CORE -eq 0 ]] &&
@@ -72,7 +72,7 @@ if [[ $INSTALL_ALL -eq 0 ]] &&
     exit 1
 fi
 
-if [[ $IINSTALL_ALL -eq 1 ]]; then
+if [[ $INSTALL_ALL -eq 1 ]]; then
     INSTALL_CORE=1
     INSTALL_TOOLS=1
 fi

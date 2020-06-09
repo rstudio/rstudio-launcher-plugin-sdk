@@ -24,36 +24,27 @@
 # SOFTWARE.
 #
 
-HAVE_YUM=1
-yum 1>/dev/null 2>/dev/null
-if [[ $? -eq 127 ]]; then
-  HAVE_YUM=0
-fi
-
-HAVE_CMAKE=1
-cmake --version 1>/dev/null 2>/dev/null
-if [[ $? -eq 127 ]]; then
-  HAVE_CMAKE=0
-fi
-
 # Install doxygen build dependencies, if not installed
 set -e
 
 # Ensure we're in the directory of this script.
-cd "$(readlink "$(dirname "${BASH_SOURCE[0]}")")"
+cd "$(readlink -f "$(dirname "${BASH_SOURCE[0]}")")"
 
-if [[ $HAVE_YUM -eq 1 ]]; then
+# Source shared script
+. ./base-script.sh
+
+if [[ $(haveCommand "yum") -eq 1 ]]; then
   sudo yum update -y
   sudo yum install -y wget flex bison libc6 make binutils python texlive-full gcc gcc-c++ git
 
-  if [[ HAVE_CMAKE -eq 0 ]]; then
+  if [[ $(haveCommand "cmake") -eq 0 ]]; then
     sudo yum install -y cmake
   fi
 else
   sudo apt update
   sudo apt install -y wget flex bison libc6 make binutils python texlive-full gcc g++ git
 
-  if [[ HAVE_CMAKE -eq 0 ]]; then
+  if [[ $(haveCommand "cmake") -eq 0 ]]; then
     sudo apt install -y cmake
   fi
 fi
@@ -67,16 +58,12 @@ if [[ "${PYTHON_VER%%.*}" -lt 2 ]] || [[ "${PYTHON_VER%%.*}" -eq 2 && $PY_VER_MI
     exit 1
 fi
 
-CMAKE_VER=($(cmake --version))
-CMAKE_VER="${CMAKE_VER[2]}"
-CMAKE_VER_MAJOR="${CMAKE_VER%%.*}"
-CMAKE_VER_MINOR="${CMAKE_VER#*.}"
-CMAKE_VER_MINOR="${CMAKE_VER%%.*}"
-CMAKE_VER_PATCH="${CMAKE_VER##*.}"
-if [[ $CMAKE_VER_MAJOR -lt 3 ]] ||
-   [[ $CMAKE_VER_MAJOR -eq 3 && $CMAKE_VER_MINOR -lt 1 ]] ||
-   [[ $CMAKE_VER_MAJOR -eq 3 && $CMAKE_VER_MINOR -eq 1 && $CMAKE_VER_PATCH -lt 3 ]]; then
-    printf "Error: CMake Version 3.1.3+ required. Have: %s" "$CMAKE_VER" >&2
+IFS=" " read -r -a CMAKE_VER <<< "$(cmakeVersion)"
+if [[ ${#CMAKE_VER[@]} -ne 3 ]] ||
+   [[ ${CMAKE_VER[0]} -lt 3 ]] ||
+   [[ ${CMAKE_VER[0]} -eq 3 && ${CMAKE_VER[1]} -lt 1 ]] ||
+   [[ ${CMAKE_VER[1]} -eq 3 && ${CMAKE_VER[1]} -eq 1 && ${CMAKE_VER[2]} -lt 3 ]]; then
+    printf "Error: CMake Version 3.1.3+ required. Have: %s.%s.%s" "${CMAKE_VER[@]}" >&2
     exit 1
 fi
 
