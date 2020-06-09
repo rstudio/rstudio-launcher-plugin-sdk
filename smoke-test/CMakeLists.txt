@@ -3,7 +3,7 @@
 #
 # CMakeLists.txt
 #
-# Copyright (C) 2019-20 by RStudio, PBC
+# Copyright (C) 2020 by RStudio, PBC
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
@@ -19,41 +19,31 @@
 # OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-cmake_minimum_required(VERSION 3.15)
-project(rlp_sdk_all)
-
-# include globals
-include(CMakeGlobals.txt)
+cmake_minimum_required(VERSION 3.14)
+project(rstudio_launcher_plugin_smoke_test)
 
 set(CMAKE_CXX_STANDARD 11)
 
-# include boost
-if (NOT RLPS_BOOST_REQUESTED_VERSION)
-   set(RLPS_BOOST_REQUESTED_VERSION 1.70.0)
-endif()
-set(Boost_NO_BOOST_CMAKE      OFF)
-set(Boost_USE_STATIC_LIBS     ON)
-find_package(Boost ${RLPS_BOOST_REQUESTED_VERSION} REQUIRED COMPONENTS
-   filesystem
-   program_options
-   regex
-   thread
+# include files
+file(GLOB_RECURSE SMOKE_TEST_HEADER_FILES "*.h*")
+
+# souce files
+set(SMOKE_TEST_SOURCE_FILES
+   src/SmokeTestMain.cpp
 )
 
-set(RLPS_BOOST_LIBS
-   Boost::filesystem
-   Boost::program_options
-   Boost::regex
-   Boost::thread
+# include directory
+include_directories(
+   include
+   ${RLPS_INCLUDE_DIR}
 )
 
-# include openssl
-find_package(OpenSSL 1.1.1 REQUIRED COMPONENTS)
+# define library
+add_executable(rlps-smoke-test
+   ${SMOKE_TEST_HEADER_FILES}
+   ${SMOKE_TEST_SOURCE_FILES}
+)
 
-set(OPENSSL_INCLUDE_DIR ${OPENSSL_ROOT_DIR}/include)
-
-# add the subdirectories
-add_subdirectory("sdk")
-add_subdirectory("plugins/Local")
-add_subdirectory("plugins/QuickStart")
-add_subdirectory("smoke-test")
+target_link_libraries(rlps-smoke-test
+   rstudio-launcher-plugin-sdk-lib
+)
