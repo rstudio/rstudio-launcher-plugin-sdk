@@ -145,13 +145,22 @@ struct ProcessOptions
    /**
     * @brief Constructor.
     */
-   ProcessOptions() : IsShellCommand(false) {};
+   ProcessOptions() :
+      CloseStdin(true),
+      IsShellCommand(false)
+   {};
 
    /**
     * @brief The arguments of the process. Each argument will be escaped using single quotations so that the values are
     *        always interpreted literally. No expansion of environment variables or backslashes will be performed.
     */
    std::vector<std::string> Arguments;
+
+   /**
+    * @brief Whether to close write end of the standard input stream after the specified StandardInput is written.
+    *        Default: true.
+    */
+   bool CloseStdin;
 
    /**
     * @brief The environment variables which should available to the process. If PATH is not set, it will be added to
@@ -237,6 +246,16 @@ public:
     */
    virtual Error terminate();
 
+   /**
+    * @brief Writes the specified string to stdin.
+    *
+    * @param in_string      The data to write to stdin.
+    * @param in_eof         True if this is the last data to write to stdin.
+    *
+    * @return Success if the data could be written; Error otherwise.
+    */
+   virtual Error writeToStdin(const std::string& in_string, bool in_eof) = 0;
+
 protected:
    /**
     * @brief Constructor.
@@ -277,6 +296,16 @@ public:
     * @return Success if the child process could be started; Error otherwise.
     */
    Error run(ProcessResult& out_result);
+
+   /**
+    * @brief Writes the specified string to stdin.
+    *
+    * @param in_string      The data to write to stdin.
+    * @param in_eof         True if this is the last data to write to stdin.
+    *
+    * @return Success if the data could be written; Error otherwise.
+    */
+   Error writeToStdin(const std::string& in_string, bool in_eof) override;
 };
 
 /**

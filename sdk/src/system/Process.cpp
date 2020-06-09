@@ -652,6 +652,7 @@ struct AbstractChildProcess::Impl
     * @param in_options     The options for this child process.
     */
    explicit Impl(const ProcessOptions& in_options) :
+      CloseStdin(in_options.CloseStdin),
       Pid(-1),
       StdErrFd(-1),
       StdInFd(-1),
@@ -862,6 +863,9 @@ struct AbstractChildProcess::Impl
    /** The list of RSandbox arguments. */
    std::vector<std::string> Arguments;
 
+   /** Whether to close the stdin FD after writing StandardInput. */
+   bool CloseStdin;
+
    /** A sterilized version of StandardInput for logging purposes. */
    std::string SafeStdin;
 
@@ -984,7 +988,7 @@ Error SyncChildProcess::run(ProcessResult& out_result)
    // Send the requested StdIn, if any.
    if (!m_baseImpl->StandardInput.empty())
    {
-      error = writeToPipe(m_baseImpl->StdInFd, m_baseImpl->StandardInput, true);
+      error = writeToStdin(m_baseImpl->StandardInput, m_baseImpl->CloseStdin);
       if (error)
       {
          Error terminateError = terminate();
@@ -1023,6 +1027,11 @@ Error SyncChildProcess::run(ProcessResult& out_result)
       out_result.ExitCode = getExitCodeFromStatus(status);
 
    return Success();
+}
+
+Error SyncChildProcess::writeToStdin(const std::string& in_string, bool in_eof)
+{
+   return writeToPipe(m_baseImpl->StdInFd, m_baseImpl->StandardInput, in_eof);
 }
 
 // AsyncChildProcess ===================================================================================================
@@ -1064,6 +1073,16 @@ public:
     * @return Success if the process could be terminated; Error otherwise.
     */
    Error terminate() override;
+
+   /**
+    * @brief Writes the specified string to stdin.
+    *
+    * @param in_string      The data to write to stdin.
+    * @param in_eof         True if this is the last data to write to stdin.
+    *
+    * @return Success if the data could be written; Error otherwise.
+    */
+   Error writeToStdin(const std::string& in_string, bool in_eof) override;
 
 private:
    /**
@@ -1164,18 +1183,14 @@ Error AsyncChildProcess::run(const AsyncProcessCallbacks& in_callbacks)
    setPipeNonBlocking(m_baseImpl->StdInFd);
    setPipeNonBlocking(m_baseImpl->StdOutFd);
 
-   WeakThis weakThis = weak_from_this();
-   if (!m_baseImpl->StandardInput.empty())
+   if (!m_baseImpl->StandardInput.empty() || !m_baseImpl->CloseStdin)
    {
       m_stdInStream.reset(new AsioStream(m_baseImpl->StdInFd));
 
-      AsioFunction onFinishedWriting = [weakThis]()
-      {
-         if (SharedThis sharedThis = weakThis.lock())
-            sharedThis->m_stdInStream->close();
-      };
-
-      m_stdInStream->writeBytes(m_baseImpl->StandardInput, in_callbacks.OnError, onFinishedWriting);
+      if (!m_baseImpl->StandardInput.empty())
+         error = writeToStdin(m_baseImpl->StandardInput, m_baseImpl->CloseStdin);
+      if (error)
+         return error;
    }
 
    auto onRead = [](const OnOutputCallback& in_onOutput, const char* in_data, size_t in_length)
@@ -1184,6 +1199,7 @@ Error AsyncChildProcess::run(const AsyncProcessCallbacks& in_callbacks)
       in_onOutput(strData);
    };
 
+   WeakThis weakThis = weak_from_this();
    auto streamFailureWatch = [weakThis](const Error& in_error, const system::DateTime& in_startTime)
    {
       if (SharedThis sharedThis = weakThis.lock())
@@ -1248,6 +1264,19 @@ Error AsyncChildProcess::terminate()
    }
 
    return error;
+}
+
+Error AsyncChildProcess::writeToStdin(const std::string& in_string, bool in_eof)
+{
+   WeakThis weakThis = weak_from_this();
+   AsioFunction onFinishedWriting = [weakThis]()
+   {
+      if (SharedThis sharedThis = weakThis.lock())
+         sharedThis->m_stdInStream->close();
+   };
+
+   m_stdInStream->writeBytes(in_string, m_callbacks.OnError, in_eof ? onFinishedWriting : AsioFunction());
+   return Success();
 }
 
 void AsyncChildProcess::startCheckingExit(
