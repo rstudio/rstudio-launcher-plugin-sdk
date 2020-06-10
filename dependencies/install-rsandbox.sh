@@ -51,7 +51,7 @@ else
   sudo apt install -y wget sudo
 fi
 
-DOWNLOAD_DIR="$(mkTmpDir rsandbox-dl)"
+DOWNLOAD_DIR="$(makeTmpDir rsandbox-dl)"
 RSP_VERSION="1.3.959-1"
 if [[ "$OS_NAME" == "debian9" ]]; then
   TAR_DIR="rsp-monitor-connect--$RSP_VERSION"

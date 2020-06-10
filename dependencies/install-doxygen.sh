@@ -73,7 +73,7 @@ DOXYGEN_VER="1.8.16"
 DOXYGEN_TAR="doxygen-${DOXYGEN_VER}.src.tar.gz"
 wget "https://s3.amazonaws.com/rstudio-buildtools/doxygen/${DOXYGEN_TAR}" -O "${DOWNLOAD_DIR}/${DOXYGEN_TAR}"
 
-tar -xzf "${DOWNLOAD_DIR}/${DOXYGEN_TAR}" -C temp/
+tar -xzf "${DOWNLOAD_DIR}/${DOXYGEN_TAR}" -C "${DOWNLOAD_DIR}"
 
 mkdir -p "${DOWNLOAD_DIR}/doxygen-${DOXYGEN_VER}/build"
 pushd "${DOWNLOAD_DIR}/doxygen-${DOXYGEN_VER}/build"
