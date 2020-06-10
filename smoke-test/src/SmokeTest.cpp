@@ -26,6 +26,7 @@
 #include <iostream>
 
 #include <json/Json.hpp>
+#include <options/Options.hpp>
 #include <system/Asio.hpp>
 
 namespace rstudio {
@@ -33,6 +34,30 @@ namespace launcher_plugins {
 namespace smoke_test {
 
 namespace {
+
+Error readOptions()
+{
+   std::vector<char> buffer;
+   buffer.resize(2048);
+   ssize_t len = ::readlink("/proc/self/exe", &buffer[0], buffer.size());
+   
+   if (len < 0)
+      return systemError(errno, "Failed to read path to self.", ERROR_LOCATION);
+   
+   std::string selfPathStr(&buffer[0], len);
+   if (len == buffer.size())
+      return Error(
+         "TruncationError",
+         1,
+         "Self path was truncated: " + selfPathStr,
+         ERROR_LOCATION);
+   
+   system::FilePath selfPath(selfPathStr);
+   return options::Options::getInstance().readOptions(
+      0,
+      {},
+      selfPath.getParent().completeChildPath("smoke-test.conf"));
+}
 
 } // anonymous namespace
 
@@ -53,10 +78,14 @@ Error SmokeTest::initialize()
       return error;
 
    system::process::ProcessOptions pluginOpts;
+   error = options::Options::getInstance().getServerUser(pluginOpts.RunAsUser);
+   if (error)
+      return error;
+
    pluginOpts.Executable = m_pluginPath.getAbsolutePath();
    pluginOpts.IsShellCommand = false;
    pluginOpts.CloseStdin = false;
-   pluginOpts.Arguments = { "--heartbeat-interval-seconds=0" };
+   pluginOpts.Arguments = { "--heartbeat-interval-seconds=0", "--enable-debug-logging=1" };
 
    system::process::AsyncProcessCallbacks callbacks;
    callbacks.OnError = [](const Error& in_error)
@@ -100,7 +129,8 @@ Error SmokeTest::initialize()
       responseReceived.exchange(true);
    };
 
-   return system::process::ProcessSupervisor::runAsyncProcess(pluginOpts, callbacks, &m_plugin);
+   error = system::process::ProcessSupervisor::runAsyncProcess(pluginOpts, callbacks, &m_plugin);
+   return error;
 }
 
 bool SmokeTest::sendRequest()
