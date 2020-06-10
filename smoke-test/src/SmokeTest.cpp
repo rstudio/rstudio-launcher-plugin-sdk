@@ -25,15 +25,60 @@
 
 #include <iostream>
 
+#include <api/Request.hpp>
 #include <json/Json.hpp>
 #include <options/Options.hpp>
 #include <system/Asio.hpp>
+
+#include "../../sdk/src/api/Constants.hpp"
+#include "../../sdk/src/comms/MessageHandler.hpp"
 
 namespace rstudio {
 namespace launcher_plugins {
 namespace smoke_test {
 
 namespace {
+
+static std::atomic_uint s_requestId { 1 };
+
+typedef std::vector<std::string> Requests;
+
+comms::MessageHandler& getMessageHandler()
+{
+   static comms::MessageHandler msgHandler;
+   return msgHandler;
+}
+
+const Requests& getRequests()
+{
+   static Requests requests =
+      {
+//         "Get cluster info",
+//         "Get jobs",
+//         "Get job statuses",
+//         "Submit job 1",
+//         "Submit job 2",
+//         "Submit job 3",
+         "Exit"
+      };
+
+   return requests;
+}
+
+std::string getBootstrap()
+{
+   json::Object version;
+   version[api::FIELD_VERSION_MAJOR] = api::API_VERSION_MAJOR;
+   version[api::FIELD_VERSION_MINOR] = api::API_VERSION_MINOR;
+   version[api::FIELD_VERSION_PATCH] = api::API_VERSION_PATCH;
+
+   json::Object bootstrap;
+   bootstrap[api::FIELD_REQUEST_ID] = 0;
+   bootstrap[api::FIELD_MESSAGE_TYPE] = static_cast<int>(api::Request::Type::BOOTSTRAP);
+   bootstrap[api::FIELD_VERSION] = version;
+
+   return getMessageHandler().formatMessage(bootstrap.write());
+}
 
 Error readOptions()
 {
@@ -97,15 +142,12 @@ Error SmokeTest::initialize()
    std::atomic_bool& isRunning = m_isRunning;
    callbacks.OnExit = [&isRunning](int exitCode)
    {
-      if (isRunning.load())
-      {
-         if (exitCode == 0)
-            std::cout << "Plugin exited normally" << std::endl;
-         else
-            std::cerr << "Plugin exited with code " << exitCode << std::endl;
+      if (exitCode == 0)
+         std::cout << "Plugin exited normally" << std::endl;
+      else
+         std::cerr << "Plugin exited with code " << exitCode << std::endl;
 
-         isRunning.exchange(false);
-      }
+      isRunning.exchange(false);
    };
 
    callbacks.OnStandardError = [](const std::string& in_string)
@@ -116,8 +158,22 @@ Error SmokeTest::initialize()
    std::atomic_bool& responseReceived = m_responseReceived;
    callbacks.OnStandardOutput = [&responseReceived](const std::string& in_string)
    {
+      std::vector<std::string> msg;
+      getMessageHandler().processBytes(in_string.c_str(), in_string.size(), msg);
+
+      if (msg.empty())
+      {
+         std::cerr << "No messages received" << std::endl;
+         return;
+      }
+      else if (msg.size() > 1)
+      {
+         std::cerr << "Multiple messages received: " << in_string << std::endl;
+         return;
+      }
+
       json::Value jsonVal;
-      Error error = jsonVal.parse(in_string);
+      Error error = jsonVal.parse(msg[0]);
       if (error)
          std::cerr << "Error parsing response from plugin: " << std::endl
                    << error.asString() << std::endl
@@ -130,12 +186,46 @@ Error SmokeTest::initialize()
    };
 
    error = system::process::ProcessSupervisor::runAsyncProcess(pluginOpts, callbacks, &m_plugin);
+   if (error)
+      return error;
+
+   std::cout << "Bootstrapping..." << std::endl;
+   error = m_plugin->writeToStdin(getBootstrap(), false);
+   if (!error)
+      m_isRunning.exchange(true);
+
    return error;
 }
 
 bool SmokeTest::sendRequest()
 {
-   return false;
+   bool exit = false;
+   std::cout << "Choose an option:" << std::endl;
+
+   const auto& requests = getRequests();
+   for (int i = 0; i < requests.size(); ++i)
+      std::cout << "  " << (i + 1) << ". " << requests[0] << std::endl;
+
+
+   std::string line;
+   std::getline(std::cin, line);
+   int choice = -1;
+   try
+   {
+       choice = std::stoi(line);
+   }
+   catch (...)
+   {
+      std::cout << "Invalid choice (" << line << "). Please enter a positive integer." << std::endl;
+   }
+
+   if (choice > 0)
+   {
+      if (requests[choice - 1] == "Exit")
+         exit = true;
+   }
+
+   return !exit;
 }
 
 void SmokeTest::stop()
