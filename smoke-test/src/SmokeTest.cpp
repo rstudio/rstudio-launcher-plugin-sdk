@@ -47,6 +47,11 @@ Error SmokeTest::initialize()
    // There must be at least 2 threads.
    system::AsioService::startThreads(2);
 
+   // Read options.
+   Error error = readOptions();
+   if (error)
+      return error;
+
    system::process::ProcessOptions pluginOpts;
    pluginOpts.Executable = m_pluginPath.getAbsolutePath();
    pluginOpts.IsShellCommand = false;
