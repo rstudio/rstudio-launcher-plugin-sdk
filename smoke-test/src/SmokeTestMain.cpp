@@ -47,8 +47,8 @@ int main(int in_argc, char** in_argv)
       return 1;
    }
 
-   SmokeTest tester((system::FilePath(in_argv[1])));
-   Error error = tester.initialize();
+   SmokeTestPtr tester(new SmokeTest(system::FilePath(in_argv[1])));
+   Error error = tester->initialize();
    if (error)
    {
       std::cerr << "An error occurred while initializing: " << std::endl
@@ -56,8 +56,8 @@ int main(int in_argc, char** in_argv)
       return 1;
    }
 
-   while(tester.sendRequest());
+   while(tester->sendRequest());
 
-   tester.stop();
+   tester->stop();
    return 0;
 }

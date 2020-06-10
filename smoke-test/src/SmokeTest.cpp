@@ -37,6 +37,9 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace smoke_test {
 
+typedef SmokeTestPtr SharedThis;
+typedef std::weak_ptr<SmokeTest> WeakThis;
+
 namespace {
 
 static std::atomic_uint s_requestId { 1 };
@@ -108,7 +111,7 @@ Error readOptions()
 
 SmokeTest::SmokeTest(system::FilePath in_pluginPath) :
    m_pluginPath(std::move(in_pluginPath)),
-   m_isRunning(false)
+   m_exited(false)
 {
 }
 
@@ -139,15 +142,16 @@ Error SmokeTest::initialize()
                 << in_error.asString() << std::endl;
    };
 
-   std::atomic_bool& isRunning = m_isRunning;
-   callbacks.OnExit = [&isRunning](int exitCode)
+   WeakThis weakThis = weak_from_this();
+   callbacks.OnExit = [weakThis](int exitCode)
    {
       if (exitCode == 0)
          std::cout << "Plugin exited normally" << std::endl;
       else
          std::cerr << "Plugin exited with code " << exitCode << std::endl;
 
-      isRunning.exchange(false);
+      if (SharedThis sharedThis = weakThis.lock())
+         sharedThis->m_exited = true;
    };
 
    callbacks.OnStandardError = [](const std::string& in_string)
@@ -155,8 +159,8 @@ Error SmokeTest::initialize()
       std::cerr << in_string << std::endl;
    };
 
-   std::atomic_bool& responseReceived = m_responseReceived;
-   callbacks.OnStandardOutput = [&responseReceived](const std::string& in_string)
+
+   callbacks.OnStandardOutput = [weakThis](const std::string& in_string)
    {
       std::vector<std::string> msg;
       getMessageHandler().processBytes(in_string.c_str(), in_string.size(), msg);
@@ -182,23 +186,40 @@ Error SmokeTest::initialize()
       else
          std::cout << jsonVal.writeFormatted() << std::endl;
 
-      responseReceived.exchange(true);
+      if (SharedThis sharedThis = weakThis.lock())
+      {
+         UNIQUE_LOCK_MUTEX(sharedThis->m_mutex)
+         {
+            uint64_t requestId = jsonVal.getObject()[api::FIELD_REQUEST_ID].getUInt64();
+            if (sharedThis->m_responseCount.find(requestId) == sharedThis->m_responseCount.end())
+               sharedThis->m_responseCount[requestId] = 0;
+            ++sharedThis->m_responseCount[requestId];
+         }
+         END_LOCK_MUTEX
+
+         sharedThis->m_condVar.notify_all();
+      }
    };
 
    error = system::process::ProcessSupervisor::runAsyncProcess(pluginOpts, callbacks, &m_plugin);
    if (error)
       return error;
 
+   error = waitForStart();
+   if (error)
+      return error;
+
    std::cout << "Bootstrapping..." << std::endl;
    error = m_plugin->writeToStdin(getBootstrap(), false);
-   if (!error)
-      m_isRunning.exchange(true);
 
    return error;
 }
 
 bool SmokeTest::sendRequest()
 {
+   if (m_exited)
+      return false;
+
    bool exit = false;
    std::cout << "Choose an option:" << std::endl;
 
@@ -230,11 +251,70 @@ bool SmokeTest::sendRequest()
 
 void SmokeTest::stop()
 {
-   m_isRunning.exchange(false);
+   m_exited = false;
    system::process::ProcessSupervisor::terminateAll();
    system::process::ProcessSupervisor::waitForExit(system::TimeDuration::Seconds(30));
    system::AsioService::stop();
    system::AsioService::waitForExit();
+}
+
+void SmokeTest::onDeadline(
+   std::weak_ptr<SmokeTest> in_weakThis,
+   std::shared_ptr<system::AsyncDeadlineEvent>& in_deadlineEvent)
+{
+   if (SharedThis sharedThis = in_weakThis.lock())
+   {
+      system::process::ProcessInfo procInfo;
+      Error error = system::process::ProcessInfo::getProcessInfo(sharedThis->m_plugin->getPid(), procInfo);
+      if (error)
+      {
+         std::cerr << error << std::endl;
+         UNIQUE_LOCK_MUTEX(sharedThis->m_mutex)
+            {
+               sharedThis->m_exited = true;
+            }
+         END_LOCK_MUTEX
+         sharedThis->m_condVar.notify_all();
+         return;
+      }
+
+      if (procInfo.Executable == "rsandbox")
+      {
+         in_deadlineEvent.reset(
+            new system::AsyncDeadlineEvent(
+               std::bind(SmokeTest::onDeadline, in_weakThis, in_deadlineEvent),
+               system::TimeDuration::Microseconds(500000)));
+         in_deadlineEvent->start();
+      }
+      else
+      {
+         sharedThis->m_condVar.notify_all();
+      }
+   }
+}
+
+Error SmokeTest::waitForStart()
+{
+   WeakThis weakThis;
+   std::shared_ptr<system::AsyncDeadlineEvent> startWaitEvent;
+
+   startWaitEvent.reset(
+      new system::AsyncDeadlineEvent(
+         std::bind(SmokeTest::onDeadline, weakThis, startWaitEvent),
+         system::TimeDuration::Microseconds(500000)));
+   startWaitEvent->start();
+
+   UNIQUE_LOCK_MUTEX(m_mutex)
+   {
+      // Wait no longer than 30 seconds.
+      std::cv_status stat = m_condVar.wait_for(uniqueLock, std::chrono::seconds(30));
+
+      if (m_exited || (stat == std::cv_status::timeout))
+         return Error("StartupError", 1, "Plugin never started", ERROR_LOCATION);
+   }
+   END_LOCK_MUTEX
+
+   return Success();
 }
 
 } // namespace smoke_test

@@ -25,17 +25,20 @@
 #define LAUNCHER_PLUGINS_SMOKETEST_HPP
 
 #include <atomic>
+#include <condition_variable>
 #include <memory>
+#include <mutex>
 
 #include <Error.hpp>
 #include <system/FilePath.hpp>
 #include <system/Process.hpp>
+#include <system/Asio.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
 namespace smoke_test {
 
-class SmokeTest
+class SmokeTest : public std::enable_shared_from_this<SmokeTest>
 {
 public:
    explicit SmokeTest(system::FilePath in_pluginPath);
@@ -47,11 +50,22 @@ public:
    void stop();
 
 private:
+   static void onDeadline(
+      std::weak_ptr<SmokeTest> in_weakThis,
+      std::shared_ptr<system::AsyncDeadlineEvent>& in_deadlineEvent);
+
+   Error waitForStart();
+
    std::shared_ptr<system::process::AbstractChildProcess> m_plugin;
    system::FilePath m_pluginPath;
-   std::atomic_bool m_isRunning;
-   std::atomic_bool m_responseReceived;
+   bool m_exited;
+   std::map<uint64_t, uint64_t> m_responseCount;
+
+   std::mutex m_mutex;
+   std::condition_variable m_condVar;
 };
+
+typedef std::shared_ptr<SmokeTest> SmokeTestPtr;
 
 } // namespace smoke_test
 } // namespace launcher_plugins
