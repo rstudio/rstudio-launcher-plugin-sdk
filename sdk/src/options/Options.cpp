@@ -427,6 +427,10 @@ Error Options::readOptions(int in_argc, const char* const in_argv[], const syste
                ERROR_LOCATION);
          }
       }
+      else
+      {
+         return system::fileNotFoundError(in_location, ERROR_LOCATION);
+      }
 
       // Now read the command line arguments.
       std::vector<std::string> unrecognizedCmdOpts;
