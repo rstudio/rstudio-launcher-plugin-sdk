@@ -151,7 +151,13 @@ Error SmokeTest::initialize()
          std::cerr << "Plugin exited with code " << exitCode << std::endl;
 
       if (SharedThis sharedThis = weakThis.lock())
-         sharedThis->m_exited = true;
+      {
+         UNIQUE_LOCK_MUTEX(sharedThis->m_mutex)
+         {
+            sharedThis->m_exited = true;
+         }
+         END_LOCK_MUTEX
+      }
    };
 
    callbacks.OnStandardError = [](const std::string& in_string)
@@ -307,10 +313,13 @@ Error SmokeTest::waitForStart()
    UNIQUE_LOCK_MUTEX(m_mutex)
    {
       // Wait no longer than 30 seconds.
-      std::cv_status stat = m_condVar.wait_for(uniqueLock, std::chrono::seconds(30));
+      std::cv_status stat = m_condVar.wait_for(uniqueLock, std::chrono::seconds(10));
 
       if (m_exited || (stat == std::cv_status::timeout))
+      {
+         m_exited = true;
          return Error("StartupError", 1, "Plugin never started", ERROR_LOCATION);
+      }
    }
    END_LOCK_MUTEX
 

@@ -40,6 +40,7 @@ using namespace rstudio::launcher_plugins::smoke_test;
  */
 int main(int in_argc, char** in_argv)
 {
+   int exitCode = 0;
    if (in_argc != 2)
    {
       std::cerr << "Unexpected number of arguments: " << in_argc << std::endl
@@ -53,11 +54,11 @@ int main(int in_argc, char** in_argv)
    {
       std::cerr << "An error occurred while initializing: " << std::endl
                 << error.asString() << std::endl;
-      return 1;
+      exitCode = 1;
    }
 
    while(tester->sendRequest());
 
    tester->stop();
-   return 0;
+   return exitCode;
 }
