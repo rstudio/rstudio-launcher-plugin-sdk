@@ -50,6 +50,8 @@ public:
    void stop();
 
 private:
+   bool waitForResponse(int in_expectedResponses);
+
    std::shared_ptr<system::process::AbstractChildProcess> m_plugin;
    system::FilePath m_pluginPath;
    bool m_exited;
