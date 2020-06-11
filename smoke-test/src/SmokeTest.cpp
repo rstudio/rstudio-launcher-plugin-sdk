@@ -30,8 +30,8 @@
 #include <options/Options.hpp>
 #include <system/Asio.hpp>
 
-#include "../../sdk/src/api/Constants.hpp"
-#include "../../sdk/src/comms/MessageHandler.hpp"
+#include <api/Constants.hpp>
+#include <comms/MessageHandler.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {

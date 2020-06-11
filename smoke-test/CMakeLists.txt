@@ -30,7 +30,7 @@ configure_file(conf-files/smoke-test.conf ./ COPYONLY)
 # include files
 file(GLOB_RECURSE SMOKE_TEST_HEADER_FILES "*.h*")
 
-# souce files
+# source files
 set(SMOKE_TEST_SOURCE_FILES
    src/SmokeTest.cpp
 )
@@ -39,6 +39,7 @@ set(SMOKE_TEST_SOURCE_FILES
 include_directories(
    include
    ${RLPS_INCLUDE_DIR}
+   ../sdk/src
 )
 
 # define library
