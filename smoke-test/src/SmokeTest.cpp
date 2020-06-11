@@ -152,6 +152,9 @@ Error SmokeTest::initialize()
             sharedThis->m_exited = true;
          }
          END_LOCK_MUTEX
+
+         // In case anyone is waiting on the cond var, notify that exit occurred.
+         sharedThis->m_condVar.notify_all();
       }
    };
 
@@ -306,7 +309,7 @@ bool SmokeTest::sendRequest()
          {
             std::cv_status stat;
             uint64_t responseCount = m_responseCount[s_requestId];
-            while ((stat != std::cv_status::timeout) && (responseCount < targetResponses))
+            while ((stat != std::cv_status::timeout) && (responseCount < targetResponses) && !m_exited)
             {
                stat = m_condVar.wait_for(uniqueLock, std::chrono::seconds(30));
 
