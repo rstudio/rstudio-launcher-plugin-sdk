@@ -196,6 +196,22 @@ private:
    char** m_data;
 };
 
+struct ChangeUser
+{
+   ChangeUser() :
+      ShouldChange(false),
+      Uid(-1),
+      Gid(-1)
+   {
+   }
+
+   bool ShouldChange;
+
+   uid_t Uid;
+
+   gid_t Gid;
+};
+
 /**
  * @brief Clears the signal mask of the current process.
  *
@@ -652,16 +668,45 @@ struct AbstractChildProcess::Impl
     * @param in_options     The options for this child process.
     */
    explicit Impl(const ProcessOptions& in_options) :
-      CloseStdin(in_options.CloseStdin),
+      CloseStdin(in_options.UseRSandbox || in_options.CloseStdin),
+      IsRSandbox(in_options.UseRSandbox),
       Pid(-1),
       StdErrFd(-1),
       StdInFd(-1),
       StdOutFd(-1)
    {
-      RSandbox = options::Options::getInstance().getRSandboxPath().getAbsolutePath();
-      Arguments.push_back(RSandbox);
-      createLaunchProfile(in_options);
-      createSandboxArguments(in_options);
+      if (IsRSandbox)
+      {
+         Executable = options::Options::getInstance().getRSandboxPath().getAbsolutePath();
+         Arguments.push_back(Executable);
+         createLaunchProfile(in_options);
+         createSandboxArguments(in_options);
+      }
+      else
+      {
+         Executable = "/bin/sh";
+         Arguments.push_back(Executable);
+         Arguments.emplace_back("-c");
+         Arguments.push_back(createShellCommand(in_options));
+
+         for (const auto& env: in_options.Environment)
+            Environment.push_back(env.first + "=" + env.second);
+
+         if (in_options.RunAsUser.isAllUsers())
+         {
+            NewUser.ShouldChange = true;
+            NewUser.Uid = 0;
+            NewUser.Gid = 0;
+         }
+         else if (!in_options.RunAsUser.isEmpty())
+         {
+            NewUser.ShouldChange = true;
+            NewUser.Uid = in_options.RunAsUser.getUserId();
+            NewUser.Gid = in_options.RunAsUser.getGroupId();
+         }
+
+         StandardInput = in_options.StandardInput;
+      }
    }
 
    /**
@@ -725,12 +770,7 @@ struct AbstractChildProcess::Impl
       }
    }
 
-   /**
-    * @brief Creates the RSandbox arguments from the given process options.
-    *
-    * @param in_options     The options for this child process.
-    */
-   void createSandboxArguments(const ProcessOptions& in_options)
+   static std::string createShellCommand(const ProcessOptions& in_options)
    {
       std::string shellCommand = in_options.Executable;
       for (const std::string& arg: in_options.Arguments)
@@ -752,6 +792,17 @@ struct AbstractChildProcess::Impl
          shellCommand.append(" 2>&1");
       else if (redirectStderr)
          shellCommand.append(" 2> ").append(shellEscape(in_options.StandardErrorFile));
+      return shellCommand;
+   }
+
+   /**
+    * @brief Creates the RSandbox arguments from the given process options.
+    *
+    * @param in_options     The options for this child process.
+    */
+   void createSandboxArguments(const ProcessOptions& in_options)
+   {
+      std::string shellCommand = createShellCommand(in_options);
 
       if (!in_options.RunAsUser.isAllUsers() && !in_options.RunAsUser.isAllUsers())
       {
@@ -797,6 +848,7 @@ struct AbstractChildProcess::Impl
     * @param in_fds             The currently open FDs for parent-child communication.
     * @param in_maxFd           The maximum possible FD for the system.
     * @param in_arguments       The process arguments.
+    * @param in_environment     The process environment variables.
     *
     * @return Error if a failure occurred before or during the call to ::execv. This method should not return on
     *         successful ::execv.
@@ -804,7 +856,8 @@ struct AbstractChildProcess::Impl
    Error execChild(
       const FileDescriptors& in_fds,
       rlim_t in_maxFd,
-      const CStringList& in_arguments) const
+      const CStringList& in_arguments,
+      const CStringList& in_environment) const
    {
       // Set up the parent group id to ensure all children of this child process will belong to its process group, and
       // as such can be cleaned up by the parent.
@@ -839,7 +892,21 @@ struct AbstractChildProcess::Impl
       closeParentFds(in_fds.CloseFd[s_readPipe], in_maxFd);
       ::close(in_fds.CloseFd[s_readPipe]);
 
-      ::execv(RSandbox.c_str(), in_arguments.getData());
+      // Change the user, if requested.
+      if (NewUser.ShouldChange)
+      {
+         result = ::setuid(NewUser.Uid);
+         if (result == -1)
+            ::_exit(s_threadSafeExitError);
+         result = ::setgid(NewUser.Gid);
+         if (result == -1)
+            ::_exit(s_threadSafeExitError);
+      }
+
+      if (in_environment.isEmpty())
+         ::execv(Executable.c_str(), in_arguments.getData());
+      else
+         ::execve(Executable.c_str(), in_arguments.getData(), in_environment.getData());
 
       // If we get here the execv(e) call failed.
       ::_exit(s_threadSafeExitError);
@@ -850,14 +917,26 @@ struct AbstractChildProcess::Impl
     */
    void logProcessSpawn()
    {
-      // If SafeStdin is empty, that means there was no sensitive data to sterilize, so just log the regular
-      // rdrStandardInput.
-      logging::logDebugMessage(
-         "Launching rsandbox. \nArgs " +
+      if (IsRSandbox)
+      {
+         // If SafeStdin is empty, that means there was no sensitive data to sterilize, so just log the regular
+         // rdrStandardInput.
+         logging::logDebugMessage(
+            "Launching rsandbox. \nArgs " +
             boost::algorithm::join(Arguments, " ") +
             "\nLaunch Profile: " +
             (SafeStdin.empty() ? StandardInput : SafeStdin),
-         ERROR_LOCATION);
+            ERROR_LOCATION);
+      }
+      else
+      {
+         // Don't log Env or stdin since those are more likely to contain sensitive info.
+         logging::logDebugMessage(
+            "Launching process " + Executable + ".\nArgs "+
+               boost::algorithm::join(Arguments, " "),
+            ERROR_LOCATION);
+      }
+
    }
 
    /** The list of RSandbox arguments. */
@@ -865,6 +944,18 @@ struct AbstractChildProcess::Impl
 
    /** Whether to close the stdin FD after writing StandardInput. */
    bool CloseStdin;
+
+   /** The list of arguments. */
+   std::vector<std::string> Environment;
+
+   /** The executable path. */
+   std::string Executable;
+
+   /** Whether this is an RSandbox child. */
+   bool IsRSandbox;
+
+   /** The uid/gid pair to change to before invoking exec, if any. */
+   ChangeUser NewUser;
 
    /** A sterilized version of StandardInput for logging purposes. */
    std::string SafeStdin;
@@ -883,9 +974,6 @@ struct AbstractChildProcess::Impl
 
    /** The PID of the child process. */
    pid_t Pid;
-
-   /** The RSandbox executable path. */
-   std::string RSandbox;
 };
 
 PRIVATE_IMPL_DELETER_IMPL(AbstractChildProcess)
@@ -947,7 +1035,8 @@ Error AbstractChildProcess::run()
       m_baseImpl->execChild(
          fds,
          hardLimit,
-         CStringList(m_baseImpl->Arguments));
+         CStringList(m_baseImpl->Arguments),
+         CStringList(m_baseImpl->Environment));
    // Otherwise, this is still the parent.
    else
    {

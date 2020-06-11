@@ -147,7 +147,8 @@ struct ProcessOptions
     */
    ProcessOptions() :
       CloseStdin(true),
-      IsShellCommand(false)
+      IsShellCommand(false),
+      UseRSandbox(true)
    {};
 
    /**
@@ -159,6 +160,8 @@ struct ProcessOptions
    /**
     * @brief Whether to close write end of the standard input stream after the specified StandardInput is written.
     *        Default: true.
+    *
+    * If UseRSandbox is true, this value will be ignored and treated as true.
     */
    bool CloseStdin;
 
@@ -182,16 +185,22 @@ struct ProcessOptions
    /**
     * @brief The set of mounts to be applied for the child process. Only mounts with a HostMountSource type will be
     *        applied. All other mounts will be ignored.
+    *
+    * Mounts will be ignored if UseRSandbox is false.
     */
    api::MountList Mounts;
 
    /**
     * @brief The PAM profile to load, if any.
+    *
+    * PamProfile will be ignored if UseRSandbox is false.
     */
    std::string PamProfile;
 
    /**
     * @brief The password of the user running the job, if any.
+    *
+    * Password will be ignored if UseRSandbox is false.
     */
    std::string Password;
 
@@ -214,6 +223,18 @@ struct ProcessOptions
     * @brief The file to which to write standard error. If not set, standard error will not be redirected.
     */
    FilePath StandardErrorFile;
+
+   /**
+    * @brief Whether to use RSandbox or launch the child process directly.
+    *
+    * If this value is true, CloseStdin will be ignored and treated as true.
+    *
+    * The following values will be ignored if UseRSandbox is false:
+    *       - Mounts
+    *       - PamProfile
+    *       - Password
+    */
+   bool UseRSandbox;
 
    /**
     * @brief The directory from which to run the process. Must exist and be accessible by the RunAsUser.
