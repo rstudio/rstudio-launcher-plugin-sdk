@@ -103,6 +103,7 @@ Error SmokeTest::initialize()
    // There must be at least 2 threads.
    system::AsioService::startThreads(2);
 
+
    system::process::ProcessOptions pluginOpts;
    pluginOpts.Executable = m_pluginPath.getAbsolutePath();
    pluginOpts.IsShellCommand = false;
@@ -217,15 +218,29 @@ bool SmokeTest::sendRequest()
       return false;
 
    bool exit = false;
-   std::cout << "Choose an option:" << std::endl;
+   std::cout << std::endl << "Actions:" << std::endl;
 
    const auto& requests = getRequests();
    for (int i = 0; i < requests.size(); ++i)
       std::cout << "  " << (i + 1) << ". " << requests[0] << std::endl;
 
 
+   std::cout << std::endl << "Enter a number: ";
    std::string line;
    std::getline(std::cin, line);
+
+   if (std::cin.bad())
+   {
+      std::cout << std::endl;
+      logging::logError(systemError(EIO, "Received bad bit on std::cin", ERROR_LOCATION));
+      return false;
+   }
+   else if (std::cin.eof()) // Operation canceled by user.
+   {
+      std::cout << std::endl;
+      return false;
+   }
+
    int choice = -1;
    try
    {
