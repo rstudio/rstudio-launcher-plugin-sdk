@@ -50,12 +50,6 @@ public:
    void stop();
 
 private:
-   static void onDeadline(
-      std::weak_ptr<SmokeTest> in_weakThis,
-      std::shared_ptr<system::AsyncDeadlineEvent>& in_deadlineEvent);
-
-   Error waitForStart();
-
    std::shared_ptr<system::process::AbstractChildProcess> m_plugin;
    system::FilePath m_pluginPath;
    bool m_exited;
