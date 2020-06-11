@@ -249,6 +249,12 @@ struct AsioStream::Impl : public std::enable_shared_from_this<AsioStream::Impl>
          return;
       }
 
+      // Clear empty data, so we can treat writtenLength == 0 as an error
+      while (!WriteBuffer.empty() && WriteBuffer.front().empty())
+      {
+         WriteBuffer.pop();
+      }
+
       if (WriteBuffer.empty())
       {
          in_onFinishedWriting();
