@@ -49,6 +49,7 @@ std::atomic_uint64_t s_requestId { 0 };
 
 constexpr char const* CLUSTER_INFO_REQ = "Get cluster info";
 constexpr char const* GET_JOBS_REQ = "Get all jobs";
+constexpr char const* GET_FILTERED_JOBS_REQ = "Get filtered jobs";
 constexpr char const* EXIT_REQ = "Exit";
 
 typedef std::vector<std::string> Requests;
@@ -65,6 +66,7 @@ const Requests& getRequests()
       {
          CLUSTER_INFO_REQ,
          GET_JOBS_REQ,
+         GET_FILTERED_JOBS_REQ,
 //         "Get job statuses",
 //         "Submit job 1",
 //         "Submit job 2",
@@ -109,6 +111,22 @@ std::string getAllJobs(const system::User& in_user)
    jobsReq[api::FIELD_REQUEST_USERNAME] = in_user.getUsername();
    jobsReq[api::FIELD_REAL_USER] = in_user.getUsername();
    jobsReq[api::FIELD_JOB_ID] = "*";
+
+   return getMessageHandler().formatMessage(jobsReq.write());
+}
+
+std::string getFilteredJobs(const system::User& in_user)
+{
+   json::Array tags;
+   tags.push_back("filter job");
+
+   json::Object jobsReq;
+   jobsReq[api::FIELD_REQUEST_ID] = ++s_requestId;
+   jobsReq[api::FIELD_MESSAGE_TYPE] = static_cast<int>(api::Request::Type::GET_JOB);
+   jobsReq[api::FIELD_REQUEST_USERNAME] = in_user.getUsername();
+   jobsReq[api::FIELD_REAL_USER] = in_user.getUsername();
+   jobsReq[api::FIELD_JOB_ID] = "*";
+   jobsReq[api::FIELD_JOB_TAGS] = tags;
 
    return getMessageHandler().formatMessage(jobsReq.write());
 }
@@ -303,6 +321,8 @@ bool SmokeTest::sendRequest()
             message = getClusterInfo(m_requestUser);
          if (request == GET_JOBS_REQ)
             message = getAllJobs(m_requestUser);
+         if (request == GET_FILTERED_JOBS_REQ)
+            message = getFilteredJobs(m_requestUser);
 
          UNIQUE_LOCK_MUTEX(m_mutex)
          {
