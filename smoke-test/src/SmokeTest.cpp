@@ -52,7 +52,10 @@ constexpr char const* GET_JOBS_REQ = "Get all jobs";
 constexpr char const* GET_FILTERED_JOBS_REQ = "Get filtered jobs";
 constexpr char const* GET_RUNNING_JOBS_REQ = "Get running jobs";
 constexpr char const* GET_FINISHED_JOBS_REQ = "Get finished jobs";
-constexpr char const* GET_JOB_STATUSES = "Get job statuses";
+constexpr char const* GET_JOB_STATUSES_REQ = "Get job statuses";
+constexpr char const* SUB_JOB_1_REQ = "Submit quick job (matches filter)";
+constexpr char const* SUB_JOB_2_REQ = "Submit quick job 2 (doesn't match filter)";
+constexpr char const* SUB_JOB_3_REQ = "Submit long job (matches filter)";
 constexpr char const* EXIT_REQ = "Exit";
 
 typedef std::vector<std::string> Requests;
@@ -72,10 +75,10 @@ const Requests& getRequests()
          GET_FILTERED_JOBS_REQ,
          GET_RUNNING_JOBS_REQ,
          GET_FINISHED_JOBS_REQ,
-         GET_JOB_STATUSES,
-//         "Submit job 1",
-//         "Submit job 2",
-//         "Submit job 3",
+         GET_JOB_STATUSES_REQ,
+         SUB_JOB_1_REQ,
+         SUB_JOB_2_REQ,
+         SUB_JOB_3_REQ,
          EXIT_REQ
       };
 
@@ -175,6 +178,56 @@ std::string cancelJobStream(const system::User& in_user)
    statusReq[api::FIELD_CANCEL_STREAM] = true;
 
    return getMessageHandler().formatMessage(statusReq.write());
+}
+
+std::string submitJobReq(const api::Job& in_job)
+{
+   json::Object submitJob;
+   submitJob[api::FIELD_REQUEST_ID] = ++s_requestId;
+   submitJob[api::FIELD_MESSAGE_TYPE] = static_cast<int>(api::Request::Type::SUBMIT_JOB);
+   submitJob[api::FIELD_REQUEST_USERNAME] = in_job.User.getUsername();
+   submitJob[api::FIELD_REAL_USER] = in_job.User.getUsername();
+   submitJob[api::FIELD_JOB] = in_job.toJson();
+
+   return getMessageHandler().formatMessage(submitJob.write());
+}
+
+std::string submitJob1Req(const system::User& in_user)
+{
+   api::Job job;
+   job.User = in_user;
+   job.Exe = "/bin/sh";
+   job.Environment = { {"ENV_VAR", "This is an environment variable!"} };
+   job.StandardIn = "#!/bin/sh\necho $ENV_VAR";
+   job.Name = "Quick Job 1";
+   job.Tags = { "filter job" };
+
+   return submitJobReq(job);
+}
+
+std::string submitJob2Req(const system::User& in_user)
+{
+   api::Job job;
+   job.User = in_user;
+   job.Command = "echo";
+   job.Arguments = { "This is a shell command." };
+   job.Environment = { {"ENV_VAR", "This is not used!"} };
+   job.Name = "Quick Job 2";
+   job.Tags = { "other tag" };
+
+   return submitJobReq(job);
+}
+
+std::string submitJob3Req(const system::User& in_user)
+{
+   api::Job job;
+   job.User = in_user;
+   job.Exe = "/bin/bash";
+   job.StandardIn = "#!/bin/bash\nset -e\nfor I in 1 2 3 4 5 6 7 8 9 10 11; do\n  echo \"$I...\"\n  sleep $I\ndone";
+   job.Name = "Slow job";
+   job.Tags = { "filter job" };
+
+   return submitJobReq(job);
 }
 
 } // anonymous namespace
@@ -375,11 +428,17 @@ bool SmokeTest::sendRequest()
             message = getStatusJobs(m_requestUser, api::Job::State::RUNNING);
          if (request == GET_FINISHED_JOBS_REQ)
             message = getStatusJobs(m_requestUser, api::Job::State::FINISHED);
-         if (request == GET_JOB_STATUSES)
+         if (request == GET_JOB_STATUSES_REQ)
          {
             message = streamJobStatuses(m_requestUser);
             jobStreamRequest = true;
          }
+         if (request == SUB_JOB_1_REQ)
+            message = submitJob1Req(m_requestUser);
+         if (request == SUB_JOB_2_REQ)
+            message = submitJob2Req(m_requestUser);
+         if (request == SUB_JOB_3_REQ)
+            message = submitJob3Req(m_requestUser);
 
          UNIQUE_LOCK_MUTEX(m_mutex)
          {
