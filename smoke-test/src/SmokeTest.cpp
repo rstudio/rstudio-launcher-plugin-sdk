@@ -48,6 +48,7 @@ namespace {
 std::atomic_uint64_t s_requestId { 0 };
 
 constexpr char const* CLUSTER_INFO_REQ = "Get cluster info";
+constexpr char const* GET_JOBS_REQ = "Get all jobs";
 constexpr char const* EXIT_REQ = "Exit";
 
 typedef std::vector<std::string> Requests;
@@ -63,7 +64,7 @@ const Requests& getRequests()
    static Requests requests =
       {
          CLUSTER_INFO_REQ,
-//         "Get jobs",
+         GET_JOBS_REQ,
 //         "Get job statuses",
 //         "Submit job 1",
 //         "Submit job 2",
@@ -98,6 +99,18 @@ std::string getClusterInfo(const system::User& in_user)
    clusterInfo[api::FIELD_REAL_USER] = in_user.getUsername();
 
    return getMessageHandler().formatMessage(clusterInfo.write());
+}
+
+std::string getAllJobs(const system::User& in_user)
+{
+   json::Object jobsReq;
+   jobsReq[api::FIELD_REQUEST_ID] = ++s_requestId;
+   jobsReq[api::FIELD_MESSAGE_TYPE] = static_cast<int>(api::Request::Type::GET_JOB);
+   jobsReq[api::FIELD_REQUEST_USERNAME] = in_user.getUsername();
+   jobsReq[api::FIELD_REAL_USER] = in_user.getUsername();
+   jobsReq[api::FIELD_JOB_ID] = "*";
+
+   return getMessageHandler().formatMessage(jobsReq.write());
 }
 
 } // anonymous namespace
@@ -276,7 +289,8 @@ bool SmokeTest::sendRequest()
 
    if (choice > 0)
    {
-      if (requests[choice - 1] == EXIT_REQ)
+      const std::string& request = requests[choice - 1];
+      if (request == EXIT_REQ)
       {
          m_plugin->writeToStdin("", true);
          return false;
@@ -285,10 +299,10 @@ bool SmokeTest::sendRequest()
       {
          std::string message;
          uint64_t targetResponses = 1;
-         if (requests[choice - 1] == CLUSTER_INFO_REQ)
-         {
+         if (request == CLUSTER_INFO_REQ)
             message = getClusterInfo(m_requestUser);
-         }
+         if (request == GET_JOBS_REQ)
+            message = getAllJobs(m_requestUser);
 
          UNIQUE_LOCK_MUTEX(m_mutex)
          {
