@@ -183,12 +183,23 @@ Error SmokeTest::initialize()
    if (error)
       return error;
 
-   error = waitForStart();
+   std::cout << "Bootstrapping..." << std::endl;
+   m_responseCount[0] = 0;
+   error = m_plugin->writeToStdin(getBootstrap(), false);
    if (error)
       return error;
 
-   std::cout << "Bootstrapping..." << std::endl;
-   error = m_plugin->writeToStdin(getBootstrap(), false);
+   // Wait for the response.
+   UNIQUE_LOCK_MUTEX(m_mutex)
+   {
+      if (m_responseCount[0] < 1)
+      {
+         std::cv_status stat = m_condVar.wait_for(uniqueLock, std::chrono::seconds(30));
+         if (stat == std::cv_status::timeout)
+            error = systemError(ETIME, "Timed out waiting for bootstrap response", ERROR_LOCATION);
+      }
+   }
+   END_LOCK_MUTEX
 
    return error;
 }
