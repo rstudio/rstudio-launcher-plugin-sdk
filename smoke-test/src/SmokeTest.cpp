@@ -29,8 +29,10 @@
 #include <json/Json.hpp>
 #include <system/Asio.hpp>
 
+// Private SDK Includes - These are not reliable!
 #include <api/Constants.hpp>
 #include <comms/MessageHandler.hpp>
+#include <logging/StderrLogDestination.hpp>
 #include <system/PosixSystem.hpp>
 
 namespace rstudio {
@@ -93,6 +95,11 @@ SmokeTest::SmokeTest(system::FilePath in_pluginPath) :
 
 Error SmokeTest::initialize()
 {
+   // Add an stderr logger.
+   logging::addLogDestination(
+      std::shared_ptr<logging::ILogDestination>(
+         new logging::StderrLogDestination(logging::LogLevel::DEBUG)));
+
    // There must be at least 2 threads.
    system::AsioService::startThreads(2);
 
