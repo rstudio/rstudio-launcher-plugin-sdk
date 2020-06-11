@@ -27,11 +27,11 @@
 
 #include <api/Request.hpp>
 #include <json/Json.hpp>
-#include <options/Options.hpp>
 #include <system/Asio.hpp>
 
 #include <api/Constants.hpp>
 #include <comms/MessageHandler.hpp>
+#include <system/PosixSystem.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -83,30 +83,6 @@ std::string getBootstrap()
    return getMessageHandler().formatMessage(bootstrap.write());
 }
 
-Error readOptions()
-{
-   std::vector<char> buffer;
-   buffer.resize(2048);
-   ssize_t len = ::readlink("/proc/self/exe", &buffer[0], buffer.size());
-   
-   if (len < 0)
-      return systemError(errno, "Failed to read path to self.", ERROR_LOCATION);
-   
-   std::string selfPathStr(&buffer[0], len);
-   if (len == buffer.size())
-      return Error(
-         "TruncationError",
-         1,
-         "Self path was truncated: " + selfPathStr,
-         ERROR_LOCATION);
-   
-   system::FilePath selfPath(selfPathStr);
-   return options::Options::getInstance().readOptions(
-      0,
-      {},
-      selfPath.getParent().completeChildPath("smoke-test.conf"));
-}
-
 } // anonymous namespace
 
 SmokeTest::SmokeTest(system::FilePath in_pluginPath) :
@@ -120,20 +96,16 @@ Error SmokeTest::initialize()
    // There must be at least 2 threads.
    system::AsioService::startThreads(2);
 
-   // Read options.
-   Error error = readOptions();
-   if (error)
-      return error;
-
    system::process::ProcessOptions pluginOpts;
-   error = options::Options::getInstance().getServerUser(pluginOpts.RunAsUser);
-   if (error)
-      return error;
-
    pluginOpts.Executable = m_pluginPath.getAbsolutePath();
    pluginOpts.IsShellCommand = false;
    pluginOpts.CloseStdin = false;
+   pluginOpts.UseRSandbox = false;
    pluginOpts.Arguments = { "--heartbeat-interval-seconds=0", "--enable-debug-logging=1" };
+   pluginOpts.RunAsUser = system::User(true); // Don't change users - run as whoever launched this.
+
+   if (!system::posix::realUserIsRoot())
+      pluginOpts.Arguments.emplace_back("--unprivileged=1");
 
    system::process::AsyncProcessCallbacks callbacks;
    callbacks.OnError = [](const Error& in_error)
@@ -207,7 +179,7 @@ Error SmokeTest::initialize()
       }
    };
 
-   error = system::process::ProcessSupervisor::runAsyncProcess(pluginOpts, callbacks, &m_plugin);
+   Error error = system::process::ProcessSupervisor::runAsyncProcess(pluginOpts, callbacks, &m_plugin);
    if (error)
       return error;
 
@@ -262,68 +234,6 @@ void SmokeTest::stop()
    system::process::ProcessSupervisor::waitForExit(system::TimeDuration::Seconds(30));
    system::AsioService::stop();
    system::AsioService::waitForExit();
-}
-
-void SmokeTest::onDeadline(
-   std::weak_ptr<SmokeTest> in_weakThis,
-   std::shared_ptr<system::AsyncDeadlineEvent>& in_deadlineEvent)
-{
-   if (SharedThis sharedThis = in_weakThis.lock())
-   {
-      system::process::ProcessInfo procInfo;
-      Error error = system::process::ProcessInfo::getProcessInfo(sharedThis->m_plugin->getPid(), procInfo);
-      if (error)
-      {
-         std::cerr << error << std::endl;
-         UNIQUE_LOCK_MUTEX(sharedThis->m_mutex)
-            {
-               sharedThis->m_exited = true;
-            }
-         END_LOCK_MUTEX
-         sharedThis->m_condVar.notify_all();
-         return;
-      }
-
-      if (procInfo.Executable == "rsandbox")
-      {
-         in_deadlineEvent.reset(
-            new system::AsyncDeadlineEvent(
-               std::bind(SmokeTest::onDeadline, in_weakThis, in_deadlineEvent),
-               system::TimeDuration::Microseconds(500000)));
-         in_deadlineEvent->start();
-      }
-      else
-      {
-         sharedThis->m_condVar.notify_all();
-      }
-   }
-}
-
-Error SmokeTest::waitForStart()
-{
-   WeakThis weakThis;
-   std::shared_ptr<system::AsyncDeadlineEvent> startWaitEvent;
-
-   startWaitEvent.reset(
-      new system::AsyncDeadlineEvent(
-         std::bind(SmokeTest::onDeadline, weakThis, startWaitEvent),
-         system::TimeDuration::Microseconds(500000)));
-   startWaitEvent->start();
-
-   UNIQUE_LOCK_MUTEX(m_mutex)
-   {
-      // Wait no longer than 30 seconds.
-      std::cv_status stat = m_condVar.wait_for(uniqueLock, std::chrono::seconds(10));
-
-      if (m_exited || (stat == std::cv_status::timeout))
-      {
-         m_exited = true;
-         return Error("StartupError", 1, "Plugin never started", ERROR_LOCATION);
-      }
-   }
-   END_LOCK_MUTEX
-
-   return Success();
 }
 
 } // namespace smoke_test
