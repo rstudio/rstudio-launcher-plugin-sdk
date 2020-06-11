@@ -41,15 +41,24 @@ using namespace rstudio::launcher_plugins::smoke_test;
 int main(int in_argc, char** in_argv)
 {
    int exitCode = 0;
-   if (in_argc != 2)
+   if (in_argc != 3)
    {
       std::cerr << "Unexpected number of arguments: " << in_argc << std::endl
-                << "Usage: ./rlps-smoke-test <path/to/plugin/exe>" << std::endl;
+                << "Usage: ./rlps-smoke-test <path/to/plugin/exe> <request user>" << std::endl;
       return 1;
    }
 
-   SmokeTestPtr tester(new SmokeTest(system::FilePath(in_argv[1])));
-   Error error = tester->initialize();
+   system::User requestUser;
+   Error error = system::User::getUserFromIdentifier(in_argv[2], requestUser);
+   if (error)
+   {
+      std::cerr << "User " << in_argv[2] << " could not be created. Please ensure that it exists. Error:" << std::endl
+                << error.asString() << std::endl;
+      return 1;
+   }
+
+   SmokeTestPtr tester(new SmokeTest(system::FilePath(in_argv[1]), requestUser));
+   error = tester->initialize();
    if (error)
    {
       std::cerr << "An error occurred while initializing: " << std::endl

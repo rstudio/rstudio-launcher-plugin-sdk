@@ -44,7 +44,11 @@ typedef std::weak_ptr<SmokeTest> WeakThis;
 
 namespace {
 
-static std::atomic_uint s_requestId { 1 };
+// Force arithmetic overflow
+std::atomic_uint64_t s_requestId { 0 };
+
+constexpr char const* CLUSTER_INFO_REQ = "Get cluster info";
+constexpr char const* EXIT_REQ = "Exit";
 
 typedef std::vector<std::string> Requests;
 
@@ -58,13 +62,13 @@ const Requests& getRequests()
 {
    static Requests requests =
       {
-//         "Get cluster info",
+         CLUSTER_INFO_REQ,
 //         "Get jobs",
 //         "Get job statuses",
 //         "Submit job 1",
 //         "Submit job 2",
 //         "Submit job 3",
-         "Exit"
+         EXIT_REQ
       };
 
    return requests;
@@ -85,11 +89,23 @@ std::string getBootstrap()
    return getMessageHandler().formatMessage(bootstrap.write());
 }
 
+std::string getClusterInfo(const system::User& in_user)
+{
+   json::Object clusterInfo;
+   clusterInfo[api::FIELD_REQUEST_ID] = ++s_requestId;
+   clusterInfo[api::FIELD_MESSAGE_TYPE] = static_cast<int>(api::Request::Type::GET_CLUSTER_INFO);
+   clusterInfo[api::FIELD_REQUEST_USERNAME] = in_user.getUsername();
+   clusterInfo[api::FIELD_REAL_USER] = in_user.getUsername();
+
+   return getMessageHandler().formatMessage(clusterInfo.write());
+}
+
 } // anonymous namespace
 
-SmokeTest::SmokeTest(system::FilePath in_pluginPath) :
+SmokeTest::SmokeTest(system::FilePath in_pluginPath, system::User in_requestUser) :
    m_pluginPath(std::move(in_pluginPath)),
-   m_exited(false)
+   m_exited(false),
+   m_requestUser(std::move(in_requestUser))
 {
 }
 
@@ -102,7 +118,6 @@ Error SmokeTest::initialize()
 
    // There must be at least 2 threads.
    system::AsioService::startThreads(2);
-
 
    system::process::ProcessOptions pluginOpts;
    pluginOpts.Executable = m_pluginPath.getAbsolutePath();
@@ -179,7 +194,7 @@ Error SmokeTest::initialize()
             uint64_t requestId = jsonVal.getObject()[api::FIELD_REQUEST_ID].getUInt64();
             if (sharedThis->m_responseCount.find(requestId) == sharedThis->m_responseCount.end())
                sharedThis->m_responseCount[requestId] = 0;
-            ++sharedThis->m_responseCount[requestId];
+            sharedThis->m_responseCount[requestId] += 1;
          }
          END_LOCK_MUTEX
 
@@ -217,12 +232,11 @@ bool SmokeTest::sendRequest()
    if (m_exited)
       return false;
 
-   bool exit = false;
    std::cout << std::endl << "Actions:" << std::endl;
 
    const auto& requests = getRequests();
    for (int i = 0; i < requests.size(); ++i)
-      std::cout << "  " << (i + 1) << ". " << requests[0] << std::endl;
+      std::cout << "  " << (i + 1) << ". " << requests[i] << std::endl;
 
 
    std::cout << std::endl << "Enter a number: ";
@@ -241,6 +255,12 @@ bool SmokeTest::sendRequest()
       return false;
    }
 
+   if (m_exited)
+   {
+      std::cerr << "Plugin exited unexpectedly. Shutting down..." << std::endl;
+      return false;
+   }
+
    int choice = -1;
    try
    {
@@ -253,16 +273,67 @@ bool SmokeTest::sendRequest()
 
    if (choice > 0)
    {
-      if (requests[choice - 1] == "Exit")
-         exit = true;
+      if (requests[choice - 1] == EXIT_REQ)
+      {
+         m_plugin->writeToStdin("", true);
+         return false;
+      }
+      else
+      {
+         std::string message;
+         uint64_t targetResponses = 1;
+         if (requests[choice - 1] == CLUSTER_INFO_REQ)
+         {
+            message = getClusterInfo(m_requestUser);
+         }
+
+         UNIQUE_LOCK_MUTEX(m_mutex)
+         {
+            m_responseCount[s_requestId] = 0;
+         }
+         END_LOCK_MUTEX
+
+         Error error = m_plugin->writeToStdin(message, false);
+         if (error)
+         {
+            std::cerr << "Error communicating with plugin." << std::endl;
+            logging::logError(error);
+            return false;
+         }
+
+         // Wait up to 30 seconds for a response
+         UNIQUE_LOCK_MUTEX(m_mutex)
+         {
+            std::cv_status stat;
+            uint64_t responseCount = m_responseCount[s_requestId];
+            while ((stat != std::cv_status::timeout) && (responseCount < targetResponses))
+            {
+               stat = m_condVar.wait_for(uniqueLock, std::chrono::seconds(30));
+
+               // If we're waiting for multiple responses and we've received at least one in the last 30 seconds, keep
+               // waiting.
+               if (m_responseCount[s_requestId] > responseCount)
+                  stat = std::cv_status::no_timeout;
+
+               responseCount = m_responseCount[s_requestId];
+            }
+
+            if (stat == std::cv_status::timeout)
+            {
+               std::cerr << "Timed out waiting for response." << std::endl;
+               return false;
+            }
+         }
+         END_LOCK_MUTEX
+      }
    }
 
-   return !exit;
+   return !m_exited;
 }
 
 void SmokeTest::stop()
 {
-   m_exited = false;
+   m_exited = true;
    system::process::ProcessSupervisor::terminateAll();
    system::process::ProcessSupervisor::waitForExit(system::TimeDuration::Seconds(30));
    system::AsioService::stop();

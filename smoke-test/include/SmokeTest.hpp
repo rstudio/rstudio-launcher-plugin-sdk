@@ -41,7 +41,7 @@ namespace smoke_test {
 class SmokeTest : public std::enable_shared_from_this<SmokeTest>
 {
 public:
-   explicit SmokeTest(system::FilePath in_pluginPath);
+   SmokeTest(system::FilePath in_pluginPath, system::User in_requestUser);
 
    Error initialize();
 
@@ -54,6 +54,8 @@ private:
    system::FilePath m_pluginPath;
    bool m_exited;
    std::map<uint64_t, uint64_t> m_responseCount;
+
+   system::User m_requestUser;
 
    std::mutex m_mutex;
    std::condition_variable m_condVar;
