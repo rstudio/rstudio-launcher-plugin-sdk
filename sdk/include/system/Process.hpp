@@ -225,7 +225,8 @@ struct ProcessOptions
    FilePath StandardErrorFile;
 
    /**
-    * @brief Whether to use RSandbox or launch the child process directly.
+    * @brief Whether to use the rsandbox executable to launch the child in sandbox environment or launch the child
+    *        process directly.
     *
     * If this value is true, CloseStdIn will be ignored and treated as true.
     *
