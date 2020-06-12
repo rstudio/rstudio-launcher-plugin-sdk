@@ -668,8 +668,8 @@ struct AbstractChildProcess::Impl
     * @param in_options     The options for this child process.
     */
    explicit Impl(const ProcessOptions& in_options) :
-      CloseStdin(in_options.UseRSandbox || in_options.CloseStdIn),
-      IsRSandbox(in_options.UseRSandbox),
+      CloseStdin(in_options.UseSandbox || in_options.CloseStdIn),
+      IsRSandbox(in_options.UseSandbox),
       Pid(-1),
       StdErrFd(-1),
       StdInFd(-1),
