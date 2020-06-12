@@ -23,6 +23,7 @@
 
 #include <SmokeTest.hpp>
 
+#include <iomanip>
 #include <iostream>
 
 #include <api/Request.hpp>
@@ -369,7 +370,7 @@ bool SmokeTest::sendRequest()
 
    const auto& requests = getRequests();
    for (int i = 0; i < requests.size(); ++i)
-      std::cout << "  " << (i + 1) << ". " << requests[i] << std::endl;
+      std::cout << "  " << std::setw(2) << (i + 1) << std::setw(1) << ". " << requests[i] << std::endl;
 
 
    std::cout << std::endl << "Enter a number: ";
