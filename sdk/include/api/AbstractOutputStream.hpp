@@ -88,7 +88,7 @@ protected:
    JobPtr m_job;
 
 private:
-   // The private implementation of AbstractOutputStream. */
+   // The private implementation of AbstractOutputStream.
    PRIVATE_IMPL(m_baseImpl);
 };
 

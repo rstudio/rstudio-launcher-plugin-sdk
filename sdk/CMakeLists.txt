@@ -34,6 +34,7 @@ set(RLPS_SOURCE_FILES
    src/AbstractMain.cpp
    src/Error.cpp
    src/api/AbstractMultiStream.cpp
+   src/api/AbstractOutputStream.cpp
    src/api/AbstractPluginApi.cpp
    src/api/Constants.cpp
    src/api/Job.cpp
