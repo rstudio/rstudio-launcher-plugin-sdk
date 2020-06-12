@@ -254,7 +254,7 @@ Error SmokeTest::initialize()
    system::process::ProcessOptions pluginOpts;
    pluginOpts.Executable = m_pluginPath.getAbsolutePath();
    pluginOpts.IsShellCommand = false;
-   pluginOpts.CloseStdin = false;
+   pluginOpts.CloseStdIn = false;
    pluginOpts.UseRSandbox = false;
    pluginOpts.Arguments = { "--heartbeat-interval-seconds=0", "--enable-debug-logging=1" };
    pluginOpts.RunAsUser = system::User(true); // Don't change users - run as whoever launched this.

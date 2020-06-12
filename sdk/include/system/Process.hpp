@@ -146,7 +146,7 @@ struct ProcessOptions
     * @brief Constructor.
     */
    ProcessOptions() :
-      CloseStdin(true),
+      CloseStdIn(true),
       IsShellCommand(false),
       UseRSandbox(true)
    {};
@@ -163,7 +163,7 @@ struct ProcessOptions
     *
     * If UseRSandbox is true, this value will be ignored and treated as true.
     */
-   bool CloseStdin;
+   bool CloseStdIn;
 
    /**
     * @brief The environment variables which should available to the process. If PATH is not set, it will be added to
@@ -227,7 +227,7 @@ struct ProcessOptions
    /**
     * @brief Whether to use RSandbox or launch the child process directly.
     *
-    * If this value is true, CloseStdin will be ignored and treated as true.
+    * If this value is true, CloseStdIn will be ignored and treated as true.
     *
     * The following values will be ignored if UseRSandbox is false:
     *       - Mounts
