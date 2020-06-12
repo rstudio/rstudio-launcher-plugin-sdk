@@ -50,7 +50,7 @@ public:
    void stop();
 
 private:
-   bool waitForResponse(int in_expectedResponses);
+   bool waitForResponse(uint64_t in_requestId, uint64_t in_expectedResponses);
 
    std::shared_ptr<system::process::AbstractChildProcess> m_plugin;
    system::FilePath m_pluginPath;

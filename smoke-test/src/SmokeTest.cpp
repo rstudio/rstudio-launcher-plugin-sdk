@@ -25,6 +25,7 @@
 
 #include <iomanip>
 #include <iostream>
+#include <thread>
 
 #include <api/Request.hpp>
 #include <json/Json.hpp>
@@ -297,38 +298,35 @@ Error SmokeTest::initialize()
 
    callbacks.OnStandardOutput = [weakThis](const std::string& in_string)
    {
-      std::vector<std::string> msg;
-      getMessageHandler().processBytes(in_string.c_str(), in_string.size(), msg);
+      std::vector<std::string> messages;
+      getMessageHandler().processBytes(in_string.c_str(), in_string.size(), messages);
 
-      if (msg.empty())
+      if (messages.empty())
       {
          std::cerr << "No messages received" << std::endl;
-         return;
       }
-      else if (msg.size() > 1)
-      {
-         std::cerr << "Multiple messages received: " << in_string << std::endl;
-         return;
-      }
-
-      json::Value jsonVal;
-      Error error = jsonVal.parse(msg[0]);
-      if (error)
-         std::cerr << "Error parsing response from plugin: " << std::endl
-                   << error.asString() << std::endl
-                   << "Response: " << std::endl
-                   << in_string << std::endl;
-      else
-         std::cout << jsonVal.writeFormatted() << std::endl;
 
       if (SharedThis sharedThis = weakThis.lock())
       {
          UNIQUE_LOCK_MUTEX(sharedThis->m_mutex)
          {
-            uint64_t requestId = jsonVal.getObject()[api::FIELD_REQUEST_ID].getUInt64();
-            if (sharedThis->m_responseCount.find(requestId) == sharedThis->m_responseCount.end())
-               sharedThis->m_responseCount[requestId] = 0;
-            sharedThis->m_responseCount[requestId] += 1;
+            for (const std::string& msg: messages)
+            {
+               json::Value jsonVal;
+               Error error = jsonVal.parse(msg);
+               if (error)
+                  std::cerr << "Error parsing response from plugin: " << std::endl
+                            << error.asString() << std::endl
+                            << "Response: " << std::endl
+                            << in_string << std::endl;
+               else
+                  std::cout << jsonVal.writeFormatted() << std::endl;
+
+               uint64_t requestId = jsonVal.getObject()[api::FIELD_REQUEST_ID].getUInt64();
+               if (sharedThis->m_responseCount.find(requestId) == sharedThis->m_responseCount.end())
+                  sharedThis->m_responseCount[requestId] = 0;
+               sharedThis->m_responseCount[requestId] += 1;
+            }
          }
          END_LOCK_MUTEX
 
@@ -347,16 +345,10 @@ Error SmokeTest::initialize()
       return error;
 
    // Wait for the response.
-   UNIQUE_LOCK_MUTEX(m_mutex)
+   if (!waitForResponse(0, 1))
    {
-      if (m_responseCount[0] < 1)
-      {
-         std::cv_status stat = m_condVar.wait_for(uniqueLock, std::chrono::seconds(30));
-         if (stat == std::cv_status::timeout)
-            error = systemError(ETIME, "Timed out waiting for bootstrap response", ERROR_LOCATION);
-      }
+      error = systemError(ETIME, "Failed to bootstrap plugin", ERROR_LOCATION);
    }
-   END_LOCK_MUTEX
 
    return error;
 }
@@ -443,7 +435,10 @@ bool SmokeTest::sendRequest()
 
          UNIQUE_LOCK_MUTEX(m_mutex)
          {
-            m_responseCount[s_requestId] = 0;
+            if (!jobStreamRequest)
+               m_responseCount[s_requestId] = 0;
+            else
+               m_responseCount[0] = 0;
          }
          END_LOCK_MUTEX
 
@@ -455,7 +450,10 @@ bool SmokeTest::sendRequest()
             return false;
          }
 
-         success = waitForResponse(targetResponses);
+         if (jobStreamRequest)
+            success = waitForResponse(0, targetResponses);
+         else
+            success = waitForResponse(s_requestId, targetResponses);
 
          // Job status stream request might not return anything. Just keep trying.
          if (!success && jobStreamRequest)
@@ -477,6 +475,8 @@ bool SmokeTest::sendRequest()
                logging::logError(error);
                return false;
             }
+            // Wait for half a second to ensure the stream has time to finish.
+            std::this_thread::sleep_for(std::chrono::microseconds(500));
          }
       }
    }
@@ -493,23 +493,23 @@ void SmokeTest::stop()
    system::AsioService::waitForExit();
 }
 
-bool SmokeTest::waitForResponse(int in_expectedResponses)
+bool SmokeTest::waitForResponse(uint64_t in_requestId, uint64_t in_expectedResponses)
 {
    // Wait up to 30 seconds for a response
    UNIQUE_LOCK_MUTEX(m_mutex)
    {
       std::cv_status stat = std::cv_status::no_timeout;
-      uint64_t responseCount = m_responseCount[s_requestId];
+      uint64_t responseCount = m_responseCount[in_requestId];
       while ((stat != std::cv_status::timeout) && (responseCount < in_expectedResponses) && !m_exited)
       {
          stat = m_condVar.wait_for(uniqueLock, std::chrono::seconds(30));
 
          // If we're waiting for multiple responses and we've received at least one in the last 30 seconds, keep
          // waiting.
-         if (m_responseCount[s_requestId] > responseCount)
+         if (m_responseCount[in_requestId] > responseCount)
             stat = std::cv_status::no_timeout;
 
-         responseCount = m_responseCount[s_requestId];
+         responseCount = m_responseCount[in_requestId];
       }
 
       if (stat == std::cv_status::timeout)
@@ -522,6 +522,7 @@ bool SmokeTest::waitForResponse(int in_expectedResponses)
 
    return true;
 }
+
 } // namespace smoke_test
 } // namespace launcher_plugins
 } // namespace rstudio
