@@ -391,45 +391,36 @@ Error Options::readOptions(int in_argc, const char* const in_argv[], const syste
    // This should be initialized in getInstance.
    assert(m_impl->IsInitialized);
 
-   if (in_location.isEmpty())
-   {
-      return systemError(
-         boost::system::errc::no_such_file_or_directory,
-         "No configuration file specified",
-         ERROR_LOCATION);
-   }
-
    try
    {
       variables_map vm;
       std::vector<std::string> unrecognizedFileOpts;
-      if (in_location.exists())
+
+      // The configuration file overrides command line options, so parse the config file first.
+      try
       {
-         // The configuration file overrides command line options, so parse the config file first.
          std::shared_ptr<std::istream> inputStream;
-         Error error = in_location.openForRead(inputStream);
-         if (error)
-            return error;
-
-         try
+         if (!in_location.isEmpty() && in_location.exists())
          {
-            parsed_options parsed = parse_config_file(*inputStream, m_impl->OptionsDescription, true);
-            store(parsed, vm);
-            notify(vm);
+            Error error = in_location.openForRead(inputStream);
+            if (error)
+               return error;
+         }
+         else
+            inputStream.reset(new std::istringstream());
 
-            collectUnrecognizedOptions(vm, parsed, unrecognizedFileOpts);
-         }
-         catch (const std::exception& e)
-         {
-            return optionsError(
-               OptionsError::READ_FAILURE,
-               "Error reading " + in_location.getAbsolutePath() + ": " + std::string(e.what()),
-               ERROR_LOCATION);
-         }
+         parsed_options parsed = parse_config_file(*inputStream, m_impl->OptionsDescription, true);
+         store(parsed, vm);
+         notify(vm);
+
+         collectUnrecognizedOptions(vm, parsed, unrecognizedFileOpts);
       }
-      else
+      catch (const std::exception& e)
       {
-         return system::fileNotFoundError(in_location, ERROR_LOCATION);
+         return optionsError(
+            OptionsError::READ_FAILURE,
+            "Error reading " + in_location.getAbsolutePath() + ": " + std::string(e.what()),
+            ERROR_LOCATION);
       }
 
       // Now read the command line arguments.
