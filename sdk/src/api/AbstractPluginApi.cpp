@@ -293,17 +293,14 @@ struct AbstractPluginApi::Impl
             return handleBootstrap(std::static_pointer_cast<BootstrapRequest>(in_request));
          case Request::Type::SUBMIT_JOB:
             return handleSubmitJobRequest(std::static_pointer_cast<SubmitJobRequest>(in_request));
-         case Request::Type::GET_CLUSTER_INFO:
-            return handleGetClusterInfo(std::static_pointer_cast<UserRequest>(in_request));
          case Request::Type::GET_JOB:
             return handleGetJobRequest(std::static_pointer_cast<JobStateRequest>(in_request));
          case Request::Type::GET_JOB_STATUS:
-         {
-            Error error = StreamMgr->handleStreamRequest(std::static_pointer_cast<JobStatusRequest>(in_request));
-            if (error)
-               return sendErrorResponse(in_request->getId(), ErrorResponse::Type::UNKNOWN, error);
-            break;
-         }
+            return StreamMgr->handleStreamRequest(std::static_pointer_cast<JobStatusRequest>(in_request));
+         case Request::Type::GET_JOB_OUTPUT:
+            return StreamMgr->handleStreamRequest(std::static_pointer_cast<OutputStreamRequest>(in_request));
+         case Request::Type::GET_CLUSTER_INFO:
+            return handleGetClusterInfo(std::static_pointer_cast<UserRequest>(in_request));
          default:
             return sendErrorResponse(
                in_request->getId(),
@@ -348,6 +345,7 @@ Error AbstractPluginApi::initialize()
 
    m_abstractPluginImpl->StreamMgr.reset(
       new StreamManager(
+         m_abstractPluginImpl->JobSource,
          m_abstractPluginImpl->JobRepo,
          m_abstractPluginImpl->Notifier,
          m_abstractPluginImpl->LauncherCommunicator));

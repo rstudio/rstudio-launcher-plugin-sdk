@@ -22,6 +22,7 @@
  */
 
 
+#include <api/AbstractOutputStream.hpp>
 #include "StreamManager.hpp"
 
 #include "JobStatusStream.hpp"
@@ -33,22 +34,27 @@ namespace api {
 // Typedefs
 typedef std::map<std::string, std::shared_ptr<SingleJobStatusStream> > JobStatusStreamMap;
 
+typedef std::map<std::string, std::shared_ptr<AbstractOutputStream> > OutputStreamMap;
+
 struct StreamManager::Impl
 {
    /**
     * @brief Constructor.
     *
+    * @param in_jobSource               The interface for interacting with the job source.
     * @param in_jobRepository           The job repository from which to retrieve jobs.
     * @param in_jobStatusNotifier       The job status notifier from which to receive job status update notifications.
     * @param in_launcherCommunicator    The communicator which may be used to send stream responses to the Launcher.
     */
    Impl(
-      jobs::JobRepositoryPtr in_jobRepository,
-      jobs::JobStatusNotifierPtr in_jobStatusNotifier,
-      comms::AbstractLauncherCommunicatorPtr in_launcherCommunicator) :
-         JobRepo(std::move(in_jobRepository)),
-         LauncherCommunicator(std::move(in_launcherCommunicator)),
-         Notifier(std::move(in_jobStatusNotifier))
+      std::shared_ptr<IJobSource>&& in_jobSource,
+      jobs::JobRepositoryPtr&& in_jobRepository,
+      jobs::JobStatusNotifierPtr&& in_jobStatusNotifier,
+      comms::AbstractLauncherCommunicatorPtr&& in_launcherCommunicator) :
+         JobRepo(in_jobRepository),
+         JobSource(in_jobSource),
+         LauncherCommunicator(in_launcherCommunicator),
+         Notifier(in_jobStatusNotifier)
    {
    }
 
@@ -164,8 +170,14 @@ struct StreamManager::Impl
    /** The map of Job IDs to their active job streams. */
    JobStatusStreamMap ActiveJobStreams;
 
+   /** The map of open output streams. */
+   OutputStreamMap ActiveOutputStreams;
+
    /** The mutex to protect the map of active Job status streams. */
-   std::mutex ActiveStreamsMutex;
+   std::mutex ActiveJobStreamsMutex;
+
+   /** The mutex to protect the map of active output streams. */
+   std::mutex ActiveOutputStreamsMutex;
 
    /** The mutex to protect the All Jobs status stream. */
    std::mutex AllJobsMutex;
@@ -175,6 +187,9 @@ struct StreamManager::Impl
 
    /** The job repository. */
    jobs::JobRepositoryPtr JobRepo;
+
+   /** The job source. */
+   std::shared_ptr<IJobSource> JobSource;
 
    /** The launcher communicator. */
    comms::AbstractLauncherCommunicatorPtr LauncherCommunicator;
@@ -186,18 +201,20 @@ struct StreamManager::Impl
 PRIVATE_IMPL_DELETER_IMPL(StreamManager)
 
 StreamManager::StreamManager(
+   std::shared_ptr<IJobSource> in_jobSource,
    jobs::JobRepositoryPtr in_jobRepository,
    jobs::JobStatusNotifierPtr in_jobStatusNotifier,
    comms::AbstractLauncherCommunicatorPtr in_launcherCommunicator) :
       m_impl(
          new Impl(
+               std::move(in_jobSource),
                std::move(in_jobRepository),
                std::move(in_jobStatusNotifier),
                std::move(in_launcherCommunicator)))
 {
 }
 
-Error StreamManager::handleStreamRequest(const std::shared_ptr<JobStatusRequest>& in_jobStatusRequest)
+void StreamManager::handleStreamRequest(const std::shared_ptr<JobStatusRequest>& in_jobStatusRequest)
 {
    if (in_jobStatusRequest->getJobId() == "*")
    {
@@ -206,26 +223,40 @@ Error StreamManager::handleStreamRequest(const std::shared_ptr<JobStatusRequest>
          if (in_jobStatusRequest->isCancelRequest())
             m_impl->cancelAllJobsStream(in_jobStatusRequest->getId());
          else
-            return m_impl->addAllJobsStream(in_jobStatusRequest->getId(), in_jobStatusRequest->getUser());
+         {
+            Error error = m_impl->addAllJobsStream(in_jobStatusRequest->getId(), in_jobStatusRequest->getUser());
+            if (error)
+               m_impl->LauncherCommunicator->sendResponse(
+                  ErrorResponse(in_jobStatusRequest->getId(), ErrorResponse::Type::UNKNOWN, error.getSummary()));
+         }
       }
       END_LOCK_MUTEX
    }
    else
    {
-      LOCK_MUTEX(m_impl->ActiveStreamsMutex)
+      LOCK_MUTEX(m_impl->ActiveJobStreamsMutex)
       {
          if (in_jobStatusRequest->isCancelRequest())
             m_impl->cancelJobStream(in_jobStatusRequest->getId(), in_jobStatusRequest->getJobId());
          else
-            return m_impl->addJobStream(
+         {
+            Error error = m_impl->addJobStream(
                in_jobStatusRequest->getId(),
                in_jobStatusRequest->getJobId(),
                in_jobStatusRequest->getUser());
+
+            if (error)
+               m_impl->LauncherCommunicator->sendResponse(
+                  ErrorResponse(in_jobStatusRequest->getId(), ErrorResponse::Type::UNKNOWN, error.getSummary()));
+         }
       }
       END_LOCK_MUTEX
    }
+}
 
-   return Success();
+void StreamManager::handleStreamRequest(const std::shared_ptr<OutputStreamRequest>& in_outputStreamRequest)
+{
+
 }
 
 } // namespace api

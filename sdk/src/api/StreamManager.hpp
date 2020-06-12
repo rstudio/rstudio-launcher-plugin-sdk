@@ -29,6 +29,7 @@
 #include <memory>
 
 #include <PImpl.hpp>
+#include <api/IJobSource.hpp>
 #include <comms/AbstractLauncherCommunicator.hpp>
 #include <jobs/JobRepository.hpp>
 #include <jobs/JobStatusNotifier.hpp>
@@ -49,21 +50,30 @@ public:
    /**
     * @brief Constructor.
     *
+    * @param in_jobSource               The interface for interacting with the job source.
     * @param in_jobRepository           The job repository from which to retrieve jobs.
     * @param in_jobStatusNotifier       The job status notifier from which to receive job status update notifications.
     * @param in_launcherCommunicator    The communicator which may be used to send stream responses to the Launcher.
     */
    StreamManager(
+      std::shared_ptr<IJobSource> in_jobSource,
       jobs::JobRepositoryPtr in_jobRepository,
       jobs::JobStatusNotifierPtr in_jobStatusNotifier,
       comms::AbstractLauncherCommunicatorPtr in_launcherCommunicator);
 
    /**
-    * @brief Handles a stream reqeust.
+    * @brief Handles a stream request.
     *
     * @param in_jobStatusRequest    The Job Status Stream request to be handled.
     */
-   Error handleStreamRequest(const std::shared_ptr<JobStatusRequest>& in_jobStatusRequest);
+   void handleStreamRequest(const std::shared_ptr<JobStatusRequest>& in_jobStatusRequest);
+
+   /**
+    * @brief Handles a stream request.
+    *
+    * @param in_outputStreamRequest    The Job Output Stream request to be handled.
+    */
+   void handleStreamRequest(const std::shared_ptr<OutputStreamRequest>& in_outputStreamRequest);
 
 private:
    // The private implementation of StreamManager.
