@@ -33,20 +33,7 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace api {
 
-/**
- * @brief The type of job output.
- */
-enum class OutputType
-{
-   /** Standard output. */
-   STDOUT,
-
-   /** Standard error output. */
-   STDERR,
-
-   /** Standard output and standard error output. */
-   BOTH
-};
+using OutputType = OutputStreamRequest::Type;
 
 /**
  * @brief Streams job output data to the launcher.

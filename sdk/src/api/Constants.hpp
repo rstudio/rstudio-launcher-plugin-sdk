@@ -90,6 +90,9 @@ constexpr char const* FIELD_PLACEMENT_CONSTRAINTS  = "placementConstraints";
 constexpr char const* FIELD_QUEUES                 = "queues";
 constexpr char const* FIELD_RESOURCE_LIMITS        = "resourceLimits";
 
+// OutputStream request fields.
+constexpr char const* FIELD_OUTPUT_TYPE            = "outputType";
+
 } // namespace api
 } // namespace launcher_plugins
 } // namespace rstudio

@@ -375,7 +375,7 @@ public:
    /**
     * @brief Gets whether the Job Status Stream should be started (false) or ended (true).
     *
-    * @return
+    * @return True if the stream should be canceled; false if it should be started.
     */
    bool isCancelRequest() const;
 
@@ -391,6 +391,56 @@ private:
    PRIVATE_IMPL(m_impl);
 
    friend class Request;
+};
+
+/**
+ * @brief Request from the launcher to begin or end a Job Output Stream.
+ */
+class OutputStreamRequest final : public JobIdRequest
+{
+public:
+   /**
+    * @brief The type of job output.
+    */
+   enum class Type
+   {
+      /** Standard output. */
+      STDOUT,
+
+      /** Standard error output. */
+      STDERR,
+
+      /** Standard output and standard error output. */
+      BOTH
+   };
+
+   /**
+    * @brief Gets the type of Output that should be streamed.
+    *
+    * @return The type of Output that should be streamed.
+    */
+   Type getStreamType() const;
+
+   /**
+    * @brief Gets whether the Job Output Stream should be started (false) or ended (true).
+    *
+    * @return True if the stream should be canceled; false if it should be started.
+    */
+   bool isCancelRequest() const;
+
+private:
+   /**
+    * @brief Constructor.
+    *
+    * @param in_requestJson     The JSON Object which represents the output stream request.
+    */
+   explicit OutputStreamRequest(const json::Object& in_requestJson);
+
+   // The private implementation of OutputStreamRequest
+   PRIVATE_IMPL(m_impl);
+
+   friend class Request;
+
 };
 
 /**
