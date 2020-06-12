@@ -24,9 +24,6 @@ project(rstudio_launcher_plugin_smoke_test)
 
 set(CMAKE_CXX_STANDARD 11)
 
-# Copy the configuration file.
-configure_file(conf-files/smoke-test.conf ./ COPYONLY)
-
 # include files
 file(GLOB_RECURSE SMOKE_TEST_HEADER_FILES "*.h*")
 
