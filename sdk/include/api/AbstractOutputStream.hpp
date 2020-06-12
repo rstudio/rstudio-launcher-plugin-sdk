@@ -72,10 +72,10 @@ public:
    virtual void stop() = 0;
 
 protected:
-   /** Convience typedef for inheriting classes. */
+   /** Convenience typedef for inheriting classes. */
    typedef std::shared_ptr<AbstractOutputStream> SharedThis;
 
-   /** Convience typedef for inheriting classes. */
+   /** Convenience typedef for inheriting classes. */
    typedef std::weak_ptr<AbstractOutputStream> WeakThis;
 
    /**
