@@ -498,7 +498,7 @@ bool SmokeTest::waitForResponse(int in_expectedResponses)
    // Wait up to 30 seconds for a response
    UNIQUE_LOCK_MUTEX(m_mutex)
    {
-      std::cv_status stat;
+      std::cv_status stat = std::cv_status::no_timeout;
       uint64_t responseCount = m_responseCount[s_requestId];
       while ((stat != std::cv_status::timeout) && (responseCount < in_expectedResponses) && !m_exited)
       {
