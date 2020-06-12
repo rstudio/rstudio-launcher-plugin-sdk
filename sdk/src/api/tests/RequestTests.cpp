@@ -734,7 +734,7 @@ TEST_CASE("Parse OutputStream request")
 
       std::shared_ptr<OutputStreamRequest> outputStreamRequest = std::static_pointer_cast<OutputStreamRequest>(request);
       CHECK(outputStreamRequest->getUser() == user1);
-      CHECK(outputStreamRequest->getRequestUsername() == USER_THREE);
+      CHECK(outputStreamRequest->getRequestUsername() == USER_ONE);
       CHECK(outputStreamRequest->getJobId() == "123");
       CHECK(outputStreamRequest->getEncodedJobId() == "321");
       CHECK(outputStreamRequest->getStreamType() == OutputStreamRequest::Type::BOTH);
@@ -753,7 +753,7 @@ TEST_CASE("Parse OutputStream request")
 
       std::shared_ptr<OutputStreamRequest> outputStreamRequest = std::static_pointer_cast<OutputStreamRequest>(request);
       CHECK(outputStreamRequest->getUser() == user1);
-      CHECK(outputStreamRequest->getRequestUsername() == USER_THREE);
+      CHECK(outputStreamRequest->getRequestUsername() == USER_ONE);
       CHECK(outputStreamRequest->getJobId() == "123");
       CHECK(outputStreamRequest->getEncodedJobId() == "321");
       CHECK(outputStreamRequest->getStreamType() == OutputStreamRequest::Type::BOTH);
@@ -772,7 +772,7 @@ TEST_CASE("Parse OutputStream request")
 
       std::shared_ptr<OutputStreamRequest> outputStreamRequest = std::static_pointer_cast<OutputStreamRequest>(request);
       CHECK(outputStreamRequest->getUser() == user1);
-      CHECK(outputStreamRequest->getRequestUsername() == USER_THREE);
+      CHECK(outputStreamRequest->getRequestUsername() == USER_ONE);
       CHECK(outputStreamRequest->getJobId() == "123");
       CHECK(outputStreamRequest->getEncodedJobId() == "321");
       CHECK(outputStreamRequest->getStreamType() == OutputStreamRequest::Type::STDOUT);
@@ -791,7 +791,7 @@ TEST_CASE("Parse OutputStream request")
 
       std::shared_ptr<OutputStreamRequest> outputStreamRequest = std::static_pointer_cast<OutputStreamRequest>(request);
       CHECK(outputStreamRequest->getUser() == user1);
-      CHECK(outputStreamRequest->getRequestUsername() == USER_THREE);
+      CHECK(outputStreamRequest->getRequestUsername() == USER_ONE);
       CHECK(outputStreamRequest->getJobId() == "123");
       CHECK(outputStreamRequest->getEncodedJobId() == "321");
       CHECK(outputStreamRequest->getStreamType() == OutputStreamRequest::Type::STDERR);
