@@ -387,7 +387,7 @@ private:
     */
    explicit JobStatusRequest(const json::Object& in_requestJson);
 
-   // The private implementation of JobStateRequest
+   // The private implementation of JobStatusRequest
    PRIVATE_IMPL(m_impl);
 
    friend class Request;
