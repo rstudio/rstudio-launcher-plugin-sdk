@@ -249,6 +249,12 @@ struct AsioStream::Impl : public std::enable_shared_from_this<AsioStream::Impl>
          return;
       }
 
+      // Clear empty data, so we can treat writtenLength == 0 as an error
+      while (!WriteBuffer.empty() && WriteBuffer.front().empty())
+      {
+         WriteBuffer.pop();
+      }
+
       if (WriteBuffer.empty())
       {
          in_onFinishedWriting();
@@ -277,7 +283,7 @@ struct AsioStream::Impl : public std::enable_shared_from_this<AsioStream::Impl>
                {
                   in_onError(
                      systemError(
-                        in_ec.value(),
+                        (in_ec.value() != 0) ? in_ec.value() : EIO,
                         "Could not write to stream with descriptor " +
                         std::to_string(instance->StreamDescriptor.native_handle()) + ".",
                         ERROR_LOCATION));

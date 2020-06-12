@@ -27,8 +27,8 @@
 set -e # exit on failed commands.
 
 VERSION=99.9.9
-if [[ -n $1 ]]; then
-  VERSION=$1
+if [[ -n "$1" ]]; then
+  VERSION="$1"
 fi
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
@@ -36,6 +36,6 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 # update the version number
 sed -e "s/\\\${RLPS_VERSION}/${VERSION}/g" _bookdown.yml.in > _bookdown.yml
 
-RSTUDIO_PANDOC="/usr/lib/rstudio/bin/pandoc" Rscript -e "bookdown::render_book(\"index.Rmd\", \"bookdown::pdf_book\")"
+RSTUDIO_PANDOC="/usr/lib/rstudio/bin/pandoc" Rscript -e "bookdown::render_book(\"index.Rmd\", \"bookdown::pdf_book\", params = list(version = '${VERSION}'))"
 
 cp "_book/rlps-${VERSION}-quickstart-guide.pdf" "../../RStudio Launcher Plugin SDK QuickStart Guide.pdf"
