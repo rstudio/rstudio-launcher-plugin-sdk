@@ -74,6 +74,20 @@ Error LocalJobSource::submitJob(api::JobPtr io_job, bool& out_wasInvalidRequest)
    return m_jobRunner->runJob(io_job, out_wasInvalidRequest);
 }
 
+Error LocalJobSource::createOutputStream(
+   uint64_t in_requestId,
+   api::OutputType in_outputType,
+   api::JobPtr in_job,
+   comms::AbstractLauncherCommunicatorPtr in_launcherCommunicator,
+   api::OutputStreamPtr& out_outputStream)
+{
+   return Error(
+      "NotImplemented",
+      2,
+      "Method LocalJobSource::createOutputStream is not implemented.",
+      ERROR_LOCATION);
+}
+
 } // namespace local
 } // namespace launcher_plugins
 } // namespace rstudio

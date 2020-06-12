@@ -104,6 +104,8 @@ private:
    PRIVATE_IMPL(m_baseImpl);
 };
 
+typedef std::shared_ptr<AbstractOutputStream> OutputStreamPtr;
+
 } // namespace api
 } // namespace launcher_plugins
 } // namespace rstudio
