@@ -38,27 +38,55 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace smoke_test {
 
+/**
+ * @brief Enables manual plugin testing.
+ */
 class SmokeTest : public std::enable_shared_from_this<SmokeTest>
 {
 public:
+   /**
+    * @brief Constructor.
+    *
+    * @param in_pluginPath      The path to the Plugin to be tested.
+    * @param in_requestUser     The user to send requests for.
+    */
    SmokeTest(system::FilePath in_pluginPath, system::User in_requestUser);
 
+   /**
+    * @brief Initializes the smoke tester, including starting threads and bootstrapping the plugin.
+    *
+    * @return Success if the smoke tester could be initialized; Error otherwise.
+    */
    Error initialize();
 
+   /**
+    * @brief Prints the action menu and handles user input.
+    *
+    * @return False if the test application should exit; true if it should continue.
+    */
    bool sendRequest();
 
+   /**
+    * @brief Stops the plugin and joins all threads.
+    */
    void stop();
 
 private:
+   /**
+    * @brief Waits for the specified number of responses for the specified request.
+    *
+    * @param in_requestId               The ID of the request for which to wait for responses.
+    * @param in_expectedResponses       The minimum number of responses to wait for.
+    *
+    * @return True if at least in_expected responses were received; false if the operation timed out.
+    */
    bool waitForResponse(uint64_t in_requestId, uint64_t in_expectedResponses);
 
    std::shared_ptr<system::process::AbstractChildProcess> m_plugin;
    system::FilePath m_pluginPath;
    bool m_exited;
    std::map<uint64_t, uint64_t> m_responseCount;
-
    system::User m_requestUser;
-
    std::mutex m_mutex;
    std::condition_variable m_condVar;
 };
