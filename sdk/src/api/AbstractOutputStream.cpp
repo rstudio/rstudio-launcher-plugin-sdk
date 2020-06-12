@@ -58,6 +58,11 @@ void AbstractOutputStream::reportData(const std::string& in_data, bool in_isStdO
 
 }
 
+void AbstractOutputStream::setStreamComplete()
+{
+
+}
+
 } // namespace api
 } // namespace launcher_plugins
 } // namespace rstudio

@@ -24,6 +24,8 @@
 #ifndef LAUNCHER_PLUGINS_ABSTRACT_OUTPUT_STREAM_HPP
 #define LAUNCHER_PLUGINS_ABSTRACT_OUTPUT_STREAM_HPP
 
+#include <memory>
+
 #include <PImpl.hpp>
 #include <comms/AbstractLauncherCommunicator.hpp>
 
@@ -49,7 +51,7 @@ enum class OutputType
 /**
  * @brief Streams job output data to the launcher.
  */
-class AbstractOutputStream
+class AbstractOutputStream : public std::enable_shared_from_this<AbstractOutputStream>
 {
 public:
    /**
@@ -57,7 +59,24 @@ public:
     */
    virtual ~AbstractOutputStream() = default;
 
+   /**
+    * @brief Starts the output stream.
+    *
+    * @return Success if the stream could be started; Error otherwise.
+    */
+   virtual Error start() = 0;
+
+   /**
+    * @brief Stops the output stream.
+    */
+   virtual void stop() = 0;
+
 protected:
+   /** Convience typedef for inheriting classes. */
+   typedef std::shared_ptr<AbstractOutputStream> SharedThis;
+
+   /** Convience typedef for inheriting classes. */
+   typedef std::weak_ptr<AbstractOutputStream> WeakThis;
 
    /**
     * @brief Constructor.
@@ -80,6 +99,12 @@ protected:
     * @param in_isStdOut    Whether the output is Standard Output (true) or Standard Error (false).
     */
    void reportData(const std::string& in_data, bool in_isStdOut);
+
+   /**
+    * @brief Notifies the base class that the output stream has completed (i.e. all output of the specified type
+    *        has been reported).
+    */
+   void setStreamComplete();
 
    /** The type of output that should be streamed. */
    OutputType m_outputType;
