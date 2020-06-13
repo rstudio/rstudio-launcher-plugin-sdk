@@ -22,8 +22,10 @@
  */
 
 
-#include <api/AbstractOutputStream.hpp>
 #include "StreamManager.hpp"
+
+#include <api/AbstractOutputStream.hpp>
+#include <api/Request.hpp>
 
 #include "JobStatusStream.hpp"
 

@@ -564,18 +564,18 @@ struct OutputStreamRequest::Impl
 {
    Impl() :
       IsCancel(false),
-      StreamType(OutputStreamRequest::Type::BOTH)
+      StreamType(OutputType::BOTH)
    {
    }
 
    bool IsCancel;
 
-   OutputStreamRequest::Type StreamType;
+   OutputType StreamType;
 };
 
 PRIVATE_IMPL_DELETER_IMPL(OutputStreamRequest)
 
-OutputStreamRequest::Type OutputStreamRequest::getStreamType() const
+OutputType OutputStreamRequest::getStreamType() const
 {
    return m_impl->StreamType;
 }
@@ -614,17 +614,17 @@ OutputStreamRequest::OutputStreamRequest(const json::Object& in_requestJson) :
       {
          case 0:
          {
-            m_impl->StreamType = Type::STDOUT;
+            m_impl->StreamType = OutputType::STDOUT;
             break;
          }
          case 1:
          {
-            m_impl->StreamType = Type::STDERR;
+            m_impl->StreamType = OutputType::STDERR;
             break;
          }
          case 2:
          {
-            m_impl->StreamType = Type::BOTH;
+            m_impl->StreamType = OutputType::BOTH;
             break;
          }
          default:

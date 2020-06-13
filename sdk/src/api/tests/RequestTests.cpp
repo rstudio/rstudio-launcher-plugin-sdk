@@ -737,7 +737,7 @@ TEST_CASE("Parse OutputStream request")
       CHECK(outputStreamRequest->getRequestUsername() == USER_ONE);
       CHECK(outputStreamRequest->getJobId() == "123");
       CHECK(outputStreamRequest->getEncodedJobId() == "321");
-      CHECK(outputStreamRequest->getStreamType() == OutputStreamRequest::Type::BOTH);
+      CHECK(outputStreamRequest->getStreamType() == OutputType::BOTH);
       CHECK_FALSE(outputStreamRequest->isCancelRequest());
    }
 
@@ -756,7 +756,7 @@ TEST_CASE("Parse OutputStream request")
       CHECK(outputStreamRequest->getRequestUsername() == USER_ONE);
       CHECK(outputStreamRequest->getJobId() == "123");
       CHECK(outputStreamRequest->getEncodedJobId() == "321");
-      CHECK(outputStreamRequest->getStreamType() == OutputStreamRequest::Type::BOTH);
+      CHECK(outputStreamRequest->getStreamType() == OutputType::BOTH);
       CHECK(outputStreamRequest->isCancelRequest());
    }
 
@@ -775,7 +775,7 @@ TEST_CASE("Parse OutputStream request")
       CHECK(outputStreamRequest->getRequestUsername() == USER_ONE);
       CHECK(outputStreamRequest->getJobId() == "123");
       CHECK(outputStreamRequest->getEncodedJobId() == "321");
-      CHECK(outputStreamRequest->getStreamType() == OutputStreamRequest::Type::STDOUT);
+      CHECK(outputStreamRequest->getStreamType() == OutputType::STDOUT);
       CHECK_FALSE(outputStreamRequest->isCancelRequest());
    }
 
@@ -794,7 +794,7 @@ TEST_CASE("Parse OutputStream request")
       CHECK(outputStreamRequest->getRequestUsername() == USER_ONE);
       CHECK(outputStreamRequest->getJobId() == "123");
       CHECK(outputStreamRequest->getEncodedJobId() == "321");
-      CHECK(outputStreamRequest->getStreamType() == OutputStreamRequest::Type::STDERR);
+      CHECK(outputStreamRequest->getStreamType() == OutputType::STDERR);
       CHECK(outputStreamRequest->isCancelRequest());
    }
 

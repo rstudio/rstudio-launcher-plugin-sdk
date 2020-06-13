@@ -53,7 +53,7 @@ AbstractOutputStream::AbstractOutputStream(
 {
 }
 
-void AbstractOutputStream::reportData(const std::string& in_data, bool in_isStdOut)
+void AbstractOutputStream::reportData(const std::string& in_data, OutputType in_outputType)
 {
 
 }

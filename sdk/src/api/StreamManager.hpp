@@ -40,6 +40,7 @@ namespace api {
 
 // Forward Declarations
 class JobStatusRequest;
+class OutputStreamRequest;
 
 /**
  * @brief Class which manages all the streamed responses for the plugin.

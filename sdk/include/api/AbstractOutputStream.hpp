@@ -27,13 +27,27 @@
 #include <memory>
 
 #include <PImpl.hpp>
+#include <api/Job.hpp>
 #include <comms/AbstractLauncherCommunicator.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
 namespace api {
 
-using OutputType = OutputStreamRequest::Type;
+/**
+ * @brief The type of job output.
+ */
+enum class OutputType
+{
+   /** Standard output. */
+   STDOUT,
+
+   /** Standard error output. */
+   STDERR,
+
+   /** Standard output and standard error output. */
+   BOTH
+};
 
 /**
  * @brief Streams job output data to the launcher.
@@ -82,10 +96,10 @@ protected:
    /**
     * @brief Reports output to the launcher.
     *
-    * @param in_data        The output data.
-    * @param in_isStdOut    Whether the output is Standard Output (true) or Standard Error (false).
+    * @param in_data            The output data.
+    * @param in_outputType      The type of output data.
     */
-   void reportData(const std::string& in_data, bool in_isStdOut);
+   void reportData(const std::string& in_data, OutputType in_outputType);
 
    /**
     * @brief Notifies the base class that the output stream has completed (i.e. all output of the specified type

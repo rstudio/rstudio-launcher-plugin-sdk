@@ -31,8 +31,9 @@
 
 #include <PImpl.hpp>
 #include <Optional.hpp>
+#include <api/AbstractOutputStream.hpp>
+#include <api/Job.hpp>
 #include <system/DateTime.hpp>
-#include "Job.hpp"
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -399,27 +400,13 @@ private:
 class OutputStreamRequest final : public JobIdRequest
 {
 public:
-   /**
-    * @brief The type of job output.
-    */
-   enum class Type
-   {
-      /** Standard output. */
-      STDOUT,
-
-      /** Standard error output. */
-      STDERR,
-
-      /** Standard output and standard error output. */
-      BOTH
-   };
 
    /**
     * @brief Gets the type of Output that should be streamed.
     *
     * @return The type of Output that should be streamed.
     */
-   Type getStreamType() const;
+   OutputType getStreamType() const;
 
    /**
     * @brief Gets whether the Job Output Stream should be started (false) or ended (true).

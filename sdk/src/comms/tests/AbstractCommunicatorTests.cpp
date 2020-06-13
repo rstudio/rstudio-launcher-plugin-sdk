@@ -31,6 +31,7 @@
 #include <Error.hpp>
 #include <MockLogDestination.hpp>
 #include <api/Constants.hpp>
+#include <api/Request.hpp>
 #include <api/Response.hpp>
 #include <comms/AbstractLauncherCommunicator.hpp>
 #include <json/Json.hpp>

@@ -27,6 +27,7 @@
 
 #include <api/Constants.hpp>
 #include <api/IJobSource.hpp>
+#include <api/Request.hpp>
 #include <api/Response.hpp>
 #include <api/StreamManager.hpp>
 #include <json/Json.hpp>

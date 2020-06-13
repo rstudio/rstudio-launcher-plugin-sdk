@@ -29,6 +29,7 @@
 #include <boost/system/error_code.hpp>
 
 #include <Error.hpp>
+#include <api/Request.hpp>
 #include <api/Response.hpp>
 #include <logging/Logger.hpp>
 #include <json/Json.hpp>
