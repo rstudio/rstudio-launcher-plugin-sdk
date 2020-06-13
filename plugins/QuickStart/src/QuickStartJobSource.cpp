@@ -81,6 +81,7 @@ Error QuickStartJobSource::createOutputStream(
    comms::AbstractLauncherCommunicatorPtr in_launcherCommunicator,
    api::OutputStreamPtr& out_outputStream)
 {
+   // TODO #13: Create an output stream.
    return Error(
       "NotImplemented",
       2,
