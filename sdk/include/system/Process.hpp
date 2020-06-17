@@ -145,13 +145,25 @@ struct ProcessOptions
    /**
     * @brief Constructor.
     */
-   ProcessOptions() : IsShellCommand(false) {};
+   ProcessOptions() :
+      CloseStdIn(true),
+      IsShellCommand(false),
+      UseSandbox(true)
+   {};
 
    /**
     * @brief The arguments of the process. Each argument will be escaped using single quotations so that the values are
     *        always interpreted literally. No expansion of environment variables or backslashes will be performed.
     */
    std::vector<std::string> Arguments;
+
+   /**
+    * @brief Whether to close write end of the standard input stream after the specified StandardInput is written.
+    *        Default: true.
+    *
+    * If UseSandbox is true, this value will be ignored and treated as true.
+    */
+   bool CloseStdIn;
 
    /**
     * @brief The environment variables which should available to the process. If PATH is not set, it will be added to
@@ -173,16 +185,22 @@ struct ProcessOptions
    /**
     * @brief The set of mounts to be applied for the child process. Only mounts with a HostMountSource type will be
     *        applied. All other mounts will be ignored.
+    *
+    * Mounts will be ignored if UseSandbox is false.
     */
    api::MountList Mounts;
 
    /**
     * @brief The PAM profile to load, if any.
+    *
+    * PamProfile will be ignored if UseSandbox is false.
     */
    std::string PamProfile;
 
    /**
     * @brief The password of the user running the job, if any.
+    *
+    * Password will be ignored if UseSandbox is false.
     */
    std::string Password;
 
@@ -205,6 +223,19 @@ struct ProcessOptions
     * @brief The file to which to write standard error. If not set, standard error will not be redirected.
     */
    FilePath StandardErrorFile;
+
+   /**
+    * @brief Whether to use the rsandbox executable to launch the child in sandbox environment or launch the child
+    *        process directly.
+    *
+    * If this value is true, CloseStdIn will be ignored and treated as true.
+    *
+    * The following values will be ignored if UseSandbox is false:
+    *       - Mounts
+    *       - PamProfile
+    *       - Password
+    */
+   bool UseSandbox;
 
    /**
     * @brief The directory from which to run the process. Must exist and be accessible by the RunAsUser.
@@ -236,6 +267,16 @@ public:
     * @return Success if the child process was terminated; Error otherwise.
     */
    virtual Error terminate();
+
+   /**
+    * @brief Writes the specified string to stdin.
+    *
+    * @param in_string      The data to write to stdin.
+    * @param in_eof         True if this is the last data to write to stdin.
+    *
+    * @return Success if the data could be written; Error otherwise.
+    */
+   virtual Error writeToStdin(const std::string& in_string, bool in_eof) = 0;
 
 protected:
    /**
@@ -277,6 +318,16 @@ public:
     * @return Success if the child process could be started; Error otherwise.
     */
    Error run(ProcessResult& out_result);
+
+   /**
+    * @brief Writes the specified string to stdin.
+    *
+    * @param in_string      The data to write to stdin.
+    * @param in_eof         True if this is the last data to write to stdin.
+    *
+    * @return Success if the data could be written; Error otherwise.
+    */
+   Error writeToStdin(const std::string& in_string, bool in_eof) override;
 };
 
 /**

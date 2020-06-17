@@ -683,6 +683,6 @@ It is possible that neither streaming nor polling are the best solution for keep
 
 Depending on the API exposed by the Job Scheduling System, it may be necessary to launch child processes to perform actions on the Job Scheduling System, such as running a job or listing the jobs in the system. The SDK provides a number of classes and functions for launching child processes in the `system/Process.hpp` header file.
 
-All child processes launched through the SDK provided process module are run through the `rsandbox` process. This is done to ensure that the child process will be run in an isolated environment. 
+Child processes launched through the SDK provided process module are run through the `rsandbox` process by default. This is done to ensure that the child process will be run in an isolated environment, however it prevents the parent process from continuing to write standard input to the child process. If this is needed by the Plugin, it is possible to launch the child process directly and keep the standard input stream open by setting `system::process::ProcessOptions::UseSandbox = false` and `system::process::ProcessOptions::CloseStdIn = false` respectively.
 
 The SDK process launching module will escape the command, arguments, standard input, the standard output and standard error files, and environment variables as appropriate. The command, arguments and environment values will be treated literally. Bash expansion of them will not take place. Bash expansion may take place within the standard input, however.
