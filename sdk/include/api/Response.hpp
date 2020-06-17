@@ -30,6 +30,7 @@
 #include <vector>
 
 #include <PImpl.hpp>
+#include <api/AbstractOutputStream.hpp>
 #include <api/Job.hpp>
 #include <api/ResponseTypes.hpp>
 
@@ -266,7 +267,7 @@ private:
 };
 
 /**
- * @brief Class which represents a JobStatus Stream, either for all jobs or for a specific job.
+ * @brief Class which represents a Job Status Stream, either for all jobs or for a specific job.
  */
 class JobStatusResponse final : public MultiStreamResponse
 {
@@ -289,6 +290,32 @@ public:
 private:
    // The private implementation of JobStatusResponse.
    PRIVATE_IMPL(m_impl);
+};
+
+/**
+ * @brief Class which represents a Job Output Stream for a specific job.
+ */
+class OutputStreamResponse final : public Response
+{
+   /**
+    * @brief Constructor.
+    * @param in_requestId       The ID of the request for which this response is being sent.
+    * @param in_sequenceId
+    * @param in_output
+    * @param in_outputType
+    */
+   OutputStreamResponse(
+      uint64_t in_requestId,
+      uint64_t in_sequenceId,
+      const std::string& in_output,
+      OutputType in_outputType);
+
+   /**
+    * @brief Converts this output stream response to a JSON object.
+    *
+    * @return The JSON object which represents this output stream response.
+    */
+   json::Object toJson() const override;
 };
 
 /**
