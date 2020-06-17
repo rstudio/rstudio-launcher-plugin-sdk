@@ -30,6 +30,7 @@
 #include <mutex>
 
 #include <Error.hpp>
+#include <api/Request.hpp>
 #include <system/FilePath.hpp>
 #include <system/Process.hpp>
 #include <system/Asio.hpp>
@@ -73,6 +74,20 @@ public:
 
 private:
    /**
+    * @brief Sends a job output stream request and waits for the response(s).
+    *
+    * @return True if the plugin responded as expected; false otherwise.
+    */
+   bool sendJobOutputStreamRequest();
+
+   /**
+    * @brief Sends a job status stream request and waits for the response(s).
+    *
+    * @return True if the plugin responded as expected; false otherwise.
+    */
+   bool sendJobStatusStreamRequest();
+
+   /**
     * @brief Waits for the specified number of responses for the specified request.
     *
     * @param in_requestId               The ID of the request for which to wait for responses.
@@ -89,6 +104,8 @@ private:
    system::User m_requestUser;
    std::mutex m_mutex;
    std::condition_variable m_condVar;
+   std::vector<std::string> m_submittedJobIds;
+   api::Request::Type m_lastRequestType;
 };
 
 typedef std::shared_ptr<SmokeTest> SmokeTestPtr;

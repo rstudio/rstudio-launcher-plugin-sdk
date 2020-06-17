@@ -58,6 +58,7 @@ constexpr char const* GET_JOB_STATUSES_REQ = "Get job statuses";
 constexpr char const* SUB_JOB_1_REQ = "Submit quick job (matches filter)";
 constexpr char const* SUB_JOB_2_REQ = "Submit quick job 2 (doesn't match filter)";
 constexpr char const* SUB_JOB_3_REQ = "Submit long job (matches filter)";
+constexpr char const* GET_JOB_OUTPUT_REQ = "Stream last job's output";
 constexpr char const* EXIT_REQ = "Exit";
 
 typedef std::vector<std::string> Requests;
@@ -232,6 +233,19 @@ std::string submitJob3Req(const system::User& in_user)
    return submitJobReq(job);
 }
 
+void parseJobIds(const json::Array& in_jobsArray, std::vector<std::string>& io_ids)
+{
+   for (size_t i = 0, last = in_jobsArray.getSize(); i < last; ++i)
+   {
+      if (in_jobsArray[i].isObject())
+      {
+         json::Object jobObj = in_jobsArray[i].getObject();
+         if (jobObj.hasMember(api::FIELD_ID) && jobObj[api::FIELD_ID].isString())
+            io_ids.push_back(jobObj[api::FIELD_ID].getString());
+      }
+   }
+}
+
 } // anonymous namespace
 
 SmokeTest::SmokeTest(system::FilePath in_pluginPath, system::User in_requestUser) :
@@ -312,20 +326,25 @@ Error SmokeTest::initialize()
          {
             for (const std::string& msg: messages)
             {
-               json::Value jsonVal;
-               Error error = jsonVal.parse(msg);
+               json::Object obj;
+               Error error = obj.parse(msg);
                if (error)
                   std::cerr << "Error parsing response from plugin: " << std::endl
                             << error.asString() << std::endl
                             << "Response: " << std::endl
                             << in_string << std::endl;
                else
-                  std::cout << jsonVal.writeFormatted() << std::endl;
+                  std::cout << obj.writeFormatted() << std::endl;
 
-               uint64_t requestId = jsonVal.getObject()[api::FIELD_REQUEST_ID].getUInt64();
+               uint64_t requestId = obj[api::FIELD_REQUEST_ID].getUInt64();
                if (sharedThis->m_responseCount.find(requestId) == sharedThis->m_responseCount.end())
                   sharedThis->m_responseCount[requestId] = 0;
                sharedThis->m_responseCount[requestId] += 1;
+
+               if ((sharedThis->m_lastRequestType == api::Request::Type::SUBMIT_JOB) &&
+                  obj.hasMember(api::FIELD_JOBS) &&
+                  obj[api::FIELD_JOBS].isArray())
+                     parseJobIds(obj[api::FIELD_JOBS].getArray(), sharedThis->m_submittedJobIds);
             }
          }
          END_LOCK_MUTEX
@@ -340,6 +359,7 @@ Error SmokeTest::initialize()
 
    std::cout << "Bootstrapping..." << std::endl;
    m_responseCount[0] = 0;
+   m_lastRequestType = api::Request::Type::BOOTSTRAP;
    error = m_plugin->writeToStdin(getBootstrap(), false);
    if (error)
       return error;
@@ -406,39 +426,60 @@ bool SmokeTest::sendRequest()
          m_plugin->writeToStdin("", true);
          return false;
       }
+      else if (request == GET_JOB_STATUSES_REQ)
+         success = sendJobStatusStreamRequest();
+      else if (request == GET_JOB_OUTPUT_REQ)
+         success = sendJobOutputStreamRequest();
       else
       {
          bool jobStreamRequest = false;
          std::string message;
          uint64_t targetResponses = 1;
-         if (request == CLUSTER_INFO_REQ)
-            message = getClusterInfo(m_requestUser);
-         if (request == GET_JOBS_REQ)
-            message = getAllJobs(m_requestUser);
-         if (request == GET_FILTERED_JOBS_REQ)
-            message = getFilteredJobs(m_requestUser);
-         if (request == GET_RUNNING_JOBS_REQ)
-            message = getStatusJobs(m_requestUser, api::Job::State::RUNNING);
-         if (request == GET_FINISHED_JOBS_REQ)
-            message = getStatusJobs(m_requestUser, api::Job::State::FINISHED);
-         if (request == GET_JOB_STATUSES_REQ)
-         {
-            message = streamJobStatuses(m_requestUser);
-            jobStreamRequest = true;
-         }
-         if (request == SUB_JOB_1_REQ)
-            message = submitJob1Req(m_requestUser);
-         if (request == SUB_JOB_2_REQ)
-            message = submitJob2Req(m_requestUser);
-         if (request == SUB_JOB_3_REQ)
-            message = submitJob3Req(m_requestUser);
 
          UNIQUE_LOCK_MUTEX(m_mutex)
          {
-            if (!jobStreamRequest)
-               m_responseCount[s_requestId] = 0;
-            else
-               m_responseCount[0] = 0;
+            if (request == CLUSTER_INFO_REQ)
+            {
+               m_lastRequestType = api::Request::Type::GET_CLUSTER_INFO;
+               message = getClusterInfo(m_requestUser);
+            }
+            if (request == GET_JOBS_REQ)
+            {
+               m_lastRequestType = api::Request::Type::GET_JOB;
+               message = getAllJobs(m_requestUser);
+            }
+            if (request == GET_FILTERED_JOBS_REQ)
+            {
+               m_lastRequestType = api::Request::Type::GET_JOB;
+               message = getFilteredJobs(m_requestUser);
+            }
+            if (request == GET_RUNNING_JOBS_REQ)
+            {
+               m_lastRequestType = api::Request::Type::GET_JOB;
+               message = getStatusJobs(m_requestUser, api::Job::State::RUNNING);
+            }
+            if (request == GET_FINISHED_JOBS_REQ)
+            {
+               m_lastRequestType = api::Request::Type::GET_JOB;
+               message = getStatusJobs(m_requestUser, api::Job::State::FINISHED);
+            }
+            if (request == SUB_JOB_1_REQ)
+            {
+               m_lastRequestType = api::Request::Type::SUBMIT_JOB;
+               message = submitJob1Req(m_requestUser);
+            }
+            if (request == SUB_JOB_2_REQ)
+            {
+               m_lastRequestType = api::Request::Type::SUBMIT_JOB;
+               message = submitJob2Req(m_requestUser);
+            }
+            if (request == SUB_JOB_3_REQ)
+            {
+               m_lastRequestType = api::Request::Type::SUBMIT_JOB;
+               message = submitJob3Req(m_requestUser);
+            }
+
+            m_responseCount[s_requestId] = 0;
          }
          END_LOCK_MUTEX
 
@@ -450,34 +491,7 @@ bool SmokeTest::sendRequest()
             return false;
          }
 
-         if (jobStreamRequest)
-            success = waitForResponse(0, targetResponses);
-         else
-            success = waitForResponse(s_requestId, targetResponses);
-
-         // Job status stream request might not return anything. Just keep trying.
-         if (!success && jobStreamRequest)
-         {
-            std::cout << "No job status stream response returned. Are there any jobs?" << std::endl;
-            success = true;
-         }
-
-         if (!success)
-            return success;
-
-         if (jobStreamRequest)
-         {
-            message = cancelJobStream(m_requestUser);
-            error = m_plugin->writeToStdin(message, false);
-            if (error)
-            {
-               std::cerr << "Error communicating with plugin." << std::endl;
-               logging::logError(error);
-               return false;
-            }
-            // Wait for half a second to ensure the stream has time to finish.
-            std::this_thread::sleep_for(std::chrono::microseconds(500));
-         }
+         success = waitForResponse(s_requestId, targetResponses);
       }
    }
 
@@ -486,11 +500,67 @@ bool SmokeTest::sendRequest()
 
 void SmokeTest::stop()
 {
-   m_exited = true;
+   UNIQUE_LOCK_MUTEX(m_mutex)
+   {
+      m_exited = true;
+   }
+   END_LOCK_MUTEX
+
    system::process::ProcessSupervisor::terminateAll();
    system::process::ProcessSupervisor::waitForExit(system::TimeDuration::Seconds(30));
    system::AsioService::stop();
    system::AsioService::waitForExit();
+}
+
+bool SmokeTest::sendJobOutputStreamRequest()
+{
+   return true;
+}
+
+bool SmokeTest::sendJobStatusStreamRequest()
+{
+   UNIQUE_LOCK_MUTEX(m_mutex)
+   {
+      m_responseCount[0] = 0;
+      m_lastRequestType = api::Request::Type::GET_JOB_STATUS;
+   }
+   END_LOCK_MUTEX
+
+   Error error = m_plugin->writeToStdin(streamJobStatuses(m_requestUser), false);
+   if (error)
+   {
+      std::cerr << "Error communicating with plugin." << std::endl;
+      logging::logError(error);
+      return false;
+   }
+
+   if (!waitForResponse(0, m_submittedJobIds.empty() ? 1: m_submittedJobIds.size()))
+   {
+      UNIQUE_LOCK_MUTEX(m_mutex)
+      {
+         if (m_responseCount[0] == 0)
+            std::cout << "No job status stream response returned. Are there any jobs?" << std::endl;
+         else if (m_responseCount[0] < m_submittedJobIds.size())
+            std::cout
+               << "Recieved fewer job status stream responses than exepected. Actual: "
+               << m_responseCount[0]
+               << " Expected (minimum): "
+               << m_submittedJobIds.size();
+      }
+      END_LOCK_MUTEX
+   }
+
+   error = m_plugin->writeToStdin(cancelJobStream(m_requestUser), false);
+   if (error)
+   {
+      std::cerr << "Error communicating with plugin." << std::endl;
+      logging::logError(error);
+      return false;
+   }
+   // Wait for half a second to ensure the stream has time to finish.
+   std::this_thread::sleep_for(std::chrono::microseconds(500));
+
+   return true;
 }
 
 bool SmokeTest::waitForResponse(uint64_t in_requestId, uint64_t in_expectedResponses)
