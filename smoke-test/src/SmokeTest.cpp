@@ -23,6 +23,7 @@
 
 #include <SmokeTest.hpp>
 
+#include <cassert>
 #include <iomanip>
 #include <iostream>
 #include <thread>
@@ -59,6 +60,9 @@ constexpr char const* SUB_JOB_1_REQ = "Submit quick job (matches filter)";
 constexpr char const* SUB_JOB_2_REQ = "Submit quick job 2 (doesn't match filter)";
 constexpr char const* SUB_JOB_3_REQ = "Submit long job (matches filter)";
 constexpr char const* SUB_JOB_4_REQ = "Submit stderr job (doesn't match filter)";
+constexpr char const* GET_JOB_OUTPUT_BOTH_REQ = "Stream last job's output (stdout and stderr)";
+constexpr char const* GET_JOB_OUTPUT_STDOUT_REQ = "Stream last job's output (stdout)";
+constexpr char const* GET_JOB_OUTPUT_STDERR_REQ = "Stream last job's output (stderr)";
 constexpr char const* EXIT_REQ = "Exit";
 
 typedef std::vector<std::string> Requests;
@@ -83,6 +87,9 @@ const Requests& getRequests()
          SUB_JOB_2_REQ,
          SUB_JOB_4_REQ,
          SUB_JOB_3_REQ,
+         GET_JOB_OUTPUT_BOTH_REQ,
+         GET_JOB_OUTPUT_STDOUT_REQ,
+         GET_JOB_OUTPUT_STDERR_REQ,
          EXIT_REQ
       };
 
@@ -245,6 +252,18 @@ std::string submitJob4Req(const system::User& in_user)
    return submitJobReq(job);
 }
 
+std::string streamOutput(const std::string& in_jobId, api::OutputType in_type, const system::User& in_user)
+{
+   json::Object outputStreamReq;
+   outputStreamReq[api::FIELD_REQUEST_ID] = ++s_requestId;
+   outputStreamReq[api::FIELD_OUTPUT_TYPE] = static_cast<int>(in_type);
+   outputStreamReq[api::FIELD_JOB_ID] = in_jobId;
+   outputStreamReq[api::FIELD_MESSAGE_TYPE] = static_cast<int>(api::Request::Type::GET_JOB_OUTPUT);
+   outputStreamReq[api::FIELD_CANCEL_STREAM] = false;
+
+   return getMessageHandler().formatMessage(outputStreamReq.write());
+}
+
 void parseJobIds(const json::Array& in_jobsArray, std::vector<std::string>& io_ids)
 {
    for (size_t i = 0, last = in_jobsArray.getSize(); i < last; ++i)
@@ -357,6 +376,10 @@ Error SmokeTest::initialize()
                   obj.hasMember(api::FIELD_JOBS) &&
                   obj[api::FIELD_JOBS].isArray())
                      parseJobIds(obj[api::FIELD_JOBS].getArray(), sharedThis->m_submittedJobIds);
+               else if ((sharedThis->m_lastRequestType == api::Request::Type::GET_JOB_OUTPUT) &&
+                  obj.hasMember(api::FIELD_CANCEL_STREAM) &&
+                  obj[api::FIELD_CANCEL_STREAM].isBool())
+                     sharedThis->m_outputStreamFinished = obj[api::FIELD_CANCEL_STREAM].getBool();
             }
          }
          END_LOCK_MUTEX
@@ -440,8 +463,12 @@ bool SmokeTest::sendRequest()
       }
       else if (request == GET_JOB_STATUSES_REQ)
          success = sendJobStatusStreamRequest();
-      else if (request == GET_JOB_OUTPUT_REQ)
-         success = sendJobOutputStreamRequest();
+      else if (request == GET_JOB_OUTPUT_BOTH_REQ)
+         success = sendJobOutputStreamRequest(api::OutputType::BOTH);
+      else if (request == GET_JOB_OUTPUT_STDOUT_REQ)
+         success = sendJobOutputStreamRequest(api::OutputType::STDOUT);
+      else if (request == GET_JOB_OUTPUT_STDERR_REQ)
+         success = sendJobOutputStreamRequest(api::OutputType::STDERR);
       else
       {
          std::string message;
@@ -533,8 +560,44 @@ void SmokeTest::stop()
    system::AsioService::waitForExit();
 }
 
-bool SmokeTest::sendJobOutputStreamRequest()
+bool SmokeTest::sendJobOutputStreamRequest(api::OutputType in_outputType)
 {
+   std::string outputStreamMsg;
+   UNIQUE_LOCK_MUTEX(m_mutex)
+   {
+      if (m_submittedJobIds.empty())
+      {
+         std::cout << "There are no recently submitted jobs. Choose another option." << std::endl;
+         return true;
+      }
+
+      outputStreamMsg = streamOutput(m_submittedJobIds.back(), in_outputType, m_requestUser);
+      m_outputStreamFinished = false;
+      m_responseCount[s_requestId] = 0;
+      m_lastRequestType = api::Request::Type::GET_JOB_STATUS;
+   }
+   END_LOCK_MUTEX
+
+   Error error = m_plugin->writeToStdin(outputStreamMsg, false);
+   if (error)
+   {
+      std::cerr << "Error communicating with plugin." << std::endl;
+      logging::logError(error);
+      return false;
+   }
+
+   bool timedOut = false;
+   UNIQUE_LOCK_MUTEX(m_mutex)
+   {
+      while (!(timedOut = waitForResponse(s_requestId, 1, uniqueLock)) && !m_outputStreamFinished);
+   }
+   END_LOCK_MUTEX
+
+   if (timedOut)
+   {
+      // Cancel
+   }
+
    return true;
 }
 
@@ -589,27 +652,40 @@ bool SmokeTest::waitForResponse(uint64_t in_requestId, uint64_t in_expectedRespo
    // Wait up to 30 seconds for a response
    UNIQUE_LOCK_MUTEX(m_mutex)
    {
-      std::cv_status stat = std::cv_status::no_timeout;
-      uint64_t responseCount = m_responseCount[in_requestId];
-      while ((stat != std::cv_status::timeout) && (responseCount < in_expectedResponses) && !m_exited)
-      {
-         stat = m_condVar.wait_for(uniqueLock, std::chrono::seconds(30));
-
-         // If we're waiting for multiple responses and we've received at least one in the last 30 seconds, keep
-         // waiting.
-         if (m_responseCount[in_requestId] > responseCount)
-            stat = std::cv_status::no_timeout;
-
-         responseCount = m_responseCount[in_requestId];
-      }
-
-      if (stat == std::cv_status::timeout)
-      {
-         std::cerr << "Timed out waiting for response." << std::endl;
-         return false;
-      }
+      return waitForResponse(in_requestId, in_expectedResponses, uniqueLock);
    }
    END_LOCK_MUTEX
+
+   return false;
+}
+
+bool SmokeTest::waitForResponse(
+   uint64_t in_requestId,
+   uint64_t in_expectedResponses,
+   std::unique_lock<std::mutex>& in_lock)
+{
+   assert(in_lock.owns_lock());
+
+   // Wait up to 30 seconds for a response
+   std::cv_status stat = std::cv_status::no_timeout;
+   uint64_t responseCount = m_responseCount[in_requestId];
+   while ((stat != std::cv_status::timeout) && (responseCount < in_expectedResponses) && !m_exited)
+   {
+      stat = m_condVar.wait_for(in_lock, std::chrono::seconds(30));
+
+      // If we're waiting for multiple responses and we've received at least one in the last 30 seconds, keep
+      // waiting.
+      if (m_responseCount[in_requestId] > responseCount)
+         stat = std::cv_status::no_timeout;
+
+      responseCount = m_responseCount[in_requestId];
+   }
+
+   if (stat == std::cv_status::timeout)
+   {
+      std::cerr << "Timed out waiting for response." << std::endl;
+      return false;
+   }
 
    return true;
 }
