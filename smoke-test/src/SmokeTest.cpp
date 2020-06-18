@@ -266,6 +266,26 @@ std::string streamOutput(const std::string& in_jobId, api::OutputType in_type, c
    return getMessageHandler().formatMessage(outputStreamReq.write());
 }
 
+std::string cancelOutputStream(const std::string& in_jobId, const system::User& in_user)
+{
+   json::Object statusReq;
+   statusReq[api::FIELD_REQUEST_ID] = s_requestId;
+   statusReq[api::FIELD_MESSAGE_TYPE] = static_cast<int>(api::Request::Type::GET_JOB_STATUS);
+   statusReq[api::FIELD_REQUEST_USERNAME] = in_user.getUsername();
+   statusReq[api::FIELD_REAL_USER] = in_user.getUsername();
+   statusReq[api::FIELD_JOB_ID] = in_jobId;
+   statusReq[api::FIELD_CANCEL_STREAM] = true;
+
+   return getMessageHandler().formatMessage(statusReq.write());
+}
+
+bool handleError(const Error& in_error)
+{
+   std::cerr << "Error communicating with plugin." << std::endl;
+   logging::logError(in_error);
+   return false;
+}
+
 void parseJobIds(const json::Array& in_jobsArray, std::vector<std::string>& io_ids)
 {
    for (size_t i = 0, last = in_jobsArray.getSize(); i < last; ++i)
@@ -535,11 +555,7 @@ bool SmokeTest::sendRequest()
 
          Error error = m_plugin->writeToStdin(message, false);
          if (error)
-         {
-            std::cerr << "Error communicating with plugin." << std::endl;
-            logging::logError(error);
-            return false;
-         }
+            return handleError(error);
 
          success = waitForResponse(s_requestId, targetResponses);
       }
@@ -577,29 +593,23 @@ bool SmokeTest::sendJobOutputStreamRequest(api::OutputType in_outputType)
       m_outputStreamFinished = false;
       m_responseCount[s_requestId] = 0;
       m_lastRequestType = api::Request::Type::GET_JOB_STATUS;
-   }
-   END_LOCK_MUTEX
 
-   Error error = m_plugin->writeToStdin(outputStreamMsg, false);
-   if (error)
-   {
-      std::cerr << "Error communicating with plugin." << std::endl;
-      logging::logError(error);
-      return false;
-   }
+      Error error = m_plugin->writeToStdin(outputStreamMsg, false);
+      if (error)
+         return handleError(error);
 
-   bool timedOut = false;
-   UNIQUE_LOCK_MUTEX(m_mutex)
-   {
+      bool timedOut = false;
       while (!(timedOut = !waitForResponse(s_requestId, 1, uniqueLock)) && !m_outputStreamFinished);
+
+      if (timedOut && !m_outputStreamFinished)
+      {
+         std::cout << "No output stream response received within the last 30 seconds: cancelling..." << std::endl;
+         error = m_plugin->writeToStdin(cancelOutputStream(m_submittedJobIds.back(), m_requestUser), false);
+         if (error)
+            return handleError(error);
+      }
    }
    END_LOCK_MUTEX
-
-   if (timedOut && !m_outputStreamFinished)
-   {
-      std::cout << "No output stream response received within the last 30 seconds: cancelling..." << std::endl;
-      // Cancel
-   }
 
    return true;
 }
@@ -615,11 +625,7 @@ bool SmokeTest::sendJobStatusStreamRequest()
 
    Error error = m_plugin->writeToStdin(streamJobStatuses(m_requestUser), false);
    if (error)
-   {
-      std::cerr << "Error communicating with plugin." << std::endl;
-      logging::logError(error);
-      return false;
-   }
+      return handleError(error);
 
    if (!waitForResponse(0, m_submittedJobIds.empty() ? 1: m_submittedJobIds.size()))
    {
@@ -629,7 +635,7 @@ bool SmokeTest::sendJobStatusStreamRequest()
             std::cout << "No job status stream response returned. Are there any jobs?" << std::endl;
          else if (m_responseCount[0] < m_submittedJobIds.size())
             std::cout
-               << "Recieved fewer job status stream responses than exepected. Actual: "
+               << "Received fewer job status stream responses than exepected. Actual: "
                << m_responseCount[0]
                << " Expected (minimum): "
                << m_submittedJobIds.size();
@@ -639,11 +645,8 @@ bool SmokeTest::sendJobStatusStreamRequest()
 
    error = m_plugin->writeToStdin(cancelJobStream(m_requestUser), false);
    if (error)
-   {
-      std::cerr << "Error communicating with plugin." << std::endl;
-      logging::logError(error);
-      return false;
-   }
+      return handleError(error);
+
    // Wait for half a second to ensure the stream has time to finish.
    std::this_thread::sleep_for(std::chrono::microseconds(500));
 
@@ -674,7 +677,7 @@ bool SmokeTest::waitForResponse(
    uint64_t responseCount = m_responseCount[in_requestId];
    while ((stat != std::cv_status::timeout) && (responseCount < in_expectedResponses) && !m_exited)
    {
-      stat = m_condVar.wait_for(in_lock, std::chrono::seconds(30));
+      stat = m_condVar.wait_for(in_lock, std::chrono::seconds(5));
 
       // If we're waiting for multiple responses and we've received at least one in the last 30 seconds, keep
       // waiting.
