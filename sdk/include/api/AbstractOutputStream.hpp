@@ -40,13 +40,13 @@ namespace api {
 enum class OutputType
 {
    /** Standard output. */
-   STDOUT,
+   STDOUT   = 0,
 
    /** Standard error output. */
-   STDERR,
+   STDERR   = 1,
 
    /** Standard output and standard error output. */
-   BOTH
+   BOTH     = 2
 };
 
 /**

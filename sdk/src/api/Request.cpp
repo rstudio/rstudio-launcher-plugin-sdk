@@ -607,32 +607,13 @@ OutputStreamRequest::OutputStreamRequest(const json::Object& in_requestJson) :
       int value = outputType.getValueOr(0);
       if ((value < 0) || (value > 2))
       {
+         m_baseImpl->ErrorMessage = "Invalid value for outputType (" + std::to_string(value) + ")";
+         m_baseImpl->ErrorType = RequestError::INVALID_REQUEST;
          return;
       }
 
-      switch (value)
-      {
-         case 0:
-         {
-            m_impl->StreamType = OutputType::STDOUT;
-            break;
-         }
-         case 1:
-         {
-            m_impl->StreamType = OutputType::STDERR;
-            break;
-         }
-         case 2:
-         {
-            m_impl->StreamType = OutputType::BOTH;
-            break;
-         }
-         default:
-         {
-            m_baseImpl->ErrorMessage = "Invalid value for outputType (" + std::to_string(value) + ")";
-            m_baseImpl->ErrorType = RequestError::INVALID_REQUEST;
-         }
-      }
+      // At this point, the value must be 0, 1, or 2, so it's safe to static cast.
+      m_impl->StreamType = static_cast<OutputType>(value);
    }
 }
 
