@@ -257,6 +257,8 @@ std::string streamOutput(const std::string& in_jobId, api::OutputType in_type, c
    json::Object outputStreamReq;
    outputStreamReq[api::FIELD_REQUEST_ID] = ++s_requestId;
    outputStreamReq[api::FIELD_OUTPUT_TYPE] = static_cast<int>(in_type);
+   outputStreamReq[api::FIELD_REQUEST_USERNAME] = in_user.getUsername();
+   outputStreamReq[api::FIELD_REAL_USER] = in_user.getUsername();
    outputStreamReq[api::FIELD_JOB_ID] = in_jobId;
    outputStreamReq[api::FIELD_MESSAGE_TYPE] = static_cast<int>(api::Request::Type::GET_JOB_OUTPUT);
    outputStreamReq[api::FIELD_CANCEL_STREAM] = false;
