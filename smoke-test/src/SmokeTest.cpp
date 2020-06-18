@@ -591,12 +591,13 @@ bool SmokeTest::sendJobOutputStreamRequest(api::OutputType in_outputType)
    bool timedOut = false;
    UNIQUE_LOCK_MUTEX(m_mutex)
    {
-      while (!(timedOut = waitForResponse(s_requestId, 1, uniqueLock)) && !m_outputStreamFinished);
+      while (!(timedOut = !waitForResponse(s_requestId, 1, uniqueLock)) && !m_outputStreamFinished);
    }
    END_LOCK_MUTEX
 
-   if (timedOut)
+   if (timedOut && !m_outputStreamFinished)
    {
+      std::cout << "No output stream response received within the last 30 seconds: cancelling..." << std::endl;
       // Cancel
    }
 
