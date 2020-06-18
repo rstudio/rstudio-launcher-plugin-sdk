@@ -1301,15 +1301,15 @@ Error AsyncChildProcess::run(const AsyncProcessCallbacks& in_callbacks)
    {
       if (SharedThis sharedThis = weakThis.lock())
       {
-         if (is_stdOut)
-            sharedThis->m_stdOutFailure = true;
-         else
-            sharedThis->m_stdErrFailure = true;
+         LOCK_MUTEX(sharedThis->m_mutex)
+         {
+            if (is_stdOut)
+               sharedThis->m_stdOutFailure = true;
+            else
+               sharedThis->m_stdErrFailure = true;
 
          // Start watching for the other stream to fail in 20 millisecond intervals, for at most 5 seconds, only if
          // there isn't another timer already running (we don't want to interrupt an actual exit watcher from terminate).
-         LOCK_MUTEX(sharedThis->m_mutex)
-         {
             if (sharedThis->m_exitWatcher == nullptr)
             {
                sharedThis->m_exitWatcher.reset(new AsyncTimedEvent());
@@ -1398,15 +1398,15 @@ void AsyncChildProcess::checkExited(
    const Error& in_error,
    const system::DateTime& in_startTime)
 {
-   // Don't bother checking for exit if one of the output/error streams still hasn't exited, unless exit is being
-   // forced.
-   if (!in_forceExit && (!m_stdOutFailure || !m_stdErrFailure))
-      return;
-
    int exitCode = -1;
 
    UNIQUE_LOCK_MUTEX(m_mutex)
    {
+      // Don't bother checking for exit if one of the output/error streams still hasn't exited, unless exit is being
+      // forced.
+      if (!in_forceExit && (!m_stdOutFailure || !m_stdErrFailure))
+         return;
+
       if (m_hasExited)
          return;
 
