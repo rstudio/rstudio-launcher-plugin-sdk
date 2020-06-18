@@ -75,10 +75,11 @@ Error QuickStartJobSource::submitJob(api::JobPtr io_job, bool& out_wasInvalidReq
 }
 
 Error QuickStartJobSource::createOutputStream(
-   uint64_t in_requestId,
    api::OutputType in_outputType,
    api::JobPtr in_job,
-   comms::AbstractLauncherCommunicatorPtr in_launcherCommunicator,
+   api::AbstractOutputStream::OnOutput in_onOutput,
+   api::AbstractOutputStream::OnComplete in_onComplete,
+   api::AbstractOutputStream::OnError in_onError,
    api::OutputStreamPtr& out_outputStream)
 {
    // TODO #13: Create an output stream.

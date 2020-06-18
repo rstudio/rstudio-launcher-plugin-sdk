@@ -107,19 +107,21 @@ public:
    /**
     * @brief Creates an output stream for the specified job.
     *
-    * @param in_requestId                   The ID of the request for which job output should be streamed.
-    * @param in_outputType                  The type of job output to stream.
-    * @param in_job                         The job for which output should be streamed.
-    * @param in_launcherCommunicator        The launcher communicator for sending responses to the Launcher.
-    * @param out_outputStream               The newly created output stream, on Success.
+    * @param in_outputType      The type of job output to stream.
+    * @param in_job             The job for which output should be streamed.
+    * @param in_onOutput        Callback function which will be invoked when data is reported.
+    * @param in_onComplete      Callback function which will be invoked when the stream is complete.
+    * @param in_onError         Callback function which will be invoked if an error occurs.
+    * @param out_outputStream   The newly created output stream, on Success.
     *
     * @return Success if the output stream could be created; Error otherwise.
     */
    Error createOutputStream(
-      uint64_t in_requestId,
       api::OutputType in_outputType,
       api::JobPtr in_job,
-      comms::AbstractLauncherCommunicatorPtr in_launcherCommunicator,
+      api::AbstractOutputStream::OnOutput in_onOutput,
+      api::AbstractOutputStream::OnComplete in_onComplete,
+      api::AbstractOutputStream::OnError in_onError,
       api::OutputStreamPtr& out_outputStream) override;
 
 private:

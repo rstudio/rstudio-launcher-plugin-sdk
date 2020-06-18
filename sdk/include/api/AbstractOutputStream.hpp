@@ -26,9 +26,10 @@
 
 #include <memory>
 
+#include <functional>
+
 #include <PImpl.hpp>
 #include <api/Job.hpp>
-#include <comms/AbstractLauncherCommunicator.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -55,6 +56,11 @@ enum class OutputType
 class AbstractOutputStream : public std::enable_shared_from_this<AbstractOutputStream>
 {
 public:
+   /** Definitions for callback functions which will be invoked when certain events occur. */
+   typedef std::function<void(uint64_t)> OnComplete;
+   typedef std::function<void(const Error&)> OnError;
+   typedef std::function<void(const std::string&, OutputType, uint64_t)> OnOutput;
+
    /**
     * @brief Virtual destructor for inheritance.
     */
@@ -82,16 +88,19 @@ protected:
    /**
     * @brief Constructor.
     *
-    * @param in_requestId                   The ID of the request for which job output should be streamed.
-    * @param in_outputType                  The type of job output to stream.
-    * @param in_job                         The job for which output should be streamed.
-    * @param in_launcherCommunicator        The launcher communicator for sending responses to the Launcher.
+    * @param in_requestId       The ID of the request for which job output should be streamed.
+    * @param in_outputType      The type of job output to stream.
+    * @param in_onOutput        Callback function which will be invoked when data is reported.
+    * @param in_onComplete      Callback function which will be invoked when the stream is complete.
+    * @param in_onError         Callback function which will be invoked if an error occurs.
+    * @param in_job             The job for which output should be streamed.
     */
    AbstractOutputStream(
-      uint64_t in_requestId,
       OutputType in_outputType,
       JobPtr in_job,
-      comms::AbstractLauncherCommunicatorPtr in_launcherCommunicator);
+      OnOutput in_onOutput,
+      OnComplete in_onComplete,
+      OnError in_onError);
 
    /**
     * @brief Reports output to the launcher.
@@ -100,6 +109,13 @@ protected:
     * @param in_outputType      The type of output data.
     */
    void reportData(const std::string& in_data, OutputType in_outputType);
+
+   /**
+    * @brief Reports an error to the launcher.
+    *
+    * @param in_error           The error which occurred.
+    */
+   void reportError(const Error& in_error);
 
    /**
     * @brief Notifies the base class that the output stream has completed (i.e. all output of the specified type

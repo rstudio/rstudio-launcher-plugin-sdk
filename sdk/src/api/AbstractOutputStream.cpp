@@ -23,44 +23,58 @@
 
 #include <api/AbstractOutputStream.hpp>
 
+#include <atomic>
+
 namespace rstudio {
 namespace launcher_plugins {
 namespace api {
 
 struct AbstractOutputStream::Impl
 {
-   Impl(uint64_t in_requestId, comms::AbstractLauncherCommunicatorPtr&& in_launcherCommunicator) :
-      LauncherCommunicator(in_launcherCommunicator),
-      RequestId(in_requestId)
+   Impl(OnOutput&& in_onOutput, OnComplete&& in_onComplete, OnError&& in_onError) :
+      OnOutputFunc(in_onOutput),
+      OnCompleteFunc(in_onComplete),
+      OnErrorFunc(in_onError),
+      SequenceId(0)
    {
    }
 
-   comms::AbstractLauncherCommunicatorPtr LauncherCommunicator;
+   OnOutput OnOutputFunc;
 
-   uint64_t RequestId;
+   OnComplete OnCompleteFunc;
+
+   OnError OnErrorFunc;
+
+   std::atomic_uint64_t SequenceId;
 };
 
 PRIVATE_IMPL_DELETER_IMPL(AbstractOutputStream)
 
 AbstractOutputStream::AbstractOutputStream(
-   uint64_t in_requestId,
    OutputType in_outputType,
    JobPtr in_job,
-   comms::AbstractLauncherCommunicatorPtr in_launcherCommunicator) :
+   OnOutput in_onOutput,
+   OnComplete in_onComplete,
+   OnError in_onError):
       m_outputType(in_outputType),
       m_job(std::move(in_job)),
-      m_baseImpl(new Impl(in_requestId, std::move(in_launcherCommunicator)))
+      m_baseImpl(new Impl(std::move(in_onOutput), std::move(in_onComplete), std::move(in_onError)))
 {
 }
 
 void AbstractOutputStream::reportData(const std::string& in_data, OutputType in_outputType)
 {
+   m_baseImpl->OnOutputFunc(in_data, in_outputType, ++m_baseImpl->SequenceId);
+}
 
+void AbstractOutputStream::reportError(const Error& in_error)
+{
+   m_baseImpl->OnErrorFunc(in_error);
 }
 
 void AbstractOutputStream::setStreamComplete()
 {
-
+   m_baseImpl->OnCompleteFunc(++m_baseImpl->SequenceId);
 }
 
 } // namespace api
