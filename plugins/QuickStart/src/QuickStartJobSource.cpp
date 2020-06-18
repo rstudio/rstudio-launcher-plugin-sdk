@@ -90,7 +90,6 @@ Error QuickStartJobSource::createOutputStream(
       ERROR_LOCATION);
 }
 
-
 } // namespace quickstart
 } // namespace launcher_plugins
 } // namespace rstudio
