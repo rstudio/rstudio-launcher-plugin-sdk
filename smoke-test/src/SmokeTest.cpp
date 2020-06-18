@@ -58,7 +58,7 @@ constexpr char const* GET_JOB_STATUSES_REQ = "Get job statuses";
 constexpr char const* SUB_JOB_1_REQ = "Submit quick job (matches filter)";
 constexpr char const* SUB_JOB_2_REQ = "Submit quick job 2 (doesn't match filter)";
 constexpr char const* SUB_JOB_3_REQ = "Submit long job (matches filter)";
-constexpr char const* GET_JOB_OUTPUT_REQ = "Stream last job's output";
+constexpr char const* SUB_JOB_4_REQ = "Submit stderr job (doesn't match filter)";
 constexpr char const* EXIT_REQ = "Exit";
 
 typedef std::vector<std::string> Requests;
@@ -81,6 +81,7 @@ const Requests& getRequests()
          GET_JOB_STATUSES_REQ,
          SUB_JOB_1_REQ,
          SUB_JOB_2_REQ,
+         SUB_JOB_4_REQ,
          SUB_JOB_3_REQ,
          EXIT_REQ
       };
@@ -229,6 +230,17 @@ std::string submitJob3Req(const system::User& in_user)
    job.StandardIn = "#!/bin/bash\nset -e\nfor I in 1 2 3 4 5 6 7 8 9 10 11; do\n  echo \"$I...\"\n  sleep $I\ndone";
    job.Name = "Slow job";
    job.Tags = { "filter job" };
+
+   return submitJobReq(job);
+}
+
+std::string submitJob4Req(const system::User& in_user)
+{
+   api::Job job;
+   job.User = in_user;
+   job.Command = "grep";
+   job.Name = "Stderr job";
+   job.Tags = { "other", "tags" , "filter", "job" };
 
    return submitJobReq(job);
 }
@@ -432,7 +444,6 @@ bool SmokeTest::sendRequest()
          success = sendJobOutputStreamRequest();
       else
       {
-         bool jobStreamRequest = false;
          std::string message;
          uint64_t targetResponses = 1;
 
@@ -443,40 +454,50 @@ bool SmokeTest::sendRequest()
                m_lastRequestType = api::Request::Type::GET_CLUSTER_INFO;
                message = getClusterInfo(m_requestUser);
             }
-            if (request == GET_JOBS_REQ)
+            else if (request == GET_JOBS_REQ)
             {
                m_lastRequestType = api::Request::Type::GET_JOB;
                message = getAllJobs(m_requestUser);
             }
-            if (request == GET_FILTERED_JOBS_REQ)
+            else if (request == GET_FILTERED_JOBS_REQ)
             {
                m_lastRequestType = api::Request::Type::GET_JOB;
                message = getFilteredJobs(m_requestUser);
             }
-            if (request == GET_RUNNING_JOBS_REQ)
+            else if (request == GET_RUNNING_JOBS_REQ)
             {
                m_lastRequestType = api::Request::Type::GET_JOB;
                message = getStatusJobs(m_requestUser, api::Job::State::RUNNING);
             }
-            if (request == GET_FINISHED_JOBS_REQ)
+            else if (request == GET_FINISHED_JOBS_REQ)
             {
                m_lastRequestType = api::Request::Type::GET_JOB;
                message = getStatusJobs(m_requestUser, api::Job::State::FINISHED);
             }
-            if (request == SUB_JOB_1_REQ)
+            else if (request == SUB_JOB_1_REQ)
             {
                m_lastRequestType = api::Request::Type::SUBMIT_JOB;
                message = submitJob1Req(m_requestUser);
             }
-            if (request == SUB_JOB_2_REQ)
+            else if (request == SUB_JOB_2_REQ)
             {
                m_lastRequestType = api::Request::Type::SUBMIT_JOB;
                message = submitJob2Req(m_requestUser);
             }
-            if (request == SUB_JOB_3_REQ)
+            else if (request == SUB_JOB_3_REQ)
             {
                m_lastRequestType = api::Request::Type::SUBMIT_JOB;
                message = submitJob3Req(m_requestUser);
+            }
+            else if (request == SUB_JOB_4_REQ)
+            {
+               m_lastRequestType = api::Request::Type::SUBMIT_JOB;
+               message = submitJob4Req(m_requestUser);
+            }
+            else
+            {
+               std::cout << "Invalid request. Choose another option." << std::endl;
+               return true;
             }
 
             m_responseCount[s_requestId] = 0;
