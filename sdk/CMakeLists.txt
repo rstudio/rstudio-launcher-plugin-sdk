@@ -29,7 +29,7 @@ find_library(PTHREAD_LIBS pthread)
 # include files
 file(GLOB_RECURSE RLPS_HEADER_FILES "*.h*")
 
-# souce files
+# source files
 set(RLPS_SOURCE_FILES
    src/AbstractMain.cpp
    src/Error.cpp
