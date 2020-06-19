@@ -29,7 +29,8 @@
 #include <api/IJobSource.hpp>
 #include <api/Request.hpp>
 #include <api/Response.hpp>
-#include <api/StreamManager.hpp>
+#include <api/JobStatusStreamManager.hpp>
+#include <api/streams/OutputStreamManager.hpp>
 #include <json/Json.hpp>
 #include <jobs/JobPruner.hpp>
 #include <options/Options.hpp>
@@ -297,9 +298,9 @@ struct AbstractPluginApi::Impl
          case Request::Type::GET_JOB:
             return handleGetJobRequest(std::static_pointer_cast<JobStateRequest>(in_request));
          case Request::Type::GET_JOB_STATUS:
-            return StreamMgr->handleStreamRequest(std::static_pointer_cast<JobStatusRequest>(in_request));
+            return JobStreamMgr->handleStreamRequest(std::static_pointer_cast<JobStatusRequest>(in_request));
          case Request::Type::GET_JOB_OUTPUT:
-            return StreamMgr->handleStreamRequest(std::static_pointer_cast<OutputStreamRequest>(in_request));
+            return OutputStreamMgr->handleStreamRequest(std::static_pointer_cast<OutputStreamRequest>(in_request));
          case Request::Type::GET_CLUSTER_INFO:
             return handleGetClusterInfo(std::static_pointer_cast<UserRequest>(in_request));
          default:
@@ -326,7 +327,9 @@ struct AbstractPluginApi::Impl
    system::AsyncTimedEvent SendHeartbeatEvent;
 
    /** Manages all streamed responses. */
-   std::unique_ptr<StreamManager> StreamMgr;
+   std::unique_ptr<JobStatusStreamManager> JobStreamMgr;
+
+   std::unique_ptr<OutputStreamManager> OutputStreamMgr;
 };
 
 PRIVATE_IMPL_DELETER_IMPL(AbstractPluginApi)
@@ -344,9 +347,8 @@ Error AbstractPluginApi::initialize()
       m_abstractPluginImpl->JobRepo,
       m_abstractPluginImpl->Notifier);
 
-   m_abstractPluginImpl->StreamMgr.reset(
-      new StreamManager(
-         m_abstractPluginImpl->JobSource,
+   m_abstractPluginImpl->JobStreamMgr.reset(
+      new JobStatusStreamManager(
          m_abstractPluginImpl->JobRepo,
          m_abstractPluginImpl->Notifier,
          m_abstractPluginImpl->LauncherCommunicator));

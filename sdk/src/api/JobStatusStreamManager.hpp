@@ -1,5 +1,5 @@
 /*
- * StreamManager.hpp
+ * JobStatusStreamManager.hpp
  *
  * Copyright (C) 2020 by RStudio, PBC
  *
@@ -45,19 +45,17 @@ class OutputStreamRequest;
 /**
  * @brief Class which manages all the streamed responses for the plugin.
  */
-class StreamManager final : public Noncopyable
+class JobStatusStreamManager final : public Noncopyable
 {
 public:
    /**
     * @brief Constructor.
     *
-    * @param in_jobSource               The interface for interacting with the job source.
     * @param in_jobRepository           The job repository from which to retrieve jobs.
     * @param in_jobStatusNotifier       The job status notifier from which to receive job status update notifications.
     * @param in_launcherCommunicator    The communicator which may be used to send stream responses to the Launcher.
     */
-   StreamManager(
-      std::shared_ptr<IJobSource> in_jobSource,
+   JobStatusStreamManager(
       jobs::JobRepositoryPtr in_jobRepository,
       jobs::JobStatusNotifierPtr in_jobStatusNotifier,
       comms::AbstractLauncherCommunicatorPtr in_launcherCommunicator);
@@ -69,15 +67,8 @@ public:
     */
    void handleStreamRequest(const std::shared_ptr<JobStatusRequest>& in_jobStatusRequest);
 
-   /**
-    * @brief Handles a stream request.
-    *
-    * @param in_outputStreamRequest    The Job Output Stream request to be handled.
-    */
-   void handleStreamRequest(const std::shared_ptr<OutputStreamRequest>& in_outputStreamRequest);
-
 private:
-   // The private implementation of StreamManager.
+   // The private implementation of JobStatusStreamManager.
    PRIVATE_IMPL(m_impl);
 };
 

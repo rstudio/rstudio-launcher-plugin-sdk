@@ -41,8 +41,9 @@ set(RLPS_SOURCE_FILES
    src/api/Request.cpp
    src/api/Response.cpp
    src/api/ResponseTypes.cpp
-   src/api/StreamManager.cpp
+   src/api/JobStatusStreamManager.cpp
    src/api/JobStatusStream.cpp
+   src/api/streams/OutputStreamManager.cpp
    src/comms/AbstractLauncherCommunicator.cpp
    src/comms/MessageHandler.cpp
    src/comms/StdIOLauncherCommunicator.cpp
