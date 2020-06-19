@@ -595,7 +595,7 @@ bool SmokeTest::sendJobOutputStreamRequest(api::OutputType in_outputType)
       outputStreamMsg = streamOutput(m_submittedJobIds.back(), in_outputType, m_requestUser);
       m_outputStreamFinished = false;
       m_responseCount[s_requestId] = 0;
-      m_lastRequestType = api::Request::Type::GET_JOB_STATUS;
+      m_lastRequestType = api::Request::Type::GET_JOB_OUTPUT;
 
       Error error = m_plugin->writeToStdin(outputStreamMsg, false);
       if (error)
