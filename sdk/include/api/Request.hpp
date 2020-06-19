@@ -31,8 +31,8 @@
 
 #include <PImpl.hpp>
 #include <Optional.hpp>
-#include <api/AbstractOutputStream.hpp>
 #include <api/Job.hpp>
+#include <api/stream/AbstractOutputStream.hpp>
 #include <system/DateTime.hpp>
 
 namespace rstudio {

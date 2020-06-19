@@ -30,9 +30,9 @@
 #include <vector>
 
 #include <PImpl.hpp>
-#include <api/AbstractOutputStream.hpp>
 #include <api/Job.hpp>
 #include <api/ResponseTypes.hpp>
+#include <api/stream/AbstractOutputStream.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {

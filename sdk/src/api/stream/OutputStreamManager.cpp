@@ -24,10 +24,10 @@
 
 #include "OutputStreamManager.hpp"
 
-#include <api/AbstractOutputStream.hpp>
 #include <api/IJobSource.hpp>
 #include <api/Request.hpp>
 #include <api/Response.hpp>
+#include <api/stream/AbstractOutputStream.hpp>
 #include <comms/AbstractLauncherCommunicator.hpp>
 #include <jobs/JobRepository.hpp>
 

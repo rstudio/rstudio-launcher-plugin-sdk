@@ -29,8 +29,8 @@
 #include <api/IJobSource.hpp>
 #include <api/Request.hpp>
 #include <api/Response.hpp>
-#include <api/JobStatusStreamManager.hpp>
-#include <api/streams/OutputStreamManager.hpp>
+#include <api/stream/JobStatusStreamManager.hpp>
+#include <api/stream/OutputStreamManager.hpp>
 #include <json/Json.hpp>
 #include <jobs/JobPruner.hpp>
 #include <options/Options.hpp>

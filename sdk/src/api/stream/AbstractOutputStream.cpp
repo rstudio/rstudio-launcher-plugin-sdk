@@ -21,7 +21,7 @@
  *
  */
 
-#include <api/AbstractOutputStream.hpp>
+#include <api/stream/AbstractOutputStream.hpp>
 
 #include <atomic>
 

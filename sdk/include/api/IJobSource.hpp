@@ -28,7 +28,7 @@
 
 #include <Error.hpp>
 #include <api/Job.hpp>
-#include <api/AbstractOutputStream.hpp>
+#include <api/stream/AbstractOutputStream.hpp>
 #include <jobs/JobRepository.hpp>
 #include <jobs/JobStatusNotifier.hpp>
 

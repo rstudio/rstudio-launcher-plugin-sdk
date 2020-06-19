@@ -33,17 +33,17 @@ file(GLOB_RECURSE RLPS_HEADER_FILES "*.h*")
 set(RLPS_SOURCE_FILES
    src/AbstractMain.cpp
    src/Error.cpp
-   src/api/AbstractMultiStream.cpp
-   src/api/AbstractOutputStream.cpp
    src/api/AbstractPluginApi.cpp
    src/api/Constants.cpp
    src/api/Job.cpp
    src/api/Request.cpp
    src/api/Response.cpp
    src/api/ResponseTypes.cpp
-   src/api/JobStatusStreamManager.cpp
-   src/api/JobStatusStream.cpp
-   src/api/streams/OutputStreamManager.cpp
+   src/api/stream/AbstractMultiStream.cpp
+   src/api/stream/AbstractOutputStream.cpp
+   src/api/stream/JobStatusStream.cpp
+   src/api/stream/JobStatusStreamManager.cpp
+   src/api/stream/OutputStreamManager.cpp
    src/comms/AbstractLauncherCommunicator.cpp
    src/comms/MessageHandler.cpp
    src/comms/StdIOLauncherCommunicator.cpp
