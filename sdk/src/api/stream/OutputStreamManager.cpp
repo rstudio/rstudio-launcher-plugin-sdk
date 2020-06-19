@@ -24,32 +24,96 @@
 
 #include "OutputStreamManager.hpp"
 
+#include <cassert>
+
 #include <api/IJobSource.hpp>
 #include <api/Request.hpp>
 #include <api/Response.hpp>
 #include <api/stream/AbstractOutputStream.hpp>
 #include <comms/AbstractLauncherCommunicator.hpp>
 #include <jobs/JobRepository.hpp>
+#include <jobs/JobStatusNotifier.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
 namespace api {
-typedef std::map<uint64_t, std::shared_ptr<AbstractOutputStream> > OutputStreamMap;
+
+namespace {
+
+struct OutputStream
+{
+   OutputStream() :
+      IsStarted(false)
+   {
+   }
+
+   OutputStream(
+      std::shared_ptr<AbstractOutputStream> in_stream,
+      jobs::SubscriptionHandle&& in_handle,
+      bool in_isStarted) :
+      Stream(in_stream),
+      SubscriptionHandle(in_handle),
+      IsStarted(in_isStarted)
+   {
+   }
+
+   std::shared_ptr<AbstractOutputStream> Stream;
+   jobs::SubscriptionHandle SubscriptionHandle;
+   bool IsStarted;
+};
+
+} // anonymous namespace
+
+// Convenience typedef
+typedef std::map<uint64_t, OutputStream> OutputStreamMap;
 
 struct OutputStreamManager::Impl : public std::enable_shared_from_this<Impl>
 {
    typedef std::shared_ptr<Impl> SharedThis;
    typedef std::weak_ptr<Impl> WeakThis;
 
-   void removeOutputStream(uint64_t in_requestId)
+   /**
+    * @brief Constructor.
+    *
+    * @param in_jobSource               The job source, which creates output streams.
+    * @param in_jobRepository           The job repository from which to retrieve jobs.
+    * @param in_jobStatusNotifier       The job status notifier from which to receive job status update notifications.
+    * @param in_launcherCommunicator    The communicator which may be used to send stream responses to the Launcher.
+    */
+   Impl(
+      std::shared_ptr<IJobSource>&& in_jobSource,
+      jobs::JobRepositoryPtr&& in_jobRepository,
+      jobs::JobStatusNotifierPtr&& in_jobStatusNotifier,
+      comms::AbstractLauncherCommunicatorPtr&& in_launcherCommunicator) :
+         JobRepo(in_jobRepository),
+         JobSource(in_jobSource),
+         LauncherCommunicator(in_launcherCommunicator),
+         Notifier(in_jobStatusNotifier)
    {
-      auto itr = ActiveOutputStreams.find(in_requestId);
-      if (itr != ActiveOutputStreams.end())
-         ActiveOutputStreams.erase(itr);
    }
 
    /**
-    * @brief Sends a job not found error to the launcher.
+    * @brief Sends a job output stream completion response to the Launcher.
+    *
+    * @param in_requestId       The ID of the request for which this response is being sent.
+    * @param in_sequenceId      The ID of this response in the sequence of responses for the specified request.
+    */
+   void sendCompleteResponse(uint64_t in_requestId, uint64_t in_sequenceId)
+   {
+      UNIQUE_LOCK_MUTEX(Mutex)
+      {
+         auto itr = ActiveOutputStreams.find(in_requestId);
+         if (itr != ActiveOutputStreams.end())
+         {
+            LauncherCommunicator->sendResponse(OutputStreamResponse(in_requestId, in_sequenceId));
+            ActiveOutputStreams.erase(itr);
+         }
+      }
+      END_LOCK_MUTEX
+   }
+
+   /**
+    * @brief Sends a "Job Not Found" error to the launcher.
     *
     * @param in_requestId       The ID of the request for which this response should be sent.
     * @param in_jobId           The ID of the job which could not be found.
@@ -63,6 +127,155 @@ struct OutputStreamManager::Impl : public std::enable_shared_from_this<Impl>
                             (in_requestUser.isAllUsers() ? "" : (" for user " + in_requestUser.getUsername())) + ".";
       LauncherCommunicator->sendResponse(
          ErrorResponse(in_requestId, ErrorResponse::Type::JOB_NOT_FOUND, message));
+   }
+
+   /**
+    * @brief Sends a "Job Output Not Found" error to the Launcher.
+    *
+    * If called before the stream starts, holding the lock is not necessary. Otherwise, the lock should be held when
+    * this is called.
+    *
+    * @param in_requestId   The ID of the request for which the job output could not be found.
+    * @param in_error       The error which occurred, if any.
+    */
+   void sendJobOutputNotFoundError(uint64_t in_requestId, const Error& in_error)
+   {
+      LauncherCommunicator->sendResponse(
+         ErrorResponse(
+            in_requestId,
+            ErrorResponse::Type::JOB_OUTPUT_NOT_FOUND,
+            in_error ?  in_error.getSummary() : "Output stream could not be created."));
+   }
+
+   /**
+    * @brief Sends a job output stream response to the Launcher.
+    *
+    * @param in_requestId       The ID of the request for which this response is being sent.
+    * @param in_sequenceId      The ID of this response in the sequence of responses for the specified request.
+    * @param in_output          The output to send.
+    * @param in_outputType      The type of the output being sent.
+    */
+   void sendOutputResponse(
+      uint64_t in_requestId,
+      uint64_t in_sequenceId,
+      const std::string& in_output,
+      OutputType in_outputType)
+   {
+      UNIQUE_LOCK_MUTEX(Mutex)
+      {
+         if (ActiveOutputStreams.find(in_requestId) != ActiveOutputStreams.end())
+            LauncherCommunicator->sendResponse(
+               OutputStreamResponse(in_requestId, in_sequenceId, in_output, in_outputType));
+      }
+      END_LOCK_MUTEX
+   }
+
+   /**
+    * @brief Sends a "Job Output Not Found" error to the Launcher and removes the output stream.
+    *
+    * This should only be invoked if an error occurs after the stream has started.
+    *
+    * @param in_requestId   The ID of the request for which the job output could not be found.
+    * @param in_error       The error which occurred.
+    */
+   void sendStreamErrorResponse(uint64_t in_requestId, const Error& in_error, const std::unique_lock<std::mutex>& in_lock)
+   {
+      assert(in_lock.owns_lock());
+      auto itr = ActiveOutputStreams.find(in_requestId);
+      if (itr != ActiveOutputStreams.end())
+      {
+         sendJobOutputNotFoundError(in_requestId, in_error);
+         ActiveOutputStreams.erase(itr);
+      }
+   }
+
+   /**
+    * @brief Sends a "Job Output Not Found" error to the Launcher and removes the output stream.
+    *
+    * This should only be invoked if an error occurs after the stream has started.
+    *
+    * @param in_requestId   The ID of the request for which the job output could not be found.
+    * @param in_error       The error which occurred.
+    */
+   void sendStreamErrorResponse(uint64_t in_requestId, const Error& in_error)
+   {
+      UNIQUE_LOCK_MUTEX(Mutex)
+      {
+         sendStreamErrorResponse(in_requestId, in_error, uniqueLock);
+      }
+      END_LOCK_MUTEX
+   }
+
+   /**
+    * @brief Starts the output stream.
+    *
+    * The lock must be held when this method is invoked.
+    *
+    * @param in_requestId       The ID of the request for which this stream was opened.
+    * @param in_job             The job for which the output stream was opened.
+    * @param in_outputStream    The output stream to start.
+    */
+   void startStream(uint64_t in_requestId, const JobPtr& in_job, const OutputStreamPtr& in_outputStream)
+   {
+      LOCK_JOB(in_job)
+      {
+         bool isStarted = false;
+         if (in_job->Status != Job::State::PENDING)
+         {
+            Error error = in_outputStream->start();
+            if (error)
+               return sendJobOutputNotFoundError(in_requestId, error);
+         }
+
+         // If the job has already completed, stop the stream right away.
+         if (in_job->isCompleted())
+            return in_outputStream->stop();
+
+         WeakThis weakThis = weak_from_this();
+         jobs::SubscriptionHandle handle = Notifier->subscribe(
+            in_job->Id,
+            [weakThis, in_requestId](const JobPtr& in_job)
+            {
+               if (SharedThis sharedThis = weakThis.lock())
+               {
+                  // Always lock the stream manager mutex before the job mutex to prevent possible deadlock.
+                  UNIQUE_LOCK_MUTEX(sharedThis->Mutex)
+                  {
+                     auto itr = sharedThis->ActiveOutputStreams.find(in_requestId);
+                     if (itr == sharedThis->ActiveOutputStreams.end())
+                        return; // Do nothing if the stream has already been removed.
+
+                     // Lock the job while we check the state.
+                     bool startStream = false, closeStream = false;
+                     LOCK_JOB(in_job)
+                     {
+                        startStream = (!itr->second.IsStarted && (in_job->Status != Job::State::PENDING));
+                        closeStream = in_job->isCompleted();
+                     }
+                     END_LOCK_JOB
+
+                     if (startStream)
+                     {
+                        Error error = itr->second.Stream->start();
+                        if (error)
+                           return sharedThis->sendStreamErrorResponse(in_requestId, error, uniqueLock);
+
+                        itr->second.IsStarted = true;
+                     }
+
+                     if (closeStream)
+                     {
+                        itr->second.Stream->stop();
+                        sharedThis->ActiveOutputStreams.erase(itr);
+                     }
+                  }
+                  END_LOCK_MUTEX
+               }
+            });
+
+         ActiveOutputStreams[in_requestId] = OutputStream(in_outputStream, std::move(handle), isStarted);
+      }
+      END_LOCK_JOB
    }
 
    /** The mutex to protect the map of active output streams. */
@@ -79,7 +292,24 @@ struct OutputStreamManager::Impl : public std::enable_shared_from_this<Impl>
 
    /** The launcher communicator. */
    comms::AbstractLauncherCommunicatorPtr LauncherCommunicator;
+
+   /** The job status notifier. */
+   jobs::JobStatusNotifierPtr Notifier;
 };
+
+OutputStreamManager::OutputStreamManager(
+   std::shared_ptr<IJobSource> in_jobSource,
+   jobs::JobRepositoryPtr in_jobRepository,
+   jobs::JobStatusNotifierPtr in_jobStatusNotifier,
+   comms::AbstractLauncherCommunicatorPtr in_launcherCommunicator) :
+      m_impl(
+         new Impl(
+            std::move(in_jobSource),
+            std::move(in_jobRepository),
+            std::move(in_jobStatusNotifier),
+            std::move(in_launcherCommunicator)))
+{
+}
 
 void OutputStreamManager::handleStreamRequest(const std::shared_ptr<OutputStreamRequest>& in_outputStreamRequest)
 {
@@ -88,14 +318,14 @@ void OutputStreamManager::handleStreamRequest(const std::shared_ptr<OutputStream
    const std::string& jobId = in_outputStreamRequest->getJobId();
    const system::User& jobUser = in_outputStreamRequest->getUser();
 
-   LOCK_MUTEX(m_impl->Mutex)
+   UNIQUE_LOCK_MUTEX(m_impl->Mutex)
    {
       auto itr = m_impl->ActiveOutputStreams.find(requestId);
       if (itr != m_impl->ActiveOutputStreams.end())
       {
          if (isCancel)
          {
-            itr->second->stop();
+            itr->second.Stream->stop();
             m_impl->ActiveOutputStreams.erase(itr);
          }
          else
@@ -114,78 +344,35 @@ void OutputStreamManager::handleStreamRequest(const std::shared_ptr<OutputStream
             return m_impl->sendJobNotFoundError(requestId, jobId, jobUser);
 
          Impl::WeakThis weakThis = m_impl->weak_from_this();
-         AbstractOutputStream::OnOutput onOutput = [weakThis, requestId](
-            const std::string& in_output,
-            OutputType in_outputType,
-            uint64_t in_sequenceId)
-         {
-            if (Impl::SharedThis sharedThis = weakThis.lock())
-            {
-               LOCK_MUTEX(sharedThis->Mutex)
-               {
-                  if (sharedThis->ActiveOutputStreams.find(requestId) != sharedThis->ActiveOutputStreams.end())
-                     sharedThis->LauncherCommunicator->sendResponse(
-                        OutputStreamResponse(requestId, in_sequenceId, in_output, in_outputType));
-               }
-               END_LOCK_MUTEX
-            }
-         };
-
-         AbstractOutputStream::OnComplete onComplete = [weakThis, requestId](uint64_t in_sequenceId)
-         {
-            if (Impl::SharedThis sharedThis = weakThis.lock())
-            {
-               LOCK_MUTEX(sharedThis->Mutex)
-               {
-                  auto itr = sharedThis->ActiveOutputStreams.find(requestId);
-                  if (itr != sharedThis->ActiveOutputStreams.end())
-                  {
-                     sharedThis->LauncherCommunicator->sendResponse(OutputStreamResponse(requestId, in_sequenceId));
-                     sharedThis->ActiveOutputStreams.erase(itr);
-                  }
-               }
-               END_LOCK_MUTEX
-            }
-         };
-
-         AbstractOutputStream::OnError onError = [weakThis, requestId](const Error& in_error)
-         {
-            if (Impl::SharedThis sharedThis = weakThis.lock())
-            {
-               LOCK_MUTEX(sharedThis->Mutex)
-               {
-                  auto itr = sharedThis->ActiveOutputStreams.find(requestId);
-                  if (itr != sharedThis->ActiveOutputStreams.end())
-                  {
-                     sharedThis->LauncherCommunicator->sendResponse(
-                        ErrorResponse(requestId, ErrorResponse::Type::JOB_OUTPUT_NOT_FOUND, in_error.getSummary()));
-                     sharedThis->ActiveOutputStreams.erase(itr);
-                  }
-               }
-               END_LOCK_MUTEX
-            }
-         };
-
          OutputStreamPtr outputStream;
          Error error = m_impl->JobSource->createOutputStream(
             in_outputStreamRequest->getStreamType(),
             job,
-            onOutput,
-            onComplete,
-            onError,
+            [weakThis, requestId](
+               const std::string& in_output,
+               OutputType in_outputType,
+               uint64_t in_sequenceId)
+            {
+               if (Impl::SharedThis sharedThis = weakThis.lock())
+                  sharedThis->sendOutputResponse(requestId, in_sequenceId, in_output, in_outputType);
+            },
+            [weakThis, requestId](uint64_t in_sequenceId)
+            {
+               if (Impl::SharedThis sharedThis = weakThis.lock())
+                  sharedThis->sendCompleteResponse(requestId, in_sequenceId);
+            },
+            [weakThis, requestId](const Error& in_error)
+            {
+               if (Impl::SharedThis sharedThis = weakThis.lock())
+                  sharedThis->sendStreamErrorResponse(requestId, in_error);
+            },
             outputStream);
 
          if (error || !outputStream)
-         {
-            m_impl->LauncherCommunicator->sendResponse(
-               ErrorResponse(
-                  requestId,
-                  ErrorResponse::Type::JOB_OUTPUT_NOT_FOUND,
-                  (error ?  error.getSummary() : "Output stream could not be created." )));
-         }
+            m_impl->sendJobOutputNotFoundError(requestId, error);
          else
          {
-
+            m_impl->startStream(requestId, job, outputStream);
          }
       }
    }

@@ -31,13 +31,50 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace api {
 
+// Forward Declarations
 class IJobSource;
 class OutputStreamRequest;
 
+} // namespace api
+
+namespace comms {
+
+class AbstractLauncherCommunicator;
+
+} // namespace comms
+
+namespace jobs {
+
+class JobRepository;
+class JobStatusNotifier;
+
+} // namespace jobs
+} // namespace launcher_plugins
+} // namespace rstudio
+
+namespace rstudio {
+namespace launcher_plugins {
+namespace api {
+
+/**
+ * @brief Responsible for managing output streams.
+ */
 class OutputStreamManager
 {
 public:
-   OutputStreamManager(std::shared_ptr<IJobSource> in_jobSource);
+   /**
+    * @brief Constructor.
+    *
+    * @param in_jobSource               The job source, which creates output streams.
+    * @param in_jobRepository           The job repository from which to retrieve jobs.
+    * @param in_jobStatusNotifier       The job status notifier from which to receive job status update notifications.
+    * @param in_launcherCommunicator    The communicator which may be used to send stream responses to the Launcher.
+    */
+   OutputStreamManager(
+      std::shared_ptr<IJobSource> in_jobSource,
+      std::shared_ptr<jobs::JobRepository> in_jobRepository,
+      std::shared_ptr<jobs::JobStatusNotifier> in_jobStatusNotifier,
+      std::shared_ptr<comms::AbstractLauncherCommunicator> in_launcherCommunicator);
 
    /**
     * @brief Handles a stream request.
@@ -47,6 +84,7 @@ public:
    void handleStreamRequest(const std::shared_ptr<OutputStreamRequest>& in_outputStreamRequest);
 
 private:
+   // The private implementation of OutputStreamManager.
    PRIVATE_IMPL_SHARED(m_impl);
 };
 
