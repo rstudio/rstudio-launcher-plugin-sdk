@@ -398,10 +398,13 @@ Error SmokeTest::initialize()
                   obj.hasMember(api::FIELD_JOBS) &&
                   obj[api::FIELD_JOBS].isArray())
                      parseJobIds(obj[api::FIELD_JOBS].getArray(), sharedThis->m_submittedJobIds);
-               else if ((sharedThis->m_lastRequestType == api::Request::Type::GET_JOB_OUTPUT) &&
-                  obj.hasMember(api::FIELD_CANCEL_STREAM) &&
-                  obj[api::FIELD_CANCEL_STREAM].isBool())
+               else if (sharedThis->m_lastRequestType == api::Request::Type::GET_JOB_OUTPUT)
+               {
+                  if (obj[api::FIELD_MESSAGE_TYPE].getInt() == -1 )
+                     sharedThis->m_outputStreamFinished = true;
+                  else if (obj.hasMember(api::FIELD_CANCEL_STREAM) && obj[api::FIELD_CANCEL_STREAM].isBool())
                      sharedThis->m_outputStreamFinished = obj[api::FIELD_CANCEL_STREAM].getBool();
+               }
             }
          }
          END_LOCK_MUTEX
