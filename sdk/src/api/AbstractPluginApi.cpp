@@ -51,7 +51,7 @@ struct AbstractPluginApi::Impl
     * @param in_launcherCommunicator    The communicator that will be used to send and receive messages from the RStudio
     *                                   Launcher.
     */
-   explicit Impl(std::shared_ptr<comms::AbstractLauncherCommunicator> in_launcherCommunicator) :
+   explicit Impl(comms::AbstractLauncherCommunicatorPtr in_launcherCommunicator) :
       LauncherCommunicator(std::move(in_launcherCommunicator)),
       Notifier(new jobs::JobStatusNotifier())
    {
@@ -349,6 +349,13 @@ Error AbstractPluginApi::initialize()
 
    m_abstractPluginImpl->JobStreamMgr.reset(
       new JobStatusStreamManager(
+         m_abstractPluginImpl->JobRepo,
+         m_abstractPluginImpl->Notifier,
+         m_abstractPluginImpl->LauncherCommunicator));
+
+   m_abstractPluginImpl->OutputStreamMgr.reset(
+      new OutputStreamManager(
+         m_abstractPluginImpl->JobSource,
          m_abstractPluginImpl->JobRepo,
          m_abstractPluginImpl->Notifier,
          m_abstractPluginImpl->LauncherCommunicator));
