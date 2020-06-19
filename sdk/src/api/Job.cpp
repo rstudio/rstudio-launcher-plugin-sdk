@@ -670,7 +670,7 @@ Error Job::stateFromString(const std::string& in_statusString, State& out_status
    return Success();
 }
 
-std::string Job::stateToString(const State& in_status)
+std::string Job::stateToString(State in_status)
 {
    return jobStatusToString(in_status);
 }
@@ -762,6 +762,14 @@ Optional<std::string> Job::getJobConfigValue(const std::string& in_name) const
    }
 
    return value;
+}
+
+bool Job::isCompleted() const
+{
+   return (Status == State::FINISHED) ||
+      (Status == State::KILLED) ||
+      (Status == State::CANCELED) ||
+      (Status == State::FAILED);
 }
 
 bool Job::matchesTags(const std::set<std::string>& in_tags) const

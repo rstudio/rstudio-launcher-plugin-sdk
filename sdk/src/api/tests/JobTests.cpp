@@ -890,6 +890,7 @@ TEST_CASE("From JSON: Job (name and command only)")
    CHECK(job.StandardErrFile.empty());
    CHECK(job.StandardOutFile.empty());
    CHECK(job.Status == Job::State::UNKNOWN);
+   CHECK_FALSE(job.isCompleted());
    CHECK(job.StatusMessage.empty());
    CHECK(job.SubmissionTime.toString() == "2015-11-30T12:32:44.336688Z");
    CHECK(job.Tags.empty());
@@ -930,6 +931,7 @@ TEST_CASE("From JSON: Job (name, exe, and state, canceled)")
    CHECK(job.StandardErrFile.empty());
    CHECK(job.StandardOutFile.empty());
    CHECK(job.Status == Job::State::CANCELED);
+   CHECK(job.isCompleted());
    CHECK(job.StatusMessage.empty());
    CHECK(job.SubmissionTime.toString() == "2015-11-30T12:32:44.336688Z");
    CHECK(job.Tags.empty());
@@ -970,6 +972,7 @@ TEST_CASE("From JSON: Job (name and state, failed)")
    CHECK(job.StandardErrFile.empty());
    CHECK(job.StandardOutFile.empty());
    CHECK(job.Status == Job::State::FAILED);
+   CHECK(job.isCompleted());
    CHECK(job.StatusMessage.empty());
    CHECK(job.SubmissionTime.toString() == "2015-11-30T12:32:44.336688Z");
    CHECK(job.Tags.empty());
@@ -1017,6 +1020,7 @@ TEST_CASE("From JSON: Job (name and state, finished)")
    CHECK(job.StandardErrFile.empty());
    CHECK(job.StandardOutFile.empty());
    CHECK(job.Status == Job::State::FINISHED);
+   CHECK(job.isCompleted());
    CHECK(job.StatusMessage.empty());
    CHECK(job.SubmissionTime.toString() == "2015-11-30T12:32:44.336688Z");
    CHECK(job.Tags.empty());
@@ -1057,6 +1061,7 @@ TEST_CASE("From JSON: Job (name and state, killed)")
    CHECK(job.StandardErrFile.empty());
    CHECK(job.StandardOutFile.empty());
    CHECK(job.Status == Job::State::KILLED);
+   CHECK(job.isCompleted());
    CHECK(job.StatusMessage.empty());
    CHECK(job.SubmissionTime.toString() == "2015-11-30T12:32:44.336688Z");
    CHECK(job.Tags.empty());
@@ -1097,6 +1102,7 @@ TEST_CASE("From JSON: Job (name and state, pending)")
    CHECK(job.StandardErrFile.empty());
    CHECK(job.StandardOutFile.empty());
    CHECK(job.Status == Job::State::PENDING);
+   CHECK_FALSE(job.isCompleted());
    CHECK(job.StatusMessage.empty());
    CHECK(job.SubmissionTime.toString() == "2015-11-30T12:32:44.336688Z");
    CHECK(job.Tags.empty());
@@ -1137,6 +1143,7 @@ TEST_CASE("From JSON: Job (name and state, running)")
    CHECK(job.StandardErrFile.empty());
    CHECK(job.StandardOutFile.empty());
    CHECK(job.Status == Job::State::RUNNING);
+   CHECK_FALSE(job.isCompleted());
    CHECK(job.StatusMessage.empty());
    CHECK(job.SubmissionTime.toString() == "2015-11-30T12:32:44.336688Z");
    CHECK(job.Tags.empty());
@@ -1177,6 +1184,7 @@ TEST_CASE("From JSON: Job (name and state, suspended, extra whitespace)")
    CHECK(job.StandardErrFile.empty());
    CHECK(job.StandardOutFile.empty());
    CHECK(job.Status == Job::State::SUSPENDED);
+   CHECK_FALSE(job.isCompleted());
    CHECK(job.StatusMessage.empty());
    CHECK(job.SubmissionTime.toString() == "2015-11-30T12:32:44.336688Z");
    CHECK(job.Tags.empty());
@@ -1394,6 +1402,7 @@ TEST_CASE("From JSON: Job (all fields, exe)")
    CHECK(job.StandardErrFile == "/path/to/errorFile.txt");
    CHECK(job.StandardOutFile == "/path/to/outputFile.txt");
    CHECK(job.Status == Job::State::FINISHED);
+   CHECK(job.isCompleted());
    CHECK(job.StatusMessage == "Exited successfully.");
    CHECK(job.SubmissionTime.toString() == "2020-01-14T04:20:13Z");
    REQUIRE(job.Tags.size() == 3);
@@ -1444,6 +1453,7 @@ TEST_CASE("From JSON: Job (some fields, command)")
    CHECK(job.StandardErrFile.empty());
    CHECK(job.StandardOutFile.empty());
    CHECK(job.Status == Job::State::RUNNING);
+   CHECK_FALSE(job.isCompleted());
    CHECK(job.StatusMessage.empty());
    CHECK(job.SubmissionTime.toString() == "2015-11-30T12:32:44.336688Z");
    CHECK(job.Tags.empty());
@@ -1528,6 +1538,7 @@ TEST_CASE("From JSON: Job (no user)")
    CHECK(job.StandardErrFile.empty());
    CHECK(job.StandardOutFile.empty());
    CHECK(job.Status == Job::State::UNKNOWN);
+   CHECK_FALSE(job.isCompleted());
    CHECK(job.StatusMessage.empty());
    CHECK(job.SubmissionTime.toString() == "2015-11-30T12:32:44.336688Z");
    CHECK(job.Tags.empty());

@@ -31,26 +31,8 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace jobs {
 
-namespace {
-
-/**
- * @brief Checks whether a job state is a completed state.
- *
- * @param in_state      The state to check.
- *
- * @return True if the state is Canceled, Finished, or Failed; false otherwise.
- */
-bool isCompletedState(api::Job::State in_state)
-{
-   return (in_state == api::Job::State::CANCELED) ||
-      (in_state == api::Job::State::FAILED) ||
-      (in_state == api::Job::State::FINISHED);
-}
-
 // Typedef for the map of Prune Deadline Events.
 typedef std::map<std::string, std::shared_ptr<system::AsyncDeadlineEvent>> PruningMap;
-
-} // namespace
 
 struct JobPruner::Impl: public std::enable_shared_from_this<JobPruner::Impl>
 {
@@ -118,7 +100,7 @@ struct JobPruner::Impl: public std::enable_shared_from_this<JobPruner::Impl>
       {
          LOCK_JOB(in_job)
          {
-            if (isCompletedState(in_job->Status))
+            if (in_job->isCompleted())
             {
                const std::string& jobId = in_job->Id;
                WeakThis weakThis = shared_from_this();

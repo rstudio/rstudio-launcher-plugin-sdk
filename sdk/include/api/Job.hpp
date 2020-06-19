@@ -246,7 +246,7 @@ struct Job
     *
     * @return The string representation of the specified Job::State.
     */
-   static std::string stateToString(const State& in_status);
+   static std::string stateToString(State in_status);
 
    /**
     * @brief Assignment operator.
@@ -274,6 +274,13 @@ struct Job
     * @return The value of the configuration option, if any.
     */
    Optional<std::string> getJobConfigValue(const std::string& in_name) const;
+
+   /**
+    * @brief Checks whether the job has completed (i.e. the job's state is a completed state).
+    *
+    * @return True if the job has completed; false otherwise.
+    */
+   bool isCompleted() const;
 
    /**
     * @brief Checks whether the job has all of the supplied tags.
