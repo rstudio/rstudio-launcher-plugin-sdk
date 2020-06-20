@@ -48,7 +48,7 @@ struct OutputStream
    }
 
    OutputStream(
-      std::shared_ptr<AbstractOutputStream> in_stream,
+      OutputStreamPtr in_stream,
       jobs::SubscriptionHandle&& in_handle,
       bool in_isStarted) :
       Stream(in_stream),
@@ -57,7 +57,7 @@ struct OutputStream
    {
    }
 
-   std::shared_ptr<AbstractOutputStream> Stream;
+   OutputStreamPtr Stream;
    jobs::SubscriptionHandle SubscriptionHandle;
    bool IsStarted;
 };
@@ -217,65 +217,61 @@ struct OutputStreamManager::Impl : public std::enable_shared_from_this<Impl>
     */
    void startStream(uint64_t in_requestId, const JobPtr& in_job, const OutputStreamPtr& in_outputStream)
    {
-      LOCK_JOB(in_job)
+      bool isStarted = false;
+      if (in_job->Status != Job::State::PENDING)
       {
-         bool isStarted = false;
-         if (in_job->Status != Job::State::PENDING)
-         {
-            Error error = in_outputStream->start();
-            if (error)
-               return sendJobOutputNotFoundError(in_requestId, error);
-         }
-
-         // If the job has already completed, stop the stream right away.
-         if (in_job->isCompleted())
-            return in_outputStream->stop();
-
-         WeakThis weakThis = weak_from_this();
-         jobs::SubscriptionHandle handle = Notifier->subscribe(
-            in_job->Id,
-            [weakThis, in_requestId](const JobPtr& in_job)
-            {
-               if (SharedThis sharedThis = weakThis.lock())
-               {
-                  // Always lock the stream manager mutex before the job mutex to prevent possible deadlock.
-                  UNIQUE_LOCK_MUTEX(sharedThis->Mutex)
-                  {
-                     auto itr = sharedThis->ActiveOutputStreams.find(in_requestId);
-                     if (itr == sharedThis->ActiveOutputStreams.end())
-                        return; // Do nothing if the stream has already been removed.
-
-                     // Lock the job while we check the state.
-                     bool startStream = false, closeStream = false;
-                     LOCK_JOB(in_job)
-                     {
-                        startStream = (!itr->second.IsStarted && (in_job->Status != Job::State::PENDING));
-                        closeStream = in_job->isCompleted();
-                     }
-                     END_LOCK_JOB
-
-                     if (startStream)
-                     {
-                        Error error = itr->second.Stream->start();
-                        if (error)
-                           return sharedThis->sendStreamErrorResponse(in_requestId, error, uniqueLock);
-
-                        itr->second.IsStarted = true;
-                     }
-
-                     if (closeStream)
-                     {
-                        itr->second.Stream->stop();
-                        sharedThis->ActiveOutputStreams.erase(itr);
-                     }
-                  }
-                  END_LOCK_MUTEX
-               }
-            });
-
-         ActiveOutputStreams[in_requestId] = OutputStream(in_outputStream, std::move(handle), isStarted);
+         Error error = in_outputStream->start();
+         if (error)
+            return sendJobOutputNotFoundError(in_requestId, error);
       }
-      END_LOCK_JOB
+
+      // If the job has already completed, stop the stream right away.
+      if (in_job->isCompleted())
+         return in_outputStream->stop();
+
+      WeakThis weakThis = weak_from_this();
+      jobs::SubscriptionHandle handle = Notifier->subscribe(
+         in_job->Id,
+         [weakThis, in_requestId](const JobPtr& in_job)
+         {
+            if (SharedThis sharedThis = weakThis.lock())
+            {
+               // Always lock the stream manager mutex before the job mutex to prevent possible deadlock.
+               UNIQUE_LOCK_MUTEX(sharedThis->Mutex)
+               {
+                  auto itr = sharedThis->ActiveOutputStreams.find(in_requestId);
+                  if (itr == sharedThis->ActiveOutputStreams.end())
+                     return; // Do nothing if the stream has already been removed.
+
+                  // Lock the job while we check the state.
+                  bool startStream = false, closeStream = false;
+                  LOCK_JOB(in_job)
+                  {
+                     startStream = (!itr->second.IsStarted && (in_job->Status != Job::State::PENDING));
+                     closeStream = in_job->isCompleted();
+                  }
+                  END_LOCK_JOB
+
+                  if (startStream)
+                  {
+                     Error error = itr->second.Stream->start();
+                     if (error)
+                        return sharedThis->sendStreamErrorResponse(in_requestId, error, uniqueLock);
+
+                     itr->second.IsStarted = true;
+                  }
+
+                  if (closeStream)
+                  {
+                     itr->second.Stream->stop();
+                     sharedThis->ActiveOutputStreams.erase(itr);
+                  }
+               }
+               END_LOCK_MUTEX
+            }
+         });
+
+      ActiveOutputStreams[in_requestId] = OutputStream(in_outputStream, std::move(handle), isStarted);
    }
 
    /** The mutex to protect the map of active output streams. */
@@ -343,37 +339,42 @@ void OutputStreamManager::handleStreamRequest(const std::shared_ptr<OutputStream
          if (!job)
             return m_impl->sendJobNotFoundError(requestId, jobId, jobUser);
 
-         Impl::WeakThis weakThis = m_impl->weak_from_this();
-         OutputStreamPtr outputStream;
-         Error error = m_impl->JobSource->createOutputStream(
-            in_outputStreamRequest->getStreamType(),
-            job,
-            [weakThis, requestId](
-               const std::string& in_output,
-               OutputType in_outputType,
-               uint64_t in_sequenceId)
-            {
-               if (Impl::SharedThis sharedThis = weakThis.lock())
-                  sharedThis->sendOutputResponse(requestId, in_sequenceId, in_output, in_outputType);
-            },
-            [weakThis, requestId](uint64_t in_sequenceId)
-            {
-               if (Impl::SharedThis sharedThis = weakThis.lock())
-                  sharedThis->sendCompleteResponse(requestId, in_sequenceId);
-            },
-            [weakThis, requestId](const Error& in_error)
-            {
-               if (Impl::SharedThis sharedThis = weakThis.lock())
-                  sharedThis->sendStreamErrorResponse(requestId, in_error);
-            },
-            outputStream);
-
-         if (error || !outputStream)
-            m_impl->sendJobOutputNotFoundError(requestId, error);
-         else
+         // Lock the job while we create the stream.
+         LOCK_JOB(job)
          {
-            m_impl->startStream(requestId, job, outputStream);
+            OutputStreamPtr outputStream;
+            Impl::WeakThis weakThis = m_impl->weak_from_this();
+            Error error = m_impl->JobSource->createOutputStream(
+               in_outputStreamRequest->getStreamType(),
+               job,
+               [weakThis, requestId](
+                  const std::string& in_output,
+                  OutputType in_outputType,
+                  uint64_t in_sequenceId)
+               {
+                  if (Impl::SharedThis sharedThis = weakThis.lock())
+                     sharedThis->sendOutputResponse(requestId, in_sequenceId, in_output, in_outputType);
+               },
+               [weakThis, requestId](uint64_t in_sequenceId)
+               {
+                  if (Impl::SharedThis sharedThis = weakThis.lock())
+                     sharedThis->sendCompleteResponse(requestId, in_sequenceId);
+               },
+               [weakThis, requestId](const Error& in_error)
+               {
+                  if (Impl::SharedThis sharedThis = weakThis.lock())
+                     sharedThis->sendStreamErrorResponse(requestId, in_error);
+               },
+               outputStream);
+
+            if (error || !outputStream)
+               m_impl->sendJobOutputNotFoundError(requestId, error);
+            else
+            {
+               m_impl->startStream(requestId, job, outputStream);
+            }
          }
+         END_LOCK_JOB
       }
    }
    END_LOCK_MUTEX
