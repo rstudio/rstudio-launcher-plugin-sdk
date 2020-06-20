@@ -804,7 +804,7 @@ struct AbstractChildProcess::Impl
    {
       std::string shellCommand = createShellCommand(in_options);
 
-      if (!in_options.RunAsUser.isAllUsers() && !in_options.RunAsUser.isAllUsers())
+      if (!in_options.RunAsUser.isEmpty())
       {
          Arguments.emplace_back("--username");
          Arguments.push_back(in_options.RunAsUser.getUsername());
