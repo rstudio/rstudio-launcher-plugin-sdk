@@ -24,6 +24,7 @@
 #include <LocalJobSource.hpp>
 
 #include <Error.hpp>
+#include <api/stream/FileOutputStream.hpp>
 
 #include <LocalConstants.hpp>
 
@@ -82,11 +83,8 @@ Error LocalJobSource::createOutputStream(
    api::AbstractOutputStream::OnError in_onError,
    api::OutputStreamPtr& out_outputStream)
 {
-   return Error(
-      "NotImplemented",
-      2,
-      "Method LocalJobSource::createOutputStream is not implemented.",
-      ERROR_LOCATION);
+   out_outputStream.reset(new api::FileOutputStream(in_outputType, in_job, in_onOutput, in_onComplete, in_onError));
+   return Success();
 }
 
 } // namespace local
