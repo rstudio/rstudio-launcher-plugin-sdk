@@ -53,7 +53,7 @@ enum class OutputType
 /**
  * @brief Streams job output data to the launcher.
  */
-class AbstractOutputStream : public std::enable_shared_from_this<AbstractOutputStream>
+class AbstractOutputStream
 {
 public:
    /** Definitions for callback functions which will be invoked when certain events occur. */
@@ -79,12 +79,6 @@ public:
    virtual void stop() = 0;
 
 protected:
-   /** Convenience typedef for inheriting classes. */
-   typedef std::shared_ptr<AbstractOutputStream> SharedThis;
-
-   /** Convenience typedef for inheriting classes. */
-   typedef std::weak_ptr<AbstractOutputStream> WeakThis;
-
    /**
     * @brief Constructor.
     *
