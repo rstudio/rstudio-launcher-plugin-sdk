@@ -137,7 +137,8 @@ FileOutputStream::FileOutputStream(
          std::move(in_job),
          std::move(in_onOutput),
          std::move(in_onComplete),
-         std::move(in_onError))
+         std::move(in_onError)),
+      m_impl(new Impl())
 {
 }
 
