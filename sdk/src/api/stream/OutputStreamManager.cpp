@@ -225,10 +225,6 @@ struct OutputStreamManager::Impl : public std::enable_shared_from_this<Impl>
             return sendJobOutputNotFoundError(in_requestId, error);
       }
 
-      // If the job has already completed, stop the stream right away.
-      if (in_job->isCompleted())
-         return in_outputStream->stop();
-
       WeakThis weakThis = weak_from_this();
       jobs::SubscriptionHandle handle = Notifier->subscribe(
          in_job->Id,

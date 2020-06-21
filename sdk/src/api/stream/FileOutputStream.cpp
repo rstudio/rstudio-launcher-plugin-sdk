@@ -322,7 +322,7 @@ Error FileOutputStream::startChildStream(OutputType in_outputType, const system:
       {
          UNIQUE_LOCK_MUTEX(sharedThis->m_impl->Mutex)
          {
-            if (!sharedThis->m_impl->WasOutputWritten)
+            if (!sharedThis->m_impl->WasOutputWritten && !sharedThis->m_impl->WasErrorReported)
             {
                sharedThis->m_impl->WasErrorReported = true;
                sharedThis->reportError(in_error);
@@ -346,11 +346,27 @@ Error FileOutputStream::startChildStream(OutputType in_outputType, const system:
          END_LOCK_MUTEX
       };
 
-      callbacks.OnStandardError = [](const std::string& in_output)
+      callbacks.OnStandardError = [sharedThis](const std::string& in_output)
       {
+         std::string message = "Error output received for OutputStream tail command: " + in_output;
          logging::logErrorMessage(
-            "Error output received for OutputStream tail command: " + in_output,
+            message,
             ERROR_LOCATION);
+
+         UNIQUE_LOCK_MUTEX(sharedThis->m_impl->Mutex)
+         {
+            if (!sharedThis->m_impl->WasErrorReported && !sharedThis->m_impl->WasOutputWritten)
+            {
+               sharedThis->m_impl->WasErrorReported = true;
+               sharedThis->reportError(
+                  Error(
+                     "FileOutputStreamError",
+                     2,
+                     message,
+                     ERROR_LOCATION));
+            }
+         }
+         END_LOCK_MUTEX
       };
 
       callbacks.OnExit = std::bind(FileOutputStream::onExitCallback, shared_from_this(), in_outputType, _1);
