@@ -1313,14 +1313,16 @@ Error AsyncChildProcess::run(const AsyncProcessCallbacks& in_callbacks)
             else
                sharedThis->m_stdErrFailure = true;
 
-         // Start watching for the other stream to fail in 20 millisecond intervals, for at most 5 seconds, only if
-         // there isn't another timer already running (we don't want to interrupt an actual exit watcher from terminate).
-            if (sharedThis->m_exitWatcher == nullptr)
+            // Start watching for the other stream to fail in 20 millisecond intervals, for at most 5 seconds, only if
+            // there isn't another timer already running (we don't want to interrupt an actual exit watcher from
+            // terminate).
+            if (sharedThis->m_streamFailureEvent == nullptr)
             {
-               sharedThis->m_exitWatcher.reset(new AsyncTimedEvent());
-               sharedThis->m_exitWatcher->start(
-                  system::TimeDuration::Microseconds(20000),
-                  std::bind(streamFailureWatch, in_error, system::DateTime()));
+               sharedThis->m_streamFailureEvent.reset(
+                  new AsyncDeadlineEvent(
+                     std::bind(streamFailureWatch, in_error, system::DateTime()),
+                     system::TimeDuration::Microseconds(20000)));
+               sharedThis->m_streamFailureEvent->start();
             }
          }
          END_LOCK_MUTEX
@@ -1481,14 +1483,19 @@ void AsyncChildProcess::checkExited(
 
 void AsyncChildProcess::waitForOtherStreamFailure(const Error& in_error, const system::DateTime& in_startTime)
 {
-   system::TimeDuration fiveSeconds = system::TimeDuration::Seconds(5);
+   const system::TimeDuration fiveSeconds = system::TimeDuration::Seconds(5);
    WeakThis weakThis;
-   auto onTimeout = [weakThis, in_error]()
+   auto onTimeout = [weakThis, in_error, in_startTime, fiveSeconds]()
    {
       if (SharedThis sharedThis = weakThis.lock())
       {
-         sharedThis->m_callbacks.OnError(in_error);
-         sharedThis->terminate();
+         if (in_startTime + fiveSeconds < system::DateTime())
+         {
+            sharedThis->m_callbacks.OnError(in_error);
+            sharedThis->terminate();
+         }
+         else
+            sharedThis->waitForOtherStreamFailure(in_error, in_startTime);
       }
    };
 
@@ -1497,17 +1504,18 @@ void AsyncChildProcess::waitForOtherStreamFailure(const Error& in_error, const s
       // If both have failed, start checking for exit.
       if (m_stdOutFailure && m_stdErrFailure)
       {
-            if (m_streamFailureEvent != nullptr)
-               m_streamFailureEvent->cancel();
+         if (m_streamFailureEvent != nullptr)
+            m_streamFailureEvent.reset();
       }
       else
       {
-         assert(m_streamFailureEvent == nullptr);
          assert(m_stdOutFailure || m_stdErrFailure);
-         m_streamFailureEvent.reset(new AsyncDeadlineEvent(onTimeout, in_startTime + fiveSeconds));
+         m_streamFailureEvent.reset(
+            new AsyncDeadlineEvent(
+               onTimeout,
+               system::TimeDuration::Microseconds(200000)));
          return m_streamFailureEvent->start();
       }
-
    }
    END_LOCK_MUTEX
 
