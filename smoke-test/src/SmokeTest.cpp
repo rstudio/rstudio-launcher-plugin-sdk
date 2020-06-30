@@ -362,7 +362,6 @@ Error SmokeTest::initialize()
       std::cerr << in_string << std::endl;
    };
 
-
    callbacks.OnStandardOutput = [weakThis](const std::string& in_string)
    {
       std::vector<std::string> messages;
@@ -402,8 +401,8 @@ Error SmokeTest::initialize()
                {
                   if (obj[api::FIELD_MESSAGE_TYPE].getInt() == -1 )
                      sharedThis->m_outputStreamFinished = true;
-                  else if (obj.hasMember(api::FIELD_CANCEL_STREAM) && obj[api::FIELD_CANCEL_STREAM].isBool())
-                     sharedThis->m_outputStreamFinished = obj[api::FIELD_CANCEL_STREAM].getBool();
+                  else if (obj.hasMember(api::FIELD_COMPLETE) && obj[api::FIELD_COMPLETE].isBool())
+                     sharedThis->m_outputStreamFinished = obj[api::FIELD_COMPLETE].getBool();
                }
             }
          }
@@ -602,7 +601,8 @@ bool SmokeTest::sendJobOutputStreamRequest(api::OutputType in_outputType)
          return handleError(error);
 
       bool timedOut = false;
-      while (!(timedOut = !waitForResponse(s_requestId, 1, uniqueLock)) && !m_outputStreamFinished);
+      while (!(timedOut = !waitForResponse(s_requestId, m_responseCount[s_requestId] + 1, uniqueLock)) &&
+         !m_outputStreamFinished);
 
       if (timedOut && !m_outputStreamFinished)
       {
@@ -680,7 +680,7 @@ bool SmokeTest::waitForResponse(
    uint64_t responseCount = m_responseCount[in_requestId];
    while ((stat != std::cv_status::timeout) && (responseCount < in_expectedResponses) && !m_exited)
    {
-      stat = m_condVar.wait_for(in_lock, std::chrono::seconds(5));
+      stat = m_condVar.wait_for(in_lock, std::chrono::seconds(30));
 
       // If we're waiting for multiple responses and we've received at least one in the last 30 seconds, keep
       // waiting.
