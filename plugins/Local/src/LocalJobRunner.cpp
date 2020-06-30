@@ -126,7 +126,7 @@ Error populateProcessOptions(
    }
 
    // Copy the argument and environment arrays.
-   std:(in_job->Arguments.begin(), in_job->Arguments.end(), std::back_inserter(out_procOpts.Arguments));
+   std::copy(in_job->Arguments.begin(), in_job->Arguments.end(), std::back_inserter(out_procOpts.Arguments));
    std::copy(in_job->Environment.begin(), in_job->Environment.end(), std::back_inserter(out_procOpts.Environment));
 
    // Populate the rest of the job details.
