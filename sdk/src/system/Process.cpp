@@ -822,6 +822,11 @@ struct AbstractChildProcess::Impl
          Arguments.push_back(in_options.PamProfile);
       }
 
+      if (options::Options::getInstance().useUnprivilegedMode())
+      {
+         Arguments.emplace_back("--unprivileged");
+      }
+
       for (const api::Mount& mount: in_options.Mounts)
       {
          if (mount.HostSourcePath)
