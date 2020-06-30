@@ -98,7 +98,10 @@ void AbstractLauncherCommunicator::registerRequestHandler(std::unique_ptr<Reques
 
 void AbstractLauncherCommunicator::sendResponse(const api::Response& in_response)
 {
-   std::string message = m_baseImpl->MsgHandler.formatMessage(in_response.toJson().write());
+   std::string jsonStr = in_response.toJson().write();
+   std::string message = m_baseImpl->MsgHandler.formatMessage(jsonStr);
+
+   logging::logDebugMessage("Sending message to the Launcher: " + jsonStr);
    writeResponse(message);
 }
 
