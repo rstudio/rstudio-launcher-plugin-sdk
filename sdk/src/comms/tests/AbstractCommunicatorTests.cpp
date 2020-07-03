@@ -107,7 +107,8 @@ TEST_CASE("Send a simple response")
    CommsPtr comms(new MockCommunicator());
    comms->sendResponse(response);
 
-   CHECK(mockLog->getSize() == 0);
+   // A single log about sending the response.
+   CHECK(mockLog->getSize() == 1);
    REQUIRE(comms->SentMessages.size() == 1);
    CHECK(comms->SentMessages.front() == expectedResult);
 }
@@ -173,7 +174,8 @@ TEST_CASE("Receive a request for a type that doesn't have a handler")
    // Wait a couple of seconds to ensure the other threads finish.
    sleep(2);
 
-   REQUIRE(mockLog->getSize() == 1);
+   // An extra log about sending the response.
+   REQUIRE(mockLog->getSize() == 2);
    CHECK(mockLog->peek().Level == logging::LogLevel::DEBUG);
    CHECK(mockLog->pop().Message.find(expectedStr.str()) != std::string::npos);
 
