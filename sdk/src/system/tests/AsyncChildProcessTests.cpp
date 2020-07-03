@@ -76,11 +76,7 @@ struct TestCallbacks
 TEST_CASE("Create Async Processes")
 {
    // Make sure default options are populated.
-   REQUIRE_FALSE(
-      options::Options::getInstance().readOptions(
-         0,
-         nullptr,
-         system::FilePath("conf-files/Empty.conf")));
+   REQUIRE_FALSE(options::Options::getInstance().readOptions(0, nullptr, system::FilePath()));
 
    // Get all the users for future user.
    system::User user1, user2, user3, user4, user5;
@@ -132,6 +128,7 @@ TEST_CASE("Create Async Processes")
       o2.Executable = "grep";
       o2.Arguments.emplace_back("-x");
       o2.IsShellCommand = true;
+      o2.RunAsUser = system::User(true);
 
       TestCallbacks cb2;
 
