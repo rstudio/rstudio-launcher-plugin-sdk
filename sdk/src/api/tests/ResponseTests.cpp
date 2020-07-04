@@ -497,6 +497,47 @@ TEST_CASE("Output Stream Response")
    }
 }
 
+TEST_CASE("Network Response")
+{
+   json::Object expected;
+   expected[FIELD_REQUEST_ID] = 36;
+   expected[FIELD_MESSAGE_TYPE] = 7;
+
+
+   SECTION("All fields")
+   {
+      NetworkInfo networkInfo;
+      networkInfo.Hostname = "myHost";
+      networkInfo.IpAddresses = {
+         "123.0.2.1",
+         "192.0.123.4",
+         "10.0.44.37"
+      };
+
+      json::Array jsonIps = json::toJsonArray(networkInfo.IpAddresses);
+
+      expected[FIELD_HOST] = "myHost";
+      expected[FIELD_IPS] = jsonIps;
+      expected[FIELD_RESPONSE_ID] = 15;
+
+      NetworkResponse response(36, networkInfo);
+      CHECK(response.toJson() == expected);
+   }
+
+   SECTION("Empty IPs")
+   {
+      NetworkInfo networkInfo;
+      networkInfo.Hostname = "myHost";
+
+      expected[FIELD_HOST] = "myHost";
+      expected[FIELD_IPS] = json::Array();
+      expected[FIELD_RESPONSE_ID] = 16;
+
+      NetworkResponse response(36, networkInfo);
+      CHECK(response.toJson() == expected);
+   }
+}
+
 } // namespace api
 } // namespace launcher_plugins
 } // namespace rstudio

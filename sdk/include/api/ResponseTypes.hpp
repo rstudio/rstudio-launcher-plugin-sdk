@@ -105,7 +105,16 @@ private:
    PRIVATE_IMPL(m_impl);
 };
 
-/** Convenience typedef. */
+struct NetworkInfo
+{
+   /** The hostname of the machine running the job. */
+   std::string Hostname;
+
+   /** The IP Address(es) of the machine running the job. */
+   std::vector<std::string> IpAddresses;
+};
+
+// Convenience typedefs.
 typedef std::vector<StreamSequenceId> StreamSequences;
 
 } // namespace api
