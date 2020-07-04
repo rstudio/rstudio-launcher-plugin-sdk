@@ -69,6 +69,12 @@ Error LocalJobSource::getJobs(api::JobList& out_jobs) const
    return m_jobStorage->loadJobs(out_jobs);
 }
 
+Error LocalJobSource::getNetworkInfo(api::JobPtr in_job, api::NetworkInfo& out_networkInfo) const
+{
+   out_networkInfo.Hostname = in_job->Host;
+   return Success();
+}
+
 Error LocalJobSource::submitJob(api::JobPtr io_job, bool& out_wasInvalidRequest) const
 {
    out_wasInvalidRequest = false;

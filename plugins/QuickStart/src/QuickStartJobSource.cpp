@@ -57,9 +57,15 @@ Error QuickStartJobSource::getConfiguration(
    return Success();
 }
 
-Error QuickStartJobSource::getJobs(api::JobList &out_jobs) const
+Error QuickStartJobSource::getJobs(api::JobList& out_jobs) const
 {
    // TODO #8: Pull all RStudio jobs from the job scheduling system synchronously.
+   return Success();
+}
+
+Error QuickStartJobSource::getNetworkInfo(api::JobPtr in_job, api::NetworkInfo& out_networkInfo) const
+{
+   // TODO #14: Get the network information of the specified job.
    return Success();
 }
 
