@@ -433,7 +433,7 @@ private:
 /**
  * @brief Request from the Launcher to get the network information for a job.
  */
-class NetworkRequest : public JobIdRequest
+class NetworkRequest final : public JobIdRequest
 {
 private:
    /**
