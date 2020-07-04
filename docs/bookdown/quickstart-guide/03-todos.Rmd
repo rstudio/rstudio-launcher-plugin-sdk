@@ -745,6 +745,7 @@ MarsJobSource::MarsJobSource(
 
 in `MarsJobSource.cpp`.
 
+
 ## TODO #12: Submit a Job {#todo-12}
 
 TODO Location             Impact
@@ -1011,3 +1012,58 @@ Error MarsJobSource::submitJob(api::JobPtr io_job, bool& out_wasInvalidRequest) 
 in `MarsJobSource.cpp`.
 
 Notice that the Mars API did not provide a way to set environment variables for the job. To compensate, the Plugin developer had to wrap the requested command in a [here-document](https://tldp.org/LDP/abs/html/here-docs.html) which set the requested environment variables.
+
+
+## TODO #13: Create an Output Stream {#todo-13}
+
+TODO Location             Impact
+------------------------  ------------------------
+QuickStartJobSource.cpp   QuickStartJobSource.cpp
+
+When a request is made to stream job output, the Launcher will retrieve the relevant `Job` object, validate the authorization of the user to access the specified Job, and then invoke `IJobSource::createOutputStream` with the appropriate parameters. The Plugin is then responsible for creating an `AbstractOuptutStream` object which will stream the correct type of job output. If the job output will always be written to a file on a shared location, the Plugin may simply construct a `FileOutputStream` object and return it to the SDK.
+
+If there is need to skip some lines of output or in some way further process the Job output, but it can still be read from a file, it is possible to customize the behavior of the base `FileOutputStream` class by inheriting from it. For more details, please refer to the 'Customizing the File Output Stream' subsection of the 'Advanced Features' chapter of the RStudio Launcher Plugin SDK Developer Guide.
+
+If it is not possible to stream the output from a file, please refer to the 'Custom Output Streams' section of the 'Advanced Features' chapter of the RStudio Launcher Plugin SDK Developer Guide for details on how to create a completely custom output stream class.
+
+### Example {#todo-13-ex}
+
+Suppose that the Mars Job Scheduling System job output is being written to a file and that the Mars Launcher Plugin will have a requirement that job output be written to a shared location. In that case the Plugin developer may decide to create a `FileOutputStream` object to stream the job output. They may change
+
+```{Rcpp, eval=FALSE}
+
+Error QuickStartJobSource::createOutputStream(
+   api::OutputType in_outputType,
+   api::JobPtr in_job,
+   api::AbstractOutputStream::OnOutput in_onOutput,
+   api::AbstractOutputStream::OnComplete in_onComplete,
+   api::AbstractOutputStream::OnError in_onError,
+   api::OutputStreamPtr& out_outputStream)
+{
+   // TODO #13: Create an output stream.
+   return Error(
+      "NotImplemented",
+      2,
+      "Method QuickStartJobSource::createOutputStream is not implemented.",
+      ERROR_LOCATION);
+}
+```
+
+in `QuickStartJobSource.cpp` to
+
+```{Rcpp, eval=FALSE}
+
+Error Mars::createOutputStream(
+   api::OutputType in_outputType,
+   api::JobPtr in_job,
+   api::AbstractOutputStream::OnOutput in_onOutput,
+   api::AbstractOutputStream::OnComplete in_onComplete,
+   api::AbstractOutputStream::OnError in_onError,
+   api::OutputStreamPtr& out_outputStream)
+{
+   out_outputStream.reset(new api::FileOutputStream(in_outputType, in_job, in_onOutput, in_onComplete, in_onError));
+   return Success();
+}
+```
+
+in `MarsJobSource.cpp`.
