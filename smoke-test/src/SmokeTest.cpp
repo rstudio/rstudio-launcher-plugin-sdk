@@ -491,7 +491,15 @@ bool SmokeTest::sendRequest()
    }
 
    bool success = true;
-   if (choice > 0)
+   if (choice > requests.size())
+   {
+      std::cout << "Invalid choice ("
+         << line
+         << "). Please enter a positive integer less than "
+         << requests.size() + 1
+         << std::endl;
+   }
+   else if (choice > 0)
    {
       const std::string& request = requests[choice - 1];
       if (request == EXIT_REQ)
