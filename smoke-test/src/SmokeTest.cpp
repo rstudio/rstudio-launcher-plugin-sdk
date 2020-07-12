@@ -132,6 +132,7 @@ std::string getAllJobs(const system::User& in_user)
    jobsReq[api::FIELD_REQUEST_USERNAME] = in_user.getUsername();
    jobsReq[api::FIELD_REAL_USER] = in_user.getUsername();
    jobsReq[api::FIELD_JOB_ID] = "*";
+   jobsReq[api::FIELD_ENCODED_JOB_ID] = "";
 
    return getMessageHandler().formatMessage(jobsReq.write());
 }
@@ -147,6 +148,7 @@ std::string getFilteredJobs(const system::User& in_user)
    jobsReq[api::FIELD_REQUEST_USERNAME] = in_user.getUsername();
    jobsReq[api::FIELD_REAL_USER] = in_user.getUsername();
    jobsReq[api::FIELD_JOB_ID] = "*";
+   jobsReq[api::FIELD_ENCODED_JOB_ID] = "";
    jobsReq[api::FIELD_JOB_TAGS] = tags;
 
    return getMessageHandler().formatMessage(jobsReq.write());
@@ -163,6 +165,7 @@ std::string getStatusJobs(const system::User& in_user, api::Job::State in_state)
    jobsReq[api::FIELD_REQUEST_USERNAME] = in_user.getUsername();
    jobsReq[api::FIELD_REAL_USER] = in_user.getUsername();
    jobsReq[api::FIELD_JOB_ID] = "*";
+   jobsReq[api::FIELD_ENCODED_JOB_ID] = "";
    jobsReq[api::FIELD_JOB_STATUSES] = status;
 
    return getMessageHandler().formatMessage(jobsReq.write());
@@ -176,6 +179,7 @@ std::string streamJobStatuses(const system::User& in_user)
    statusReq[api::FIELD_REQUEST_USERNAME] = in_user.getUsername();
    statusReq[api::FIELD_REAL_USER] = in_user.getUsername();
    statusReq[api::FIELD_JOB_ID] = "*";
+   statusReq[api::FIELD_ENCODED_JOB_ID] = "";
 
    return getMessageHandler().formatMessage(statusReq.write());
 }
@@ -188,6 +192,7 @@ std::string cancelJobStream(const system::User& in_user)
    statusReq[api::FIELD_REQUEST_USERNAME] = in_user.getUsername();
    statusReq[api::FIELD_REAL_USER] = in_user.getUsername();
    statusReq[api::FIELD_JOB_ID] = "*";
+   statusReq[api::FIELD_ENCODED_JOB_ID] = "";
    statusReq[api::FIELD_CANCEL_STREAM] = true;
 
    return getMessageHandler().formatMessage(statusReq.write());
@@ -262,6 +267,7 @@ std::string streamOutput(const std::string& in_jobId, api::OutputType in_type, c
    outputStreamReq[api::FIELD_REQUEST_USERNAME] = in_user.getUsername();
    outputStreamReq[api::FIELD_REAL_USER] = in_user.getUsername();
    outputStreamReq[api::FIELD_JOB_ID] = in_jobId;
+   outputStreamReq[api::FIELD_ENCODED_JOB_ID] = "";
    outputStreamReq[api::FIELD_MESSAGE_TYPE] = static_cast<int>(api::Request::Type::GET_JOB_OUTPUT);
    outputStreamReq[api::FIELD_CANCEL_STREAM] = false;
 
@@ -276,6 +282,7 @@ std::string cancelOutputStream(const std::string& in_jobId, const system::User& 
    statusReq[api::FIELD_REQUEST_USERNAME] = in_user.getUsername();
    statusReq[api::FIELD_REAL_USER] = in_user.getUsername();
    statusReq[api::FIELD_JOB_ID] = in_jobId;
+   statusReq[api::FIELD_ENCODED_JOB_ID] = "";
    statusReq[api::FIELD_CANCEL_STREAM] = true;
 
    return getMessageHandler().formatMessage(statusReq.write());
