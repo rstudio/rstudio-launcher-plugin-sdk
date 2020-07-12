@@ -29,8 +29,8 @@
 
 #include <Error.hpp>
 #include <system/FilePath.hpp>
+#include <system/PosixSystem.hpp>
 
-#include "PosixSystem.hpp"
 #include "../SafeConvert.hpp"
 
 namespace rstudio {

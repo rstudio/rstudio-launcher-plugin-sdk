@@ -193,11 +193,6 @@ for I in "${!SRC_INCLUDES[@]}"; do
     SRC_FILE=${SRC_INCLUDES[$I]}
     DEST_PATH="$DEST_INCLUDE/${DEST_INCLUDES[$I]}"
 
-    # Make PosixSystem private in the SDK.
-    if [[ "$SRC_FILE" == "system/PosixSystem.hpp" ]]; then
-      DEST_PATH="$DEST_SRC/${DEST_INCLUDES[$I]}"
-    fi
-
     copyFile "$SRC_INCLUDE/$SRC_FILE" "$DEST_PATH"
 
     # Special cases

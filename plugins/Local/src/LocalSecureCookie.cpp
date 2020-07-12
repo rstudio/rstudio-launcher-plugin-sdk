@@ -27,15 +27,11 @@
 #include <Error.hpp>
 #include <options/Options.hpp>
 #include <system/FilePath.hpp>
+#include <system/PosixSystem.hpp>
 #include <system/User.hpp>
 #include <utils/FileUtils.hpp>
 
 #include <LocalOptions.hpp>
-
-// Current dir is plugins/Local/src
-// ONLY INCLUDING PRIVATE SDK HEADER BECAUSE ABSOLUTELY NECESSARY.
-// PRIVATE HEADERS ARE NOT STABLE. THEY CANNOT BE RELIED ON.
-#include "../../../sdk/src/system/PosixSystem.hpp"
 
 namespace rstudio {
 namespace launcher_plugins {
