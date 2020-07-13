@@ -26,7 +26,7 @@
 
 #include <api/IJobSource.hpp>
 
-#include <jobs/JobRepository.hpp>
+#include <jobs/AbstractJobRepository.hpp>
 #include <jobs/JobStatusNotifier.hpp>
 
 #include "QuickStartJobStatusWatcher.hpp"

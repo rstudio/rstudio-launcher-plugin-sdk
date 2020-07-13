@@ -29,7 +29,7 @@
 #include <vector>
 
 #include <api/Job.hpp>
-#include <jobs/JobRepository.hpp>
+#include <jobs/AbstractJobRepository.hpp>
 #include <jobs/JobStatusNotifier.hpp>
 
 #include "job_store/LocalJobStorage.hpp"

@@ -26,7 +26,6 @@
 #include <jobs/AbstractTimedJobStatusWatcher.hpp>
 
 #include <AsioRaii.hpp>
-#include <MockLogDestination.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -92,7 +91,7 @@ TEST_CASE("Timed Job Status Watcher Tests")
 
    // Job repo and status notifier.
    JobStatusNotifierPtr notifier(new JobStatusNotifier());
-   JobRepositoryPtr repo(new JobRepository(notifier));
+   JobRepositoryPtr repo(new AbstractJobRepository(notifier));
 
    SECTION("No polling errors")
    {

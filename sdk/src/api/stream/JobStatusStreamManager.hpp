@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef LAUNCHER_PLUGINS_STREAMMANAGER_HPP
-#define LAUNCHER_PLUGINS_STREAMMANAGER_HPP
+#ifndef LAUNCHER_PLUGINS_JOB_STATUS_STREAM_MANAGER_HPP
+#define LAUNCHER_PLUGINS_JOB_STATUS_STREAM_MANAGER_HPP
 
 #include <Noncopyable.hpp>
 
@@ -31,7 +31,7 @@
 #include <PImpl.hpp>
 #include <api/IJobSource.hpp>
 #include <comms/AbstractLauncherCommunicator.hpp>
-#include <jobs/JobRepository.hpp>
+#include <jobs/AbstractJobRepository.hpp>
 #include <jobs/JobStatusNotifier.hpp>
 
 namespace rstudio {

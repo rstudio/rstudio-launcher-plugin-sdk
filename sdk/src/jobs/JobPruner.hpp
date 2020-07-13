@@ -27,7 +27,7 @@
 #include <Noncopyable.hpp>
 
 #include <PImpl.hpp>
-#include <jobs/JobRepository.hpp>
+#include <jobs/AbstractJobRepository.hpp>
 #include <jobs/JobStatusNotifier.hpp>
 
 namespace rstudio {

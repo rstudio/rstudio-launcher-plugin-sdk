@@ -39,7 +39,7 @@ namespace launcher_plugins {
 namespace jobs {
 
 // Forward declarations
-class JobRepository;
+class AbstractJobRepository;
 
 struct Subscription;
 typedef std::shared_ptr<Subscription> SubscriptionHandle;

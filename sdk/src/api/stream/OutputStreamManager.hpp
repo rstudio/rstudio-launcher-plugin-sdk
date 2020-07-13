@@ -45,7 +45,7 @@ class AbstractLauncherCommunicator;
 
 namespace jobs {
 
-class JobRepository;
+class AbstractJobRepository;
 class JobStatusNotifier;
 
 } // namespace jobs
@@ -72,7 +72,7 @@ public:
     */
    OutputStreamManager(
       std::shared_ptr<IJobSource> in_jobSource,
-      std::shared_ptr<jobs::JobRepository> in_jobRepository,
+      std::shared_ptr<jobs::AbstractJobRepository> in_jobRepository,
       std::shared_ptr<jobs::JobStatusNotifier> in_jobStatusNotifier,
       std::shared_ptr<comms::AbstractLauncherCommunicator> in_launcherCommunicator);
 

@@ -30,7 +30,7 @@
 #include <api/Job.hpp>
 #include <api/ResponseTypes.hpp>
 #include <api/stream/AbstractOutputStream.hpp>
-#include <jobs/JobRepository.hpp>
+#include <jobs/AbstractJobRepository.hpp>
 #include <jobs/JobStatusNotifier.hpp>
 
 namespace rstudio {

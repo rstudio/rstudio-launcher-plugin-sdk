@@ -25,7 +25,7 @@
 
 #include <PImpl.hpp>
 #include <comms/AbstractLauncherCommunicator.hpp>
-#include <jobs/JobRepository.hpp>
+#include <jobs/AbstractJobRepository.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -78,7 +78,7 @@ private:
     * This may be overridden if the Plugin implementation requires custom job repository behaviour, such as removing
     * any persistent Job data when a completed Job expires.
     *
-    * @param in_jobStatusNotifier       The job status notifier, which is used by the JobRepository to keep track of new
+    * @param in_jobStatusNotifier       The job status notifier, which is used by the AbstractJobRepository to keep track of new
     *                                   jobs.
     *
     * @return The job repository.

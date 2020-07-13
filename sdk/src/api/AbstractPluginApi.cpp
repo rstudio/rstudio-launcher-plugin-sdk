@@ -417,7 +417,7 @@ AbstractPluginApi::AbstractPluginApi(std::shared_ptr<comms::AbstractLauncherComm
 
 jobs::JobRepositoryPtr AbstractPluginApi::createJobRepository(const jobs::JobStatusNotifierPtr& in_jobStatusNotifier) const
 {
-   return std::make_shared<jobs::JobRepository>(in_jobStatusNotifier);
+   return std::make_shared<jobs::AbstractJobRepository>(in_jobStatusNotifier);
 }
 
 } // namespace api

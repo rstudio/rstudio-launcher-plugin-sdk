@@ -23,7 +23,7 @@
 
 #include <TestMain.hpp>
 
-#include <jobs/JobRepository.hpp>
+#include <jobs/AbstractJobRepository.hpp>
 #include <system/User.hpp>
 
 namespace rstudio {
@@ -72,7 +72,7 @@ TEST_CASE("One job")
    job->User = user1;
 
    JobStatusNotifierPtr notifier(new JobStatusNotifier()); 
-   JobRepositoryPtr repo(new JobRepository(notifier));
+   JobRepositoryPtr repo(new AbstractJobRepository(notifier));
    repo->addJob(job);
 
    SECTION("Get job for correct user")
@@ -131,7 +131,7 @@ TEST_CASE("Multiple jobs")
    job5->User = user2;
 
    JobStatusNotifierPtr notifier(new JobStatusNotifier());
-   JobRepositoryPtr repo(new JobRepository(notifier));
+   JobRepositoryPtr repo(new AbstractJobRepository(notifier));
    repo->addJob(job1);
    repo->addJob(job2);
    repo->addJob(job3);
