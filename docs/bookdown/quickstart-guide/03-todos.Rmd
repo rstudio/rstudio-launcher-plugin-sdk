@@ -1067,3 +1067,67 @@ Error Mars::createOutputStream(
 ```
 
 in `MarsJobSource.cpp`.
+
+## TODO #14: Get Network Information {#todo-14}
+
+TODO Location             Impact
+------------------------  ------------------------
+QuickStartJobSource.cpp   QuickStartJobSource.cpp
+
+Some use cases of the Launcher may require the ability to communicate with a remotely launched job. For example, when using the Launcher to run RStudio R Sessions, the RStudio Server needs to be able to communicate with the R Session over TCP. To facilitate this, the Plugin must be able to provide network information for each Job. 
+
+The Plugin developer should implement `IJobSource::getNetworkInfo` so that it populates the `out_networkInfo` object with the hostname and IP addresses of the host running the specified Job.
+
+Note that the `in_job` object provided to the `IJobSource::getNetworkInfo` should already have the `Host` field populated because a Job must have been successfully submitted to the Job Scheduling System in order for a network info request to be valid.
+
+### Example {#todo-14-ex}
+
+Assume that the Plugin developer set the `Host` field on the Job object to the name of the Mars node running the Job, and that the name of the Mars node may or may not be the actual hostname of the machine running the job. Also assume that there is a `mars_api` method that returns information about a node with the following signature:
+
+```{Rcpp, eval=FALSE}
+struct node
+{
+  std::string hostname;
+  std::vector<std::string> addresses;
+  int avail_cpus;
+  int avail_mem_mb;
+  int avail_gpus;
+  proc_type processor_type;
+}
+
+mars_api::node node_info(const char* node_name);
+```
+
+In that case, the developer might change
+
+```{Rcpp, eval=FALSE}
+Error QuickStartJobSource::getNetworkInfo(api::JobPtr in_job, api::NetworkInfo& out_networkInfo) const
+{
+   // TODO #14: Get the network information of the specified job.
+   return Success();
+}
+```
+
+in `QuickStartJobSource.cpp` to 
+
+```{Rcpp, eval=FALSE}
+Error MarsJobSource::getNetworkInfo(api::JobPtr in_job, api::NetworkInfo& out_networkInfo) const
+{
+   mars_api::node nodeInfo;
+   try
+   {
+      nodeInfo = mars_api::node_info(in_job->Host.c_str());
+   }
+   catch(mars_api::mars_exception& e)
+   {
+      return Error("MarsApiError", e.code(), e.what(), ERROR_LOCATION);
+   }
+   
+   out_networkInfo.Hostname = nodeInfo.hostname;
+   std::copy(nodeInfo.addresses.begin(), nodeInfo.addresses.end(), std::back_inserter(out_networkInfo.IpAddresses));
+   
+   return Success();
+}
+```
+
+in `MarsJobSource.cpp`
