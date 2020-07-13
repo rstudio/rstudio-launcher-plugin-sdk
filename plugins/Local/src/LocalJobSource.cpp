@@ -25,6 +25,7 @@
 
 #include <Error.hpp>
 #include <api/stream/FileOutputStream.hpp>
+#include <system/PosixSystem.hpp>
 
 #include <LocalConstants.hpp>
 
@@ -71,7 +72,22 @@ Error LocalJobSource::getJobs(api::JobList& out_jobs) const
 
 Error LocalJobSource::getNetworkInfo(api::JobPtr in_job, api::NetworkInfo& out_networkInfo) const
 {
+   using system::posix::IpAddress;
+   std::vector<IpAddress> addresses;
+   Error error = system::posix::getIpAddresses(addresses, true);
+   if (error)
+      return error;
+
    out_networkInfo.Hostname = in_job->Host;
+   for (const IpAddress& addr: addresses)
+   {
+      // Return all addresses except the loop-back and link local addresses.
+      if ((addr.Address.find("127") != 0) &&
+         (addr.Address.find("::1") != 0) &&
+         (addr.Address.find("%") == std::string::npos))
+         out_networkInfo.IpAddresses.push_back(addr.Address);
+   }
+
    return Success();
 }
 
