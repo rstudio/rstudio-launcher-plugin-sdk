@@ -140,6 +140,15 @@ Error AbstractJobRepository::initialize()
 
    m_impl->JobPruneTimer.reset(new JobPruner(shared_from_this(), m_impl->Notifier));
 
+   size_t pruned = 0;
+   for (const JobPtr& job: jobs)
+   {
+      if (m_impl->JobPruneTimer->pruneJob(job->Id))
+         ++pruned;
+   }
+
+   logging::logInfoMessage("Pruned " + std::to_string(pruned) + " jobs...");
+
    return onInitialize();
 }
 
