@@ -35,7 +35,7 @@
 
 #include <LocalConstants.hpp>
 #include <LocalError.hpp>
-#include <job_store/LocalJobStorage.hpp>
+#include <LocalJobRepository.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -150,10 +150,10 @@ Error populateProcessOptions(
 LocalJobRunner::LocalJobRunner(
    const std::string& in_hostname,
    jobs::JobStatusNotifierPtr in_notifier,
-   std::shared_ptr<job_store::LocalJobStorage> in_jobStorage) :
-      m_hostname(in_hostname),
-      m_jobStorage(std::move(in_jobStorage)),
-      m_notifier(std::move(in_notifier))
+   std::shared_ptr<LocalJobRepository> in_jobRepository) :
+   m_hostname(in_hostname),
+   m_jobRepo(std::move(in_jobRepository)),
+   m_notifier(std::move(in_notifier))
 {
 }
 
@@ -174,7 +174,7 @@ Error LocalJobRunner::runJob(api::JobPtr& io_job, bool& out_wasInvalidJob)
    io_job->Host = m_hostname;
 
    // Set the output files for the job, if required.
-   error = m_jobStorage->setJobOutputPaths(io_job);
+   error = m_jobRepo->setJobOutputPaths(io_job);
    if (error)
       return error;
 
@@ -281,7 +281,7 @@ void LocalJobRunner::onJobExitCallback(WeakLocalJobRunner in_weakThis, int in_ex
          if (io_job->Status == State::KILLED)
          {
             io_job->LastUpdateTime = system::DateTime();
-            sharedThis->m_jobStorage->saveJob(io_job);
+            sharedThis->m_jobRepo->saveJob(io_job);
          }
          else
          {

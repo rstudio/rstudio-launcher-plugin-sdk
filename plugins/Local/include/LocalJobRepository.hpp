@@ -1,5 +1,5 @@
 /*
- * LocalJobStorage.hpp
+ * LocalJobRepository.hpp
  *
  * Copyright (C) 2020 by RStudio, PBC
  *
@@ -21,8 +21,10 @@
  *
  */
 
-#ifndef LAUNCHER_PLUGINS_LOCAL_JOB_STORAGE_HPP
-#define LAUNCHER_PLUGINS_LOCAL_JOB_STORAGE_HPP
+#ifndef LAUNCHER_PLUGINS_LOCAL_JOB_REPOSITORY_HPP
+#define LAUNCHER_PLUGINS_LOCAL_JOB_REPOSITORY_HPP
+
+#include <jobs/AbstractJobRepository.hpp>
 
 #include <memory>
 
@@ -41,12 +43,11 @@ class Error;
 namespace rstudio {
 namespace launcher_plugins {
 namespace local {
-namespace job_store {
 
 /**
  * @brief Responsible for job persistence.
  */
-class LocalJobStorage : public std::enable_shared_from_this<LocalJobStorage>
+class LocalJobRepository : public jobs::AbstractJobRepository
 {
 public:
    /**
@@ -55,14 +56,7 @@ public:
     * @param in_hostname    The hostname of machine which is hosting this instance of the Local Plugin.
     * @param in_notifier    The job status notifier from which to receive job status update notifications.
     */
-   LocalJobStorage(const std::string& in_hostname, jobs::JobStatusNotifierPtr in_notifier);
-
-   /**
-    * @brief Initializes the local job storage.
-    *
-    * @return Success if all local job storage directories could be created; Error otherwise.
-    */
-   Error initialize();
+   LocalJobRepository(const std::string& in_hostname, jobs::JobStatusNotifierPtr in_notifier);
 
    /**
     * @brief Loads all jobs from disk.
@@ -88,6 +82,13 @@ public:
    Error setJobOutputPaths(api::JobPtr io_job) const;
 
 private:
+   /**
+    * @brief Initializes the local job repository.
+    *
+    * @return Success if all local job repository directories could be created; Error otherwise.
+    */
+   Error onInitialize() override;
+   
    /** The name of the host of this Local Plugin instance. */
    const std::string& m_hostname;
 
@@ -110,7 +111,6 @@ private:
    const system::FilePath m_outputRootPath;
 };
 
-} // namespace job_store
 } // namespace local
 } // namespace launcher_plugins
 } // namespace rstudio

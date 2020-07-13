@@ -44,11 +44,9 @@ class AsyncDeadlineEvent;
 } // namespace system
 
 namespace local {
-namespace job_store {
 
-class LocalJobStorage;
+class LocalJobRepository;
 
-} // namespace job_store
 } // namespace local
 } // namespace launcher_plugins
 } // namespace rstudio
@@ -68,12 +66,12 @@ public:
     *
     * @param in_hostname        The hostname of the machine on which jobs will be run (this machine).
     * @param in_notifier        The job status notifier, for posting job status updates.
-    * @param in_jobStorage      The job storage, for saving jobs and job output.
+    * @param in_jobRepository   The job repository, for saving jobs and job output.
     */
    LocalJobRunner(
       const std::string& in_hostname,
       jobs::JobStatusNotifierPtr in_notifier,
-      std::shared_ptr<job_store::LocalJobStorage> in_jobStorage);
+      std::shared_ptr<LocalJobRepository> in_jobRepository);
 
    /**
     * @brief Initializes the job runner.
@@ -138,7 +136,7 @@ private:
    const std::string& m_hostname;
 
    /** The job storage. */
-   std::shared_ptr<job_store::LocalJobStorage> m_jobStorage;
+   std::shared_ptr<LocalJobRepository> m_jobRepo;
 
    /** The mutex to protect the process watch events. */
    std::mutex m_mutex;

@@ -58,6 +58,21 @@ inline bool isEqual(const api::JobList& in_lhs, const api::JobList& in_rhs)
    return true;
 }
 
+class MockJobRepo : public AbstractJobRepository
+{
+public:
+   explicit MockJobRepo(const JobStatusNotifierPtr& in_notifier) :
+      AbstractJobRepository(in_notifier)
+   {
+   }
+
+private:
+   Error loadJobs(api::JobList& out_jobs) const override
+   {
+      return Success();
+   }
+};
+
 } // anonymous namespace
 
 TEST_CASE("One job")
@@ -72,7 +87,7 @@ TEST_CASE("One job")
    job->User = user1;
 
    JobStatusNotifierPtr notifier(new JobStatusNotifier()); 
-   JobRepositoryPtr repo(new AbstractJobRepository(notifier));
+   JobRepositoryPtr repo(new MockJobRepo(notifier));
    repo->addJob(job);
 
    SECTION("Get job for correct user")
@@ -131,7 +146,7 @@ TEST_CASE("Multiple jobs")
    job5->User = user2;
 
    JobStatusNotifierPtr notifier(new JobStatusNotifier());
-   JobRepositoryPtr repo(new AbstractJobRepository(notifier));
+   JobRepositoryPtr repo(new MockJobRepo(notifier));
    repo->addJob(job1);
    repo->addJob(job2);
    repo->addJob(job3);

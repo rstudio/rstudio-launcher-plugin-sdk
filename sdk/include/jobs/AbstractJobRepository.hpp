@@ -113,6 +113,17 @@ public:
 
 private:
    /**
+    * @brief Responsible for loading any jobs which were in the system when the Plugin started.
+    *
+    * This method will be invoked once, when the Plugin is started.
+    *
+    * @param out_jobs       The jobs that were already in the job scheduling system on start up.
+    *
+    * @return Success if the jobs could be loaded; Error otherwise.
+    */
+   virtual Error loadJobs(api::JobList& out_jobs) const = 0;
+
+   /**
     * @brief Allows inheriting classes to perform custom actions when a job is removed from the repository.
     *
     * @param in_job     The job that was removed from the repository.

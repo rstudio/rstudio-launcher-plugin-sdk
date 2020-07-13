@@ -1,7 +1,10 @@
 /*
- * LocalPluginApi.cpp
- * 
- * Copyright (C) 2019-20 by RStudio, PBC
+ * QuickStartJobRepository.cpp
+ *
+ * Copyright (C) 2020 by RStudio, PBC
+ *
+ * Unless you have received this program directly from RStudio pursuant to the terms of a commercial license agreement
+ * with RStudio, then this program is licensed to you under the following terms:
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
  * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
@@ -18,47 +21,22 @@
  *
  */
 
-#include <LocalPluginApi.hpp>
-
-#include <LocalJobRepository.hpp>
-#include <LocalJobSource.hpp>
+#include <QuickStartJobRepository.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
-namespace local {
+namespace quickstart {
 
-LocalPluginApi::LocalPluginApi(
-   std::string in_hostname,
-   std::shared_ptr<comms::AbstractLauncherCommunicator> in_launcherCommunicator) :
-   AbstractPluginApi(std::move(in_launcherCommunicator)),
-   m_hostname(std::move(in_hostname))
+QuickStartJobRepository::QuickStartJobRepository(jobs::JobStatusNotifierPtr in_notifier) :
+   jobs::AbstractJobRepository(std::move(in_notifier))
 {
 }
 
-jobs::JobRepositoryPtr LocalPluginApi::createJobRepository(
-   const jobs::JobStatusNotifierPtr& in_jobStatusNotifier) const
-{
-   return jobs::JobRepositoryPtr(new LocalJobRepository(m_hostname, in_jobStatusNotifier));
-}
-
-std::shared_ptr<api::IJobSource> LocalPluginApi::createJobSource(
-   jobs::JobRepositoryPtr in_jobRepository,
-   jobs::JobStatusNotifierPtr in_jobStatusNotifier) const
-{
-   // The job repository will always be a LocalJobRepository, so the static pointer cast is safe here.
-   return std::shared_ptr<api::IJobSource>(
-      new LocalJobSource(
-         m_hostname,
-         std::move(in_jobStatusNotifier),
-         std::static_pointer_cast<LocalJobRepository>(in_jobRepository)));
-}
-
-Error LocalPluginApi::doInitialize()
+Error QuickStartJobRepository::loadJobs(api::JobList&) const
 {
    return Success();
 }
 
-} // namespace local
+} // namespace quickstart
 } // namespace launcher_plugins
 } // namespace rstudio
-

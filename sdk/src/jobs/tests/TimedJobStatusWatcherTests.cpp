@@ -31,6 +31,21 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace jobs {
 
+class MockJobRepo : public AbstractJobRepository
+{
+public:
+   explicit MockJobRepo(const JobStatusNotifierPtr& in_notifier) :
+      AbstractJobRepository(in_notifier)
+   {
+   }
+
+private:
+   Error loadJobs(api::JobList& out_jobs) const override
+   {
+      return Success();
+   }
+};
+
 class MockJobStatusWatcher : public AbstractTimedJobStatusWatcher
 {
 public:
@@ -91,7 +106,7 @@ TEST_CASE("Timed Job Status Watcher Tests")
 
    // Job repo and status notifier.
    JobStatusNotifierPtr notifier(new JobStatusNotifier());
-   JobRepositoryPtr repo(new AbstractJobRepository(notifier));
+   JobRepositoryPtr repo(new MockJobRepo(notifier));
 
    SECTION("No polling errors")
    {

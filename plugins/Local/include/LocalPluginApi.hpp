@@ -24,7 +24,7 @@
 #include <api/AbstractPluginApi.hpp>
 
 #include "LocalJobSource.hpp"
-#include "job_store/LocalJobStorage.hpp"
+#include "LocalJobRepository.hpp"
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -58,6 +58,16 @@ public:
       std::shared_ptr<comms::AbstractLauncherCommunicator> in_launcherCommunicator);
 
 private:
+   /**
+    * @brief Creates the job repository which stores any RStudio Launcher jobs currently in the job scheduling system.
+    *
+    * @param in_jobStatusNotifier       The job status notifier, which is used by the AbstractJobRepository to keep
+    *                                   track of new jobs.
+    *
+    * @return The job repository.
+    */
+   jobs::JobRepositoryPtr createJobRepository(
+      const jobs::JobStatusNotifierPtr& in_jobStatusNotifier) const override;
    /**
     * @brief Creates the job source which can communicate with the Local system.
     *

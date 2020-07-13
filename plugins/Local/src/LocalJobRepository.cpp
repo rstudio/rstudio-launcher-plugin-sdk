@@ -1,5 +1,5 @@
 /*
- * LocalJobStorage.cpp
+ * LocalJobRepository.cpp
  *
  * Copyright (C) 2020 by RStudio, PBC
  *
@@ -21,7 +21,7 @@
  *
  */
 
-#include <job_store/LocalJobStorage.hpp>
+#include <LocalJobRepository.hpp>
 
 #include <Error.hpp>
 #include <json/Json.hpp>
@@ -37,10 +37,9 @@ using namespace rstudio::launcher_plugins::system;
 namespace rstudio {
 namespace launcher_plugins {
 namespace local {
-namespace job_store {
 
-typedef std::shared_ptr<LocalJobStorage> SharedThis;
-typedef std::weak_ptr<LocalJobStorage> WeakThis;
+typedef std::shared_ptr<LocalJobRepository> SharedThis;
+typedef std::weak_ptr<LocalJobRepository> WeakThis;
 
 namespace {
 
@@ -138,7 +137,8 @@ inline Error readJobFromFile(const FilePath& in_jobFile, api::JobPtr& out_job)
 
 } // anonymous namespace
 
-LocalJobStorage::LocalJobStorage(const std::string& in_hostname, jobs::JobStatusNotifierPtr in_notifier) :
+LocalJobRepository::LocalJobRepository(const std::string& in_hostname, jobs::JobStatusNotifierPtr in_notifier) :
+   AbstractJobRepository(in_notifier),
    m_hostname(in_hostname),
    m_jobsRootPath(options::Options::getInstance().getScratchPath().completeChildPath(ROOT_JOBS_DIR)),
    m_jobsPath(m_jobsRootPath.completeChildPath(m_hostname)),
@@ -147,35 +147,7 @@ LocalJobStorage::LocalJobStorage(const std::string& in_hostname, jobs::JobStatus
    m_outputRootPath(options::Options::getInstance().getScratchPath().completeChildPath(ROOT_OUTPUT_DIR))
 {
 }
-
-Error LocalJobStorage::initialize()
-{
-   Error error = ensureDirectory(m_jobsRootPath);
-   if (error)
-      return error;
-
-   error = ensureDirectory(m_jobsPath);
-   if (error)
-      return error;
-
-   error = ensureDirectory(m_outputRootPath, FileMode::ALL_READ_WRITE_EXECUTE);
-   if (error)
-      return error;
-
-   WeakThis weakThis = weak_from_this();
-   m_subscriptionHandle = m_notifier->subscribe(
-      [weakThis](const api::JobPtr& in_job)
-      {
-         if (SharedThis sharedThis = weakThis.lock())
-         {
-            sharedThis->saveJob(in_job);
-         }
-      });
-
-   return Success();
-}
-
-Error LocalJobStorage::loadJobs(api::JobList& out_jobs) const
+Error LocalJobRepository::loadJobs(api::JobList& out_jobs) const
 {
    std::vector<FilePath> jobFiles;
    Error error = m_jobsPath.getChildren(jobFiles);
@@ -204,7 +176,7 @@ Error LocalJobStorage::loadJobs(api::JobList& out_jobs) const
    return Success();
 }
 
-void LocalJobStorage::saveJob(api::JobPtr in_job) const
+void LocalJobRepository::saveJob(api::JobPtr in_job) const
 {
    LOCK_JOB(in_job)
    {
@@ -218,7 +190,7 @@ void LocalJobStorage::saveJob(api::JobPtr in_job) const
    END_LOCK_JOB
 }
 
-Error LocalJobStorage::setJobOutputPaths(api::JobPtr io_job) const
+Error LocalJobRepository::setJobOutputPaths(api::JobPtr io_job) const
 {
    bool outputEmpty = io_job->StandardOutFile.empty(),
         errorEmpty = io_job->StandardErrFile.empty();
@@ -238,7 +210,34 @@ Error LocalJobStorage::setJobOutputPaths(api::JobPtr io_job) const
    return Success();
 }
 
-} // namespace job_store
+Error LocalJobRepository::onInitialize()
+{
+   Error error = ensureDirectory(m_jobsRootPath);
+   if (error)
+      return error;
+
+   error = ensureDirectory(m_jobsPath);
+   if (error)
+      return error;
+
+   error = ensureDirectory(m_outputRootPath, FileMode::ALL_READ_WRITE_EXECUTE);
+   if (error)
+      return error;
+
+   WeakThis weakThis = std::static_pointer_cast<LocalJobRepository>(shared_from_this());
+   m_subscriptionHandle = m_notifier->subscribe(
+      [weakThis](const api::JobPtr& in_job)
+      {
+         if (SharedThis sharedThis = weakThis.lock())
+         {
+            sharedThis->saveJob(in_job);
+         }
+      });
+
+   return Success();
+}
+
+
 } // namespace local
 } // namespace launcher_plugins
 } // namespace rstudio

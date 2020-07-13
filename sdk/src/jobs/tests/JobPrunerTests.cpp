@@ -44,6 +44,11 @@ public:
    }
 
 private:
+   Error loadJobs(api::JobList&) const override
+   {
+      return Success();
+   }
+
    void onJobRemoved(const api::JobPtr& in_job) override
    {
       s_count.fetch_add(1);
