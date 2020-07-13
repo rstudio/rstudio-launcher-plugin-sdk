@@ -451,11 +451,11 @@ in `MarsJobSource.cpp`.
   
 ## TODO #8: Pull All Jobs {#todo-8}
  
-TODO Location             Impact
-------------------------  ------------------------
-QuickStartJobSource.cpp   QuickStartJobSource.cpp
+TODO Location                  Impact
+-----------------------------  -----------------------------
+QuickStartJobRepository.cpp    QuickStartJobRepository.cpp
 
-When the Launcher starts the Plugin, it will send a Bootstrap request to ensure that the Plugin is initialized. During this request, the Plugin SDK will populate the `JobRepository` with any pre-existing Launcher jobs by calling `IJobSource::getJobs`. The Plugin developer needs to override `IJobSource::getJobs` to synchronously pull down the list jobs that are already in the Job Scheduling System.
+When the Launcher starts the Plugin, it will send a Bootstrap request to ensure that the Plugin is initialized. During this request, the Plugin SDK will initialize the `AbstractJobRepository` which will invoke the concrete implementation of `AbstractJobRepostiory::loadJobs`. The Plugin developer needs to override `AbstractJobRepostiory::loadJobs` to synchronously pull down the list jobs that are already in the Job Scheduling System. The `IJobSource` will be initialized successfully before the Job Repository is initialized.
 
 Any jobs which were not launched by the Plugin should not be included in the output. To distinguish between jobs that were launched by the Plugin and jobs that were launched either manually or by another tool, it may be useful to preface the name of the job with a unique tag (e.g. `'[RStudio Launcher] <job name>`). Alternately, if the Job Scheduling System supports setting custom fields on the job, a custom field may be used to indicate that the job was launched through the Plugin. Note that if a unique prefix is added to Launcher jobs by the Plugin, it should be removed from the job name before being returned to the Launcher.
 
@@ -498,18 +498,18 @@ In that case, the Plugin developer might change
 
 ```{Rcpp, eval=FALSE}
 
-Error QuickStartJobSource::getJobs(api::JobList &out_jobs) const
+Error QuickStartJobRepository::loadJobs(api::JobList& out_jobs) const
 {
   // TODO #8: Pull all RStudio jobs from the job scheduling system synchronously.
   return Success();
 }
 ```
 
-in `QuickStartJobSource.cpp` to 
+in `QuickStartJobRepository.cpp` to 
 
 ```{Rcpp, eval=FALSE}
 
-Error MarsJobSource::getJobs(api::JobList &out_jobs) const
+Error MarsJobRepository::loadJobs(api::JobList &out_jobs) const
 {
   const options::MarsOptions& opts = options::MarsOptions::getInstance();
   std::vector<mars_api::job> marsJobs;
@@ -530,7 +530,7 @@ Error MarsJobSource::getJobs(api::JobList &out_jobs) const
 }
 ```
 
-in `MarsJobSource.cpp`.
+in `MarsJobRepository.cpp`.
 
 ## TODO #9: Poll Job Statuses {#todo-9}
 
@@ -758,6 +758,8 @@ When a Job is submitted to the Plugin, the Plugin will be provided with an `Job`
 * Set the `SubmissionTime` field of the `Job` object. This may be either the time that the Plugin invoked the Job Scheduling System's submission method or the time that the Job Scheduling System reports that the Job was submitted, if available.
 
 The SDK will set the initial Job Status to `Job::State::PENDING` if no `Error` is returned from `IJobSource::submitJob`. Additional Job Status updates must be implemented by the Plugin. Ideally, this would be implemented through Job Status Streaming, which is discussed in detail in the 'Job Status Updates' section of the 'Advanced Features' chapter of the RStudio Launcher Plugin SDK Developer's Guide.
+
+When a Job is updated in the `JobStatusNotifier` for the first time, it gets added to the `AbstractJobRepository`. If the Plugin requires any special handling for newly added Jobs, or for Jobs that are being pruned, this functionality can be added in the concrete implementation of the `AbstractJobRepositry`. For more detail see the 'Job Repository' section of the 'Advanced Features' chapter of the RStudio Launcher Plugin SDK Developer's Guide.
 
 ### Error Handling {#todo-12-err}
 
