@@ -50,6 +50,17 @@ public:
       JobRepositoryPtr in_jobRepository,
       JobStatusNotifierPtr in_jobStatusNotifier);
 
+   /**
+    * @brief Prunes the job with the specified ID.
+    *
+    * If the job has not expired it will not be pruned.
+    *
+    * @param in_jobId   The ID of the job to prune.
+    *
+    * @return True if the job was pruned; false otherwise.
+    */
+   bool pruneJob(const std::string& in_jobId);
+
 private:
    // The private implementation of JobPruner
    PRIVATE_IMPL_SHARED(m_impl);
