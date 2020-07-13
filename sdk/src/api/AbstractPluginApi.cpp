@@ -119,13 +119,9 @@ struct AbstractPluginApi::Impl
       if (error)
          return sendErrorResponse(in_bootstrapRequest->getId(), ErrorResponse::Type::UNKNOWN, error);
 
-      JobList jobs;
-      error = JobSource->getJobs(jobs);
+      error = JobRepo->initialize();
       if (error)
          return sendErrorResponse(in_bootstrapRequest->getId(), ErrorResponse::Type::UNKNOWN, error);
-
-      for (const JobPtr& job: jobs)
-         JobRepo->addJob(job);
 
       LauncherCommunicator->sendResponse(BootstrapResponse(in_bootstrapRequest->getId()));
    }
@@ -362,9 +358,6 @@ Error AbstractPluginApi::initialize()
 {
    // Create the job repository.
    m_abstractPluginImpl->JobRepo = createJobRepository(m_abstractPluginImpl->Notifier);
-   Error error = m_abstractPluginImpl->JobRepo->initialize();
-   if (error)
-      return error;
 
    // Create the job source.
    m_abstractPluginImpl->JobSource = createJobSource(

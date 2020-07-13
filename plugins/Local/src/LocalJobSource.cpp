@@ -60,11 +60,6 @@ Error LocalJobSource::getConfiguration(const system::User&, api::JobSourceConfig
    return Success();
 }
 
-Error LocalJobSource::getJobs(api::JobList& out_jobs) const
-{
-   return Success();
-}
-
 Error LocalJobSource::getNetworkInfo(api::JobPtr in_job, api::NetworkInfo& out_networkInfo) const
 {
    using system::posix::IpAddress;

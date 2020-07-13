@@ -32,8 +32,9 @@ QuickStartJobRepository::QuickStartJobRepository(jobs::JobStatusNotifierPtr in_n
 {
 }
 
-Error QuickStartJobRepository::loadJobs(api::JobList&) const
+Error QuickStartJobRepository::loadJobs(api::JobList& out_jobs) const
 {
+   // TODO #8: Pull all RStudio jobs from the job scheduling system synchronously.
    return Success();
 }
 

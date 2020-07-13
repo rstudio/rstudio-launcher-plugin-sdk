@@ -82,15 +82,6 @@ public:
    Error getConfiguration(const system::User&, api::JobSourceConfiguration& out_configuration) const override;
 
    /**
-    * @brief Gets all RStudio jobs currently in the job scheduling system.
-    *
-    * @param out_jobs   All RStudio jobs currently in the job scheduling system.
-    *
-    * @return Success if all jobs could be retrieved; Error otherwise.
-    */
-    Error getJobs(api::JobList& out_jobs) const override;
-
-   /**
     * @brief Gets the network information for the specified job.
     *
     * @param in_job             The job for which to retrieve network information.
