@@ -70,7 +70,10 @@ void AbstractJobRepository::addJob(const JobPtr& in_job)
    {
       auto itr = m_impl->JobMap.find(in_job->Id);
       if (itr == m_impl->JobMap.end())
+      {
          m_impl->JobMap[in_job->Id] = in_job;
+         onJobAdded(in_job);
+      }
    }
    RW_LOCK_END(true)
 }
@@ -125,6 +128,14 @@ Error AbstractJobRepository::initialize()
       }
    };
 
+   JobList jobs;
+   Error error = loadJobs(jobs);
+   if (error)
+      return error;
+
+   for (const JobPtr& job: jobs)
+      m_impl->JobMap[job->Id] = job;
+
    m_impl->AllJobsSubHandle = m_impl->Notifier->subscribe(onJobStatusUpdate);
 
    m_impl->JobPruneTimer.reset(new JobPruner(shared_from_this(), m_impl->Notifier));
@@ -145,6 +156,11 @@ void AbstractJobRepository::removeJob(const std::string& in_jobId)
       }
    }
    RW_LOCK_END(true)
+}
+
+void AbstractJobRepository::onJobAdded(const JobPtr&)
+{
+   // Do nothing.
 }
 
 void AbstractJobRepository::onJobRemoved(const JobPtr&)

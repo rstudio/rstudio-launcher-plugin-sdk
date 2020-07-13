@@ -138,42 +138,13 @@ inline Error readJobFromFile(const FilePath& in_jobFile, api::JobPtr& out_job)
 } // anonymous namespace
 
 LocalJobRepository::LocalJobRepository(const std::string& in_hostname, jobs::JobStatusNotifierPtr in_notifier) :
-   AbstractJobRepository(in_notifier),
+   AbstractJobRepository(std::move(in_notifier)),
    m_hostname(in_hostname),
    m_jobsRootPath(options::Options::getInstance().getScratchPath().completeChildPath(ROOT_JOBS_DIR)),
    m_jobsPath(m_jobsRootPath.completeChildPath(m_hostname)),
-   m_notifier(std::move(in_notifier)),
    m_saveUnspecifiedOutput(LocalOptions::getInstance().shouldSaveUnspecifiedOutput()),
    m_outputRootPath(options::Options::getInstance().getScratchPath().completeChildPath(ROOT_OUTPUT_DIR))
 {
-}
-Error LocalJobRepository::loadJobs(api::JobList& out_jobs) const
-{
-   std::vector<FilePath> jobFiles;
-   Error error = m_jobsPath.getChildren(jobFiles);
-   if (error)
-      return error;
-
-   for (const FilePath& jobFile: jobFiles)
-   {
-      if (jobFile.getExtension() != JOB_FILE_EXT)
-         continue;
-
-      api::JobPtr job(new api::Job());
-      error = readJobFromFile(jobFile, job);
-      if (error)
-      {
-         // If there's a problem loading a job, just log the error and skip the job.
-         logging::logError(error);
-         continue;
-      }
-
-      out_jobs.push_back(job);
-   }
-
-   logging::logInfoMessage("Loaded " + std::to_string(out_jobs.size())  + " jobs from file");
-
-   return Success();
 }
 
 void LocalJobRepository::saveJob(api::JobPtr in_job) const
@@ -210,6 +181,45 @@ Error LocalJobRepository::setJobOutputPaths(api::JobPtr io_job) const
    return Success();
 }
 
+Error LocalJobRepository::loadJobs(api::JobList& out_jobs) const
+{
+   std::vector<FilePath> jobFiles;
+   Error error = m_jobsPath.getChildren(jobFiles);
+   if (error)
+      return error;
+
+   for (const FilePath& jobFile: jobFiles)
+   {
+      if (jobFile.getExtension() != JOB_FILE_EXT)
+         continue;
+
+      api::JobPtr job(new api::Job());
+      error = readJobFromFile(jobFile, job);
+      if (error)
+      {
+         // If there's a problem loading a job, just log the error and skip the job.
+         logging::logError(error);
+         continue;
+      }
+
+      out_jobs.push_back(job);
+   }
+
+   logging::logInfoMessage("Loaded " + std::to_string(out_jobs.size())  + " jobs from file");
+
+   return Success();
+}
+
+void LocalJobRepository::onJobAdded(const api::JobPtr& in_job)
+{
+   saveJob(in_job);
+}
+
+void LocalJobRepository::onJobRemoved(const api::JobPtr& in_job)
+{
+   // TODO: remove job files from disk.
+}
+
 Error LocalJobRepository::onInitialize()
 {
    Error error = ensureDirectory(m_jobsRootPath);
@@ -223,16 +233,6 @@ Error LocalJobRepository::onInitialize()
    error = ensureDirectory(m_outputRootPath, FileMode::ALL_READ_WRITE_EXECUTE);
    if (error)
       return error;
-
-   WeakThis weakThis = std::static_pointer_cast<LocalJobRepository>(shared_from_this());
-   m_subscriptionHandle = m_notifier->subscribe(
-      [weakThis](const api::JobPtr& in_job)
-      {
-         if (SharedThis sharedThis = weakThis.lock())
-         {
-            sharedThis->saveJob(in_job);
-         }
-      });
 
    return Success();
 }

@@ -124,6 +124,13 @@ private:
    virtual Error loadJobs(api::JobList& out_jobs) const = 0;
 
    /**
+    * @brief Allows inheriting classes to perform custom actions when a job is added to the repository.
+    *
+    * @param in_job     The job that was added to the repository.
+    */
+   virtual void onJobAdded(const api::JobPtr& in_job);
+
+   /**
     * @brief Allows inheriting classes to perform custom actions when a job is removed from the repository.
     *
     * @param in_job     The job that was removed from the repository.

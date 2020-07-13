@@ -59,15 +59,6 @@ public:
    LocalJobRepository(const std::string& in_hostname, jobs::JobStatusNotifierPtr in_notifier);
 
    /**
-    * @brief Loads all jobs from disk.
-    *
-    * @param out_jobs       The loaded jobs.
-    *
-    * @return Success if all the existing jobs could be loaded from disk; Error otherwise.
-    */
-   Error loadJobs(api::JobList& out_jobs) const;
-
-   /**
     * @brief Saves a job to disk.
     *
     * @param in_job     The job to be saved.
@@ -82,6 +73,29 @@ public:
    Error setJobOutputPaths(api::JobPtr io_job) const;
 
 private:
+   /**
+    * @brief Loads all jobs from disk.
+    *
+    * @param out_jobs       The loaded jobs.
+    *
+    * @return Success if all the existing jobs could be loaded from disk; Error otherwise.
+    */
+   Error loadJobs(api::JobList& out_jobs) const override;
+
+   /**
+    * @brief Saves newly added jobs to disk.
+    *
+    * @param in_job     The job that was added to the repository.
+    */
+   void onJobAdded(const api::JobPtr& in_job) override;
+
+   /**
+    * @brief Removes expired jobs from disk, including all output data.
+    *
+    * @param in_job     The job that was removed from the repository.
+    */
+   virtual void onJobRemoved(const api::JobPtr& in_job) override;
+
    /**
     * @brief Initializes the local job repository.
     *
@@ -98,14 +112,8 @@ private:
    /** The scratch path configured by the system administrator. */
    const system::FilePath m_jobsPath;
 
-   /** The job status notifier, to listen for job changes. */
-   jobs::JobStatusNotifierPtr m_notifier;
-
    /** Whether to save job output when the output location is not specified by the user. */
    const bool m_saveUnspecifiedOutput;
-
-   /** The job subscription handle. */
-   jobs::SubscriptionHandle m_subscriptionHandle;
 
    /** The scratch path configured by the system administrator. */
    const system::FilePath m_outputRootPath;
