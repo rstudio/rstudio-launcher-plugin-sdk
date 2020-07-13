@@ -49,6 +49,48 @@ constexpr const char* OUT_FILE_EXT = ".stdout";
 constexpr const char* ROOT_JOBS_DIR = "jobs";
 constexpr const char* ROOT_OUTPUT_DIR = "output";
 
+inline void deleteFileAsUser(const system::User& in_user, const FilePath& in_file)
+{
+   if (!in_file.isEmpty())
+   {
+      logging::logDebugMessage("Deleting job file: " + in_file.getAbsolutePath());
+
+      system::process::ProcessOptions opts;
+      opts.Executable = "rm";
+      opts.Arguments = { "-f", in_file.getAbsolutePath() };
+      opts.RunAsUser = in_user;
+      opts.IsShellCommand = true;
+
+      system::process::ProcessResult result;
+      system::process::SyncChildProcess rmProc(opts);
+      Error error = rmProc.run(result);
+      if (error)
+      {
+         logging::logErrorMessage("Could not delete output file: " + in_file.getAbsolutePath(), ERROR_LOCATION);
+         logging::logError(error, ERROR_LOCATION);
+      }
+      else if (result.ExitCode != 0)
+      {
+         logging::logErrorMessage(
+            "Deleting output file " +
+               in_file.getAbsolutePath() +
+               " exited with non-zero exit code: " +
+               std::to_string(result.ExitCode),
+            ERROR_LOCATION);
+
+         logging::logDebugMessage(
+            "Delete output file stdout: " + result.StdOut + "\nDelete output file stderr:" + result.StdError);
+      }
+
+      // If the file couldn't be deleted, treat it as a permissions issue.
+      if (in_file.exists())
+      {
+         logging::logError(
+            systemError(EPERM, "Could not delete output file: " + in_file.getAbsolutePath(), ERROR_LOCATION));
+      }
+   }
+}
+
 inline Error ensureDirectory(const FilePath& in_directory, FileMode in_fileMode = FileMode::USER_READ_WRITE_EXECUTE)
 {
    Error error = in_directory.ensureDirectory();
@@ -217,7 +259,30 @@ void LocalJobRepository::onJobAdded(const api::JobPtr& in_job)
 
 void LocalJobRepository::onJobRemoved(const api::JobPtr& in_job)
 {
-   // TODO: remove job files from disk.
+   LOCK_JOB(in_job)
+   {
+      if (in_job->Host != m_hostname)
+      {
+         logging::logDebugMessage("Not deleting job files for job " + in_job->Id + " owned by host " + in_job->Host);
+         return;
+      }
+
+      logging::logDebugMessage("Deleting job files for job: " + in_job->Id);
+
+      FilePath jobFile = getJobFilePath(in_job->Id, m_jobsPath);
+      Error error = jobFile.removeIfExists();
+      if (error)
+         logging::logError(error, ERROR_LOCATION);
+
+      FilePath stdoutFile(in_job->StandardOutFile);
+      FilePath stderrFile(in_job->StandardErrFile);
+
+      if (stdoutFile.isWithin(m_outputRootPath))
+         deleteFileAsUser(in_job->User, stdoutFile);
+      if (stderrFile.isWithin(m_outputRootPath))
+         deleteFileAsUser(in_job->User, stderrFile);
+   }
+   END_LOCK_JOB
 }
 
 Error LocalJobRepository::onInitialize()
