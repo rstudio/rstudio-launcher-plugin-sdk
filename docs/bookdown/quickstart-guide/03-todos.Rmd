@@ -991,7 +991,7 @@ Error MarsJobSource::submitJob(api::JobPtr io_job, bool& out_wasInvalidRequest) 
       mars_api::job marsJob;
       try
       {
-         marsJob = mars_api::submitJob("/bin/sh", { }, 0, stdInp.c_str(), opts);
+         marsJob = mars_api::submit_job("/bin/sh", { }, 0, stdInp.c_str(), opts);
       }
       catch(mars_api::mars_exception& e)
       {
