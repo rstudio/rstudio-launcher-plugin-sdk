@@ -495,6 +495,7 @@ bool SmokeTest::sendRequest()
    catch (...)
    {
       std::cout << "Invalid choice (" << line << "). Please enter a positive integer." << std::endl;
+      return true;
    }
 
    bool success = true;
