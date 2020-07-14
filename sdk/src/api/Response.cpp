@@ -333,7 +333,7 @@ json::Object OutputStreamResponse::toJson() const
    if (!m_impl->Output.empty())
    {
       result[FIELD_OUTPUT] = m_impl->Output;
-      result[FIELD_OUTPUT_TYPE] = static_cast<int>(m_impl->OutType);
+      result[FIELD_OUTPUT_TYPE] = std::to_string(static_cast<int>(m_impl->OutType));
    }
 
    return result;

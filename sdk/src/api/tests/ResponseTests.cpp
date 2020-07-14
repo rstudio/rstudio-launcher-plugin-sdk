@@ -466,7 +466,7 @@ TEST_CASE("Output Stream Response")
       std::string data = "Some Standard Output\nwith multiple lines\n";
       expected[FIELD_SEQUENCE_ID] = 1;
       expected[FIELD_OUTPUT] = data;
-      expected[FIELD_OUTPUT_TYPE] = 0;
+      expected[FIELD_OUTPUT_TYPE] = "0";
       expected[FIELD_RESPONSE_ID] = 12;
 
       OutputStreamResponse response(76, 1, data, OutputType::STDOUT);
@@ -477,7 +477,7 @@ TEST_CASE("Output Stream Response")
       std::string data = "Error: Some error occurred.";
       expected[FIELD_SEQUENCE_ID] = 31;
       expected[FIELD_OUTPUT] = data;
-      expected[FIELD_OUTPUT_TYPE] = 1;
+      expected[FIELD_OUTPUT_TYPE] = "1";
       expected[FIELD_RESPONSE_ID] = 13;
 
       OutputStreamResponse response(76, 31, data, OutputType::STDERR);
@@ -489,7 +489,7 @@ TEST_CASE("Output Stream Response")
       std::string data = "Some Standard Output\nError: Some error occurred.\nwith multiple lines\n";
       expected[FIELD_SEQUENCE_ID] = 27;
       expected[FIELD_OUTPUT] = data;
-      expected[FIELD_OUTPUT_TYPE] = 2;
+      expected[FIELD_OUTPUT_TYPE] = "2";
       expected[FIELD_RESPONSE_ID] = 14;
 
       OutputStreamResponse response(76, 27, data, OutputType::BOTH);
