@@ -686,3 +686,21 @@ Depending on the API exposed by the Job Scheduling System, it may be necessary t
 Child processes launched through the SDK provided process module are run through the `rsandbox` process by default. This is done to ensure that the child process will be run in an isolated environment, however it prevents the parent process from continuing to write standard input to the child process. If this is needed by the Plugin, it is possible to launch the child process directly and keep the standard input stream open by setting `system::process::ProcessOptions::UseSandbox = false` and `system::process::ProcessOptions::CloseStdIn = false` respectively.
 
 The SDK process launching module will escape the command, arguments, standard input, the standard output and standard error files, and environment variables as appropriate. The command, arguments and environment values will be treated literally. Bash expansion of them will not take place. Bash expansion may take place within the standard input, however.
+
+## Custom Output Streams {#out-streams}
+
+To create a custom output stream, the Plugin developer must create a class which inherits `api::AbstractOuptutStream` and implements the `api::AbstractOutputStream::start` and `api::AbstractOutputStream::stop` methods.
+
+In the `api::AbstractOutputStream::start` method, the output stream implementation should begin reporting the Job's output. To report output, the implementation must invoke the protected method `api::AbstractOutputStream::reportData` specifying the data and the type of output. The output type will be `OutputType::STDOUT` for standard output, `OutputType::STDERR` for standard error, or if it is not possible to tell `OutputType::BOTH`. It may not be possible to tell the output type if the Job specified the same output location for both standard output and standard error output.
+
+When the stream has completed, the output stream implementation should invoke the protected method `api::AbstractOututStream::setStreamComplete`. The stream is complete when the Job has finished emitting all output. This can only happen if the Job is in a completed state, which can be tested with `api::Job::isCompleted`. Even if a Job has completed, some Job Scheduling Systems buffer job output, so it may take a few seconds after the Job has completed for the remainder of the job output to be emitted.
+
+If `api::AbstractOutputStream::stop` has been invoked, the output stream implementation should stop streaming data, even if the stream has not been completed.
+
+For an example of a correct and complete implementation of an `api::AbstractOutputStream` child class, please refer to `api::FileOutputStream`.
+
+### Customizing the File Output Stream {#file-out-stream}
+
+It is possible that the Plugin will be able to read Job output from a file, but it will need to process the Job output in some way before surfacing the output to the user. For example, the RStudio Slurm Launcher Plugin emits one line of output at the start of each Job that represents extra Job metadata that it needs, and one line at the end of each Job to indicate that all output has been emitted. In that case, the Plugin may customize the behavior of the `api::FileOutputStream` class by inheriting from it and overriding `api::FileOutputStream::onOutput` and/or `api::FileOutputStream::waitForStreamEnd`. By default `api::FileOutputStream::onOutput` emits every line of output and `api::FileOutputStream::waitForStreamEnd` waits for a fixed short period of time after the Job enters a completed state before ending the stream.
+
+The RStudio Slurm Launcher Plugin would override `api::FileOutputStream::onOutput` to skip the first and last lines of output, and to notify a condition variable when the last line of output is emitted. It would override `api::FileOutputStream::waitForStreamEnd` to wait on the aforementioned condition variable instead of waiting for a fixed period of time.

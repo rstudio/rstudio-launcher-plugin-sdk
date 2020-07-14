@@ -101,6 +101,26 @@ public:
     */
    Error submitJob(api::JobPtr io_job, bool& out_wasInvalidRequest) const override;
 
+   /**
+    * @brief Creates a file output stream for the specified job.
+    *
+    * @param in_outputType      The type of job output to stream.
+    * @param in_job             The job for which output should be streamed.
+    * @param in_onOutput        Callback function which will be invoked when data is reported.
+    * @param in_onComplete      Callback function which will be invoked when the stream is complete.
+    * @param in_onError         Callback function which will be invoked if an error occurs.
+    * @param out_outputStream   The newly created output stream, on Success.
+    *
+    * @return Success if the output stream could be created; Error otherwise.
+    */
+   Error createOutputStream(
+      api::OutputType in_outputType,
+      api::JobPtr in_job,
+      api::AbstractOutputStream::OnOutput in_onOutput,
+      api::AbstractOutputStream::OnComplete in_onComplete,
+      api::AbstractOutputStream::OnError in_onError,
+      api::OutputStreamPtr& out_outputStream) override;
+
 private:
    /** The hostname of the machine running this instance of the Local Launcher Plugin. */
    const std::string m_hostname;

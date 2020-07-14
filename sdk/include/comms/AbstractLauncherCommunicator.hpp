@@ -26,7 +26,6 @@
 
 #include <Noncopyable.hpp>
 
-#include <api/Request.hpp>
 #include <utils/Functionals.hpp>
 
 namespace rstudio {
@@ -36,6 +35,7 @@ class Error;
 
 namespace api {
 
+class Request;
 class Response;
 
 } // namespace api

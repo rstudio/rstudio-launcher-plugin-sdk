@@ -283,6 +283,62 @@ json::Object JobStatusResponse::toJson() const
    return result;
 }
 
+// Output Stream Response ==============================================================================================
+struct OutputStreamResponse::Impl
+{
+   Impl(uint64_t in_sequenceId, std::string&& in_output, OutputType in_outputType) :
+      IsComplete(false),
+      Output(in_output),
+      OutType(in_outputType),
+      SequenceId(in_sequenceId)
+   {
+   }
+
+   explicit Impl(uint64_t in_sequenceId) :
+      IsComplete(true),
+      SequenceId(in_sequenceId)
+   {
+   }
+
+   bool IsComplete;
+   std::string Output;
+   OutputType OutType;
+   uint64_t SequenceId;
+};
+
+PRIVATE_IMPL_DELETER_IMPL(OutputStreamResponse)
+
+OutputStreamResponse::OutputStreamResponse(
+   uint64_t in_requestId,
+   uint64_t in_sequenceId,
+   std::string in_output,
+   OutputType in_outputType) :
+      Response(Type::JOB_OUTPUT, in_requestId),
+      m_impl(new Impl(in_sequenceId, std::move(in_output), in_outputType))
+{
+}
+
+OutputStreamResponse::OutputStreamResponse(uint64_t in_requestId, uint64_t in_sequenceId)  :
+   Response(Type::JOB_OUTPUT, in_requestId),
+   m_impl(new Impl(in_sequenceId))
+{
+}
+
+json::Object OutputStreamResponse::toJson() const
+{
+   json::Object result = Response::toJson();
+   result[FIELD_SEQUENCE_ID] = m_impl->SequenceId;
+   result[FIELD_COMPLETE] = m_impl->IsComplete;
+
+   if (!m_impl->Output.empty())
+   {
+      result[FIELD_OUTPUT] = m_impl->Output;
+      result[FIELD_OUTPUT_TYPE] = std::to_string(static_cast<int>(m_impl->OutType));
+   }
+
+   return result;
+}
+
 // Cluster Info Response ===============================================================================================
 struct ClusterInfoResponse::Impl
 {

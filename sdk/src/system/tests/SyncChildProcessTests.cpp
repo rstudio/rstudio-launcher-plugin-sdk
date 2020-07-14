@@ -38,11 +38,7 @@ namespace process {
 TEST_CASE("Create Processes")
 {
    // Make sure default options are populated.
-   REQUIRE_FALSE(
-      options::Options::getInstance().readOptions(
-         0,
-         nullptr,
-         system::FilePath("conf-files/Empty.conf")));
+   REQUIRE_FALSE(options::Options::getInstance().readOptions(0, nullptr, system::FilePath()));
 
    // Get all the users for future user.
    system::User user1, user2, user3, user4, user5;
@@ -97,6 +93,7 @@ TEST_CASE("Create Processes")
       opts.Executable = "grep";
       opts.Arguments.emplace_back("-x");
       opts.IsShellCommand = true;
+      opts.RunAsUser = system::User(true);
 
       ProcessResult result;
       SyncChildProcess child(opts);

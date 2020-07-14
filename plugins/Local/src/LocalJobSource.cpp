@@ -24,6 +24,7 @@
 #include <LocalJobSource.hpp>
 
 #include <Error.hpp>
+#include <api/stream/FileOutputStream.hpp>
 
 #include <LocalConstants.hpp>
 
@@ -72,6 +73,18 @@ Error LocalJobSource::submitJob(api::JobPtr io_job, bool& out_wasInvalidRequest)
 {
    out_wasInvalidRequest = false;
    return m_jobRunner->runJob(io_job, out_wasInvalidRequest);
+}
+
+Error LocalJobSource::createOutputStream(
+   api::OutputType in_outputType,
+   api::JobPtr in_job,
+   api::AbstractOutputStream::OnOutput in_onOutput,
+   api::AbstractOutputStream::OnComplete in_onComplete,
+   api::AbstractOutputStream::OnError in_onError,
+   api::OutputStreamPtr& out_outputStream)
+{
+   out_outputStream.reset(new api::FileOutputStream(in_outputType, in_job, in_onOutput, in_onComplete, in_onError));
+   return Success();
 }
 
 } // namespace local

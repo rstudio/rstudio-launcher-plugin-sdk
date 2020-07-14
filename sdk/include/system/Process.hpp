@@ -205,7 +205,9 @@ struct ProcessOptions
    std::string Password;
 
    /**
-    * @brief The user who the job should be run as. The job may fail to run if the RunAsUser is "all users" or empty.
+    * @brief The user who the job should be run as.
+    *
+    * The job may fail to run if the RunAsUser is empty.
     */
    User RunAsUser;
 

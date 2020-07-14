@@ -27,6 +27,8 @@
 #include <Noncopyable.hpp>
 
 #include <string>
+#include <set>
+#include <mutex>
 
 #include <Error.hpp>
 #include <PImpl.hpp>

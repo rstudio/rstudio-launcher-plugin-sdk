@@ -30,6 +30,7 @@
 #include <mutex>
 
 #include <Error.hpp>
+#include <api/Request.hpp>
 #include <system/FilePath.hpp>
 #include <system/Process.hpp>
 #include <system/Asio.hpp>
@@ -73,6 +74,22 @@ public:
 
 private:
    /**
+    * @brief Sends a job output stream request and waits for the response(s).
+    *
+    * @param in_outputType      The type of output to stream.
+    *
+    * @return True if the plugin responded as expected; false otherwise.
+    */
+   bool sendJobOutputStreamRequest(api::OutputType in_outputType);
+
+   /**
+    * @brief Sends a job status stream request and waits for the response(s).
+    *
+    * @return True if the plugin responded as expected; false otherwise.
+    */
+   bool sendJobStatusStreamRequest();
+
+   /**
     * @brief Waits for the specified number of responses for the specified request.
     *
     * @param in_requestId               The ID of the request for which to wait for responses.
@@ -82,6 +99,20 @@ private:
     */
    bool waitForResponse(uint64_t in_requestId, uint64_t in_expectedResponses);
 
+   /**
+    * @brief Waits for the specified number of responses for the specified request.
+    *
+    * @param in_requestId               The ID of the request for which to wait for responses.
+    * @param in_expectedResponses       The minimum number of responses to wait for.
+    * @param in_lock                    The owned lock, if it is already held by this thread.
+    *
+    * @return True if at least in_expected responses were received; false if the operation timed out.
+    */
+   bool waitForResponse(
+      uint64_t in_requestId,
+      uint64_t in_expectedResponses,
+      std::unique_lock<std::mutex>& in_lock);
+
    std::shared_ptr<system::process::AbstractChildProcess> m_plugin;
    system::FilePath m_pluginPath;
    bool m_exited;
@@ -89,6 +120,10 @@ private:
    system::User m_requestUser;
    std::mutex m_mutex;
    std::condition_variable m_condVar;
+   std::vector<std::string> m_submittedJobIds;
+   api::Request::Type m_lastRequestType;
+
+   bool m_outputStreamFinished;
 };
 
 typedef std::shared_ptr<SmokeTest> SmokeTestPtr;

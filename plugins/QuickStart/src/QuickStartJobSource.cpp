@@ -74,6 +74,22 @@ Error QuickStartJobSource::submitJob(api::JobPtr io_job, bool& out_wasInvalidReq
       ERROR_LOCATION);
 }
 
+Error QuickStartJobSource::createOutputStream(
+   api::OutputType in_outputType,
+   api::JobPtr in_job,
+   api::AbstractOutputStream::OnOutput in_onOutput,
+   api::AbstractOutputStream::OnComplete in_onComplete,
+   api::AbstractOutputStream::OnError in_onError,
+   api::OutputStreamPtr& out_outputStream)
+{
+   // TODO #13: Create an output stream.
+   return Error(
+      "NotImplemented",
+      2,
+      "Method QuickStartJobSource::createOutputStream is not implemented.",
+      ERROR_LOCATION);
+}
+
 } // namespace quickstart
 } // namespace launcher_plugins
 } // namespace rstudio

@@ -56,7 +56,7 @@ TEST_CASE("Parse valid bootstrap request")
 
    REQUIRE_FALSE(error);
    REQUIRE(request != nullptr);
-   CHECK(request->getType() == Request::Type::BOOTSTRAP);
+   REQUIRE(request->getType() == Request::Type::BOOTSTRAP);
    CHECK(request->getId() == 6);
 
    BootstrapRequest* bootstrapRequest = dynamic_cast<BootstrapRequest*>(request.get());
@@ -162,7 +162,7 @@ TEST_CASE("Parse heartbeat request")
    Error error = Request::fromJson(requestObj, request);
 
    REQUIRE_FALSE(error);
-   CHECK(request->getType() == Request::Type::HEARTBEAT);
+   REQUIRE(request->getType() == Request::Type::HEARTBEAT);
    CHECK(request->getId() == 0);
    CHECK(logDest->getSize() == 0);
 }
@@ -180,7 +180,7 @@ TEST_CASE("Parse cluster info request")
    system::User user;
    REQUIRE_FALSE(system::User::getUserFromIdentifier(USER_TWO, user));
    REQUIRE_FALSE(Request::fromJson(requestObj, request));
-   CHECK(request->getType() == Request::Type::GET_CLUSTER_INFO);
+   REQUIRE(request->getType() == Request::Type::GET_CLUSTER_INFO);
    CHECK(request->getId() == 6);
    CHECK(std::static_pointer_cast<UserRequest>(request)->getUser() == user);
    CHECK(std::static_pointer_cast<UserRequest>(request)->getRequestUsername().empty());
@@ -199,7 +199,7 @@ TEST_CASE("Parse cluster info request (admin user)")
    std::shared_ptr<Request> request;
 
    REQUIRE_FALSE(Request::fromJson(requestObj, request));
-   CHECK(request->getType() == Request::Type::GET_CLUSTER_INFO);
+   REQUIRE(request->getType() == Request::Type::GET_CLUSTER_INFO);
    CHECK(request->getId() == 14);
    CHECK(std::static_pointer_cast<UserRequest>(request)->getUser().isAllUsers());
    CHECK(std::static_pointer_cast<UserRequest>(request)->getRequestUsername() == USER_TWO);
@@ -232,7 +232,7 @@ TEST_CASE("Parse get job request")
    std::shared_ptr<Request> request;
 
    REQUIRE_FALSE(Request::fromJson(requestObj, request));
-   CHECK(request->getType() == Request::Type::GET_JOB);
+   REQUIRE(request->getType() == Request::Type::GET_JOB);
    CHECK(request->getId() == 657);
 
    Optional<system::DateTime> endTime, startTime;
@@ -268,7 +268,7 @@ TEST_CASE("Parse get job request w/ encoded ID")
    system::User user;
    REQUIRE_FALSE(system::User::getUserFromIdentifier(USER_TWO, user));
    REQUIRE_FALSE(Request::fromJson(requestObj, request));
-   CHECK(request->getType() == Request::Type::GET_JOB);
+   REQUIRE(request->getType() == Request::Type::GET_JOB);
    CHECK(request->getId() == 91);
 
    Optional<system::DateTime> endTime, startTime;
@@ -336,7 +336,7 @@ TEST_CASE("Parse complete get job request")
    system::User user;
    REQUIRE_FALSE(system::User::getUserFromIdentifier(USER_FIVE, user));
    REQUIRE_FALSE(Request::fromJson(requestObj, request));
-   CHECK(request->getType() == Request::Type::GET_JOB);
+   REQUIRE(request->getType() == Request::Type::GET_JOB);
    CHECK(request->getId() == 91);
    CHECK(logDest->getSize() == 0);
 
@@ -385,7 +385,7 @@ TEST_CASE("Parse get job request with fields (no id)")
    system::User user;
    REQUIRE_FALSE(system::User::getUserFromIdentifier(USER_FIVE, user));
    REQUIRE_FALSE(Request::fromJson(requestObj, request));
-   CHECK(request->getType() == Request::Type::GET_JOB);
+   REQUIRE(request->getType() == Request::Type::GET_JOB);
    CHECK(request->getId() == 91);
    CHECK(logDest->getSize() == 0);
 
@@ -429,7 +429,7 @@ TEST_CASE("Parse invalid get job request")
 
       std::shared_ptr<Request> request;
       CHECK_FALSE(Request::fromJson(requestObj, request));
-      CHECK(request->getType() == Request::Type::GET_JOB);
+      REQUIRE(request->getType() == Request::Type::GET_JOB);
       CHECK(request->getId() == 91);
 
       Optional<system::DateTime> endTime, startTime;
@@ -460,7 +460,7 @@ TEST_CASE("Parse invalid get job request")
 
       std::shared_ptr<Request> request;
       CHECK_FALSE(Request::fromJson(requestObj, request));
-      CHECK(request->getType() == Request::Type::GET_JOB);
+      REQUIRE(request->getType() == Request::Type::GET_JOB);
       CHECK(request->getId() == 91);
 
       Optional<system::DateTime> endTime, startTime;
@@ -592,7 +592,7 @@ TEST_CASE("Parse Submit Job Request")
 
       std::shared_ptr<Request> request;
       REQUIRE_FALSE(Request::fromJson(requestObj, request));
-      CHECK(request->getType() == Request::Type::SUBMIT_JOB);
+      REQUIRE(request->getType() == Request::Type::SUBMIT_JOB);
       CHECK(request->getId() == 68);
 
       std::shared_ptr<SubmitJobRequest> submitJobRequest = std::static_pointer_cast<SubmitJobRequest>(request);
@@ -638,7 +638,7 @@ TEST_CASE("Parse Submit Job Request")
 
       std::shared_ptr<Request> request;
       REQUIRE_FALSE(Request::fromJson(requestObj, request));
-      CHECK(request->getType() == Request::Type::SUBMIT_JOB);
+      REQUIRE(request->getType() == Request::Type::SUBMIT_JOB);
       CHECK(request->getId() == 68);
 
       std::shared_ptr<SubmitJobRequest> submitJobRequest = std::static_pointer_cast<SubmitJobRequest>(request);
@@ -710,6 +710,102 @@ TEST_CASE("Parse Submit Job Request")
    }
 }
 
+TEST_CASE("Parse OutputStream request")
+{
+   system::User user1;
+   REQUIRE_FALSE(system::User::getUserFromIdentifier(USER_ONE, user1));
+
+   json::Object requestObj;
+   requestObj[FIELD_MESSAGE_TYPE] = static_cast<int>(Request::Type::GET_JOB_OUTPUT);
+   requestObj[FIELD_REQUEST_ID] = 113;
+   requestObj[FIELD_JOB_ID] = "123";
+   requestObj[FIELD_ENCODED_JOB_ID] = "321";
+   requestObj[FIELD_REAL_USER] = USER_ONE;
+   requestObj[FIELD_REQUEST_USERNAME] = USER_ONE;
+
+   SECTION("No type, no cancel")
+   {
+      requestObj[FIELD_CANCEL_STREAM] = false;
+
+      std::shared_ptr<Request> request;
+      REQUIRE_FALSE(Request::fromJson(requestObj, request));
+      REQUIRE(request->getType() == Request::Type::GET_JOB_OUTPUT);
+      CHECK(request->getId() == 113);
+
+      std::shared_ptr<OutputStreamRequest> outputStreamRequest = std::static_pointer_cast<OutputStreamRequest>(request);
+      CHECK(outputStreamRequest->getUser() == user1);
+      CHECK(outputStreamRequest->getRequestUsername() == USER_ONE);
+      CHECK(outputStreamRequest->getJobId() == "123");
+      CHECK(outputStreamRequest->getEncodedJobId() == "321");
+      CHECK(outputStreamRequest->getStreamType() == OutputType::BOTH);
+      CHECK_FALSE(outputStreamRequest->isCancelRequest());
+   }
+
+   SECTION("Both streams, cancel")
+   {
+      requestObj[FIELD_CANCEL_STREAM] = true;
+      requestObj[FIELD_OUTPUT_TYPE] = 2;
+
+      std::shared_ptr<Request> request;
+      REQUIRE_FALSE(Request::fromJson(requestObj, request));
+      REQUIRE(request->getType() == Request::Type::GET_JOB_OUTPUT);
+      CHECK(request->getId() == 113);
+
+      std::shared_ptr<OutputStreamRequest> outputStreamRequest = std::static_pointer_cast<OutputStreamRequest>(request);
+      CHECK(outputStreamRequest->getUser() == user1);
+      CHECK(outputStreamRequest->getRequestUsername() == USER_ONE);
+      CHECK(outputStreamRequest->getJobId() == "123");
+      CHECK(outputStreamRequest->getEncodedJobId() == "321");
+      CHECK(outputStreamRequest->getStreamType() == OutputType::BOTH);
+      CHECK(outputStreamRequest->isCancelRequest());
+   }
+
+   SECTION("Stdout stream, no cancel")
+   {
+      requestObj[FIELD_CANCEL_STREAM] = false;
+      requestObj[FIELD_OUTPUT_TYPE] = 0;
+
+      std::shared_ptr<Request> request;
+      REQUIRE_FALSE(Request::fromJson(requestObj, request));
+      REQUIRE(request->getType() == Request::Type::GET_JOB_OUTPUT);
+      CHECK(request->getId() == 113);
+
+      std::shared_ptr<OutputStreamRequest> outputStreamRequest = std::static_pointer_cast<OutputStreamRequest>(request);
+      CHECK(outputStreamRequest->getUser() == user1);
+      CHECK(outputStreamRequest->getRequestUsername() == USER_ONE);
+      CHECK(outputStreamRequest->getJobId() == "123");
+      CHECK(outputStreamRequest->getEncodedJobId() == "321");
+      CHECK(outputStreamRequest->getStreamType() == OutputType::STDOUT);
+      CHECK_FALSE(outputStreamRequest->isCancelRequest());
+   }
+
+   SECTION("Stderr stream, cancel")
+   {
+      requestObj[FIELD_CANCEL_STREAM] = true;
+      requestObj[FIELD_OUTPUT_TYPE] = 1;
+
+      std::shared_ptr<Request> request;
+      REQUIRE_FALSE(Request::fromJson(requestObj, request));
+      REQUIRE(request->getType() == Request::Type::GET_JOB_OUTPUT);
+      CHECK(request->getId() == 113);
+
+      std::shared_ptr<OutputStreamRequest> outputStreamRequest = std::static_pointer_cast<OutputStreamRequest>(request);
+      CHECK(outputStreamRequest->getUser() == user1);
+      CHECK(outputStreamRequest->getRequestUsername() == USER_ONE);
+      CHECK(outputStreamRequest->getJobId() == "123");
+      CHECK(outputStreamRequest->getEncodedJobId() == "321");
+      CHECK(outputStreamRequest->getStreamType() == OutputType::STDERR);
+      CHECK(outputStreamRequest->isCancelRequest());
+   }
+
+   SECTION("Missing cancel")
+   {
+      requestObj[FIELD_OUTPUT_TYPE] = 1;
+
+      std::shared_ptr<Request> request;
+      REQUIRE(Request::fromJson(requestObj, request));
+   }
+}
 
 } // namespace api
 } // namespace launcher_plugins

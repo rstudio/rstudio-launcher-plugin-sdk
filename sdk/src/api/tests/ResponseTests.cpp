@@ -445,6 +445,58 @@ TEST_CASE("Job Status Response Tests")
    }
 }
 
+TEST_CASE("Output Stream Response")
+{
+   json::Object expected;
+   expected[FIELD_REQUEST_ID] = 76;
+   expected[FIELD_MESSAGE_TYPE] = 5;
+   expected[FIELD_COMPLETE] = false;
+
+   SECTION("Complete")
+   {
+      expected[FIELD_SEQUENCE_ID] = 59;
+      expected[FIELD_COMPLETE] = true;
+      expected[FIELD_RESPONSE_ID] = 11;
+
+      OutputStreamResponse response(76, 59);
+      CHECK(response.toJson() == expected);
+   }
+   SECTION("Output Type: STDOUT, not complete")
+   {
+      std::string data = "Some Standard Output\nwith multiple lines\n";
+      expected[FIELD_SEQUENCE_ID] = 1;
+      expected[FIELD_OUTPUT] = data;
+      expected[FIELD_OUTPUT_TYPE] = "0";
+      expected[FIELD_RESPONSE_ID] = 12;
+
+      OutputStreamResponse response(76, 1, data, OutputType::STDOUT);
+      CHECK(response.toJson() == expected);
+   }
+   SECTION("Output Type: STDERR, not complete")
+   {
+      std::string data = "Error: Some error occurred.";
+      expected[FIELD_SEQUENCE_ID] = 31;
+      expected[FIELD_OUTPUT] = data;
+      expected[FIELD_OUTPUT_TYPE] = "1";
+      expected[FIELD_RESPONSE_ID] = 13;
+
+      OutputStreamResponse response(76, 31, data, OutputType::STDERR);
+      CHECK(response.toJson() == expected);
+
+   }
+   SECTION("Output Type: MIXED, not complete")
+   {
+      std::string data = "Some Standard Output\nError: Some error occurred.\nwith multiple lines\n";
+      expected[FIELD_SEQUENCE_ID] = 27;
+      expected[FIELD_OUTPUT] = data;
+      expected[FIELD_OUTPUT_TYPE] = "2";
+      expected[FIELD_RESPONSE_ID] = 14;
+
+      OutputStreamResponse response(76, 27, data, OutputType::BOTH);
+      CHECK(response.toJson() == expected);
+   }
+}
+
 } // namespace api
 } // namespace launcher_plugins
 } // namespace rstudio

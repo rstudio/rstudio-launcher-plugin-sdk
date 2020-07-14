@@ -28,6 +28,7 @@
 
 #include <Error.hpp>
 #include <api/Job.hpp>
+#include <api/stream/AbstractOutputStream.hpp>
 #include <jobs/JobRepository.hpp>
 #include <jobs/JobStatusNotifier.hpp>
 
@@ -150,6 +151,26 @@ public:
     * @return Success if the job could be submitted to the Job Scheduling System; Error otherwise.
     */
    virtual Error submitJob(JobPtr io_job, bool& out_wasInvalidRequest) const = 0;
+
+   /**
+    * @brief Creates an output stream for the specified job.
+    *
+    * @param in_outputType      The type of job output to stream.
+    * @param in_job             The job for which output should be streamed.
+    * @param in_onOutput        Callback function which will be invoked when data is reported.
+    * @param in_onComplete      Callback function which will be invoked when the stream is complete.
+    * @param in_onError         Callback function which will be invoked if an error occurs.
+    * @param out_outputStream   The newly created output stream, on Success.
+    *
+    * @return Success if the output stream could be created; Error otherwise.
+    */
+   virtual Error createOutputStream(
+      OutputType in_outputType,
+      JobPtr in_job,
+      AbstractOutputStream::OnOutput in_onOutput,
+      AbstractOutputStream::OnComplete in_onComplete,
+      AbstractOutputStream::OnError in_onError,
+      OutputStreamPtr& out_outputStream) = 0;
 
 protected:
    /**

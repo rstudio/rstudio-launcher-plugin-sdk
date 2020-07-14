@@ -32,6 +32,7 @@
 #include <PImpl.hpp>
 #include <api/Job.hpp>
 #include <api/ResponseTypes.hpp>
+#include <api/stream/AbstractOutputStream.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -266,7 +267,7 @@ private:
 };
 
 /**
- * @brief Class which represents a JobStatus Stream, either for all jobs or for a specific job.
+ * @brief Class which represents a Job Status Stream, either for all jobs or for a specific job.
  */
 class JobStatusResponse final : public MultiStreamResponse
 {
@@ -288,6 +289,48 @@ public:
 
 private:
    // The private implementation of JobStatusResponse.
+   PRIVATE_IMPL(m_impl);
+};
+
+/**
+ * @brief Class which represents a Job Output Stream for a specific job.
+ */
+class OutputStreamResponse final : public Response
+{
+public:
+   /**
+    * @brief Constructor.
+    *
+    * @param in_requestId       The ID of the request for which this response is being sent.
+    * @param in_sequenceId      The ID of this output in the sequence of responses for this request.
+    * @param in_output          The output to send to the Launcher.
+    * @param in_outputType      The type of output being sent.
+    */
+   OutputStreamResponse(
+      uint64_t in_requestId,
+      uint64_t in_sequenceId,
+      std::string in_output,
+      OutputType in_outputType);
+
+   /**
+    * @brief Constructor. Represents the last (complete notification) response of the output stream.
+    *
+    * @param in_requestId       The ID of the request for which this response is being sent.
+    * @param in_sequenceId      The ID of this output in the sequence of responses for this request.
+    */
+   OutputStreamResponse(
+      uint64_t in_requestId,
+      uint64_t in_sequenceId);
+
+   /**
+    * @brief Converts this output stream response to a JSON object.
+    *
+    * @return The JSON object which represents this output stream response.
+    */
+   json::Object toJson() const override;
+
+private:
+   // The private implementation of OutputStreamResponse
    PRIVATE_IMPL(m_impl);
 };
 

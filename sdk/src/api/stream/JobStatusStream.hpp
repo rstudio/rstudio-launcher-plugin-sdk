@@ -24,7 +24,7 @@
 #ifndef LAUNCHER_PLUGINS_JOB_STATUS_STREAM_HPP
 #define LAUNCHER_PLUGINS_JOB_STATUS_STREAM_HPP
 
-#include <api/AbstractMultiStream.hpp>
+#include <api/stream/AbstractMultiStream.hpp>
 
 #include <PImpl.hpp>
 #include <api/Response.hpp>

@@ -1,5 +1,5 @@
 /*
- * StreamManager.hpp
+ * OutputStreamManager.hpp
  *
  * Copyright (C) 2020 by RStudio, PBC
  *
@@ -21,53 +21,71 @@
  *
  */
 
-#ifndef LAUNCHER_PLUGINS_STREAMMANAGER_HPP
-#define LAUNCHER_PLUGINS_STREAMMANAGER_HPP
 
-#include <Noncopyable.hpp>
-
-#include <memory>
+#ifndef LAUNCHER_PLUGINS_OUTPUT_STREAM_MANAGER_HPP
+#define LAUNCHER_PLUGINS_OUTPUT_STREAM_MANAGER_HPP
 
 #include <PImpl.hpp>
-#include <comms/AbstractLauncherCommunicator.hpp>
-#include <jobs/JobRepository.hpp>
-#include <jobs/JobStatusNotifier.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
 namespace api {
 
 // Forward Declarations
-class JobStatusRequest;
+class IJobSource;
+class OutputStreamRequest;
+
+} // namespace api
+
+namespace comms {
+
+class AbstractLauncherCommunicator;
+
+} // namespace comms
+
+namespace jobs {
+
+class JobRepository;
+class JobStatusNotifier;
+
+} // namespace jobs
+} // namespace launcher_plugins
+} // namespace rstudio
+
+namespace rstudio {
+namespace launcher_plugins {
+namespace api {
 
 /**
- * @brief Class which manages all the streamed responses for the plugin.
+ * @brief Responsible for managing output streams.
  */
-class StreamManager final : public Noncopyable
+class OutputStreamManager
 {
 public:
    /**
     * @brief Constructor.
     *
+    * @param in_jobSource               The job source, which creates output streams.
     * @param in_jobRepository           The job repository from which to retrieve jobs.
     * @param in_jobStatusNotifier       The job status notifier from which to receive job status update notifications.
     * @param in_launcherCommunicator    The communicator which may be used to send stream responses to the Launcher.
     */
-   StreamManager(
-      jobs::JobRepositoryPtr in_jobRepository,
-      jobs::JobStatusNotifierPtr in_jobStatusNotifier,
-      comms::AbstractLauncherCommunicatorPtr in_launcherCommunicator);
+   OutputStreamManager(
+      std::shared_ptr<IJobSource> in_jobSource,
+      std::shared_ptr<jobs::JobRepository> in_jobRepository,
+      std::shared_ptr<jobs::JobStatusNotifier> in_jobStatusNotifier,
+      std::shared_ptr<comms::AbstractLauncherCommunicator> in_launcherCommunicator);
 
    /**
-    * @brief Handles a stream reqeust.
+    * @brief Handles a stream request.
     *
-    * @param in_jobStatusRequest    The Job Status Stream request to be handled.
+    * @param in_outputStreamRequest    The Job Output Stream request to be handled.
     */
-   Error handleStreamRequest(const std::shared_ptr<JobStatusRequest>& in_jobStatusRequest);
+   void handleStreamRequest(const std::shared_ptr<OutputStreamRequest>& in_outputStreamRequest);
 
 private:
-   // The private implementation of StreamManager.
-   PRIVATE_IMPL(m_impl);
+   // The private implementation of OutputStreamManager.
+   PRIVATE_IMPL_SHARED(m_impl);
 };
 
 } // namespace api

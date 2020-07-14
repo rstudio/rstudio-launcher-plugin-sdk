@@ -27,8 +27,10 @@
 
 #include <api/Constants.hpp>
 #include <api/IJobSource.hpp>
+#include <api/Request.hpp>
 #include <api/Response.hpp>
-#include <api/StreamManager.hpp>
+#include <api/stream/JobStatusStreamManager.hpp>
+#include <api/stream/OutputStreamManager.hpp>
 #include <json/Json.hpp>
 #include <jobs/JobPruner.hpp>
 #include <options/Options.hpp>
@@ -49,7 +51,7 @@ struct AbstractPluginApi::Impl
     * @param in_launcherCommunicator    The communicator that will be used to send and receive messages from the RStudio
     *                                   Launcher.
     */
-   explicit Impl(std::shared_ptr<comms::AbstractLauncherCommunicator> in_launcherCommunicator) :
+   explicit Impl(comms::AbstractLauncherCommunicatorPtr in_launcherCommunicator) :
       LauncherCommunicator(std::move(in_launcherCommunicator)),
       Notifier(new jobs::JobStatusNotifier())
    {
@@ -293,17 +295,14 @@ struct AbstractPluginApi::Impl
             return handleBootstrap(std::static_pointer_cast<BootstrapRequest>(in_request));
          case Request::Type::SUBMIT_JOB:
             return handleSubmitJobRequest(std::static_pointer_cast<SubmitJobRequest>(in_request));
-         case Request::Type::GET_CLUSTER_INFO:
-            return handleGetClusterInfo(std::static_pointer_cast<UserRequest>(in_request));
          case Request::Type::GET_JOB:
             return handleGetJobRequest(std::static_pointer_cast<JobStateRequest>(in_request));
          case Request::Type::GET_JOB_STATUS:
-         {
-            Error error = StreamMgr->handleStreamRequest(std::static_pointer_cast<JobStatusRequest>(in_request));
-            if (error)
-               return sendErrorResponse(in_request->getId(), ErrorResponse::Type::UNKNOWN, error);
-            break;
-         }
+            return JobStreamMgr->handleStreamRequest(std::static_pointer_cast<JobStatusRequest>(in_request));
+         case Request::Type::GET_JOB_OUTPUT:
+            return OutputStreamMgr->handleStreamRequest(std::static_pointer_cast<OutputStreamRequest>(in_request));
+         case Request::Type::GET_CLUSTER_INFO:
+            return handleGetClusterInfo(std::static_pointer_cast<UserRequest>(in_request));
          default:
             return sendErrorResponse(
                in_request->getId(),
@@ -328,7 +327,9 @@ struct AbstractPluginApi::Impl
    system::AsyncTimedEvent SendHeartbeatEvent;
 
    /** Manages all streamed responses. */
-   std::unique_ptr<StreamManager> StreamMgr;
+   std::unique_ptr<JobStatusStreamManager> JobStreamMgr;
+
+   std::unique_ptr<OutputStreamManager> OutputStreamMgr;
 };
 
 PRIVATE_IMPL_DELETER_IMPL(AbstractPluginApi)
@@ -346,8 +347,15 @@ Error AbstractPluginApi::initialize()
       m_abstractPluginImpl->JobRepo,
       m_abstractPluginImpl->Notifier);
 
-   m_abstractPluginImpl->StreamMgr.reset(
-      new StreamManager(
+   m_abstractPluginImpl->JobStreamMgr.reset(
+      new JobStatusStreamManager(
+         m_abstractPluginImpl->JobRepo,
+         m_abstractPluginImpl->Notifier,
+         m_abstractPluginImpl->LauncherCommunicator));
+
+   m_abstractPluginImpl->OutputStreamMgr.reset(
+      new OutputStreamManager(
+         m_abstractPluginImpl->JobSource,
          m_abstractPluginImpl->JobRepo,
          m_abstractPluginImpl->Notifier,
          m_abstractPluginImpl->LauncherCommunicator));

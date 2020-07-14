@@ -1,5 +1,5 @@
 /*
- * StreamManager.cpp
+ * JobStatusStreamManager.cpp
  *
  * Copyright (C) 2020 by RStudio, PBC
  *
@@ -22,7 +22,9 @@
  */
 
 
-#include "StreamManager.hpp"
+#include "JobStatusStreamManager.hpp"
+
+#include <api/Request.hpp>
 
 #include "JobStatusStream.hpp"
 
@@ -33,22 +35,23 @@ namespace api {
 // Typedefs
 typedef std::map<std::string, std::shared_ptr<SingleJobStatusStream> > JobStatusStreamMap;
 
-struct StreamManager::Impl
+struct JobStatusStreamManager::Impl
 {
    /**
     * @brief Constructor.
     *
+    * @param in_jobSource               The interface for interacting with the job source.
     * @param in_jobRepository           The job repository from which to retrieve jobs.
     * @param in_jobStatusNotifier       The job status notifier from which to receive job status update notifications.
     * @param in_launcherCommunicator    The communicator which may be used to send stream responses to the Launcher.
     */
    Impl(
-      jobs::JobRepositoryPtr in_jobRepository,
-      jobs::JobStatusNotifierPtr in_jobStatusNotifier,
-      comms::AbstractLauncherCommunicatorPtr in_launcherCommunicator) :
-         JobRepo(std::move(in_jobRepository)),
-         LauncherCommunicator(std::move(in_launcherCommunicator)),
-         Notifier(std::move(in_jobStatusNotifier))
+      jobs::JobRepositoryPtr&& in_jobRepository,
+      jobs::JobStatusNotifierPtr&& in_jobStatusNotifier,
+      comms::AbstractLauncherCommunicatorPtr&& in_launcherCommunicator) :
+         JobRepo(in_jobRepository),
+         LauncherCommunicator(in_launcherCommunicator),
+         Notifier(in_jobStatusNotifier)
    {
    }
 
@@ -84,7 +87,8 @@ struct StreamManager::Impl
    /**
     * @brief Adds a request to the correct SingleJobStatusStream, creating a new stream if necessary.
     *
-    * @param in_requestId       The ID of the request for which this stream should be open.
+    * @param in_requestId       The ID of the request for which this stream should be opened.
+    * @param in_jobId           The ID of the job for which this stream should be opened.
     * @param in_requestUser     The user who made the request.
     *
     * @return Success if the stream could be created and the request added it to; Error otherwise.
@@ -92,14 +96,7 @@ struct StreamManager::Impl
    Error addJobStream(uint64_t in_requestId, const std::string& in_jobId, const system::User& in_requestUser)
    {
       if (!JobRepo->getJob(in_jobId, in_requestUser))
-      {
-         std::string message = "Job " +
-            in_jobId +
-            " could not be found" +
-            (in_requestUser.isAllUsers() ? "" : (" for user " + in_requestUser.getUsername())) + ".";
-         LauncherCommunicator->sendResponse(
-            ErrorResponse(in_requestId, ErrorResponse::Type::JOB_NOT_FOUND, message));
-      }
+         sendJobNotFoundError(in_requestId, in_jobId, in_requestUser);
       else
       {
          auto itr = ActiveJobStreams.find(in_jobId);
@@ -142,7 +139,6 @@ struct StreamManager::Impl
       }
    }
 
-
    /**
     * @brief Cancels the correct SingleJobsStatusStream for the specified request. If the stream is empty,
     *        it will be deleted.
@@ -161,11 +157,28 @@ struct StreamManager::Impl
       }
    }
 
+   /**
+    * @brief Sends a job not found error to the launcher.
+    *
+    * @param in_requestId       The ID of the request for which this response should be sent.
+    * @param in_jobId           The ID of the job which could not be found.
+    * @param in_requestUser     The user who made the request.
+    */
+   void sendJobNotFoundError(uint64_t in_requestId, const std::string& in_jobId, const system::User& in_requestUser)
+   {
+      std::string message = "Job " +
+                            in_jobId +
+                            " could not be found" +
+                            (in_requestUser.isAllUsers() ? "" : (" for user " + in_requestUser.getUsername())) + ".";
+      LauncherCommunicator->sendResponse(
+         ErrorResponse(in_requestId, ErrorResponse::Type::JOB_NOT_FOUND, message));
+   }
+
    /** The map of Job IDs to their active job streams. */
    JobStatusStreamMap ActiveJobStreams;
 
    /** The mutex to protect the map of active Job status streams. */
-   std::mutex ActiveStreamsMutex;
+   std::mutex ActiveJobStreamsMutex;
 
    /** The mutex to protect the All Jobs status stream. */
    std::mutex AllJobsMutex;
@@ -183,9 +196,9 @@ struct StreamManager::Impl
    jobs::JobStatusNotifierPtr Notifier;
 };
 
-PRIVATE_IMPL_DELETER_IMPL(StreamManager)
+PRIVATE_IMPL_DELETER_IMPL(JobStatusStreamManager)
 
-StreamManager::StreamManager(
+JobStatusStreamManager::JobStatusStreamManager(
    jobs::JobRepositoryPtr in_jobRepository,
    jobs::JobStatusNotifierPtr in_jobStatusNotifier,
    comms::AbstractLauncherCommunicatorPtr in_launcherCommunicator) :
@@ -197,7 +210,7 @@ StreamManager::StreamManager(
 {
 }
 
-Error StreamManager::handleStreamRequest(const std::shared_ptr<JobStatusRequest>& in_jobStatusRequest)
+void JobStatusStreamManager::handleStreamRequest(const std::shared_ptr<JobStatusRequest>& in_jobStatusRequest)
 {
    if (in_jobStatusRequest->getJobId() == "*")
    {
@@ -206,26 +219,35 @@ Error StreamManager::handleStreamRequest(const std::shared_ptr<JobStatusRequest>
          if (in_jobStatusRequest->isCancelRequest())
             m_impl->cancelAllJobsStream(in_jobStatusRequest->getId());
          else
-            return m_impl->addAllJobsStream(in_jobStatusRequest->getId(), in_jobStatusRequest->getUser());
+         {
+            Error error = m_impl->addAllJobsStream(in_jobStatusRequest->getId(), in_jobStatusRequest->getUser());
+            if (error)
+               m_impl->LauncherCommunicator->sendResponse(
+                  ErrorResponse(in_jobStatusRequest->getId(), ErrorResponse::Type::UNKNOWN, error.getSummary()));
+         }
       }
       END_LOCK_MUTEX
    }
    else
    {
-      LOCK_MUTEX(m_impl->ActiveStreamsMutex)
+      LOCK_MUTEX(m_impl->ActiveJobStreamsMutex)
       {
          if (in_jobStatusRequest->isCancelRequest())
             m_impl->cancelJobStream(in_jobStatusRequest->getId(), in_jobStatusRequest->getJobId());
          else
-            return m_impl->addJobStream(
+         {
+            Error error = m_impl->addJobStream(
                in_jobStatusRequest->getId(),
                in_jobStatusRequest->getJobId(),
                in_jobStatusRequest->getUser());
+
+            if (error)
+               m_impl->LauncherCommunicator->sendResponse(
+                  ErrorResponse(in_jobStatusRequest->getId(), ErrorResponse::Type::UNKNOWN, error.getSummary()));
+         }
       }
       END_LOCK_MUTEX
    }
-
-   return Success();
 }
 
 } // namespace api

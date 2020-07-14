@@ -167,6 +167,11 @@ Error Request::fromJson(const json::Object& in_requestJson, std::shared_ptr<Requ
          out_request.reset(new JobStatusRequest(in_requestJson));
          break;
       }
+      case Type::GET_JOB_OUTPUT:
+      {
+         out_request.reset(new OutputStreamRequest(in_requestJson));
+         break;
+      }
       case Type::GET_CLUSTER_INFO:
       {
          out_request.reset(new UserRequest(Type::GET_CLUSTER_INFO, in_requestJson));
@@ -552,6 +557,64 @@ JobStatusRequest::JobStatusRequest(const json::Object& in_requestJson) :
    }
 
    m_impl->IsCancelRequest = isCancel.getValueOr(false);
+}
+
+// Output Stream Request ===============================================================================================
+struct OutputStreamRequest::Impl
+{
+   Impl() :
+      IsCancel(false),
+      StreamType(OutputType::BOTH)
+   {
+   }
+
+   bool IsCancel;
+
+   OutputType StreamType;
+};
+
+PRIVATE_IMPL_DELETER_IMPL(OutputStreamRequest)
+
+OutputType OutputStreamRequest::getStreamType() const
+{
+   return m_impl->StreamType;
+}
+
+bool OutputStreamRequest::isCancelRequest() const
+{
+   return m_impl->IsCancel;
+}
+
+OutputStreamRequest::OutputStreamRequest(const json::Object& in_requestJson) :
+   JobIdRequest(Request::Type::GET_JOB_OUTPUT, in_requestJson),
+   m_impl(new Impl())
+{
+   Optional<int> outputType;
+   Error error = json::readObject(
+      in_requestJson,
+      FIELD_CANCEL_STREAM, m_impl->IsCancel,
+      FIELD_OUTPUT_TYPE, outputType);
+   if (error)
+   {
+      logging::logError(error);
+      m_baseImpl->ErrorType = RequestError::INVALID_REQUEST;
+      return;
+   }
+
+   if (outputType)
+   {
+      // Since the value is not missing, the default value doesn't matter.
+      int value = outputType.getValueOr(static_cast<int>(OutputType::FIRST));
+      if ((value < static_cast<int>(OutputType::FIRST)) || (value >= static_cast<int>(OutputType::LAST)))
+      {
+         m_baseImpl->ErrorMessage = "Invalid value for outputType (" + std::to_string(value) + ")";
+         m_baseImpl->ErrorType = RequestError::INVALID_REQUEST;
+         return;
+      }
+
+      // At this point, the value must be 0, 1, or 2, so it's safe to static cast.
+      m_impl->StreamType = static_cast<OutputType>(value);
+   }
 }
 
 // Helpers =============================================================================================================
