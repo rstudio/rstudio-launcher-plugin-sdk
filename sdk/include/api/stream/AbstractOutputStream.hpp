@@ -40,6 +40,9 @@ namespace api {
  */
 enum class OutputType
 {
+   /** The first element of Output Type is always 0. */
+   FIRST    = 0,
+
    /** Standard output. */
    STDOUT   = 0,
 
@@ -47,7 +50,10 @@ enum class OutputType
    STDERR   = 1,
 
    /** Standard output and standard error output. */
-   BOTH     = 2
+   BOTH     = 2,
+
+   /** This element of OutputType will always be one more than the last element. */
+   LAST
 };
 
 /**

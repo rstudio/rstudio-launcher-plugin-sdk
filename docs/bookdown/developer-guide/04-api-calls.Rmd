@@ -130,7 +130,7 @@ This request is sent to the Plugin once, immediately after the Plugin is launche
 
 ### Jobs {#jobs}
 
-There are two API requests which return a Job State Response: the Submit Job and Job State requests. The SDK maintains an internal cache of all jobs in the system. When a Job State request is received, the SDK searches the cache for any jobs that match the request and sends them back to the Launcher. The SDK will also manage filtering the jobs and restricting the job fields in the response, if necessary. For more information about how the job cache is maintained, see the [Job Repository](#job-repo) section of the [Advanced Features](#advanced-features) chapter.
+There are two API requests which return a Job State Response: the Submit Job and Job State requests. The SDK maintains an internal cache of all jobs in the system. When a Job State request is received, the SDK searches the cache for any jobs that match the request and sends them back to the Launcher. The SDK will also manage filtering the jobs and restricting the job fields in the response, if necessary. For more information about how the job cache is maintained, see the [Customizing the Job Repository](#job-repo) section of the [Advanced Features](#advanced-features) chapter.
 
 &nbsp;
 
@@ -181,7 +181,7 @@ The SDK will manage all Job status streams, including closing them on request. T
 
 Rather than sending a response per open stream, the Plugin sends the Launcher a response with a field that indicates which stream requests are answered by this response. A sequence ID is kept per request to ensure the Launcher can keep the responses in the right order.
 
-&nbsp
+&nbsp;
 
 **Job Status Stream Request**
 
@@ -195,19 +195,84 @@ Rather than sending a response per open stream, the Plugin sends the Launcher a 
 | encodedJobId    | The Launcher generated encoded job ID which contains extra metadata. Provides extra information only.                 | String
 | cancel          | Whether the stream should be started (`false`) or canceled (`true`). Default: `false`.                                | Boolean
 
-&nbsp
+&nbsp;
 
-**Job Status Stream Request**
+**Job Status Stream Response**
 
 |  Field Name     |                                                             Description                                                             |      Value
 | --------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ----------------
 | messageType     | [See above.](#common-fields)                                                                                                        | 3
 | sequences       | An array of requests which are waiting for this stream response and the sequence ID of this response, relative to each request ID.  | [StreamSequence](#stream-sequence) Array
-| jobId           | The ID of the job to be for which to stream statuses. If this field is '*' the statuses of all jobs will be streamed.               | String
-| encodedJobId    | The Launcher generated encoded job ID which contains extra metadata. Provides extra information only.                               | String
-| jobName         | The name of the job.                                                                                                                | String
+| id              | The ID of the job.                                                                                                                  | String
+| name            | The name of the job.                                                                                                                | String
 | status          | The status of the job.                                                                                                              | [JobState](#job-state)
 | statusMessage   | The status message of the job, if any.                                                                                              | String
+
+### Job Output Stream {#output-stream}
+
+This API call is responsible for streaming a Job's output data. The caller may request the type of output they wish to see (Standard Out, Standard Error, or both) and the Plugin must do its best to report only that type of data.
+
+The SDK will manage all the output streams. The Plugin developer needs to implement `IJobSource::createOutputStream` and may either use the provided `FileOutputStream` class or implement a custom concrete `AbstractOutputStream`. An example using the `FileOutputStream` can be found in 'TODO #8' of the 'RStudio Launcher Plugin SDK QuickStart Guide'. For more details on implementing a custom `AbstractOutputStream` class, see the [Job Status Updates](#status-updates) feature.
+
+&nbsp;
+
+**Job Output Stream Request**
+
+|  Field Name     |                                                              Description                                              |  Value
+| --------------- | --------------------------------------------------------------------------------------------------------------------- | -------
+| messageType     | [See above.](#common-fields)                                                                                          | 6
+| requestId       | [See above.](#common-fields)                                                                                          | Int
+| username        | [See above.](#common-fields)                                                                                          | String
+| requestUsername | [See above.](#common-fields)                                                                                          | String
+| jobId           | The ID of the job to be for which to stream output.                                                                   | String
+| encodedJobId    | The Launcher generated encoded job ID which contains extra metadata. Provides extra information only.                 | String
+| outputType      | The type of output to be streamed. Standard out (0), Standard error (1), or both (2).                                 | Int: 0, 1, or 2
+| cancel          | Whether the stream should be started (`false`) or canceled (`true`). Default: `false`.                                | Boolean
+
+&nbsp;
+
+**Job Output Stream Response**
+
+|  Field Name     |                                                             Description                                                             |      Value
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ----------------
+| messageType     | [See above.](#common-fields)                                                                                                        | 5
+| requestId       | [See above.](#common-fields)                                                                                                        | Int
+| responseId      | [See above.](#common-fields)                                                                                                        | Int
+| seqId           | The ID of this response in the stream of output responses.                                                                          | Int
+| outputType      | The type of output to in the response, if any. Standard out (0), Standard error (1), or mixed (2).                                  | String: "0", "1", or "2"
+| output          | The job output, if any.                                                                                                             | String
+| complete        | Whether the output stream is complete. Default: `true`.                                                                             | Boolean
+
+### Job Network {#job-network}
+
+This API call is responsible for providing network information about the machine running the specified job to the caller. When this API call is received, the SDK will invoke `IJobSource::getNetworkInfo`. The Plugin is responsible for resolving the hostname and the IP addresses of the machine running the job.
+
+For an example of how to implement `IJobSource::getNetworkInfo`, see 'TODO #14' of the 'RStudio Launcher Plugin SDK QuickStart Guide'.
+
+&nbsp;
+
+**Job Network Request**
+
+|  Field Name     |                                                              Description                                              |  Value
+| --------------- | --------------------------------------------------------------------------------------------------------------------- | -------
+| messageType     | [See above.](#common-fields)                                                                                          | 8
+| requestId       | [See above.](#common-fields)                                                                                          | Int
+| username        | [See above.](#common-fields)                                                                                          | String
+| requestUsername | [See above.](#common-fields)                                                                                          | String
+| jobId           | The ID of the job to be for which to retreive network information.                                                    | String
+| encodedJobId    | The Launcher generated encoded job ID which contains extra metadata. Provides extra information only.                 | String
+
+&nbsp;
+
+**Job Network Response**
+
+|  Field Name     |                                                             Description                                                             |      Value
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ----------------
+| messageType     | [See above.](#common-fields)                                                                                                        | 7
+| requestId       | [See above.](#common-fields)                                                                                                        | Int
+| responseId      | [See above.](#common-fields)                                                                                                        | Int
+| host            | The hostname of the machine running the job.                                                                                        | String
+| ipAddresses     | An array of the non-local IP addresses for the machine running the job.                                                                       | String Array
 
 ### Cluster Info {#cluster-info}
 
@@ -215,9 +280,9 @@ This API call is responsible for reporting the configuration and capabilities of
 
 * `IJobSource::getConfiguration`
 
-The Plugin may return an error from this method if it encounters any issues populating the fields on the `JobSourceConfiguration` object. Additionally, the method is provided with a `system::User` object, which represents the user who initiated the Cluster Info request. This optionally allows the Plugin Developer to provide different results on a per-user or per-group basis. This may be useful to allow system administrator to set different maximum and default Resource Limits for different groups of user via the [User Profiles feature](#user-profiles). It also may be useful if the job scheduling system allows administrators to make similar rule sets.
+The Plugin may return an error from this method if it encounters any issues populating the fields on the `JobSourceConfiguration` object. Additionally, the method is provided with a `system::User` object, which represents the user who initiated the Cluster Info request. This optionally allows the Plugin Developer to provide different results on a per-user or per-group basis. This may be useful to allow system administrator to set different maximum and default Resource Limits for different groups of user via the [User Profiles](#user-profiles) feature. It also may be useful if the job scheduling system allows administrators to make similar rule sets.
 
-For a simple example of implementing this method, see 'TODO #7' in the RStudio Launcher Plugin SDK QuickStart Guide.
+For a simple example of implementing this method, see 'TODO #7' in the 'RStudio Launcher Plugin SDK QuickStart Guide'.
 
 &nbsp;
 
