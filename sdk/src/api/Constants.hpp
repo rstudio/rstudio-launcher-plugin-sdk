@@ -80,15 +80,13 @@ constexpr char const* FIELD_JOB_NAME               = "name";
 constexpr char const* FIELD_JOB_STATUS             = "status";
 constexpr char const* FIELD_JOB_STATUS_MESSAGE     = "statusMessage";
 
-// ClusterInfo response fields.
-constexpr char const* FIELD_ALLOW_UNKNOWN_IMAGES   = "allowUnknownImages";
-constexpr char const* FIELD_CONFIG                 = "config";
-constexpr char const* FIELD_CONTAINER_SUPPORT      = "supportsContainers";
-constexpr char const* FIELD_DEFAULT_IMAGE          = "defaultImage";
-constexpr char const* FIELD_IMAGES                 = "images";
-constexpr char const* FIELD_PLACEMENT_CONSTRAINTS  = "placementConstraints";
-constexpr char const* FIELD_QUEUES                 = "queues";
-constexpr char const* FIELD_RESOURCE_LIMITS        = "resourceLimits";
+// ControlJob request and response fields
+constexpr char const* VALUE_CANCEL_JOB             = "cancel";
+constexpr char const* VALUE_KILL_JOB               = "kill";
+constexpr char const* FIELD_OPERATION              = "operation";
+constexpr char const* VALUE_RESUME_JOB             = "resume";
+constexpr char const* VALUE_STOP_JOB               = "stop";
+constexpr char const* VALUE_SUSPEND_JOB            = "suspend";
 
 // OutputStream request and response fields.
 constexpr char const* FIELD_COMPLETE               = "complete";
@@ -98,6 +96,16 @@ constexpr char const* FIELD_OUTPUT_TYPE            = "outputType";
 // Network response fields.
 constexpr char const* FIELD_HOST                   = "host";
 constexpr char const* FIELD_IPS                    = "ipAddresses";
+
+// ClusterInfo response fields.
+constexpr char const* FIELD_ALLOW_UNKNOWN_IMAGES   = "allowUnknownImages";
+constexpr char const* FIELD_CONFIG                 = "config";
+constexpr char const* FIELD_CONTAINER_SUPPORT      = "supportsContainers";
+constexpr char const* FIELD_DEFAULT_IMAGE          = "defaultImage";
+constexpr char const* FIELD_IMAGES                 = "images";
+constexpr char const* FIELD_PLACEMENT_CONSTRAINTS  = "placementConstraints";
+constexpr char const* FIELD_QUEUES                 = "queues";
+constexpr char const* FIELD_RESOURCE_LIMITS        = "resourceLimits";
 
 } // namespace api
 } // namespace launcher_plugins
