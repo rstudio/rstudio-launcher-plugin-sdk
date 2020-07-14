@@ -272,7 +272,7 @@ For an example of how to implement `IJobSource::getNetworkInfo`, see 'TODO #14' 
 | requestId       | [See above.](#common-fields)                                                                                                        | Int
 | responseId      | [See above.](#common-fields)                                                                                                        | Int
 | host            | The hostname of the machine running the job.                                                                                        | String
-| ipAddresses     | An array of the IP addresses for the machine running the job.                                                                       | String Array
+| ipAddresses     | An array of the non-local IP addresses for the machine running the job.                                                                       | String Array
 
 ### Cluster Info {#cluster-info}
 
