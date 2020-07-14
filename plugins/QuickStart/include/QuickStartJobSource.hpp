@@ -92,6 +92,16 @@ public:
    Error getJobs(api::JobList& out_jobs) const override;
 
    /**
+    * @brief Gets the network information for the specified job.
+    *
+    * @param in_job             The job for which to retrieve network information.
+    * @param out_networkInfo    The network information of the specified job, if no error occurred.
+    *
+    * @return Success if the network information could be retrieved; Error otherwise.
+    */
+   Error getNetworkInfo(api::JobPtr in_job, api::NetworkInfo& out_networkInfo) const override;
+
+   /**
     * @brief Submits a job to the Job Scheduling System.
     *
     * @param io_job                     The Job to be submitted. On successful submission, the Job should be updated

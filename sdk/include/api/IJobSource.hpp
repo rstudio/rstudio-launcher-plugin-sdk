@@ -28,6 +28,7 @@
 
 #include <Error.hpp>
 #include <api/Job.hpp>
+#include <api/ResponseTypes.hpp>
 #include <api/stream/AbstractOutputStream.hpp>
 #include <jobs/JobRepository.hpp>
 #include <jobs/JobStatusNotifier.hpp>
@@ -138,6 +139,16 @@ public:
     * @return Success if all jobs could be retrieved; Error otherwise.
     */
    virtual Error getJobs(JobList& out_jobs) const = 0;
+
+   /**
+    * @brief Gets the network information for the specified job.
+    *
+    * @param in_job             The job for which to retrieve network information.
+    * @param out_networkInfo    The network information of the specified job, if no error occurred.
+    *
+    * @return Success if the network information could be retrieved; Error otherwise.
+    */
+   virtual Error getNetworkInfo(JobPtr in_job, NetworkInfo& out_networkInfo) const = 0;
 
    /**
     * @brief Submits a job to the Job Scheduling System.

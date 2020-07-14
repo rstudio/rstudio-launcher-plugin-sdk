@@ -172,6 +172,11 @@ Error Request::fromJson(const json::Object& in_requestJson, std::shared_ptr<Requ
          out_request.reset(new OutputStreamRequest(in_requestJson));
          break;
       }
+      case Type::GET_JOB_NETWORK:
+      {
+         out_request.reset(new NetworkRequest( in_requestJson));
+         break;
+      }
       case Type::GET_CLUSTER_INFO:
       {
          out_request.reset(new UserRequest(Type::GET_CLUSTER_INFO, in_requestJson));
@@ -614,6 +619,17 @@ OutputStreamRequest::OutputStreamRequest(const json::Object& in_requestJson) :
 
       // At this point, the value must be 0, 1, or 2, so it's safe to static cast.
       m_impl->StreamType = static_cast<OutputType>(value);
+   }
+}
+
+// Network Request =====================================================================================================
+NetworkRequest::NetworkRequest(const json::Object& in_requestJson) :
+   JobIdRequest(Request::Type::GET_JOB_NETWORK, in_requestJson)
+{
+   if (getJobId() == "*")
+   {
+      m_baseImpl->ErrorType = RequestError::INVALID_REQUEST;
+      m_baseImpl->ErrorMessage = "Cannot retrieve network information for all jobs. Please specify a single Job ID.";
    }
 }
 

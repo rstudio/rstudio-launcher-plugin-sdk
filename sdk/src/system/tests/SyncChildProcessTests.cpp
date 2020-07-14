@@ -25,9 +25,9 @@
 
 #include <options/Options.hpp>
 #include <system/FilePath.hpp>
+#include <system/PosixSystem.hpp>
 #include <system/Process.hpp>
 
-#include "../PosixSystem.hpp"
 #include "../../tests/MockLogDestination.hpp"
 
 namespace rstudio {

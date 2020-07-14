@@ -335,6 +335,32 @@ private:
 };
 
 /**
+ * @brief Class which represents a network information response which should be sent to the Launcher in response to a
+ *        Job network information request.
+ */
+class NetworkResponse final : public Response
+{
+public:
+   /**
+    * @brief Constructor.
+    *
+    * @param in_requestId       The ID of the request for which this response is being sent.
+    * @param in_networkInfo     The network information for the requested Job.
+    */
+   NetworkResponse(uint64_t in_requestId, NetworkInfo in_networkInfo);
+   /**
+    * @brief Converts this cluster info response to a JSON object.
+    *
+    * @return The JSON object which represents this network info response.
+    */
+   json::Object toJson() const override;
+
+private:
+   // The private implementation of NetworkResponse
+   PRIVATE_IMPL(m_impl);
+};
+
+/**
  * @brief Class which represents a cluster info response which should be sent to the Launcher in response to a cluster
  *        info request.
  */
@@ -342,7 +368,7 @@ private:
  {
  public:
     /**
-     * @brief
+     * @brief Constructor.
      *
      * @param in_requestId          The ID of the request for which this response is being sent.
      * @param in_configuration      The configuration and capabilities of the cluster.

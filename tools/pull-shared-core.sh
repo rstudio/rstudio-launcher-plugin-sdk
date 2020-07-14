@@ -34,10 +34,12 @@ fi
 
 ROOT_DIR="$(readlink -e "$(dirname "${BASH_SOURCE[0]}")/..")"
 
+# shellcheck source=${ROOT_DIR}/dependencies/base-script.sh
+. "${ROOT_DIR}/dependencies/base-script.sh"
 RSTUDIO_CLONE_DIR="$(makeTmpDir "rstudio-clone")"
 
 SRC_INCLUDE="${RSTUDIO_CLONE_DIR}/src/cpp/shared_core/include/shared_core"
-SRC_SRC="${RSTUDIO_CLONE_DIR}/rstudio-clone/src/cpp/shared_core"
+SRC_SRC="${RSTUDIO_CLONE_DIR}/src/cpp/shared_core"
 DEST_INCLUDE="${ROOT_DIR}/sdk/include"
 DEST_SRC="${ROOT_DIR}/sdk/src"
 
@@ -191,11 +193,6 @@ for I in "${!SRC_INCLUDES[@]}"; do
     SRC_FILE=${SRC_INCLUDES[$I]}
     DEST_PATH="$DEST_INCLUDE/${DEST_INCLUDES[$I]}"
 
-    # Make PosixSystem private in the SDK.
-    if [[ "$SRC_FILE" == "system/PosixSystem.hpp" ]]; then
-      DEST_PATH="$DEST_SRC/${DEST_INCLUDES[$I]}"
-    fi
-
     copyFile "$SRC_INCLUDE/$SRC_FILE" "$DEST_PATH"
 
     # Special cases
@@ -340,4 +337,4 @@ echo "Copying rapidjson library..."
 if [[ -e "${ROOT_DIR}/sdk/src/json/rapidjson" ]]; then
     sudo rm -r "${ROOT_DIR}/sdk/src/json/rapidjson"
 fi
-cp -r temp/rstudio-clone/src/cpp/shared_core/include/shared_core/json/rapidjson "${ROOT_DIR}/sdk/src/json/rapidjson"
+cp -r "${RSTUDIO_CLONE_DIR}/src/cpp/shared_core/include/shared_core/json/rapidjson" "${ROOT_DIR}/sdk/src/json/rapidjson"

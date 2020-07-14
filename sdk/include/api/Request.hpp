@@ -431,6 +431,22 @@ private:
 };
 
 /**
+ * @brief Request from the Launcher to get the network information for a job.
+ */
+class NetworkRequest final : public JobIdRequest
+{
+private:
+   /**
+    * @brief Constructor.
+    *
+    * @param in_requestJson     The JSON Object which represents the network request.
+    */
+   explicit NetworkRequest(const json::Object& in_requestJson);
+
+   friend class Request;
+};
+
+/**
  * @brief Converts a Request::Type to string and adds it to the specified stream.
  *
  * @param in_ostream    The stream to which to add the string version of the type.

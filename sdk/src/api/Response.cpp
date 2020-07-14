@@ -339,6 +339,40 @@ json::Object OutputStreamResponse::toJson() const
    return result;
 }
 
+// Network Response ====================================================================================================
+struct NetworkResponse::Impl
+{
+   /**
+    * @brief Constructor.
+    *
+    * @param in_networkInfo     The network information for the requested Job.
+    */
+   explicit Impl(NetworkInfo&& in_networkInfo) :
+      NetInfo(in_networkInfo)
+   {
+   }
+
+   /** The network information for the requested Job. */
+   NetworkInfo NetInfo;
+};
+
+PRIVATE_IMPL_DELETER_IMPL(NetworkResponse)
+
+NetworkResponse::NetworkResponse(uint64_t in_requestId, NetworkInfo in_networkInfo) :
+   Response(Response::Type::JOB_NETWORK, in_requestId),
+   m_impl(new Impl(std::move(in_networkInfo)))
+{
+}
+
+json::Object NetworkResponse::toJson() const
+{
+   json::Object result = Response::toJson();
+   result[FIELD_HOST] = m_impl->NetInfo.Hostname;
+   result[FIELD_IPS] = json::toJsonArray(m_impl->NetInfo.IpAddresses);
+
+   return result;
+}
+
 // Cluster Info Response ===============================================================================================
 struct ClusterInfoResponse::Impl
 {

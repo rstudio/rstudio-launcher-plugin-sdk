@@ -807,6 +807,75 @@ TEST_CASE("Parse OutputStream request")
    }
 }
 
+TEST_CASE("Parse Network Request")
+{
+   system::User user3;
+   REQUIRE_FALSE(system::User::getUserFromIdentifier(USER_THREE, user3));
+
+   json::Object requestObj;
+   requestObj[FIELD_MESSAGE_TYPE] = static_cast<int>(Request::Type::GET_JOB_NETWORK);
+   requestObj[FIELD_REQUEST_ID] = 43;
+
+   SECTION("Specific user, specific job")
+   {
+      requestObj[FIELD_REAL_USER] = USER_THREE;
+      requestObj[FIELD_JOB_ID] = "*";
+      requestObj[FIELD_JOB_ID] = "job-182";
+      requestObj[FIELD_ENCODED_JOB_ID] = "Q2x1c3Rlci1qb2ItMTgyCg==";
+
+      std::shared_ptr<Request> request;
+      REQUIRE_FALSE(Request::fromJson(requestObj, request));
+      REQUIRE(request->getType() == Request::Type::GET_JOB_NETWORK);
+
+      std::shared_ptr<NetworkRequest> jobStatusRequest = std::static_pointer_cast<NetworkRequest>(request);
+      CHECK(jobStatusRequest->getId() == 43);
+      CHECK(jobStatusRequest->getUser() == user3);
+      CHECK(jobStatusRequest->getRequestUsername().empty());
+      CHECK(jobStatusRequest->getJobId() == "job-182");
+      CHECK(jobStatusRequest->getEncodedJobId() == "Q2x1c3Rlci1qb2ItMTgyCg==");
+   }
+
+   SECTION("Specific user, all jobs")
+   {
+      requestObj[FIELD_REAL_USER] = USER_THREE;
+      requestObj[FIELD_JOB_ID] = "*";
+      requestObj[FIELD_ENCODED_JOB_ID] = "";
+
+      std::shared_ptr<Request> request;
+      REQUIRE(Request::fromJson(requestObj, request));
+   }
+
+   SECTION("All users, specific job")
+   {
+      requestObj[FIELD_REAL_USER] = "*";
+      requestObj[FIELD_REQUEST_USERNAME] = USER_FOUR;
+      requestObj[FIELD_JOB_ID] = "job-182";
+      requestObj[FIELD_ENCODED_JOB_ID] = "Q2x1c3Rlci1qb2ItMTgyCg==";
+
+      std::shared_ptr<Request> request;
+      REQUIRE_FALSE(Request::fromJson(requestObj, request));
+      REQUIRE(request->getType() == Request::Type::GET_JOB_NETWORK);
+
+      std::shared_ptr<NetworkRequest> jobStatusRequest = std::static_pointer_cast<NetworkRequest>(request);
+      CHECK(jobStatusRequest->getId() == 43);
+      CHECK(jobStatusRequest->getUser().isAllUsers());
+      CHECK(jobStatusRequest->getRequestUsername() == USER_FOUR);
+      CHECK(jobStatusRequest->getJobId() == "job-182");
+      CHECK(jobStatusRequest->getEncodedJobId() == "Q2x1c3Rlci1qb2ItMTgyCg==");
+   }
+
+   SECTION("All users, all jobs")
+   {
+      requestObj[FIELD_REAL_USER] = "*";
+      requestObj[FIELD_REQUEST_USERNAME] = USER_FOUR;
+      requestObj[FIELD_JOB_ID] = "*";
+      requestObj[FIELD_ENCODED_JOB_ID] = "";
+
+      std::shared_ptr<Request> request;
+      REQUIRE(Request::fromJson(requestObj, request));
+   }
+}
+
 } // namespace api
 } // namespace launcher_plugins
 } // namespace rstudio

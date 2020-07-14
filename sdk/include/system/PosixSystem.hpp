@@ -49,6 +49,18 @@ namespace posix {
  */
 
 /**
+ * @brief Represents an IP address.
+ */
+struct IpAddress
+{
+   /** The name of the IP address. */
+   std::string Name;
+
+   /** The address of the IP address. */
+   std::string Address;
+};
+
+/**
  * @brief Enables core dumps for this process.
  *
  * @return Success if core dumps could be enabled; Error otherwise.
@@ -63,6 +75,16 @@ Error enableCoreDumps();
  * @return The value of the environment variable.
  */
 std::string getEnvironmentVariable(const std::string& in_name);
+
+/**
+ * @brief Gets the IP addresses of the machine running this process.
+ *
+ * @param out_addresses         The IP addresses of the machine running this process.
+ * @param in_includeIPv6        Whether or not to include IPv6 addresses. Default: false.
+ *
+ * @return Success if the IP addresses could be retrieved; Error otherwise.
+ */
+launcher_plugins::Error getIpAddresses(std::vector<IpAddress>& out_addresses, bool in_includeIPv6 = false);
 
 /**
  * @brief Ignores a particular signal for this process.

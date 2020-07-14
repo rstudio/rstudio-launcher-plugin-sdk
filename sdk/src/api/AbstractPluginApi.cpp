@@ -248,7 +248,29 @@ struct AbstractPluginApi::Impl
          jobs.push_back(job);
       }
 
-      return LauncherCommunicator->sendResponse(JobStateResponse(in_getJobRequest->getId(), jobs, fields));
+      LauncherCommunicator->sendResponse(JobStateResponse(in_getJobRequest->getId(), jobs, fields));
+   }
+
+   void handleGetNetworkRequest(const std::shared_ptr<NetworkRequest>& in_networkRequest)
+   {
+      const system::User& requestUser = in_networkRequest->getUser();
+      const std::string& jobId = in_networkRequest->getJobId();
+      JobPtr job = JobRepo->getJob(jobId, requestUser);
+      if (job == nullptr)
+         return sendErrorResponse(
+            in_networkRequest->getId(),
+            ErrorResponse::Type::JOB_NOT_FOUND,
+            "Job " +
+               jobId +
+               " could not be found" +
+               (requestUser.isAllUsers() ? "" : " for user " + requestUser.getUsername()));
+
+      NetworkInfo networkInfo;
+      Error error = JobSource->getNetworkInfo(job, networkInfo);
+      if (error)
+         return sendErrorResponse(in_networkRequest->getId(), ErrorResponse::Type::UNKNOWN, error);
+
+      LauncherCommunicator->sendResponse(NetworkResponse(in_networkRequest->getId(), networkInfo));
    }
 
    /**
@@ -266,7 +288,7 @@ struct AbstractPluginApi::Impl
       if (error)
          return sendErrorResponse(requestId, ErrorResponse::Type::UNKNOWN, error);
 
-      return LauncherCommunicator->sendResponse(ClusterInfoResponse(in_clusterInfoRequest->getId(), caps));
+      LauncherCommunicator->sendResponse(ClusterInfoResponse(in_clusterInfoRequest->getId(), caps));
    }
 
 
@@ -301,6 +323,8 @@ struct AbstractPluginApi::Impl
             return JobStreamMgr->handleStreamRequest(std::static_pointer_cast<JobStatusRequest>(in_request));
          case Request::Type::GET_JOB_OUTPUT:
             return OutputStreamMgr->handleStreamRequest(std::static_pointer_cast<OutputStreamRequest>(in_request));
+         case Request::Type::GET_JOB_NETWORK:
+            return handleGetNetworkRequest(std::static_pointer_cast<NetworkRequest>(in_request));
          case Request::Type::GET_CLUSTER_INFO:
             return handleGetClusterInfo(std::static_pointer_cast<UserRequest>(in_request));
          default:

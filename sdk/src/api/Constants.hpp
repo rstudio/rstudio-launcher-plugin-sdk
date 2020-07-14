@@ -95,6 +95,10 @@ constexpr char const* FIELD_COMPLETE               = "complete";
 constexpr char const* FIELD_OUTPUT                 = "output";
 constexpr char const* FIELD_OUTPUT_TYPE            = "outputType";
 
+// Network response fields.
+constexpr char const* FIELD_HOST                   = "host";
+constexpr char const* FIELD_IPS                    = "ipAddresses";
+
 } // namespace api
 } // namespace launcher_plugins
 } // namespace rstudio

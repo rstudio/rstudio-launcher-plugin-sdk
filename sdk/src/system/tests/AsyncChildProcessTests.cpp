@@ -26,9 +26,8 @@
 #include <AsioRaii.hpp>
 
 #include <options/Options.hpp>
+#include <system/PosixSystem.hpp>
 #include <system/Process.hpp>
-
-#include "../PosixSystem.hpp"
 
 namespace rstudio {
 namespace launcher_plugins {
