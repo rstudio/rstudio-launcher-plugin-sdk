@@ -264,7 +264,7 @@ For an example of how to implement `IJobSource::getNetworkInfo`, see 'TODO #14' 
 
 &nbsp;
 
-**Job Network Request**
+**Job Network Response**
 
 |  Field Name     |                                                             Description                                                             |      Value
 | --------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ----------------
