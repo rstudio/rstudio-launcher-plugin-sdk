@@ -229,6 +229,7 @@ Error AllJobStatusStream::initialize()
          END_LOCK_MUTEX
       }
    };
+   m_impl->Handle = m_impl->Notifier->subscribe(onJobStatusUpdate);
 
    m_impl->IsInitialized = true;
    return Success();
