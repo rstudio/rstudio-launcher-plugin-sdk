@@ -594,7 +594,7 @@ ControlJobRequest::ControlJobRequest(const json::Object& in_requestJson) :
    if (getJobId() == "*")
    {
       m_baseImpl->ErrorType = RequestError::INVALID_REQUEST;
-      m_baseImpl->ErrorMessage = "Cannot retrieve network information for all jobs. Please specify a single Job ID.";
+      m_baseImpl->ErrorMessage = "Cannot control all jobs simultaneously. Please specify a single Job ID.";
       return;
    }
 
