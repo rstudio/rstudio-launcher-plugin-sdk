@@ -76,9 +76,9 @@ constexpr char const* FIELD_JOBS                   = "jobs";
 
 // JobStatus response fields.
 constexpr char const* FIELD_ID                     = "id";
-constexpr char const* FIELD_JOB_NAME               = "name";
-constexpr char const* FIELD_JOB_STATUS             = "status";
-constexpr char const* FIELD_JOB_STATUS_MESSAGE     = "statusMessage";
+constexpr char const* FIELD_NAME                   = "name";
+constexpr char const* FIELD_STATUS                 = "status";
+constexpr char const* FIELD_STATUS_MESSAGE         = "statusMessage";
 
 // ControlJob request and response fields
 constexpr char const* VALUE_CANCEL_JOB             = "cancel";

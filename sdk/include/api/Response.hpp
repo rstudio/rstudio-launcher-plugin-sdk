@@ -293,6 +293,34 @@ private:
 };
 
 /**
+ * @brief Class which represents the result of a control job operation.
+ */
+class ControlJobResponse final : public Response
+{
+public:
+   /**
+    * @brief Constructor.
+    *
+    * @param in_requestId           The ID of the request for which this response is being sent.
+    * @param in_statusMessage       A message describing the status of the control job operation that was requested.
+    * @param in_isComplete          Whether the request control job operation has completed (true) or not (false).
+    */
+   ControlJobResponse(uint64_t in_requestId, std::string in_statusMessage, bool in_isComplete);
+
+
+   /**
+    * @brief Converts this control job response to a JSON object.
+    *
+    * @return The JSON object which represents this control job response.
+    */
+   json::Object toJson() const override;
+
+private:
+   // The private implementation of ControlJobResponse
+   PRIVATE_IMPL(m_impl);
+};
+
+/**
  * @brief Class which represents a Job Output Stream for a specific job.
  */
 class OutputStreamResponse final : public Response
