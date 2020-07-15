@@ -167,6 +167,11 @@ Error Request::fromJson(const json::Object& in_requestJson, std::shared_ptr<Requ
          out_request.reset(new JobStatusRequest(in_requestJson));
          break;
       }
+      case Type::CONTROL_JOB:
+      {
+         out_request.reset(new ControlJobRequest(in_requestJson));
+         break;
+      }
       case Type::GET_JOB_OUTPUT:
       {
          out_request.reset(new OutputStreamRequest(in_requestJson));
@@ -562,6 +567,62 @@ JobStatusRequest::JobStatusRequest(const json::Object& in_requestJson) :
    }
 
    m_impl->IsCancelRequest = isCancel.getValueOr(false);
+}
+
+// Control Job Request =================================================================================================
+struct ControlJobRequest::Impl
+{
+   Impl() :
+      JobOperation(Operation::SUSPEND)
+   {
+   }
+
+   Operation JobOperation;
+};
+
+PRIVATE_IMPL_DELETER_IMPL(ControlJobRequest)
+
+ControlJobRequest::Operation ControlJobRequest::getOperation() const
+{
+   return m_impl->JobOperation;
+}
+
+ControlJobRequest::ControlJobRequest(const json::Object& in_requestJson) :
+   JobIdRequest(Request::Type::CONTROL_JOB, in_requestJson),
+   m_impl(new Impl())
+{
+   if (getJobId() == "*")
+   {
+      m_baseImpl->ErrorType = RequestError::INVALID_REQUEST;
+      m_baseImpl->ErrorMessage = "Cannot retrieve network information for all jobs. Please specify a single Job ID.";
+      return;
+   }
+
+   std::string operationStr;
+   Error error = json::readObject(in_requestJson, FIELD_OPERATION, operationStr);
+   if (error)
+   {
+      logging::logError(error);
+      m_baseImpl->ErrorType = RequestError::INVALID_REQUEST;
+      return;
+   }
+
+   if (operationStr == VALUE_CANCEL_JOB)
+      m_impl->JobOperation = Operation::CANCEL;
+   else if (operationStr == VALUE_KILL_JOB)
+      m_impl->JobOperation = Operation::KILL;
+   else if (operationStr == VALUE_RESUME_JOB)
+      m_impl->JobOperation = Operation::RESUME;
+   else if (operationStr == VALUE_STOP_JOB)
+      m_impl->JobOperation = Operation::STOP;
+   else if (operationStr == VALUE_SUSPEND_JOB)
+      m_impl->JobOperation = Operation::SUSPEND;
+   else
+   {
+      m_baseImpl->ErrorMessage = "Invalid value for " + std::string(FIELD_OPERATION) + " (" + operationStr + ")";
+      m_baseImpl->ErrorType = RequestError::INVALID_REQUEST;
+      return;
+   }
 }
 
 // Output Stream Request ===============================================================================================
