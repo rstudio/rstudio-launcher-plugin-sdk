@@ -418,7 +418,7 @@ public:
       /** Indicates that the job should be killed. This operation should be equivalent to sending SIGKILL. */
       KILL = 3,
 
-      /** Indicates that the job should be canceled through the job scheduling system, if possible. */
+      /** Indicates that a pending job should be canceled, if possible. */
       CANCEL = 4
    };
 
