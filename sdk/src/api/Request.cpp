@@ -612,7 +612,7 @@ OutputStreamRequest::OutputStreamRequest(const json::Object& in_requestJson) :
       int value = outputType.getValueOr(static_cast<int>(OutputType::FIRST));
       if ((value < static_cast<int>(OutputType::FIRST)) || (value >= static_cast<int>(OutputType::LAST)))
       {
-         m_baseImpl->ErrorMessage = "Invalid value for outputType (" + std::to_string(value) + ")";
+         m_baseImpl->ErrorMessage = "Invalid value for " + std::string(FIELD_OUTPUT_TYPE) + " (" + std::to_string(value) + ")";
          m_baseImpl->ErrorType = RequestError::INVALID_REQUEST;
          return;
       }
