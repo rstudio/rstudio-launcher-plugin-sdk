@@ -113,6 +113,19 @@ public:
    virtual Error initialize() = 0;
 
    /**
+    * @brief Cancels a pending job.
+    *
+    * This method will not be invoked unless the job is currently pending.
+    * The Job lock will be held when this method is invoked.
+    *
+    * @param in_job                 The job to be canceled.
+    * @param out_statusMessage      The status message of the cancel operation, if any.
+    *
+    * @return True if the job was canceled; false otherwise.
+    */
+   virtual bool cancelJob(JobPtr in_job, std::string& out_statusMessage) = 0;
+
+   /**
     * @brief Gets the configuration and capabilities of this Job Source for the specified user.
     *
     * This function controls the options that will be available to users when launching jobs.
@@ -140,6 +153,63 @@ public:
     * @return Success if the network information could be retrieved; Error otherwise.
     */
    virtual Error getNetworkInfo(JobPtr in_job, NetworkInfo& out_networkInfo) const = 0;
+
+   /**
+    * @brief Forcibly kills a running job.
+    *
+    * This method should perform the equivalent of sending a SIGKILL to a process.
+    * This method will not be invoked unless the job is currently running.
+    * The Job lock will be held when this method is invoked.
+    *
+    * @param in_job                 The job to be canceled.
+    * @param out_statusMessage      The status message of the cancel operation, if any.
+    *
+    * @return True if the job was killed; false otherwise.
+    */
+   virtual bool killJob(JobPtr in_job, std::string& out_statusMessage) = 0;
+
+   /**
+    * @brief Resumes a suspended job.
+    *
+    * This method should perform the equivalent of sending a SIGCONT to a process.
+    * This method will not be invoked unless the job is currently suspended.
+    * The Job lock will be held when this method is invoked.
+    *
+    * @param in_job                 The job to be canceled.
+    * @param out_statusMessage      The status message of the cancel operation, if any.
+    *
+    * @return True if the job was resumed; false otherwise.
+    */
+   virtual bool resumeJob(JobPtr in_job, std::string& out_statusMessage) = 0;
+
+   /**
+    * @brief Stops a running job.
+    *
+    * This method should perform the equivalent of sending a SIGTERM to a process.
+    * This method will not be invoked unless the job is currently running.
+    * The Job lock will be held when this method is invoked.
+    *
+    * @param in_job                 The job to be canceled.
+    * @param out_statusMessage      The status message of the cancel operation, if any.
+    *
+    * @return True if the job was stopped; false otherwise.
+    */
+   virtual bool stopJob(JobPtr in_job, std::string& out_statusMessage) = 0;
+
+   /**
+    * @brief Suspends a running job.
+    *
+    * This method should perform the equivalent of sending a SIGSTOP to a process.
+    * A suspended job should be able to be resumed at a later time.
+    * This method will not be invoked unless the job is currently running.
+    * The Job lock will be held when this method is invoked.
+    *
+    * @param in_job                 The job to be suspended.
+    * @param out_statusMessage      The status message of the cancel operation, if any.
+    *
+    * @return True if the job was suspended; false otherwise.
+    */
+   virtual bool suspendJob(JobPtr in_job, std::string& out_statusMessage) = 0;
 
    /**
     * @brief Submits a job to the Job Scheduling System.

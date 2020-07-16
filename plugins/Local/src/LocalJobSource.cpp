@@ -49,6 +49,12 @@ Error LocalJobSource::initialize()
    return m_jobRunner->initialize();
 }
 
+bool LocalJobSource::cancelJob(api::JobPtr in_job, std::string& out_statusMessage)
+{
+   out_statusMessage = "The RStudio Local Launcher Plugin does not support canceling jobs.";
+   return false;
+}
+
 Error LocalJobSource::getConfiguration(const system::User&, api::JobSourceConfiguration& out_configuration) const
 {
    static const api::JobConfig::Type& strType = api::JobConfig::Type::STRING;
@@ -79,6 +85,30 @@ Error LocalJobSource::getNetworkInfo(api::JobPtr in_job, api::NetworkInfo& out_n
    }
 
    return Success();
+}
+
+bool LocalJobSource::killJob(api::JobPtr in_job, std::string& out_statusMessage)
+{
+   out_statusMessage = "Kill job is not supported.";
+   return false;
+}
+
+bool LocalJobSource::resumeJob(api::JobPtr in_job, std::string& out_statusMessage)
+{
+   out_statusMessage = "Resume job is not supported.";
+   return false;
+}
+
+bool LocalJobSource::stopJob(api::JobPtr in_job, std::string& out_statusMessage)
+{
+   out_statusMessage = "Stop job is not supported.";
+   return false;
+}
+
+bool LocalJobSource::suspendJob(api::JobPtr in_job, std::string& out_statusMessage)
+{
+   out_statusMessage = "Suspend job is not supported.";
+   return false;
 }
 
 Error LocalJobSource::submitJob(api::JobPtr io_job, bool& out_wasInvalidRequest) const

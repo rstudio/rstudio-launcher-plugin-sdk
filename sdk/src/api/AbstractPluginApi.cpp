@@ -247,6 +247,112 @@ struct AbstractPluginApi::Impl
       LauncherCommunicator->sendResponse(JobStateResponse(in_getJobRequest->getId(), jobs, fields));
    }
 
+   void handleControlJobRequest(const std::shared_ptr<ControlJobRequest>& in_controlJobRequest)
+   {
+      const system::User& requestUser = in_controlJobRequest->getUser();
+      const std::string& jobId = in_controlJobRequest->getJobId();
+      JobPtr job = JobRepo->getJob(jobId, requestUser);
+      if (job == nullptr)
+         return sendErrorResponse(
+            in_controlJobRequest->getId(),
+            ErrorResponse::Type::JOB_NOT_FOUND,
+            "Job " +
+            jobId +
+            " could not be found" +
+            (requestUser.isAllUsers() ? "" : " for user " + requestUser.getUsername()));
+
+      LOCK_JOB(job)
+      {
+         switch (in_controlJobRequest->getOperation())
+         {
+            case ControlJobRequest::Operation::KILL:
+            {
+               if (job->Status != Job::State::RUNNING)
+                  return sendErrorResponse(
+                     in_controlJobRequest->getId(),
+                     ErrorResponse::Type::INVALID_JOB_STATE,
+                     "Job must be running to kill it");
+
+               std::string status;
+               return LauncherCommunicator->sendResponse(
+                  ControlJobResponse(
+                     in_controlJobRequest->getId(),
+                     status,
+                     JobSource->killJob(job, status)));
+            }
+            case ControlJobRequest::Operation::SUSPEND:
+            {
+               if (job->Status != Job::State::RUNNING)
+                  return sendErrorResponse(
+                     in_controlJobRequest->getId(),
+                     ErrorResponse::Type::INVALID_JOB_STATE,
+                     "Job must be running to suspend it");
+
+               std::string status;
+               return LauncherCommunicator->sendResponse(
+                  ControlJobResponse(
+                     in_controlJobRequest->getId(),
+                     status,
+                     JobSource->suspendJob(job, status)));
+            }
+            case ControlJobRequest::Operation::RESUME:
+            {
+               if (job->Status != Job::State::SUSPENDED)
+                  return sendErrorResponse(
+                     in_controlJobRequest->getId(),
+                     ErrorResponse::Type::INVALID_JOB_STATE,
+                     "Job must be suspended to resume it");
+
+               std::string status;
+               return LauncherCommunicator->sendResponse(
+                  ControlJobResponse(
+                     in_controlJobRequest->getId(),
+                     status,
+                     JobSource->resumeJob(job, status)));
+            }
+            case ControlJobRequest::Operation::STOP:
+            {
+               if (job->Status != Job::State::RUNNING)
+                  return sendErrorResponse(
+                     in_controlJobRequest->getId(),
+                     ErrorResponse::Type::INVALID_JOB_STATE,
+                     "Job must be running to stop it");
+
+               std::string status;
+               return LauncherCommunicator->sendResponse(
+                  ControlJobResponse(
+                     in_controlJobRequest->getId(),
+                     status,
+                     JobSource->stopJob(job, status)));
+            }
+            case ControlJobRequest::Operation::CANCEL:
+            {
+               if (job->Status != Job::State::PENDING)
+                  return sendErrorResponse(
+                     in_controlJobRequest->getId(),
+                     ErrorResponse::Type::INVALID_JOB_STATE,
+                     "Job must be pending to cancel it");
+
+               std::string status;
+               return LauncherCommunicator->sendResponse(
+                  ControlJobResponse(
+                     in_controlJobRequest->getId(),
+                     status,
+                     JobSource->cancelJob(job, status)));
+            }
+            default:
+            {
+               assert(false);
+               return sendErrorResponse(
+                  in_controlJobRequest->getId(),
+                  ErrorResponse::Type::UNKNOWN,
+                  "Internal server error: unrecognized control job operation.");
+            }
+         }
+      }
+      END_LOCK_JOB
+   }
+
    void handleGetNetworkRequest(const std::shared_ptr<NetworkRequest>& in_networkRequest)
    {
       const system::User& requestUser = in_networkRequest->getUser();

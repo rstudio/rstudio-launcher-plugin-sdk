@@ -62,6 +62,19 @@ public:
    Error initialize() override;
 
    /**
+    * @brief Cancels a pending job.
+    *
+    * This method will not be invoked unless the job is currently pending.
+    * The Job lock will be held when this method is invoked.
+    *
+    * @param in_job                 The job to be canceled.
+    * @param out_statusMessage      The status message of the cancel operation, if any.
+    *
+    * @return True if the job was canceled; false otherwise.
+    */
+   bool cancelJob(api::JobPtr in_job, std::string& out_statusMessage) override;
+
+   /**
     * @brief Gets the configuration and capabilities of this Job Source for the specified user.
     *
     * This function controls the options that will be available to users when launching jobs.
@@ -91,6 +104,63 @@ public:
     * @return Success if the network information could be retrieved; Error otherwise.
     */
    Error getNetworkInfo(api::JobPtr in_job, api::NetworkInfo& out_networkInfo) const override;
+
+   /**
+    * @brief Forcibly kills a running job.
+    *
+    * This method should perform the equivalent of sending a SIGKILL to a process.
+    * This method will not be invoked unless the job is currently running.
+    * The Job lock will be held when this method is invoked.
+    *
+    * @param in_job                 The job to be canceled.
+    * @param out_statusMessage      The status message of the cancel operation, if any.
+    *
+    * @return True if the job was killed; false otherwise.
+    */
+   bool killJob(api::JobPtr in_job, std::string& out_statusMessage) override;
+
+   /**
+    * @brief Resumes a suspended job.
+    *
+    * This method should perform the equivalent of sending a SIGCONT to a process.
+    * This method will not be invoked unless the job is currently suspended.
+    * The Job lock will be held when this method is invoked.
+    *
+    * @param in_job                 The job to be canceled.
+    * @param out_statusMessage      The status message of the cancel operation, if any.
+    *
+    * @return True if the job was resumed; false otherwise.
+    */
+   bool resumeJob(api::JobPtr in_job, std::string& out_statusMessage) override;
+
+   /**
+    * @brief Stops a running job.
+    *
+    * This method should perform the equivalent of sending a SIGTERM to a process.
+    * This method will not be invoked unless the job is currently running.
+    * The Job lock will be held when this method is invoked.
+    *
+    * @param in_job                 The job to be canceled.
+    * @param out_statusMessage      The status message of the cancel operation, if any.
+    *
+    * @return True if the job was stopped; false otherwise.
+    */
+   bool stopJob(api::JobPtr in_job, std::string& out_statusMessage) override;
+
+   /**
+    * @brief Suspends a running job.
+    *
+    * This method should perform the equivalent of sending a SIGSTOP to a process.
+    * A suspended job should be able to be resumed at a later time.
+    * This method will not be invoked unless the job is currently running.
+    * The Job lock will be held when this method is invoked.
+    *
+    * @param in_job                 The job to be suspended.
+    * @param out_statusMessage      The status message of the cancel operation, if any.
+    *
+    * @return True if the job was suspended; false otherwise.
+    */
+   bool suspendJob(api::JobPtr in_job, std::string& out_statusMessage) override;
 
    /**
     * @brief Submits a job to the Job Scheduling System.
