@@ -264,7 +264,7 @@ void MarsOptions::initialize()
 } // namespace orchid
 ```
 
-## TODO #6: Initilaize Communication {#todo-6}
+## TODO #6: Initialize Communication {#todo-6}
  
 TODO Location             Impact
 ------------------------  ------------------------
