@@ -27,7 +27,6 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace local {
 
-
 Error createError(
    LocalError in_code,
    const std::string& in_message,
