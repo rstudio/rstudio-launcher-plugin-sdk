@@ -268,7 +268,7 @@ TEST_CASE("Create Async Processes")
    ProcessSupervisor::waitForExit();
 }
 
-} //namespace process
+} // namespace process
 } // namespace system
 } // namespace launcher_plugins
 } // namespace rstudio
