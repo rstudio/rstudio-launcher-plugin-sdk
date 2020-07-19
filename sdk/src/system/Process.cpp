@@ -30,6 +30,7 @@
 #include <sys/resource.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+#include <unordered_set>
 
 #include <boost/regex.hpp>
 #include <boost/algorithm/string.hpp>
