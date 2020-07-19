@@ -1579,6 +1579,13 @@ struct ProcessSupervisor::Impl : public std::enable_shared_from_this<Impl>
          in_onExit(in_exitCode);
    }
 
+   /**
+    * @brief Checks whether the supervisor has any running children.
+    *
+    * @param in_lock    The lock on Impl::Mutex, which must already be held.
+    *
+    * @return True if there are any children; false otherwise.
+    */
    bool hasRunningChildren(const std::unique_lock<std::mutex>& in_lock)
    {
       assert(in_lock.owns_lock());
