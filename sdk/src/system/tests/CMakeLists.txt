@@ -72,10 +72,21 @@ target_link_libraries(rlps-date-tests
 )
 
 # Process Tests
-add_executable(rlps-process-tests
+add_executable(rlps-child-process-tests
    ${RLPS_SYSTEM_TEST_MAIN}
    AsyncChildProcessTests.cpp
    SyncChildProcessTests.cpp
+   ${RLPS_HEADER_FILES}
+)
+
+target_link_libraries(rlps-child-process-tests
+   rstudio-launcher-plugin-sdk-lib
+   ${RLPS_BOOST_LIBS}
+)
+
+add_executable(rlps-process-tests
+   ${RLPS_SYSTEM_TEST_MAIN}
+   ProcessTests.cpp
    ${RLPS_HEADER_FILES}
 )
 
@@ -83,3 +94,4 @@ target_link_libraries(rlps-process-tests
    rstudio-launcher-plugin-sdk-lib
    ${RLPS_BOOST_LIBS}
 )
+

@@ -29,7 +29,7 @@ FAILURES=0
 for test in ./*-tests;
 do
   echo "Running ${test}..."
-  if [[ "${test}" =~ .*rlps-process-tests ]]; then
+  if [[ "${test}" =~ .*-process-tests ]]; then
     sudo "${test}"
   else
     ${test}
