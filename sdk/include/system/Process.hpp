@@ -393,6 +393,17 @@ private:
 };
 
 /**
+ * @brief Gets all the children of the specified process.
+ *
+ * @param in_parentPid      The PID of the process for which to retrieve its child processes.
+ * @param out_processes     The Process Info of the requested process and all its children. If the requested process
+ *                          could not be found this list will be empty.
+ *
+ * @return Success if the system could be searched for the requested process and its children; Error otherwise.
+ */
+Error getChildProcesses(pid_t in_parentPid, std::vector<ProcessInfo>& out_processes);
+
+/**
  * @brief Shell escapes a string.
  *
  * @param in_toEscape   The string to escape.

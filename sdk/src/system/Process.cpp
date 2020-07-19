@@ -1701,6 +1701,95 @@ ProcessSupervisor::ProcessSupervisor() :
 }
 
 // Free Functions ======================================================================================================
+Error getChildProcesses(pid_t in_parentPid, std::vector<ProcessInfo>& out_processes)
+{
+   // On posix-like systems, we only have access to the parent and group IDs of a process in the ProcessInfo struct. As
+   // a result, in order to get the children of a process we need to collect the info of all the processes on the system
+   // and work backwards, adding a child to its parent's list of children based on the ppid of the child.
+
+   // A node in the process tree of the system.
+   struct Node
+   {
+      explicit Node(ProcessInfo&& in_info) : Info(in_info) {};
+
+      ProcessInfo Info;
+      std::vector<std::shared_ptr<Node> > Children;
+   };
+
+   // All process mapped by their PIDs.
+   typedef std::map<pid_t, std::shared_ptr<Node> > Tree;
+
+   DIR* dirPtr = nullptr;
+
+   // Step 1: Collect all the process info, making a node for each process.
+   Tree allProcs;
+   try
+   {
+      dirPtr = ::opendir("/proc");
+      if (dirPtr == nullptr)
+         return systemError(errno, "Unable to open /proc to get process information", ERROR_LOCATION);
+
+      struct dirent* direntPtr;
+      while ((direntPtr = ::readdir(dirPtr)) != nullptr)
+      {
+         pid_t pid = safe_convert::stringTo(direntPtr->d_name, -1);
+
+         // Skip directories that aren't process directories.
+         if (pid == -1)
+            continue;
+
+         // If we can't get the information for the given PID, just skip it.
+         ProcessInfo info;
+         Error error = ProcessInfo::getProcessInfo(pid, info);
+         if (error)
+            continue;
+
+         allProcs[pid] = std::make_shared<Node>(std::move(info));
+      }
+   }
+   CATCH_UNEXPECTED_EXCEPTION
+
+   // Find the requested PID's node now, since we can short circuit if it doesn't exist and if it does exist the pointer
+   // will still be valid after it's children are added to it.
+   const Tree::const_iterator end = allProcs.end();
+   auto root = allProcs.find(in_parentPid);
+   if (root == end)
+      return Success();
+
+   // Step 2: Build the relationships.
+   for (Tree::value_type& ele: allProcs)
+   {
+      auto itr = allProcs.find(ele.second->Info.PPid);
+      if (itr != end)
+         itr->second->Children.push_back(ele.second);
+   }
+
+   // Step 3: Put the process itself and all of it's children into the output vector.
+   out_processes.push_back(root->second->Info);
+   std::function<void (std::shared_ptr<Node>, int)> walkChildren;
+   walkChildren = [&out_processes, &walkChildren](std::shared_ptr<Node> in_node, int in_depth)->void
+   {
+      // Make sure we don't revisit already visited nodes and that we don't infinitely recurse
+      if (in_depth >= 100)
+         return;
+
+      std::unordered_set<pid_t> visited;
+      for (const auto& child: in_node->Children)
+      {
+         if (visited.count(child->Info.Pid) == 0)
+         {
+            visited.insert(child->Info.Pid);
+            out_processes.push_back(child->Info);
+            walkChildren(child, in_depth + 1);
+         }
+      }
+   };
+
+   walkChildren(root->second, 0);
+
+   return Success();
+}
+
 std::string shellEscape(const std::string& in_string)
 {
    boost::regex pattern("'");
