@@ -901,10 +901,10 @@ struct AbstractChildProcess::Impl
       // Change the user, if requested.
       if (NewUser.ShouldChange)
       {
-         result = ::setuid(NewUser.Uid);
+         result = ::setgid(NewUser.Gid);
          if (result == -1)
             ::_exit(s_threadSafeExitError);
-         result = ::setgid(NewUser.Gid);
+         result = ::setuid(NewUser.Uid);
          if (result == -1)
             ::_exit(s_threadSafeExitError);
       }
