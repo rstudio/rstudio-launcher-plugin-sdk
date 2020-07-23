@@ -54,39 +54,66 @@ struct JobPruner::Impl: public std::enable_shared_from_this<JobPruner::Impl>
    {
    }
 
+   void startPruneTimer(const std::string& in_jobId, system::DateTime in_expiry)
+   {
+      WeakThis weakThis = shared_from_this();
+      system::AsioFunction onDeadline = [weakThis, in_jobId]()
+      {
+         if (SharedThis sharedThis = weakThis.lock())
+         {
+            sharedThis->pruneJob(in_jobId);
+         }
+      };
+
+      auto pruneEvent = std::make_shared<system::AsyncDeadlineEvent>(
+         onDeadline,
+         in_expiry);
+      ActivePruneTasks[in_jobId] = pruneEvent;
+      pruneEvent->start();
+   }
+
    /**
     * @brief Prunes the job with the specified ID.
     *
     * @param in_jobId   The ID of the job to prune.
+    *
+    * @return True if the job was pruned; false otherwise.
     */
-   void pruneJob(const std::string& in_jobId)
+   bool pruneJob(const std::string& in_jobId)
    {
+      bool removeJob = false;
       LOCK_MUTEX(Mutex)
       {
          // Get the job as an admin user. If it doesn't exist, there's nothing to do.
          api::JobPtr job = JobRepo->getJob(in_jobId, system::User());
          if (job == nullptr)
-            return;
+            return false;
 
-         bool removeJob = false;
+         system::DateTime expiry;
          LOCK_JOB(job)
          {
             // Check if we should remove the job.
-            system::DateTime expiry = job->LastUpdateTime.getValueOr(job->SubmissionTime) + JobExpiryTime;
+            expiry = job->LastUpdateTime.getValueOr(job->SubmissionTime) + JobExpiryTime;
             removeJob = expiry <= system::DateTime();
             if (removeJob)
                JobRepo->removeJob(in_jobId);
+
+            if (removeJob)
+            {
+               auto itr = ActivePruneTasks.find(in_jobId);
+               if (itr != ActivePruneTasks.end())
+                  ActivePruneTasks.erase(itr);
+            }
+            else if (job->isCompleted())
+            {
+               startPruneTimer(in_jobId, expiry);
+            }
          }
          END_LOCK_JOB
-
-         if (removeJob)
-         {
-            auto itr = ActivePruneTasks.find(in_jobId);
-            if (itr != ActivePruneTasks.end())
-               ActivePruneTasks.erase(itr);
-         }
       }
       END_LOCK_MUTEX
+
+      return removeJob;
    }
 
    /**
@@ -101,23 +128,7 @@ struct JobPruner::Impl: public std::enable_shared_from_this<JobPruner::Impl>
          LOCK_JOB(in_job)
          {
             if (in_job->isCompleted())
-            {
-               const std::string& jobId = in_job->Id;
-               WeakThis weakThis = shared_from_this();
-               system::AsioFunction onDeadline = [weakThis, jobId]()
-               {
-                  if (SharedThis sharedThis = weakThis.lock())
-                  {
-                     sharedThis->pruneJob(jobId);
-                  }
-               };
-
-               auto pruneEvent = std::make_shared<system::AsyncDeadlineEvent>(
-                  onDeadline,
-                  in_job->LastUpdateTime.getValueOr(in_job->SubmissionTime) + JobExpiryTime);
-               ActivePruneTasks[jobId] = pruneEvent;
-               pruneEvent->start();
-            }
+               startPruneTimer(in_job->Id, in_job->LastUpdateTime.getValueOr(in_job->SubmissionTime) + JobExpiryTime);
          }
          END_LOCK_JOB
       }
@@ -176,6 +187,11 @@ JobPruner::JobPruner(
    m_impl(new Impl(std::move(in_jobRepository), std::move(in_jobStatusNotifier)))
 {
    m_impl->start();
+}
+
+bool JobPruner::pruneJob(const std::string& in_jobId)
+{
+   return m_impl->pruneJob(in_jobId);
 }
 
 } // namespace jobs

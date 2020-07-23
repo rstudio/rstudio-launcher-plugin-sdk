@@ -1,5 +1,5 @@
 /*
- * JobRepository.hpp
+ * AbstractJobRepository.hpp
  *
  * Copyright (C) 2020 by RStudio, PBC
  *
@@ -47,7 +47,7 @@ namespace jobs {
 /**
  * @brief Stores any jobs currently in the job scheduling system.
  */
-class JobRepository : public Noncopyable, public std::enable_shared_from_this<JobRepository>
+class AbstractJobRepository : public Noncopyable, public std::enable_shared_from_this<AbstractJobRepository>
 {
 public:
    /**
@@ -55,12 +55,12 @@ public:
     *
     * @param in_jobStatusNotifier       The job status notifier. Used to add new jobs.
     */
-   explicit JobRepository(JobStatusNotifierPtr in_jobStatusNotifier);
+   explicit AbstractJobRepository(JobStatusNotifierPtr in_jobStatusNotifier);
 
    /**
     * @brief Virtual Destructor, to allow for inheritance, if necessary.
     */
-   virtual ~JobRepository() = default;
+   virtual ~AbstractJobRepository() = default;
 
    /**
     * @brief Adds the job to the repository.
@@ -96,7 +96,7 @@ public:
    api::JobList getJobs(const system::User& in_use = system::User()) const;
 
    /**
-    * @brief Initializes the JobRepository.
+    * @brief Initializes the AbstractJobRepository.
     *
     * @return Success if the repository could be initialized; Error otherwise.
     */
@@ -113,6 +113,24 @@ public:
 
 private:
    /**
+    * @brief Responsible for loading any jobs which were in the system when the Plugin started.
+    *
+    * This method will be invoked once, when the Plugin is started.
+    *
+    * @param out_jobs       The jobs that were already in the job scheduling system on start up.
+    *
+    * @return Success if the jobs could be loaded; Error otherwise.
+    */
+   virtual Error loadJobs(api::JobList& out_jobs) const = 0;
+
+   /**
+    * @brief Allows inheriting classes to perform custom actions when a job is added to the repository.
+    *
+    * @param in_job     The job that was added to the repository.
+    */
+   virtual void onJobAdded(const api::JobPtr& in_job);
+
+   /**
     * @brief Allows inheriting classes to perform custom actions when a job is removed from the repository.
     *
     * @param in_job     The job that was removed from the repository.
@@ -126,12 +144,12 @@ private:
     */
    virtual Error onInitialize();
 
-   // The private implementation of JobRepository.
+   // The private implementation of AbstractJobRepository.
    PRIVATE_IMPL(m_impl);
 };
 
 /** Convenience typedef. */
-typedef std::shared_ptr<JobRepository> JobRepositoryPtr;
+typedef std::shared_ptr<AbstractJobRepository> JobRepositoryPtr;
 
 } // namespace jobs
 } // namespace launcher_plugins

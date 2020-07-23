@@ -34,7 +34,7 @@ set(LOCAL_SOURCE_FILES
    src/LocalOptions.cpp
    src/LocalPluginApi.cpp
    src/LocalSecureCookie.cpp
-   src/job_store/LocalJobStorage.cpp
+        src/LocalJobRepository.cpp
 )
 
 # include directories

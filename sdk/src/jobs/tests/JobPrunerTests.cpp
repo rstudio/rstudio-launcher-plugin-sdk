@@ -27,7 +27,7 @@
 
 #include <AsioRaii.hpp>
 #include <system/Asio.hpp>
-#include <jobs/JobRepository.hpp>
+#include <jobs/AbstractJobRepository.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -35,15 +35,20 @@ namespace jobs {
 
 std::atomic<uint32_t> s_count = { 0 };
 
-class MockRepo : public JobRepository
+class MockRepo : public AbstractJobRepository
 {
 public:
    explicit MockRepo(const JobStatusNotifierPtr& in_notifier) :
-      JobRepository(in_notifier)
+      AbstractJobRepository(in_notifier)
    {
    }
 
 private:
+   Error loadJobs(api::JobList&) const override
+   {
+      return Success();
+   }
+
    void onJobRemoved(const api::JobPtr& in_job) override
    {
       s_count.fetch_add(1);

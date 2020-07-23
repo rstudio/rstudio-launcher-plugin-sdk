@@ -25,22 +25,38 @@
 
 #include <queue>
 
-#include <Error.hpp>
+#include <jobs/AbstractJobRepository.hpp>
 #include <jobs/JobStatusNotifier.hpp>
-#include <jobs/JobRepository.hpp>
 #include <system/DateTime.hpp>
-
-
 
 namespace rstudio {
 namespace launcher_plugins {
 namespace jobs {
 
+namespace {
+
+class MockJobRepo : public AbstractJobRepository
+{
+public:
+   explicit MockJobRepo(const JobStatusNotifierPtr& in_notifier) :
+      AbstractJobRepository(in_notifier)
+   {
+   }
+
+private:
+   Error loadJobs(api::JobList& out_jobs) const override
+   {
+      return Success();
+   }
+};
+
+} // anonymous namespace
+
 TEST_CASE("Job Status Notifier")
 {
 
    JobStatusNotifierPtr notifier(new JobStatusNotifier());
-   JobRepositoryPtr jobRepo(new JobRepository(notifier));
+   JobRepositoryPtr jobRepo(new MockJobRepo(notifier));
 
    api::JobPtr job1(new api::Job()),
                job2(new api::Job()),

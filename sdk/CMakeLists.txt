@@ -51,7 +51,7 @@ set(RLPS_SOURCE_FILES
    src/jobs/AbstractJobStatusWatcher.cpp
    src/jobs/AbstractTimedJobStatusWatcher.cpp
    src/jobs/JobPruner.cpp
-   src/jobs/JobRepository.cpp
+   src/jobs/AbstractJobRepository.cpp
    src/jobs/JobStatusNotifier.cpp
    src/json/Json.cpp
    src/logging/FileLogDestination.cpp

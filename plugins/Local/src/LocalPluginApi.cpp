@@ -20,6 +20,7 @@
 
 #include <LocalPluginApi.hpp>
 
+#include <LocalJobRepository.hpp>
 #include <LocalJobSource.hpp>
 
 namespace rstudio {
@@ -34,15 +35,22 @@ LocalPluginApi::LocalPluginApi(
 {
 }
 
+jobs::JobRepositoryPtr LocalPluginApi::createJobRepository(
+   const jobs::JobStatusNotifierPtr& in_jobStatusNotifier) const
+{
+   return jobs::JobRepositoryPtr(new LocalJobRepository(m_hostname, in_jobStatusNotifier));
+}
+
 std::shared_ptr<api::IJobSource> LocalPluginApi::createJobSource(
    jobs::JobRepositoryPtr in_jobRepository,
    jobs::JobStatusNotifierPtr in_jobStatusNotifier) const
 {
+   // The job repository will always be a LocalJobRepository, so the static pointer cast is safe here.
    return std::shared_ptr<api::IJobSource>(
       new LocalJobSource(
          m_hostname,
-         std::move(in_jobRepository),
-         std::move(in_jobStatusNotifier)));
+         std::move(in_jobStatusNotifier),
+         std::static_pointer_cast<LocalJobRepository>(in_jobRepository)));
 }
 
 Error LocalPluginApi::doInitialize()

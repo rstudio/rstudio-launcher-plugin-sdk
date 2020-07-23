@@ -29,10 +29,10 @@
 #include <vector>
 
 #include <api/Job.hpp>
-#include <jobs/JobRepository.hpp>
+#include <jobs/AbstractJobRepository.hpp>
 #include <jobs/JobStatusNotifier.hpp>
 
-#include "job_store/LocalJobStorage.hpp"
+#include "LocalJobRepository.hpp"
 #include "LocalSecureCookie.hpp"
 #include "LocalJobRunner.hpp"
 
@@ -50,14 +50,14 @@ public:
     * @brief Constructor.
     *
     * @param in_hostname                The name of the host running this instance of the Local Plugin.
-    * @param in_jobRepository           The job repository, from which to look up jobs.
     * @param in_jobStatusNotifier       The job status notifier to which to post or from which to receive job status
     *                                   updates.
+    * @param in_jobRepository           The job repository, from which to look up jobs.
     */
    LocalJobSource(
       std::string in_hostname,
-      jobs::JobRepositoryPtr in_jobRepository,
-      jobs::JobStatusNotifierPtr in_jobStatusNotifier);
+      jobs::JobStatusNotifierPtr in_jobStatusNotifier,
+      std::shared_ptr<LocalJobRepository> in_jobRepository);
 
    /**
     * @brief Initializes the Local Job Source.
@@ -80,15 +80,6 @@ public:
     * @return Success if the configuration and capabilities for this Job Source could be populated; Error otherwise.
     */
    Error getConfiguration(const system::User&, api::JobSourceConfiguration& out_configuration) const override;
-
-   /**
-    * @brief Gets all RStudio jobs currently in the job scheduling system.
-    *
-    * @param out_jobs   All RStudio jobs currently in the job scheduling system.
-    *
-    * @return Success if all jobs could be retrieved; Error otherwise.
-    */
-    Error getJobs(api::JobList& out_jobs) const override;
 
    /**
     * @brief Gets the network information for the specified job.
@@ -137,9 +128,6 @@ private:
 
    /** The job runner. */
    std::shared_ptr<LocalJobRunner> m_jobRunner;
-
-   /** The job storage. */
-   std::shared_ptr<job_store::LocalJobStorage> m_jobStorage;
 };
 
 } // namespace local

@@ -679,6 +679,20 @@ Error MarsJobStatusWatcher::getJobDetails(const std::string& in_jobId, api::JobP
 
 It is possible that neither streaming nor polling are the best solution for keeping job statuses up to date. The use of an `AbstractJobStatusWatcher` is completely optional, and the Plugin developer may choose to implement this feature in any way that best suits the Job Scheduling System. For example, the provided sample Local Plugin does not use an `AbstractJobStatusWatcher`. Jobs are launched on the local system by forking a new processes and running the requested command in that process. The Local Plugin receives notifications when the child process writes to standard out, standard error, or exits. When the process exits, the Job state is transitioned from `Job::State::RUNNING` to `Job::State::FINISHED`. The Local Plugin also keeps track of when the process should transition from `Job::State::PENDING` to `Job::State::RUNNING` by checking whether the executable name has changed from `rsandbox` (a utility for launching processes in an isolated environment provided with the RStudio Server Pro installation) to the name of the actual executable for the Job.
 
+## Customizing the Job Repository {#job-repo}
+
+In 'TODO #8' of the 'RStudio Launcher Plugin SDK QuickStart Guide', the Plugin developer implemented the `AbstractJobRepository::loadJobs` method to populate the Job Repository on bootstrap. In the case that the Plugin needs to do special processing when a Job is added or removed from the repository, it can do so by overriding the other virtual methods on `AbstractJobRepository`.
+
+An example of when this may be necessary is if the Plugin needs to do additional Job state persistence, beyond what the Job Scheduling System will save. A common case of this is Job output. If the user does not specify an output file the Job Scheduling System may not persist the Job output; however, it must be available to the Launcher until the Job expires according to the Launcher's configured `job-expiry-hours`.
+
+There are three additional virtual methods on `AbstractJobRepository` that allow the Plugin developer to customize the behavior of the Job Repository:
+
+* `AbstractJobRepository::onJobAdded`: this method will be invoked when a job is first added to the repository, immediately after successful submission.
+* `AbstractJobRepository::onJobRemoved`: this method will be invoked when an expired Job is removed from the system. Any files or other persistent data that were created by the Plugin should be cleaned up in this method.
+* `AbstractJobRepository::onInitialize`: this method will be invoked once, when the Job Repository is initialized during bootstrap. The Plugin may do any extra initialization steps that are required and is responsible for returning an `Error` if any necessary initialization steps fail.
+
+The provided sample Local Launcher Plugin manages Job persistence completely within the Plugin. The `LocalJobRepository` implementation may be used as an example for the implementation of all three virtual methods on `AbstractJobRepository`.
+
 ## Process Launching
 
 Depending on the API exposed by the Job Scheduling System, it may be necessary to launch child processes to perform actions on the Job Scheduling System, such as running a job or listing the jobs in the system. The SDK provides a number of classes and functions for launching child processes in the `system/Process.hpp` header file.

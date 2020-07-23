@@ -35,22 +35,17 @@ namespace local {
 
 LocalJobSource::LocalJobSource(
    std::string in_hostname,
-   jobs::JobRepositoryPtr in_jobRepository,
-   jobs::JobStatusNotifierPtr in_jobStatusNotifier) :
-      api::IJobSource(std::move(in_jobRepository), std::move(in_jobStatusNotifier)),
-      m_hostname(std::move(in_hostname)),
-      m_jobStorage(new job_store::LocalJobStorage(m_hostname, m_jobStatusNotifier))
+   jobs::JobStatusNotifierPtr in_jobStatusNotifier,
+   std::shared_ptr<LocalJobRepository> in_jobRepository) :
+      api::IJobSource(in_jobRepository, std::move(in_jobStatusNotifier)),
+      m_hostname(std::move(in_hostname))
 {
-   m_jobRunner.reset(new LocalJobRunner(m_hostname, m_jobStatusNotifier, m_jobStorage));
+   m_jobRunner.reset(new LocalJobRunner(m_hostname, m_jobStatusNotifier, in_jobRepository));
 }
 
 Error LocalJobSource::initialize()
 {
    // TODO: Initialize communications with the other local plugins, if any.
-   Error error = m_jobStorage->initialize();
-   if (error)
-      return error;
-
    return m_jobRunner->initialize();
 }
 
@@ -63,11 +58,6 @@ Error LocalJobSource::getConfiguration(const system::User&, api::JobSourceConfig
    out_configuration.CustomConfig.emplace_back(s_initializationVector, strType);
 
    return Success();
-}
-
-Error LocalJobSource::getJobs(api::JobList& out_jobs) const
-{
-   return m_jobStorage->loadJobs(out_jobs);
 }
 
 Error LocalJobSource::getNetworkInfo(api::JobPtr in_job, api::NetworkInfo& out_networkInfo) const

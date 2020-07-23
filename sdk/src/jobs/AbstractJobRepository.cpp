@@ -1,5 +1,5 @@
 /*
- * JobRepository.cpp
+ * AbstractJobRepository.cpp
  *
  * Copyright (C) 2020 by RStudio, PBC
  *
@@ -21,7 +21,7 @@
  *
  */
 
-#include <jobs/JobRepository.hpp>
+#include <jobs/AbstractJobRepository.hpp>
 
 #include <map>
 
@@ -36,10 +36,10 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace jobs {
 
-typedef std::shared_ptr<JobRepository> SharedThis;
-typedef std::weak_ptr<JobRepository> WeakThis;
+typedef std::shared_ptr<AbstractJobRepository> SharedThis;
+typedef std::weak_ptr<AbstractJobRepository> WeakThis;
 
-struct JobRepository::Impl
+struct AbstractJobRepository::Impl
 {
    explicit Impl(JobStatusNotifierPtr in_jobStatusNotifier) :
       Notifier(std::move(in_jobStatusNotifier))
@@ -57,25 +57,28 @@ struct JobRepository::Impl
    JobStatusNotifierPtr Notifier;
 };
 
-PRIVATE_IMPL_DELETER_IMPL(JobRepository)
+PRIVATE_IMPL_DELETER_IMPL(AbstractJobRepository)
 
-JobRepository::JobRepository(JobStatusNotifierPtr in_jobStatusNotifier) :
+AbstractJobRepository::AbstractJobRepository(JobStatusNotifierPtr in_jobStatusNotifier) :
    m_impl(new Impl(std::move(in_jobStatusNotifier)))
 {
 }
 
-void JobRepository::addJob(const JobPtr& in_job)
+void AbstractJobRepository::addJob(const JobPtr& in_job)
 {
    WRITE_LOCK_BEGIN(m_impl->Mutex)
    {
       auto itr = m_impl->JobMap.find(in_job->Id);
       if (itr == m_impl->JobMap.end())
+      {
          m_impl->JobMap[in_job->Id] = in_job;
+         onJobAdded(in_job);
+      }
    }
    RW_LOCK_END(true)
 }
 
-JobPtr JobRepository::getJob(const std::string& in_jobId, const system::User& in_user) const
+JobPtr AbstractJobRepository::getJob(const std::string& in_jobId, const system::User& in_user) const
 {
    READ_LOCK_BEGIN(m_impl->Mutex)
    {
@@ -89,7 +92,7 @@ JobPtr JobRepository::getJob(const std::string& in_jobId, const system::User& in
    return JobPtr();
 }
 
-JobList JobRepository::getJobs(const system::User& in_user) const
+JobList AbstractJobRepository::getJobs(const system::User& in_user) const
 {
    JobList jobs;
 
@@ -114,7 +117,7 @@ JobList JobRepository::getJobs(const system::User& in_user) const
    return jobs;
 }
 
-Error JobRepository::initialize()
+Error AbstractJobRepository::initialize()
 {
    WeakThis weakThis = shared_from_this();
    OnJobStatusUpdate onJobStatusUpdate = [weakThis](const JobPtr& in_job)
@@ -125,14 +128,31 @@ Error JobRepository::initialize()
       }
    };
 
+   JobList jobs;
+   Error error = loadJobs(jobs);
+   if (error)
+      return error;
+
+   for (const JobPtr& job: jobs)
+      m_impl->JobMap[job->Id] = job;
+
    m_impl->AllJobsSubHandle = m_impl->Notifier->subscribe(onJobStatusUpdate);
 
    m_impl->JobPruneTimer.reset(new JobPruner(shared_from_this(), m_impl->Notifier));
 
+   size_t pruned = 0;
+   for (const JobPtr& job: jobs)
+   {
+      if (m_impl->JobPruneTimer->pruneJob(job->Id))
+         ++pruned;
+   }
+
+   logging::logInfoMessage("Pruned " + std::to_string(pruned) + " jobs...");
+
    return onInitialize();
 }
 
-void JobRepository::removeJob(const std::string& in_jobId)
+void AbstractJobRepository::removeJob(const std::string& in_jobId)
 {
    WRITE_LOCK_BEGIN(m_impl->Mutex)
    {
@@ -147,12 +167,17 @@ void JobRepository::removeJob(const std::string& in_jobId)
    RW_LOCK_END(true)
 }
 
-void JobRepository::onJobRemoved(const JobPtr&)
+void AbstractJobRepository::onJobAdded(const JobPtr&)
 {
    // Do nothing.
 }
 
-Error JobRepository::onInitialize()
+void AbstractJobRepository::onJobRemoved(const JobPtr&)
+{
+   // Do nothing.
+}
+
+Error AbstractJobRepository::onInitialize()
 {
    return Success();
 }

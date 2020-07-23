@@ -1,5 +1,5 @@
 /*
- * LocalJobStorage.cpp
+ * LocalJobRepository.cpp
  *
  * Copyright (C) 2020 by RStudio, PBC
  *
@@ -21,7 +21,7 @@
  *
  */
 
-#include <job_store/LocalJobStorage.hpp>
+#include <LocalJobRepository.hpp>
 
 #include <Error.hpp>
 #include <json/Json.hpp>
@@ -37,10 +37,9 @@ using namespace rstudio::launcher_plugins::system;
 namespace rstudio {
 namespace launcher_plugins {
 namespace local {
-namespace job_store {
 
-typedef std::shared_ptr<LocalJobStorage> SharedThis;
-typedef std::weak_ptr<LocalJobStorage> WeakThis;
+typedef std::shared_ptr<LocalJobRepository> SharedThis;
+typedef std::weak_ptr<LocalJobRepository> WeakThis;
 
 namespace {
 
@@ -49,6 +48,48 @@ constexpr const char* ERR_FILE_EXT = ".stderr";
 constexpr const char* OUT_FILE_EXT = ".stdout";
 constexpr const char* ROOT_JOBS_DIR = "jobs";
 constexpr const char* ROOT_OUTPUT_DIR = "output";
+
+inline void deleteFileAsUser(const system::User& in_user, const FilePath& in_file)
+{
+   if (!in_file.isEmpty())
+   {
+      logging::logDebugMessage("Deleting job file: " + in_file.getAbsolutePath());
+
+      system::process::ProcessOptions opts;
+      opts.Executable = "rm";
+      opts.Arguments = { "-f", in_file.getAbsolutePath() };
+      opts.RunAsUser = in_user;
+      opts.IsShellCommand = true;
+
+      system::process::ProcessResult result;
+      system::process::SyncChildProcess rmProc(opts);
+      Error error = rmProc.run(result);
+      if (error)
+      {
+         logging::logErrorMessage("Could not delete output file: " + in_file.getAbsolutePath(), ERROR_LOCATION);
+         logging::logError(error, ERROR_LOCATION);
+      }
+      else if (result.ExitCode != 0)
+      {
+         logging::logErrorMessage(
+            "Deleting output file " +
+               in_file.getAbsolutePath() +
+               " exited with non-zero exit code: " +
+               std::to_string(result.ExitCode),
+            ERROR_LOCATION);
+
+         logging::logDebugMessage(
+            "Delete output file stdout: " + result.StdOut + "\nDelete output file stderr:" + result.StdError);
+      }
+
+      // If the file couldn't be deleted, treat it as a permissions issue.
+      if (in_file.exists())
+      {
+         logging::logError(
+            systemError(EPERM, "Could not delete output file: " + in_file.getAbsolutePath(), ERROR_LOCATION));
+      }
+   }
+}
 
 inline Error ensureDirectory(const FilePath& in_directory, FileMode in_fileMode = FileMode::USER_READ_WRITE_EXECUTE)
 {
@@ -138,44 +179,51 @@ inline Error readJobFromFile(const FilePath& in_jobFile, api::JobPtr& out_job)
 
 } // anonymous namespace
 
-LocalJobStorage::LocalJobStorage(const std::string& in_hostname, jobs::JobStatusNotifierPtr in_notifier) :
+LocalJobRepository::LocalJobRepository(const std::string& in_hostname, jobs::JobStatusNotifierPtr in_notifier) :
+   AbstractJobRepository(std::move(in_notifier)),
    m_hostname(in_hostname),
    m_jobsRootPath(options::Options::getInstance().getScratchPath().completeChildPath(ROOT_JOBS_DIR)),
    m_jobsPath(m_jobsRootPath.completeChildPath(m_hostname)),
-   m_notifier(std::move(in_notifier)),
    m_saveUnspecifiedOutput(LocalOptions::getInstance().shouldSaveUnspecifiedOutput()),
    m_outputRootPath(options::Options::getInstance().getScratchPath().completeChildPath(ROOT_OUTPUT_DIR))
 {
 }
 
-Error LocalJobStorage::initialize()
+void LocalJobRepository::saveJob(api::JobPtr in_job) const
 {
-   Error error = ensureDirectory(m_jobsRootPath);
-   if (error)
-      return error;
-
-   error = ensureDirectory(m_jobsPath);
-   if (error)
-      return error;
-
-   error = ensureDirectory(m_outputRootPath, FileMode::ALL_READ_WRITE_EXECUTE);
-   if (error)
-      return error;
-
-   WeakThis weakThis = weak_from_this();
-   m_subscriptionHandle = m_notifier->subscribe(
-      [weakThis](const api::JobPtr& in_job)
+   LOCK_JOB(in_job)
+   {
+      if (m_hostname == in_job->Host)
       {
-         if (SharedThis sharedThis = weakThis.lock())
-         {
-            sharedThis->saveJob(in_job);
-         }
-      });
+         Error error = utils::writeStringToFile(in_job->toJson().write(), getJobFilePath(in_job->Id, m_jobsPath));
+         if (error)
+            logging::logError(error, ERROR_LOCATION);
+      }
+   }
+   END_LOCK_JOB
+}
+
+Error LocalJobRepository::setJobOutputPaths(api::JobPtr io_job) const
+{
+   bool outputEmpty = io_job->StandardOutFile.empty(),
+        errorEmpty = io_job->StandardErrFile.empty();
+   if (m_saveUnspecifiedOutput && (outputEmpty || errorEmpty))
+   {
+      system::FilePath outputDir = m_outputRootPath.completeChildPath(io_job->User.getUsername());
+      Error error = ensureUserDirectory(outputDir, io_job->User);
+      if (error)
+         return error;
+
+      if (outputEmpty)
+         io_job->StandardOutFile = outputDir.completeChildPath(io_job->Id + OUT_FILE_EXT).getAbsolutePath();
+      if (errorEmpty)
+         io_job->StandardErrFile = outputDir.completeChildPath(io_job->Id + ERR_FILE_EXT).getAbsolutePath();
+   }
 
    return Success();
 }
 
-Error LocalJobStorage::loadJobs(api::JobList& out_jobs) const
+Error LocalJobRepository::loadJobs(api::JobList& out_jobs) const
 {
    std::vector<FilePath> jobFiles;
    Error error = m_jobsPath.getChildren(jobFiles);
@@ -204,41 +252,57 @@ Error LocalJobStorage::loadJobs(api::JobList& out_jobs) const
    return Success();
 }
 
-void LocalJobStorage::saveJob(api::JobPtr in_job) const
+void LocalJobRepository::onJobAdded(const api::JobPtr& in_job)
+{
+   saveJob(in_job);
+}
+
+void LocalJobRepository::onJobRemoved(const api::JobPtr& in_job)
 {
    LOCK_JOB(in_job)
    {
-      if (m_hostname == in_job->Host)
+      if (in_job->Host != m_hostname)
       {
-         Error error = utils::writeStringToFile(in_job->toJson().write(), getJobFilePath(in_job->Id, m_jobsPath));
-         if (error)
-            logging::logError(error, ERROR_LOCATION);
+         logging::logDebugMessage("Not deleting job files for job " + in_job->Id + " owned by host " + in_job->Host);
+         return;
       }
+
+      logging::logDebugMessage("Deleting job files for job: " + in_job->Id);
+
+      FilePath jobFile = getJobFilePath(in_job->Id, m_jobsPath);
+      Error error = jobFile.removeIfExists();
+      if (error)
+         logging::logError(error, ERROR_LOCATION);
+
+      FilePath stdoutFile(in_job->StandardOutFile);
+      FilePath stderrFile(in_job->StandardErrFile);
+
+      if (stdoutFile.isWithin(m_outputRootPath))
+         deleteFileAsUser(in_job->User, stdoutFile);
+      if (stderrFile.isWithin(m_outputRootPath))
+         deleteFileAsUser(in_job->User, stderrFile);
    }
    END_LOCK_JOB
 }
 
-Error LocalJobStorage::setJobOutputPaths(api::JobPtr io_job) const
+Error LocalJobRepository::onInitialize()
 {
-   bool outputEmpty = io_job->StandardOutFile.empty(),
-        errorEmpty = io_job->StandardErrFile.empty();
-   if (m_saveUnspecifiedOutput && (outputEmpty || errorEmpty))
-   {
-      system::FilePath outputDir = m_outputRootPath.completeChildPath(io_job->User.getUsername());
-      Error error = ensureUserDirectory(outputDir, io_job->User);
-      if (error)
-         return error;
+   Error error = ensureDirectory(m_jobsRootPath);
+   if (error)
+      return error;
 
-      if (outputEmpty)
-         io_job->StandardOutFile = outputDir.completeChildPath(io_job->Id + OUT_FILE_EXT).getAbsolutePath();
-      if (errorEmpty)
-         io_job->StandardErrFile = outputDir.completeChildPath(io_job->Id + ERR_FILE_EXT).getAbsolutePath();
-   }
+   error = ensureDirectory(m_jobsPath);
+   if (error)
+      return error;
+
+   error = ensureDirectory(m_outputRootPath, FileMode::ALL_READ_WRITE_EXECUTE);
+   if (error)
+      return error;
 
    return Success();
 }
 
-} // namespace job_store
+
 } // namespace local
 } // namespace launcher_plugins
 } // namespace rstudio

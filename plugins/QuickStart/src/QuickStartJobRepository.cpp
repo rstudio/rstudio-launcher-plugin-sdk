@@ -1,5 +1,5 @@
 /*
- * JobPruner.hpp
+ * QuickStartJobRepository.cpp
  *
  * Copyright (C) 2020 by RStudio, PBC
  *
@@ -21,56 +21,23 @@
  *
  */
 
-#ifndef LAUNCHER_PLUGINS_JOB_PRUNER_HPP
-#define LAUNCHER_PLUGINS_JOB_PRUNER_HPP
-
-#include <Noncopyable.hpp>
-
-#include <PImpl.hpp>
-#include <jobs/AbstractJobRepository.hpp>
-#include <jobs/JobStatusNotifier.hpp>
+#include <QuickStartJobRepository.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
-namespace jobs {
+namespace quickstart {
 
-/**
- * @brief Responsible for pruning expired jobs from the system as long as it is alive.
- */
-class JobPruner final : public Noncopyable
+QuickStartJobRepository::QuickStartJobRepository(jobs::JobStatusNotifierPtr in_notifier) :
+   jobs::AbstractJobRepository(std::move(in_notifier))
 {
-public:
-   /**
-    * @brief Constructor.
-    *
-    * @param in_jobRepository       The job repository from which pruned jobs should be removed.
-    * @param in_jobStatusNotifier   The job status notifier.
-    */
-   JobPruner(
-      JobRepositoryPtr in_jobRepository,
-      JobStatusNotifierPtr in_jobStatusNotifier);
+}
 
-   /**
-    * @brief Prunes the job with the specified ID.
-    *
-    * If the job has not expired it will not be pruned.
-    *
-    * @param in_jobId   The ID of the job to prune.
-    *
-    * @return True if the job was pruned; false otherwise.
-    */
-   bool pruneJob(const std::string& in_jobId);
+Error QuickStartJobRepository::loadJobs(api::JobList& out_jobs) const
+{
+   // TODO #8: Pull all RStudio jobs from the job scheduling system synchronously.
+   return Success();
+}
 
-private:
-   // The private implementation of JobPruner
-   PRIVATE_IMPL_SHARED(m_impl);
-};
-
-/** Convenience Typedef. */
-typedef std::unique_ptr<JobPruner> JobPrunerPtr;
-
-} // namespace jobs
+} // namespace quickstart
 } // namespace launcher_plugins
 } // namespace rstudio
-
-#endif

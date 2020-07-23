@@ -28,8 +28,8 @@
 
 #include <PImpl.hpp>
 #include <api/Response.hpp>
+#include <jobs/AbstractJobRepository.hpp>
 #include <jobs/JobStatusNotifier.hpp>
-#include <jobs/JobRepository.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {

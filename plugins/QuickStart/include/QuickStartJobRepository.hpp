@@ -1,5 +1,5 @@
 /*
- * JobStatusStreamManager.hpp
+ * QuickStartJobRepository.hpp
  *
  * Copyright (C) 2020 by RStudio, PBC
  *
@@ -21,58 +21,39 @@
  *
  */
 
-#ifndef LAUNCHER_PLUGINS_JOB_STATUS_STREAM_MANAGER_HPP
-#define LAUNCHER_PLUGINS_JOB_STATUS_STREAM_MANAGER_HPP
+#ifndef LAUNCHER_PLUGINS_QUICK_START_JOB_REPOSITORY_HPP
+#define LAUNCHER_PLUGINS_QUICK_START_JOB_REPOSITORY_HPP
 
-#include <Noncopyable.hpp>
-
-#include <memory>
-
-#include <PImpl.hpp>
-#include <api/IJobSource.hpp>
-#include <comms/AbstractLauncherCommunicator.hpp>
 #include <jobs/AbstractJobRepository.hpp>
-#include <jobs/JobStatusNotifier.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
-namespace api {
+namespace quickstart {
 
-// Forward Declarations
-class JobStatusRequest;
-class OutputStreamRequest;
-
-/**
- * @brief Class which manages all the streamed responses for the plugin.
- */
-class JobStatusStreamManager final : public Noncopyable
+class QuickStartJobRepository : public jobs::AbstractJobRepository
 {
 public:
    /**
     * @brief Constructor.
     *
-    * @param in_jobRepository           The job repository from which to retrieve jobs.
-    * @param in_jobStatusNotifier       The job status notifier from which to receive job status update notifications.
-    * @param in_launcherCommunicator    The communicator which may be used to send stream responses to the Launcher.
+    * @param in_jobStatusNotifier       The job status notifier. Used to add new jobs.
     */
-   JobStatusStreamManager(
-      jobs::JobRepositoryPtr in_jobRepository,
-      jobs::JobStatusNotifierPtr in_jobStatusNotifier,
-      comms::AbstractLauncherCommunicatorPtr in_launcherCommunicator);
-
-   /**
-    * @brief Handles a stream request.
-    *
-    * @param in_jobStatusRequest    The Job Status Stream request to be handled.
-    */
-   void handleStreamRequest(const std::shared_ptr<JobStatusRequest>& in_jobStatusRequest);
+   explicit QuickStartJobRepository(jobs::JobStatusNotifierPtr in_notifier);
 
 private:
-   // The private implementation of JobStatusStreamManager.
-   PRIVATE_IMPL(m_impl);
+   /**
+    * @brief Responsible for loading any jobs which were in the system when the Plugin started.
+    *
+    * This method will be invoked once, when the Plugin is started.
+    *
+    * @param out_jobs       The jobs that were already in the job scheduling system on start up.
+    *
+    * @return Success if the jobs could be loaded; Error otherwise.
+    */
+   virtual Error loadJobs(api::JobList& out_jobs) const override;
 };
 
-} // namespace api
+} // namespace quickstart
 } // namespace launcher_plugins
 } // namespace rstudio
 

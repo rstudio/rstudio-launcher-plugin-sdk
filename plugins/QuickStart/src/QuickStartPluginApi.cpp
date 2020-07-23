@@ -20,6 +20,7 @@
 
 #include <QuickStartPluginApi.hpp>
 
+#include <QuickStartJobRepository.hpp>
 #include <QuickStartJobSource.hpp>
 
 #include <Error.hpp>
@@ -31,6 +32,12 @@ namespace quickstart {
 QuickStartPluginApi::QuickStartPluginApi(std::shared_ptr<comms::AbstractLauncherCommunicator> in_launcherCommunicator) :
    AbstractPluginApi(std::move(in_launcherCommunicator))
 {
+}
+
+jobs::JobRepositoryPtr QuickStartPluginApi::createJobRepository(
+   const jobs::JobStatusNotifierPtr& in_jobStatusNotifier) const
+{
+   return jobs::JobRepositoryPtr(new QuickStartJobRepository(in_jobStatusNotifier));
 }
 
 std::shared_ptr<api::IJobSource> QuickStartPluginApi::createJobSource(
