@@ -29,6 +29,8 @@
 #include <system/PosixSystem.hpp>
 #include <system/Process.hpp>
 
+#include "ProcessTestHelpers.hpp"
+
 namespace rstudio {
 namespace launcher_plugins {
 namespace system {
@@ -75,7 +77,7 @@ struct TestCallbacks
 TEST_CASE("Create Async Processes")
 {
    // Make sure default options are populated.
-   REQUIRE_FALSE(options::Options::getInstance().readOptions(0, nullptr, system::FilePath()));
+   REQUIRE_FALSE(loadOptions());
 
    // Get all the users for future user.
    system::User user1, user2, user3, user4, user5;
