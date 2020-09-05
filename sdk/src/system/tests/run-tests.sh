@@ -28,10 +28,11 @@ FAILURES=0
 
 for test in ./*-tests;
 do
-  echo "Running ${test}..."
   if [[ "${test}" =~ .*-process-tests ]]; then
+    echo "Running sudo ${test}..."
     sudo "${test}"
   else
+    echo "Running ${test}..."
     ${test}
   fi
   FAILURES=$((FAILURES + $?))
