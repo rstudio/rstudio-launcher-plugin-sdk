@@ -52,7 +52,7 @@ else
 fi
 
 DOWNLOAD_DIR="$(makeTmpDir rsandbox-dl)"
-RSP_VERSION="1.3.959-1"
+RSP_VERSION="1.3.1073-1"
 if [[ "$OS_NAME" == "debian9" ]]; then
   TAR_DIR="rsp-monitor-connect--$RSP_VERSION"
 else
@@ -60,10 +60,11 @@ else
 fi
 
 TAR_FILE="$TAR_DIR.tar.gz"
-wget "https://s3.amazonaws.com://rstudio-ide-build/monitor/$OS_NAME/$TAR_FILE" -O "${DOWNLOAD_DIR}/$TAR_FILE"
+wget "https://s3.amazonaws.com://rstudio-ide-build/monitor/$OS_NAME/$TAR_FILE" -O "${DOWNLOAD_DIR}/${TAR_FILE}"
 
-tar -xzf "${DOWNLOAD_DIR}/$TAR_FILE" -C "${DOWNLOAD_DIR}/"
-sudo mkdir -p /usr/lib/rstudio-server/bin
-sudo cp "${DOWNLOAD_DIR}/$TAR_DIR/rsandbox" /usr/lib/rstudio-server/bin
+tar -xzf "${DOWNLOAD_DIR}/${TAR_FILE}" -C "${DOWNLOAD_DIR}/"
+INSTALL_DIR=/opt/tools/rstudio-launcher-plugin-sdk/bin
+sudo mkdir -p "$INSTALL_DIR"
+sudo cp "${DOWNLOAD_DIR}/${TAR_DIR}/rsandbox" "$INSTALL_DIR"
 
 rm -rf temp
