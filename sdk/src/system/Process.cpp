@@ -759,6 +759,7 @@ struct AbstractChildProcess::Impl
       json::Object profileObj;
       profileObj["context"] = contextObj;
       profileObj["password"] = in_options.Password;
+      profileObj["encryptionKey"] = "";
       profileObj["executablePath"] = in_options.Executable;
       profileObj["config"] = configObj;
 
