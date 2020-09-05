@@ -74,8 +74,9 @@ TEST_CASE("Get children")
    error = getChildProcesses(child->getPid(), process);
    CHECK_FALSE(error);
 
-   // We are expecting 6 processes - one for the initial /bin/sh -c /bin/sh, one for the second /bin/sh, and one for each of the sleeps.
-   CHECK(process.size() == 6);
+   // On some OS's are expecting 6 processes - one for the initial /bin/sh -c /bin/sh, one for the second /bin/sh, and
+   // one for each of the sleeps. On others we're expecting only five - one for the /bin/sh and one for each of the sleeps.
+   CHECK((process.size() == 6) || (process.size() == 5));
 
    // Give the processes a chance to exit.
    CHECK_FALSE(ProcessSupervisor::waitForExit(TimeDuration::Seconds(2)));
