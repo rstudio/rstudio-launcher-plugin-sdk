@@ -8,4 +8,4 @@ build_*/
 *_build/
 rstudio-clone/
 *.log
-
+**/settings.json
