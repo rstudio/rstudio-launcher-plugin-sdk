@@ -213,6 +213,54 @@ struct ChangeUser
    gid_t Gid;
 };
 
+// Forward declarations of anonymous functions =========================================================================
+int getExitCodeFromStatus(int in_status);
+
+// Anonymous functions  ================================================================================================
+/**
+ * @brief Changes the user after fork.
+ * 
+ * @param in_uid     The ID of the user to which to change.
+ * @param in_gid     The group ID of the user to which to change.
+ * 
+ * @return 0 on success; the error code that occurred otherwise.
+ */
+int changeUser(uid_t in_uid, gid_t in_gid)
+{
+   // If it's possible to escalate to the root user before attempting to change users, do so.
+   if (system::posix::realUserIsRoot() && (geteuid() != 0))
+   {
+      int result = ::seteuid(0);
+      if (result != 0)
+         return result;
+   }
+
+   if (in_uid != 0)
+   {
+      if (::setgid(in_uid) == -1)
+         return s_threadSafeExitError;
+      if (::setuid(in_gid) == -1)
+         return s_threadSafeExitError;
+   }
+
+   return 0;
+}
+
+/**
+ * @brief Changes the user after fork.
+ * 
+ * @param in_user    The new user. No action is taken if this object is empty.
+ * 
+ * @return 0 on success; the error code that occurred otherwise.
+ */
+int changeUser(const system::User& in_user)
+{
+   if (in_user.isEmpty())
+      return 0;
+
+   return changeUser(in_user.getUserId(), in_user.getGroupId());
+}
+
 /**
  * @brief Clears the signal mask of the current process.
  *
@@ -359,6 +407,43 @@ Error createPipes(FileDescriptors& out_fds)
    return error;
 }
 
+Error forkAndRun(
+   const std::function<int()>& in_function,
+   const system::User& in_user = system::User(true))
+{
+   pid_t pid = ::fork();
+   if (pid < 0)
+      return systemError(errno, ERROR_LOCATION);
+
+   // If we're in the child process, change users if necessary and then run the requested function.
+   if (pid == 0)
+   {
+      int ret = changeUser(in_user);
+      if (ret != 0)
+         ::exit(ret);
+
+      ::exit(in_function());
+   }
+   // Otherwise we're in the parent process, so wait for the child to exit and report the result.
+   else
+   {
+      int status;
+      pid_t result = posix::posixCall<pid_t>(std::bind(::waitpid, pid, &status, 0));
+
+      // Ignore child already reaped errors.
+      if ((result == -1) && (errno != ECHILD))
+         return systemError(errno, ERROR_LOCATION);
+      else if (result == 0)
+      {
+         int exitStatus = getExitCodeFromStatus(status);
+         if (exitStatus != 0)
+            return systemError(errno, ERROR_LOCATION);
+      }
+   }
+   
+   return Success();
+}
+
 /**
  * @brief Gets the process exit code from its exit status.
  *
@@ -450,6 +535,26 @@ Error getOpenFds(pid_t in_pid, std::vector<uint32_t>& out_fds)
    ::free(nameList);
 
    return Success();
+}
+
+/**
+ * @brief Sends a signal to the specified process.
+ * 
+ * @param in_pid        The PID of the process to which to send the signal.
+ * @param in_signal     The signal to send to the process.
+ * 
+ * @return 0 on success; errno of the error that occurred otherwise.
+ */
+int sendSignal(int in_pid, int in_signal)
+{
+   bool isKillSignal = (in_signal == SIGKILL) || (in_signal == SIGTERM);
+
+   // If kill returns -1 for any reason other than the process was already killed when we attempted to kill it, return 
+   // the last errno. (ESRCH means the process doesn't exist).
+   if ((::kill(in_pid, in_signal) == -1) && ((errno != ESRCH) || !isKillSignal))
+      return errno;
+
+   return 0;
 }
 
 /**
@@ -902,12 +1007,9 @@ struct AbstractChildProcess::Impl
       // Change the user, if requested.
       if (NewUser.ShouldChange)
       {
-         result = ::setgid(NewUser.Gid);
-         if (result == -1)
-            ::_exit(s_threadSafeExitError);
-         result = ::setuid(NewUser.Uid);
-         if (result == -1)
-            ::_exit(s_threadSafeExitError);
+         result = changeUser(NewUser.Uid, NewUser.Gid);
+         if (result != 0)
+            ::exit(result);
       }
 
       if (in_environment.isEmpty())
@@ -1797,6 +1899,49 @@ Error getChildProcesses(pid_t in_parentPid, std::vector<ProcessInfo>& out_proces
    walkChildren(root->second, 0);
 
    return Success();
+}
+
+Error signalProcess(pid_t in_pid, int in_signal, bool in_processGroupOnly)
+{
+   std::function<int()> signalFunction;
+   if (in_processGroupOnly)
+   {
+      signalFunction = [in_pid, in_signal]()
+      {
+          return sendSignal(-in_pid, in_signal);
+      };
+   }
+   else
+   {
+      std::vector<ProcessInfo> children;
+      Error error = getChildProcesses(in_pid, children);
+      if (error)
+         return error;
+
+      signalFunction = [in_pid, in_signal, children]()
+      {
+         // Kill the process and all its children, storing the last error number. It's most improtant that we report
+         // that there was some sort of error killing all these processes, as opposed to reporting each exact error (if
+         // there were multiple).
+         int ret = sendSignal(in_pid, in_signal);
+
+         for (const ProcessInfo& child: children)
+         {
+            int tmp = sendSignal(child.Pid, in_signal);
+            if (tmp != 0)
+               ret = tmp;
+         }
+
+         return ret;
+      };
+   }
+
+   system::User rootUser;
+   Error error = system::User::getUserFromIdentifier(0, rootUser);
+   if (error)
+      return error;
+
+   return forkAndRun(signalFunction, rootUser);
 }
 
 std::string shellEscape(const std::string& in_string)
