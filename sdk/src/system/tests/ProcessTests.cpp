@@ -25,6 +25,8 @@
 
 #include <TestMain.hpp>
 
+#include <csignal>
+
 #include <AsioRaii.hpp>
 
 #include <options/Options.hpp>
@@ -38,22 +40,10 @@ namespace process {
 
 AsioRaii s_asioInit;
 
-TEST_CASE("Get children")
+TEST_CASE("General tests")
 {
    // Make sure default options are populated.
    REQUIRE_FALSE(options::Options::getInstance().readOptions(0, nullptr, system::FilePath()));
-
-   ProcessOptions opts;
-   REQUIRE_FALSE(User::getUserFromIdentifier(USER_ONE, opts.RunAsUser));
-
-   opts.IsShellCommand = false;
-   opts.UseSandbox = false;
-   opts.Executable ="/bin/sh";
-   opts.StandardInput = "#!/bin/sh \n"
-                        "sleep 2& \n"
-                        "sleep 2& \n"
-                        "sleep 2& \n"
-                        "sleep 2";
 
    AsyncProcessCallbacks cbs;
    bool failed = false;
@@ -64,33 +54,82 @@ TEST_CASE("Get children")
    cbs.OnStandardError = [&stdErr](const std::string& in_err) { stdErr.append(in_err); };
    cbs.OnStandardOutput = [&stdOut](const std::string& in_out) { stdOut.append(in_out); };
 
-   std::shared_ptr<AbstractChildProcess> child;
-   Error error = ProcessSupervisor::runAsyncProcess(opts, cbs, &child);
-   REQUIRE_FALSE(error);
-   // Give a quarter of a second for the child process info to be populated in /proc.
-   usleep(250000);
+   SECTION("Get children")
+   {
+      ProcessOptions opts;
+      REQUIRE_FALSE(User::getUserFromIdentifier(USER_ONE, opts.RunAsUser));
 
-   std::vector<ProcessInfo> process;
-   error = getChildProcesses(child->getPid(), process);
-   CHECK_FALSE(error);
+      opts.IsShellCommand = false;
+      opts.UseSandbox = false;
+      opts.Executable ="/bin/sh";
+      opts.StandardInput = "#!/bin/sh \n"
+                           "sleep 2& \n"
+                           "sleep 2& \n"
+                           "sleep 2& \n"
+                           "sleep 2";
 
-   // On some OS's are expecting 6 processes - one for the initial /bin/sh -c /bin/sh, one for the second /bin/sh, and
-   // one for each of the sleeps. On others we're expecting only five - one for the /bin/sh and one for each of the sleeps.
-   CHECK(((process.size() == 6) || (process.size() == 5)));
 
-   // Give the processes a chance to exit.
-   CHECK_FALSE(ProcessSupervisor::waitForExit(TimeDuration::Seconds(2)));
-   CHECK_FALSE(ProcessSupervisor::hasRunningChildren());
+      std::shared_ptr<AbstractChildProcess> child;
+      REQUIRE_FALSE(ProcessSupervisor::runAsyncProcess(opts, cbs, &child));
+      
+      // Give a quarter of a second for the child process info to be populated in /proc.
+      usleep(250000);
 
-   // Ensure the process are definitely exited.
-   ProcessSupervisor::terminateAll();
-   ProcessSupervisor::waitForExit();
+      std::vector<ProcessInfo> process;
+      CHECK_FALSE(getChildProcesses(child->getPid(), process));
 
-   CHECK(exitCode == 0);
-   CHECK_FALSE(failed);
-   CHECK(stdOut == "");
-   CHECK(stdErr == "");
+      // On some OS's are expecting 6 processes - one for the initial /bin/sh -c /bin/sh, one for the second /bin/sh, and
+      // one for each of the sleeps. On others we're expecting only five - one for the /bin/sh and one for each of the sleeps.
+      CHECK(((process.size() == 6) || (process.size() == 5)));
+
+      // Give the processes a chance to exit.
+      CHECK_FALSE(ProcessSupervisor::waitForExit(TimeDuration::Seconds(2)));
+      CHECK_FALSE(ProcessSupervisor::hasRunningChildren());
+
+      // Ensure the process are definitely exited.
+      ProcessSupervisor::terminateAll();
+      ProcessSupervisor::waitForExit();
+
+      CHECK(exitCode == 0);
+      CHECK_FALSE(failed);
+      CHECK(stdOut == "");
+      CHECK(stdErr == "");
+   }
+
+   SECTION("Send kill signal")
+   {
+      // Make sure default options are populated.
+      REQUIRE_FALSE(options::Options::getInstance().readOptions(0, nullptr, system::FilePath()));
+
+      ProcessOptions opts;
+      REQUIRE_FALSE(User::getUserFromIdentifier(USER_ONE, opts.RunAsUser));
+      opts.IsShellCommand = false;
+      opts.UseSandbox = false;
+      opts.Executable ="/bin/sh";
+      opts.StandardInput = "#!/bin/sh \n"
+                           "sleep 20 \n"
+                           "echo \"Failed\"";
+
+      std::shared_ptr<AbstractChildProcess> child;
+      REQUIRE_FALSE(ProcessSupervisor::runAsyncProcess(opts, cbs, &child));
+      
+      CHECK_FALSE(signalProcess(child.get()->getPid(), SIGKILL));
+
+      // Give the process a chance to exit. Half a second should be more than enough.
+      CHECK_FALSE(ProcessSupervisor::waitForExit(TimeDuration::Microseconds(500000)));
+      CHECK_FALSE(ProcessSupervisor::hasRunningChildren());
+
+      // Ensure the process are definitely exited.
+      ProcessSupervisor::terminateAll();
+      ProcessSupervisor::waitForExit();
+
+      CHECK(exitCode == SIGKILL);
+      CHECK_FALSE(failed);
+      CHECK(stdOut == "");
+      CHECK(stdErr == "");
+   }
 }
+
 
 } // namespace process
 } // namespace system
