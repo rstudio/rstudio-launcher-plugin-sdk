@@ -9,3 +9,5 @@ build_*/
 rstudio-clone/
 *.log
 **/settings.json
+**/tasks.json
+**/launch.json
