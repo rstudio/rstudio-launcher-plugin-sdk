@@ -105,7 +105,7 @@ TEST_CASE("General tests")
       REQUIRE_FALSE(options::Options::getInstance().readOptions(0, nullptr, system::FilePath()));
 
       ProcessOptions opts;
-      REQUIRE_FALSE(User::getUserFromIdentifier(USER_ONE, opts.RunAsUser));
+      REQUIRE_FALSE(User::getUserFromIdentifier(USER_TWO, opts.RunAsUser));
       opts.IsShellCommand = false;
       opts.UseSandbox = false;
       opts.Executable ="/bin/sh";
@@ -141,7 +141,7 @@ TEST_CASE("General tests")
       REQUIRE_FALSE(options::Options::getInstance().readOptions(0, nullptr, system::FilePath()));
 
       ProcessOptions opts;
-      REQUIRE_FALSE(User::getUserFromIdentifier(USER_ONE, opts.RunAsUser));
+      REQUIRE_FALSE(User::getUserFromIdentifier(USER_THREE, opts.RunAsUser));
       opts.IsShellCommand = false;
       opts.UseSandbox = false;
       opts.Executable ="/bin/bash";
@@ -157,7 +157,7 @@ TEST_CASE("General tests")
       std::shared_ptr<AbstractChildProcess> child;
       REQUIRE_FALSE(ProcessSupervisor::runAsyncProcess(opts, cbs, &child));
 
-      // Sleep for half a second to give the script a chance to launch its children.
+      // Sleep for half a second to give the script a chance to launch its children - it seems to be slower with set -m.
       usleep(500000);
       CHECK_FALSE(signalProcess(child.get()->getPid(), sig, false));
 
@@ -174,6 +174,41 @@ TEST_CASE("General tests")
       CHECK(exitCode == sig);
       CHECK_FALSE(failed);
       CHECK(stdOut == "");
+      CHECK(stdErr == "");
+   }
+
+   SECTION("Send sigstop and resume, with sandbox")
+   {
+      // Make sure default options are populated.
+      REQUIRE_FALSE(options::Options::getInstance().readOptions(0, nullptr, system::FilePath()));
+
+      ProcessOptions opts;
+      REQUIRE_FALSE(User::getUserFromIdentifier(USER_FOUR, opts.RunAsUser));
+      opts.IsShellCommand = true;
+      opts.UseSandbox = true;
+      opts.Executable ="sleep 1 && echo Success";
+
+      std::shared_ptr<AbstractChildProcess> child;
+      REQUIRE_FALSE(ProcessSupervisor::runAsyncProcess(opts, cbs, &child));
+
+      CHECK_FALSE(signalProcess(child.get()->getPid(), SIGSTOP));
+      CHECK(ProcessSupervisor::hasRunningChildren());
+      CHECK(stdOut == "");
+      CHECK_FALSE(signalProcess(child.get()->getPid(), SIGCONT));
+
+      // Give the process a chance to exit. Two seconds should be enough.
+      CHECK_FALSE(ProcessSupervisor::waitForExit(TimeDuration::Seconds(2)));
+      
+      if (ProcessSupervisor::hasRunningChildren());
+      {
+         // Ensure the processes are definitely exited.
+         ProcessSupervisor::terminateAll();
+         ProcessSupervisor::waitForExit();
+      }
+
+      CHECK(exitCode == 0);
+      CHECK_FALSE(failed);
+      CHECK(stdOut == "Success\n");
       CHECK(stdErr == "");
    }
 }
