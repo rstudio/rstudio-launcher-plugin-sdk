@@ -84,11 +84,13 @@ TEST_CASE("General tests")
 
       // Give the processes a chance to exit.
       CHECK_FALSE(ProcessSupervisor::waitForExit(TimeDuration::Seconds(2)));
-      CHECK_FALSE(ProcessSupervisor::hasRunningChildren());
 
-      // Ensure the process are definitely exited.
-      ProcessSupervisor::terminateAll();
-      ProcessSupervisor::waitForExit();
+      if (ProcessSupervisor::hasRunningChildren())
+      {
+         // Ensure the processes are definitely exited.
+         ProcessSupervisor::terminateAll();
+         ProcessSupervisor::waitForExit();
+      }
 
       CHECK(exitCode == 0);
       CHECK_FALSE(failed);
@@ -96,8 +98,9 @@ TEST_CASE("General tests")
       CHECK(stdErr == "");
    }
 
-   SECTION("Send kill signal")
+   SECTION("Send kill signal, process group only")
    {
+      int sig = SIGTERM;
       // Make sure default options are populated.
       REQUIRE_FALSE(options::Options::getInstance().readOptions(0, nullptr, system::FilePath()));
 
@@ -113,17 +116,62 @@ TEST_CASE("General tests")
       std::shared_ptr<AbstractChildProcess> child;
       REQUIRE_FALSE(ProcessSupervisor::runAsyncProcess(opts, cbs, &child));
       
-      CHECK_FALSE(signalProcess(child.get()->getPid(), SIGKILL));
+      CHECK_FALSE(signalProcess(child.get()->getPid(), sig));
 
       // Give the process a chance to exit. Half a second should be more than enough.
       CHECK_FALSE(ProcessSupervisor::waitForExit(TimeDuration::Microseconds(500000)));
-      CHECK_FALSE(ProcessSupervisor::hasRunningChildren());
 
-      // Ensure the process are definitely exited.
-      ProcessSupervisor::terminateAll();
-      ProcessSupervisor::waitForExit();
+      if (ProcessSupervisor::hasRunningChildren())
+      {
+         // Ensure the processes are definitely exited.
+         ProcessSupervisor::terminateAll();
+         ProcessSupervisor::waitForExit();
+      }
 
-      CHECK(exitCode == SIGKILL);
+      CHECK(exitCode == sig);
+      CHECK_FALSE(failed);
+      CHECK(stdOut == "");
+      CHECK(stdErr == "");
+   }
+
+   SECTION("Send term signal, all children not just group")
+   {
+      int sig = SIGTERM;
+      // Make sure default options are populated.
+      REQUIRE_FALSE(options::Options::getInstance().readOptions(0, nullptr, system::FilePath()));
+
+      ProcessOptions opts;
+      REQUIRE_FALSE(User::getUserFromIdentifier(USER_ONE, opts.RunAsUser));
+      opts.IsShellCommand = false;
+      opts.UseSandbox = false;
+      opts.Executable ="/bin/bash";
+      opts.StandardInput = "#!/bin/bash \n"
+                           "set -m \n"
+                           "sleep 500& \n"
+                           "sleep 500& \n"
+                           "sleep 500& \n"
+                           "sleep 500& \n"
+                           "sleep 500 \n"
+                           "echo \"Failed\"";
+
+      std::shared_ptr<AbstractChildProcess> child;
+      REQUIRE_FALSE(ProcessSupervisor::runAsyncProcess(opts, cbs, &child));
+
+      // Sleep for half a second to give the script a chance to launch its children.
+      usleep(500000);
+      CHECK_FALSE(signalProcess(child.get()->getPid(), sig, false));
+
+      // Give the process a chance to exit. Half a second should be more than enough.
+      CHECK_FALSE(ProcessSupervisor::waitForExit(TimeDuration::Microseconds(5000000)));
+      
+      if (ProcessSupervisor::hasRunningChildren());
+      {
+         // Ensure the processes are definitely exited.
+         ProcessSupervisor::terminateAll();
+         ProcessSupervisor::waitForExit();
+      }
+
+      CHECK(exitCode == sig);
       CHECK_FALSE(failed);
       CHECK(stdOut == "");
       CHECK(stdErr == "");
