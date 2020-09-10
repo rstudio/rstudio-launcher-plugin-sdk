@@ -420,9 +420,9 @@ Error forkAndRun(
    {
       int ret = changeUser(in_user);
       if (ret != 0)
-         ::exit(ret);
+         ::_exit(ret);
 
-      ::exit(in_function());
+      ::_exit(in_function());
    }
    // Otherwise we're in the parent process, so wait for the child to exit and report the result.
    else
