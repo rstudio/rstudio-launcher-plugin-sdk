@@ -118,8 +118,8 @@ TEST_CASE("General tests")
       
       CHECK_FALSE(signalProcess(child.get()->getPid(), sig));
 
-      // Give the process a chance to exit. Half a second should be more than enough.
-      CHECK_FALSE(ProcessSupervisor::waitForExit(TimeDuration::Microseconds(500000)));
+      // Give the process a chance to exit. A second should be more than enough.
+      CHECK_FALSE(ProcessSupervisor::waitForExit(TimeDuration::Seconds(1)));
 
       if (ProcessSupervisor::hasRunningChildren())
       {
