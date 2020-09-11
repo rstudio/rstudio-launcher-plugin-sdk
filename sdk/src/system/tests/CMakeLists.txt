@@ -88,6 +88,7 @@ target_link_libraries(rlps-child-process-tests
 add_executable(rlps-process-tests
    ${RLPS_SYSTEM_TEST_MAIN}
    ProcessTests.cpp
+   ProcessTestHelpers.cpp
    ${RLPS_HEADER_FILES}
 )
 

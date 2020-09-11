@@ -29,9 +29,10 @@
 
 #include <AsioRaii.hpp>
 
-#include <options/Options.hpp>
 #include <system/PosixSystem.hpp>
 #include <system/Process.hpp>
+
+#include "ProcessTestHelpers.hpp"
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -43,7 +44,7 @@ AsioRaii s_asioInit;
 TEST_CASE("General tests")
 {
    // Make sure default options are populated.
-   REQUIRE_FALSE(options::Options::getInstance().readOptions(0, nullptr, system::FilePath()));
+   REQUIRE_FALSE(loadOptions());
 
    AsyncProcessCallbacks cbs;
    bool failed = false;
@@ -101,8 +102,6 @@ TEST_CASE("General tests")
    SECTION("Send kill signal, process group only")
    {
       int sig = SIGTERM;
-      // Make sure default options are populated.
-      REQUIRE_FALSE(options::Options::getInstance().readOptions(0, nullptr, system::FilePath()));
 
       ProcessOptions opts;
       REQUIRE_FALSE(User::getUserFromIdentifier(USER_TWO, opts.RunAsUser));
@@ -137,8 +136,6 @@ TEST_CASE("General tests")
    SECTION("Send term signal, all children not just group")
    {
       int sig = SIGTERM;
-      // Make sure default options are populated.
-      REQUIRE_FALSE(options::Options::getInstance().readOptions(0, nullptr, system::FilePath()));
 
       ProcessOptions opts;
       REQUIRE_FALSE(User::getUserFromIdentifier(USER_THREE, opts.RunAsUser));
@@ -179,9 +176,6 @@ TEST_CASE("General tests")
 
    SECTION("Send sigstop and resume, with sandbox")
    {
-      // Make sure default options are populated.
-      REQUIRE_FALSE(options::Options::getInstance().readOptions(0, nullptr, system::FilePath()));
-
       ProcessOptions opts;
       REQUIRE_FALSE(User::getUserFromIdentifier(USER_FOUR, opts.RunAsUser));
       opts.IsShellCommand = true;
