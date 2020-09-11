@@ -162,7 +162,7 @@ TEST_CASE("Create Async Processes")
       o5.IsShellCommand = false;
       o5.Environment.emplace_back("VAR", "Hello, world!");
       o5.RunAsUser = user3;
-      o5.WorkingDirectory = FilePath::safeCurrentPath(FilePath());
+      o5.WorkingDirectory = user3.getHomePath();
 
       TestCallbacks cb5;
 

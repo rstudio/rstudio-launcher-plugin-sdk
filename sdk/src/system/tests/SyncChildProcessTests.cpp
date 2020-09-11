@@ -184,7 +184,7 @@ TEST_CASE("Create Processes")
       opts.IsShellCommand = false;
       opts.Environment.emplace_back("VAR", "Hello, world!");
       opts.RunAsUser = user3;
-      opts.WorkingDirectory = FilePath::safeCurrentPath(FilePath());
+      opts.WorkingDirectory = user3.getHomePath();
 
       ProcessResult result;
       SyncChildProcess child(opts);
@@ -205,7 +205,7 @@ TEST_CASE("Create Processes")
       opts.Environment.emplace_back("VAR2", "Something else!");
       opts.RunAsUser = user2;
       opts.Password = "test-pwd";
-      opts.WorkingDirectory = FilePath::safeCurrentPath(FilePath());
+      opts.WorkingDirectory = user2.getHomePath();
 
       ProcessResult result;
       SyncChildProcess child(opts);
