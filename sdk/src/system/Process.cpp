@@ -237,9 +237,9 @@ int changeUser(uid_t in_uid, gid_t in_gid)
 
    if (in_uid != 0)
    {
-      if (::setgid(in_uid) == -1)
+      if (::setgid(in_gid) == -1)
          return s_threadSafeExitError;
-      if (::setuid(in_gid) == -1)
+      if (::setuid(in_uid) == -1)
          return s_threadSafeExitError;
    }
 
