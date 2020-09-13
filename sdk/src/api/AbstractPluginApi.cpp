@@ -429,6 +429,8 @@ struct AbstractPluginApi::Impl
             return handleGetNetworkRequest(std::static_pointer_cast<NetworkRequest>(in_request));
          case Request::Type::GET_CLUSTER_INFO:
             return handleGetClusterInfo(std::static_pointer_cast<UserRequest>(in_request));
+         case Request::Type::CONTROL_JOB:
+            return handleControlJobRequest(std::static_pointer_cast<ControlJobRequest>(in_request));
          default:
             return sendErrorResponse(
                in_request->getId(),
