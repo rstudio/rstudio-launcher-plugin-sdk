@@ -494,8 +494,13 @@ bool SmokeTest::sendRequest()
    }
    catch (...)
    {
-      std::cout << "Invalid choice (" << line << "). Please enter a positive integer." << std::endl;
-      return true;
+      if ((line == "q") || (line == "Q"))
+         choice = requests.size();
+      else
+      {
+         std::cout << "Invalid choice (" << line << "). Please enter a positive integer." << std::endl;
+         return true;
+      }
    }
 
    bool success = true;
