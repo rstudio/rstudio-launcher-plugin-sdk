@@ -73,6 +73,8 @@ public:
    void stop();
 
 private:
+   bool sendControlJobReqeust(api::ControlJobRequest::Operation in_operation);
+   
    /**
     * @brief Sends a job output stream request and waits for the response(s).
     *
@@ -88,6 +90,9 @@ private:
     * @return True if the plugin responded as expected; false otherwise.
     */
    bool sendJobStatusStreamRequest();
+
+   bool sendKillJobReqeust();
+   bool sendSupsendResumeJobReqeust();
 
    /**
     * @brief Waits for the specified number of responses for the specified request.
