@@ -67,6 +67,7 @@ constexpr char const* GET_JOB_NETWORK_REQ = "Get last job's network information"
 constexpr char const* CANCEL_JOB_REQ = "Submit a slow job and then cancel it";
 constexpr char const* STOP_JOB_REQ = "Submit a slow job and then stop it";
 constexpr char const* KILL_JOB_REQ = "Submit a slow job and then kill it";
+constexpr char const* SUSP_RES_JOB_REQ = "Submit a slow job, suspend it, and then resume it";
 constexpr char const* EXIT_REQ = "Exit (q or Q also exits)";
 
 typedef std::vector<std::string> Requests;
@@ -98,6 +99,7 @@ const Requests& getRequests()
          CANCEL_JOB_REQ,
          KILL_JOB_REQ,
          STOP_JOB_REQ,
+         SUSP_RES_JOB_REQ,
          EXIT_REQ
       };
 
@@ -584,6 +586,8 @@ bool SmokeTest::sendRequest()
          success = sendControlJobReqeust(api::ControlJobRequest::Operation::KILL);
       else if (request == STOP_JOB_REQ)
          success = sendControlJobReqeust(api::ControlJobRequest::Operation::STOP);
+      else if (request == SUSP_RES_JOB_REQ)
+         success = sendSupsendResumeJobReqeust();
       else
       {
          std::string message;
@@ -682,6 +686,35 @@ void SmokeTest::stop()
    system::AsioService::waitForExit();
 }
 
+bool SmokeTest::controlLastJobAndPrintStatus(
+   api::ControlJobRequest::Operation in_operation,
+   std::unique_lock<std::mutex>& in_uniqueLock)
+{
+   // Sleep for a second to give the job a chance to start change state if the request is not to cancel it.
+   // We have 20 seconds after the job starts before the output is emitted.
+   if (in_operation != api::ControlJobRequest::Operation::CANCEL)
+      sleep(1);
+
+   std::string controlJobStr = controlJobReq(in_operation, m_submittedJobIds.back(), m_requestUser);
+   m_responseCount[s_requestId] = 0;
+   m_lastRequestType = api::Request::Type::CONTROL_JOB;
+   Error error = m_plugin->writeToStdin(controlJobStr, false);
+   if (error)
+      return handleError(error);
+
+   if (!waitForResponse(s_requestId, 1, in_uniqueLock))
+      return false;
+
+   std::string jobStatusReqStr = getJob(m_submittedJobIds.back(), m_requestUser);
+   m_responseCount[s_requestId] = 0;
+   m_lastRequestType = api::Request::Type::GET_JOB;
+   error = m_plugin->writeToStdin(jobStatusReqStr, false);
+   if (error)
+      return handleError(error);
+
+   return waitForResponse(s_requestId, 1, in_uniqueLock);
+}
+
 bool SmokeTest::sendControlJobReqeust(api::ControlJobRequest::Operation in_operation)
 {
    UNIQUE_LOCK_MUTEX(m_mutex)
@@ -698,33 +731,12 @@ bool SmokeTest::sendControlJobReqeust(api::ControlJobRequest::Operation in_opera
       if (!waitForResponse(s_requestId, 1, uniqueLock) || (currJobCount >= m_submittedJobIds.size()))
          return false;
 
-      // Sleep for a second to give the job a chance to start running if the request is not to cancel it.
-      // We have 20 seconds after the job starts before the output is emitted.
-      if (in_operation != api::ControlJobRequest::Operation::CANCEL)
-         sleep(1);
-
-      std::string controlJobStr = controlJobReq(in_operation, m_submittedJobIds.back(), m_requestUser);
-      m_responseCount[s_requestId] = 0;
-      m_lastRequestType = api::Request::Type::CONTROL_JOB;
-      error = m_plugin->writeToStdin(controlJobStr, false);
-      if (error)
-         return handleError(error);
-
-      if (!waitForResponse(s_requestId, 1, uniqueLock))
-         return false;
-
-      std::string jobStatusReqStr = getJob(m_submittedJobIds.back(), m_requestUser);
-      m_responseCount[s_requestId] = 0;
-      m_lastRequestType = api::Request::Type::GET_JOB;
-      error = m_plugin->writeToStdin(jobStatusReqStr, false);
-      if (error)
-         return handleError(error);
-
-      return waitForResponse(s_requestId, 1, uniqueLock);
+      return controlLastJobAndPrintStatus(in_operation, uniqueLock);
    }
    END_LOCK_MUTEX
 
-   return true;
+   // If execution gets here something went wrong.
+   return false;
 }
 
 bool SmokeTest::sendJobOutputStreamRequest(api::OutputType in_outputType)
@@ -800,6 +812,22 @@ bool SmokeTest::sendJobStatusStreamRequest()
    std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
    return true;
+}
+
+bool SmokeTest::sendSupsendResumeJobReqeust()
+{
+   bool result = sendControlJobReqeust(api::ControlJobRequest::Operation::SUSPEND);
+   if (!result)
+      return result;
+
+   UNIQUE_LOCK_MUTEX(m_mutex)
+   {
+      return controlLastJobAndPrintStatus(api::ControlJobRequest::Operation::RESUME, uniqueLock);
+   }
+   END_LOCK_MUTEX
+
+   // If execution gets here something went wrong.
+   return false;
 }
 
 bool SmokeTest::waitForResponse(uint64_t in_requestId, uint64_t in_expectedResponses)
