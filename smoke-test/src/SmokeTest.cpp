@@ -199,6 +199,7 @@ std::string streamJobStatuses(const system::User& in_user)
    statusReq[api::FIELD_REAL_USER] = in_user.getUsername();
    statusReq[api::FIELD_JOB_ID] = "*";
    statusReq[api::FIELD_ENCODED_JOB_ID] = "";
+   statusReq[api::FIELD_CANCEL_STREAM] = false;
 
    return getMessageHandler().formatMessage(statusReq.write());
 }
@@ -222,7 +223,6 @@ std::string controlJobReq(
    const std::string& in_jobId,
    const system::User& in_user)
 {
-   typedef  api::ControlJobRequest::Operation Op;
    json::Object controlJobReq;
    controlJobReq[api::FIELD_REQUEST_ID] = ++s_requestId;
    controlJobReq[api::FIELD_MESSAGE_TYPE] = static_cast<int>(api::Request::Type::CONTROL_JOB);
@@ -230,19 +230,7 @@ std::string controlJobReq(
    controlJobReq[api::FIELD_REAL_USER] = in_user.getUsername();
    controlJobReq[api::FIELD_JOB_ID] = in_jobId;
    controlJobReq[api::FIELD_ENCODED_JOB_ID] = "";
-
-   if (in_operation == Op::CANCEL)
-      controlJobReq[api::FIELD_OPERATION] = api::VALUE_CANCEL_JOB;
-   else if (in_operation == Op::KILL)
-      controlJobReq[api::FIELD_OPERATION] = api::VALUE_KILL_JOB;
-   else if (in_operation == Op::RESUME)
-      controlJobReq[api::FIELD_OPERATION] = api::VALUE_RESUME_JOB;
-   else if (in_operation == Op::STOP)
-      controlJobReq[api::FIELD_OPERATION] = api::VALUE_STOP_JOB;
-   else if (in_operation == Op::SUSPEND)
-      controlJobReq[api::FIELD_OPERATION] = api::VALUE_SUSPEND_JOB;
-   else
-      assert(false);
+   controlJobReq[api::FIELD_OPERATION] = static_cast<int>(in_operation);
 
    return getMessageHandler().formatMessage(controlJobReq.write());
 }
@@ -356,6 +344,7 @@ std::string networkReq(const std::string& in_jobId, const system::User& in_user)
    networkReq[api::FIELD_REQUEST_USERNAME] = in_user.getUsername();
    networkReq[api::FIELD_REAL_USER] = in_user.getUsername();
    networkReq[api::FIELD_JOB_ID] = in_jobId;
+   networkReq[api::FIELD_ENCODED_JOB_ID] = "";
 
    return getMessageHandler().formatMessage(networkReq.write());
 }
