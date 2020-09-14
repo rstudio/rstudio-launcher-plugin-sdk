@@ -598,8 +598,8 @@ ControlJobRequest::ControlJobRequest(const json::Object& in_requestJson) :
       return;
    }
 
-   std::string operationStr;
-   Error error = json::readObject(in_requestJson, FIELD_OPERATION, operationStr);
+   int operation;
+   Error error = json::readObject(in_requestJson, FIELD_OPERATION, operation);
    if (error)
    {
       logging::logError(error);
@@ -607,22 +607,19 @@ ControlJobRequest::ControlJobRequest(const json::Object& in_requestJson) :
       return;
    }
 
-   if (operationStr == VALUE_CANCEL_JOB)
-      m_impl->JobOperation = Operation::CANCEL;
-   else if (operationStr == VALUE_KILL_JOB)
-      m_impl->JobOperation = Operation::KILL;
-   else if (operationStr == VALUE_RESUME_JOB)
-      m_impl->JobOperation = Operation::RESUME;
-   else if (operationStr == VALUE_STOP_JOB)
-      m_impl->JobOperation = Operation::STOP;
-   else if (operationStr == VALUE_SUSPEND_JOB)
-      m_impl->JobOperation = Operation::SUSPEND;
-   else
+   if ((operation < static_cast<int>(Operation::FIRST)) || (operation >= static_cast<int>(Operation::INVALID)))
    {
-      m_baseImpl->ErrorMessage = "Invalid value for " + std::string(FIELD_OPERATION) + " (" + operationStr + ")";
       m_baseImpl->ErrorType = RequestError::INVALID_REQUEST;
+      m_baseImpl->ErrorMessage = 
+         "Unknown control job operation (" +
+         std::to_string(operation) +
+         ") for job " +
+         getJobId();
+
       return;
    }
+
+   m_impl->JobOperation = static_cast<Operation>(operation);
 }
 
 // Output Stream Request ===============================================================================================

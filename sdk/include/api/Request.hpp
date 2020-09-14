@@ -407,6 +407,7 @@ public:
    enum class Operation
    {
       /** Indicates that the job should be suspended. This operation should be equivalent to sending SIGSTOP. */
+      FIRST = 0,
       SUSPEND = 0,
 
       /** Indicates that the job should be resumed. This operation should be equivalent to sending SIGCONT. */
@@ -419,7 +420,10 @@ public:
       KILL = 3,
 
       /** Indicates that a pending job should be canceled, if possible. */
-      CANCEL = 4
+      CANCEL = 4,
+
+      /** This value must always be last for input validation purposes. */
+      INVALID
    };
 
    /**
