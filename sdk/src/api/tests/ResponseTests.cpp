@@ -547,7 +547,7 @@ TEST_CASE("ControlJob Response")
    SECTION("Not complete, non-empty status")
    {
       expected[FIELD_STATUS_MESSAGE] = "Job is not running.";
-      expected[FIELD_COMPLETE] = false;
+      expected[FIELD_OPERATION_COMPLETE] = false;
       expected[FIELD_RESPONSE_ID] = 17;
 
       ControlJobResponse response(421, "Job is not running.", false);
@@ -557,7 +557,7 @@ TEST_CASE("ControlJob Response")
    SECTION("Complete, empty status")
    {
       expected[FIELD_STATUS_MESSAGE] = "";
-      expected[FIELD_COMPLETE] = true;
+      expected[FIELD_OPERATION_COMPLETE] = true;
       expected[FIELD_RESPONSE_ID] = 18;
 
       ControlJobResponse response(421, "", true);

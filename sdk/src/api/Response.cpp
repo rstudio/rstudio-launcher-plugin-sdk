@@ -311,7 +311,7 @@ json::Object ControlJobResponse::toJson() const
 {
    json::Object result = Response::toJson();
    result[FIELD_STATUS_MESSAGE] = m_impl->StatusMessage;
-   result[FIELD_COMPLETE] = m_impl->IsComplete;
+   result[FIELD_OPERATION_COMPLETE] = m_impl->IsComplete;
 
    return result;
 }
@@ -361,7 +361,7 @@ json::Object OutputStreamResponse::toJson() const
 {
    json::Object result = Response::toJson();
    result[FIELD_SEQUENCE_ID] = m_impl->SequenceId;
-   result[FIELD_OPERATION_COMPLETE] = m_impl->IsComplete;
+   result[FIELD_COMPLETE] = m_impl->IsComplete;
 
    if (!m_impl->Output.empty())
    {
