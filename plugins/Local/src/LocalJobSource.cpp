@@ -76,8 +76,9 @@ Error LocalJobSource::initialize()
    return m_jobRunner->initialize();
 }
 
-bool LocalJobSource::cancelJob(api::JobPtr in_job, std::string& out_statusMessage)
+bool LocalJobSource::cancelJob(api::JobPtr in_job, bool& out_isComplete, std::string& out_statusMessage)
 {
+   out_isComplete = false;
    out_statusMessage = "The RStudio Local Launcher Plugin does not support canceling jobs.";
    return false;
 }
@@ -114,36 +115,37 @@ Error LocalJobSource::getNetworkInfo(api::JobPtr in_job, api::NetworkInfo& out_n
    return Success();
 }
 
-bool LocalJobSource::killJob(api::JobPtr in_job, std::string& out_statusMessage)
+bool LocalJobSource::killJob(api::JobPtr in_job, bool& out_isComplete, std::string& out_statusMessage)
 {
-   bool result = signalJob(in_job->Id, in_job->Pid, SIGKILL, "kill", out_statusMessage);
-   if (result)
+   out_isComplete = signalJob(in_job->Id, in_job->Pid, SIGKILL, "kill", out_statusMessage);
+   if (out_isComplete)
       m_jobStatusNotifier->updateJob(in_job, api::Job::State::KILLED);
 
-   return result;
+   return true;
 }
 
-bool LocalJobSource::resumeJob(api::JobPtr in_job, std::string& out_statusMessage)
+bool LocalJobSource::resumeJob(api::JobPtr in_job, bool& out_isComplete, std::string& out_statusMessage)
 {
-   bool result = signalJob(in_job->Id, in_job->Pid, SIGCONT, "resume", out_statusMessage);
-   if (result)
+   out_isComplete = signalJob(in_job->Id, in_job->Pid, SIGCONT, "resume", out_statusMessage);
+   if (out_isComplete)
       m_jobStatusNotifier->updateJob(in_job, api::Job::State::RUNNING);
 
-   return result;
+   return true;
 }
 
-bool LocalJobSource::stopJob(api::JobPtr in_job, std::string& out_statusMessage)
+bool LocalJobSource::stopJob(api::JobPtr in_job, bool& out_isComplete, std::string& out_statusMessage)
 {
-   return signalJob(in_job->Id, in_job->Pid, SIGTERM, "stop", out_statusMessage);
+   out_isComplete = signalJob(in_job->Id, in_job->Pid, SIGTERM, "stop", out_statusMessage);
+   return true;
 }
 
-bool LocalJobSource::suspendJob(api::JobPtr in_job, std::string& out_statusMessage)
+bool LocalJobSource::suspendJob(api::JobPtr in_job, bool& out_isComplete, std::string& out_statusMessage)
 {
-   bool result = signalJob(in_job->Id, in_job->Pid, SIGSTOP, "suspend", out_statusMessage);
-   if (result)
+   out_isComplete = signalJob(in_job->Id, in_job->Pid, SIGSTOP, "suspend", out_statusMessage);
+   if (out_isComplete)
       m_jobStatusNotifier->updateJob(in_job, api::Job::State::SUSPENDED);
 
-   return result;
+   return true;
 }
 
 Error LocalJobSource::submitJob(api::JobPtr io_job, bool& out_wasInvalidRequest) const

@@ -49,9 +49,10 @@ Error QuickStartJobSource::initialize()
    return error;
 }
 
-bool QuickStartJobSource::cancelJob(api::JobPtr in_job, std::string& out_statusMessage)
+bool QuickStartJobSource::cancelJob(api::JobPtr in_job, bool& out_isComplete, std::string& out_statusMessage)
 {
    // TODO #15: Cancel a pending job.
+   out_isComplete = false;
    out_statusMessage = "Cancel job is not supported.";
    return false;
 }
@@ -70,30 +71,34 @@ Error QuickStartJobSource::getNetworkInfo(api::JobPtr in_job, api::NetworkInfo& 
    return Success();
 }
 
-bool QuickStartJobSource::killJob(api::JobPtr in_job, std::string& out_statusMessage)
+bool QuickStartJobSource::killJob(api::JobPtr in_job, bool& out_isComplete, std::string& out_statusMessage)
 {
    // TODO #17: Kill a running job.
+   out_isComplete = false;
    out_statusMessage = "Kill job is not supported.";
    return false;
 }
 
-bool QuickStartJobSource::resumeJob(api::JobPtr in_job, std::string& out_statusMessage)
+bool QuickStartJobSource::resumeJob(api::JobPtr in_job, bool& out_isComplete, std::string& out_statusMessage)
 {
    // TODO #19: Resume a suspended job.
+   out_isComplete = false;
    out_statusMessage = "Resume job is not supported.";
    return false;
 }
 
-bool QuickStartJobSource::stopJob(api::JobPtr in_job, std::string& out_statusMessage)
+bool QuickStartJobSource::stopJob(api::JobPtr in_job, bool& out_isComplete, std::string& out_statusMessage)
 {
    // TODO #16: Stop a running job.
+   out_isComplete = false;
    out_statusMessage = "Stop job is not supported.";
    return false;
 }
 
-bool QuickStartJobSource::suspendJob(api::JobPtr in_job, std::string& out_statusMessage)
+bool QuickStartJobSource::suspendJob(api::JobPtr in_job, bool& out_isComplete, std::string& out_statusMessage)
 {
    // TODO #18: Suspend a running job.
+   out_isComplete = false;
    out_statusMessage = "Suspend job is not supported.";
    return false;
 }

@@ -76,11 +76,12 @@ public:
     * The Job lock will be held when this method is invoked.
     *
     * @param in_job                 The job to be canceled.
+    * @param out_isComplete         Whether the cancel operation completed successfully (true) or not (false).
     * @param out_statusMessage      The status message of the cancel operation, if any.
     *
-    * @return True if the job was canceled; false otherwise.
+    * @return False if the cancel operation is not supported; true otherwise.
     */
-   bool cancelJob(api::JobPtr in_job, std::string& out_statusMessage) override;
+   bool cancelJob(api::JobPtr in_job, bool& out_isComplete, std::string& out_statusMessage) override;
 
    /**
     * @brief Gets the configuration and capabilities of the Local Job Source.
@@ -112,11 +113,12 @@ public:
     * The Job lock will be held when this method is invoked.
     *
     * @param in_job                 The job to be canceled.
-    * @param out_statusMessage      The status message of the cancel operation, if any.
+    * @param out_isComplete         Whether the kill operation completed successfully (true) or not (false).
+    * @param out_statusMessage      The status message of the kill operation, if any.
     *
-    * @return True if the job was killed; false otherwise.
+    * @return False if the kill operation is not supported; true otherwise.
     */
-   bool killJob(api::JobPtr in_job, std::string& out_statusMessage) override;
+   bool killJob(api::JobPtr in_job, bool& out_isComplete, std::string& out_statusMessage) override;
 
    /**
     * @brief Resumes a suspended job.
@@ -126,11 +128,12 @@ public:
     * The Job lock will be held when this method is invoked.
     *
     * @param in_job                 The job to be canceled.
-    * @param out_statusMessage      The status message of the cancel operation, if any.
+    * @param out_isComplete         Whether the resume operation completed successfully (true) or not (false).
+    * @param out_statusMessage      The status message of the resume operation, if any.
     *
-    * @return True if the job was resumed; false otherwise.
+    * @return False if the resume operation is not supported; true otherwise.
     */
-   bool resumeJob(api::JobPtr in_job, std::string& out_statusMessage) override;
+   bool resumeJob(api::JobPtr in_job, bool& out_isComplete, std::string& out_statusMessage) override;
 
    /**
     * @brief Stops a running job.
@@ -140,11 +143,12 @@ public:
     * The Job lock will be held when this method is invoked.
     *
     * @param in_job                 The job to be canceled.
-    * @param out_statusMessage      The status message of the cancel operation, if any.
+    * @param out_isComplete         Whether the stop operation completed successfully (true) or not (false).
+    * @param out_statusMessage      The status message of the stop operation, if any.
     *
-    * @return True if the job was stopped; false otherwise.
+    * @return False if the stop operation is not supported; true otherwise. 
     */
-   bool stopJob(api::JobPtr in_job, std::string& out_statusMessage) override;
+   bool stopJob(api::JobPtr in_job, bool& out_isComplete, std::string& out_statusMessage) override;
 
    /**
     * @brief Suspends a running job.
@@ -155,11 +159,12 @@ public:
     * The Job lock will be held when this method is invoked.
     *
     * @param in_job                 The job to be suspended.
-    * @param out_statusMessage      The status message of the cancel operation, if any.
+    * @param out_isComplete         Whether the suspend operation completed successfully (true) or not (false).
+    * @param out_statusMessage      The status message of the suspend operation, if any.
     *
-    * @return True if the job was suspended; false otherwise.
+    * @return False if the suspend operation is not supported; true otherwise. 
     */
-   bool suspendJob(api::JobPtr in_job, std::string& out_statusMessage) override;
+   bool suspendJob(api::JobPtr in_job, bool& out_isComplete, std::string& out_statusMessage) override;
 
    /**
     * @brief Runs a job on the local instance.

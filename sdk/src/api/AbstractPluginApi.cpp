@@ -263,6 +263,9 @@ struct AbstractPluginApi::Impl
 
       LOCK_JOB(job)
       {
+         bool opUnsupported = false;
+         bool opComplete = false;
+         std::string message;
          switch (in_controlJobRequest->getOperation())
          {
             case ControlJobRequest::Operation::KILL:
@@ -273,12 +276,8 @@ struct AbstractPluginApi::Impl
                      ErrorResponse::Type::INVALID_JOB_STATE,
                      "Job must be running to kill it");
 
-               std::string status;
-               return LauncherCommunicator->sendResponse(
-                  ControlJobResponse(
-                     in_controlJobRequest->getId(),
-                     status,
-                     JobSource->killJob(job, status)));
+               opUnsupported = JobSource->killJob(job, opComplete, message);
+               break;
             }
             case ControlJobRequest::Operation::SUSPEND:
             {
@@ -288,12 +287,8 @@ struct AbstractPluginApi::Impl
                      ErrorResponse::Type::INVALID_JOB_STATE,
                      "Job must be running to suspend it");
 
-               std::string status;
-               return LauncherCommunicator->sendResponse(
-                  ControlJobResponse(
-                     in_controlJobRequest->getId(),
-                     status,
-                     JobSource->suspendJob(job, status)));
+               opUnsupported = JobSource->suspendJob(job, opComplete, message);
+               break;
             }
             case ControlJobRequest::Operation::RESUME:
             {
@@ -303,12 +298,8 @@ struct AbstractPluginApi::Impl
                      ErrorResponse::Type::INVALID_JOB_STATE,
                      "Job must be suspended to resume it");
 
-               std::string status;
-               return LauncherCommunicator->sendResponse(
-                  ControlJobResponse(
-                     in_controlJobRequest->getId(),
-                     status,
-                     JobSource->resumeJob(job, status)));
+               opUnsupported = JobSource->resumeJob(job, opComplete, message);
+               break;
             }
             case ControlJobRequest::Operation::STOP:
             {
@@ -318,12 +309,8 @@ struct AbstractPluginApi::Impl
                      ErrorResponse::Type::INVALID_JOB_STATE,
                      "Job must be running to stop it");
 
-               std::string status;
-               return LauncherCommunicator->sendResponse(
-                  ControlJobResponse(
-                     in_controlJobRequest->getId(),
-                     status,
-                     JobSource->stopJob(job, status)));
+               opUnsupported = JobSource->stopJob(job, opComplete, message);
+               break;
             }
             case ControlJobRequest::Operation::CANCEL:
             {
@@ -333,12 +320,8 @@ struct AbstractPluginApi::Impl
                      ErrorResponse::Type::INVALID_JOB_STATE,
                      "Job must be pending to cancel it");
 
-               std::string status;
-               return LauncherCommunicator->sendResponse(
-                  ControlJobResponse(
-                     in_controlJobRequest->getId(),
-                     status,
-                     JobSource->cancelJob(job, status)));
+               opUnsupported = JobSource->cancelJob(job, opComplete, message);
+               break;
             }
             default:
             {
@@ -348,6 +331,23 @@ struct AbstractPluginApi::Impl
                   ErrorResponse::Type::UNKNOWN,
                   "Internal server error: unrecognized control job operation.");
             }
+
+            if (opUnsupported)
+            {
+               std::string opStr = std::to_string(static_cast<int>(in_controlJobRequest->getOperation()));
+               sendErrorResponse(
+                  in_controlJobRequest->getId(),
+                  ErrorResponse::Type::INVALID_REQUEST,
+                  message.empty() ?
+                     "Operation " + opStr + " not supported." :
+                     message);
+            }
+            else
+            {
+               LauncherCommunicator->sendResponse(
+                  ControlJobResponse(in_controlJobRequest->getId(), message, opComplete));
+            }
+            
          }
       }
       END_LOCK_JOB
