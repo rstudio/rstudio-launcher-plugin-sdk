@@ -11,3 +11,4 @@ rstudio-clone/
 **/settings.json
 **/tasks.json
 **/launch.json
+.Rproj.user
