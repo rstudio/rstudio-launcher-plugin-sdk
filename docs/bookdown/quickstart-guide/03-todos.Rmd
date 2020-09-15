@@ -2,7 +2,7 @@
 
 This section will walk the developer through each of the QuickStart `TODO` items. As each `TODO` is completed, it is recommended to remove it from the code.
 
-Throughout this chapter, an example Plugin Developer who is part of the "Orchid Organization" and developing a Launcher Plugin for the "Mars" job scheduling system will be used. The theoretical Mars job scheduling provides a C/C++ interface, which will be referred to as the `mars_api`. It provides a set of free functions which allow the caller to get details from the Mars job scheduling system. `mars_api` calls may throw `mars_exceptions` which need to be handled.
+Throughout this chapter, an example Plugin Developer who is part of the "Orchid Organization" and developing a Launcher Plugin for the "Mars" job scheduling system will be used. The theoretical Mars job scheduling provides a C/C++ interface, which will be referred to as the `mars_api`. It provides a set of free functions which allow the caller to get details from the Mars job scheduling system. Any `mars_api` call may throw a `mars_exception`, which needs to be handled appropriately.
 
 ## TODO #1: Change Namespaces {#todo-1}
  
@@ -319,7 +319,7 @@ Error MarsJobSource::initialize()
   {
     mars_api::init(opts.host(), opts.port(), opts.useSsl());
   }
-  catch (const mars_api::mars_expcetion& e)
+  catch (const mars_api::mars_exception& e)
   {
     return Error("MarsApiError", e.code(), e.what(), ERROR_LOCATION);
   }
@@ -348,7 +348,7 @@ This section will describe the questions which need to be answered to correctly 
     + set `JobSourceConfiguration::ContainerConfig::SupportsContainers` to `true`. Note that if `JobSourceConfiguration::ContainerConfig::SupportsContainers` is set to `false`, all other values of `JobSourceConfiguration::ContainerConfig` will be ignored.
     + decide how the list of available container images should be determined and add each container image name to `JobSourceConfiguration::ContainerConfig::ContainerImages`.
     + decide how the default container image should be determined, if any, and then set the value of `JobSourceConfiguration::ContainerConfig::DefaultImage`.
-    * decide whether unknown images should be allowed and set `JobSourceConfiguration::ContainerConfig""AllowUnknownImages` to `true` or `false` as desired.
+    * decide whether unknown images should be allowed and set `JobSourceConfiguration::ContainerConfig::AllowUnknownImages` to `true` or `false` as desired.
     > Info: The RStudio Kubernetes Launcher Plugin allows system administrators to control the list of available container images, the default image, and whether unknown images should be allowed on a per-user or per-group basis through the User Profiles feature. For an example of what that configuration looks like, see the sample `launcher.kubernetes.profiles.conf` file in the [Job Launcher Plugin Configuration section of the RStudio Job Launcher Administrator's Guide](https://docs.rstudio.com/job-launcher/index.html#job-launcher-plugin-configuration).
     
     &nbsp;
@@ -1133,3 +1133,191 @@ Error MarsJobSource::getNetworkInfo(api::JobPtr in_job, api::NetworkInfo& out_ne
 ```
 
 in `MarsJobSource.cpp`
+
+## TODO #15: Control Jobs {#todo-15}
+
+TODO Location             Impact
+------------------------  ------------------------
+QuickStartJobSource.cpp   QuickStartJobSource.cpp
+
+When a request is made to control the state of a Job, the SDK will first validate the state of the job and then invoke the appropriate method on `IJobSource`. If the Job is not in an appropriate state for the control operation that was requested, the SDK will return an error to the Launcher without invoking any methods on the `IJobSource` object.
+
+The following table describes the possible control job operations, the method that will be invoked for each, the equivalent posix signal, and the list of states that a Job can be in for that operation to be valid.
+
+Operation  | `IJobSource` method | Equivalent Posix Signal | Valid Job States |
+---------- | ------------------- | ----------------------- | ---------------- |
+Cancel     | `cancelJob`         | N/A                     | `PENDING`        |
+Kill       | `killJob`           | `SIGKILL`               | `RUNNING`        |
+Resume     | `resumeJob`         | `SIGCONT`               | `SUSPENDED`      |
+Stop       | `stopJob`           | `SIGTERM`               | `RUNNING`        |
+Suspend    | `suspendJob`        | `SIGSTOP`               | `RUNNING`        |
+
+The Plugin is not required to support any of these operations. For any of the methods that the Plugin does not support, the Plugin should return `false`. If the Plugin returns `false` for one of these methods, the SDK will provide a default `"Operation not supported"` error message. However, the Plugin developer may choose to provide a more detailed error message by setting the `out_statusMessage` variable.
+
+If the Plugin does support a given operation, the Plugin should return `true` from the method. The Plugin can indicate the success of the operation via the `out_isComplete` parameter by setting it to `true` on a successful operation and `false` on a failed operation. In any case, the Plugin may provide more details about the success or failure of the operation by setting the `out_statusMessage` variable.
+
+Note that the SDK will acquire the `JobLock` of the relevant `Job` object before invoking the appropriate `IJobSource` method, so the Plugin implementation is free to modify the state of the job without acquiring the `JobLock` itself. The Plugin should modify the state of the `Job` when the operation is finished. In some cases, that may mean immediately modifying the state of the Job after the operation is invoked. In some cases, that may mean updating the state of the Job when the change is reflected in the Job Scheduling System.
+
+### Example {#todo-15-ex}
+
+Assume that the `mars_api` provides a way to cancel a job via the function `int cancel_job(const char* id)`, a way to suspend a running job via the function `int suspend_job(const char* id)`, a way to resume a suspended function via `int resume_job(const char* id)`, and a way to stop a job via `int stop_job(const char* id, bool force = false)`. In that case, the developer might change
+
+```{Rcpp, eval=FALSE}
+bool QuickStartJobSource::cancelJob(api::JobPtr in_job, bool& out_isComplete, std::string& out_statusMessage)
+{
+   // TODO #15: Cancel a pending job.
+   out_isComplete = false;
+   out_statusMessage = "Cancel job is not supported.";
+   return false;
+}
+
+// ...
+
+bool QuickStartJobSource::killJob(api::JobPtr in_job, bool& out_isComplete, std::string& out_statusMessage)
+{
+   // TODO #15: Kill a running job.
+   out_isComplete = false;
+   out_statusMessage = "Kill job is not supported.";
+   return false;
+}
+
+bool QuickStartJobSource::resumeJob(api::JobPtr in_job, bool& out_isComplete, std::string& out_statusMessage)
+{
+   // TODO #15: Resume a suspended job.
+   out_isComplete = false;
+   out_statusMessage = "Resume job is not supported.";
+   return false;
+}
+
+bool QuickStartJobSource::stopJob(api::JobPtr in_job, bool& out_isComplete, std::string& out_statusMessage)
+{
+   // TODO #15: Stop a running job.
+   out_isComplete = false;
+   out_statusMessage = "Stop job is not supported.";
+   return false;
+}
+
+bool QuickStartJobSource::suspendJob(api::JobPtr in_job, bool& out_isComplete, std::string& out_statusMessage)
+{
+   // TODO #15: Suspend a running job.
+   out_isComplete = false;
+   out_statusMessage = "Suspend job is not supported.";
+   return false;
+}
+```
+
+in `QuickStartJobSource.cpp` to 
+
+```{Rcpp, eval=FALSE}
+bool MarsJobSource::cancelJob(api::JobPtr in_job, bool& out_isComplete, std::string& out_statusMessage)
+{
+   int ret = -1;
+   try 
+   {
+      ret = mars_api::cancel_job(in_job->Id);
+      out_isComplete = (ret == 0);
+      
+      // The job status watcher will update the job status to CANCELED when it shows as canceled in the Mars system.
+      if (!out_isComplete)
+        out_statusMessage = "Cancel job " + in_job->Id + " failed with code " + std::to_string(ret);
+   }
+   catch (const mars_api::mars_exception& e)
+   {
+      out_isComplete = false;
+      out_statusMessage = "Cancel job " + in_job->Id + " failed " + e.what();
+   }
+   
+   return true;
+}
+
+// ...
+
+bool MarsJobSource::killJob(api::JobPtr in_job, bool& out_isComplete, std::string& out_statusMessage)
+{
+   int ret = -1;
+   try 
+   {
+      // Stop the job forcefully.
+      ret = mars_api::stop_job(in_job->Id, true);
+      out_isComplete = (ret == 0);
+      
+      // Set the job status to KILLED so that it doesn't incorrectly show as FINISHED
+      if (out_isComplete)
+        in_job->Status = api::Job::State::KILLED;
+      else
+        out_statusMessage = "Kill job " + in_job->Id + " failed with code " + std::to_string(ret);
+   }
+   catch (const mars_api::mars_exception& e)
+   {
+      out_isComplete = false;
+      out_statusMessage = "Kill job " + in_job->Id + " failed " + e.what();
+   }
+   
+   return true;
+}
+
+bool MarsJobSource::resumeJob(api::JobPtr in_job, bool& out_isComplete, std::string& out_statusMessage)
+{
+   int ret = -1;
+   try 
+   {
+      ret = mars_api::resume_job(in_job->Id);
+      out_isComplete = (ret == 0);
+      
+      // The job status watcher will update the job status to RUNNING when it shows as canceled in the Mars system.
+      if (!out_isComplete)
+        out_statusMessage = "Resume job " + in_job->Id + " failed with code " + std::to_string(ret);
+   }
+   catch (const mars_api::mars_exception& e)
+   {
+      out_isComplete = false;
+      out_statusMessage = "Resume job " + in_job->Id + " failed " + e.what();
+   }
+   
+   return true;
+}
+
+bool MarsJobSource::stopJob(api::JobPtr in_job, bool& out_isComplete, std::string& out_statusMessage)
+{
+   int ret = -1;
+   try 
+   {
+      ret = mars_api::stop_job(in_job->Id);
+      out_isComplete = (ret == 0);
+      
+      // The job status watcher will update the job status to FINISHED when it shows as completed in the Mars system.
+      if (!out_isComplete)
+        out_statusMessage = "Stop job " + in_job->Id + " failed with code " + std::to_string(ret);
+   }
+   catch (const mars_api::mars_exception& e)
+   {
+      out_isComplete = false;
+      out_statusMessage = "Stop job " + in_job->Id + " failed " + e.what();
+   }
+   
+   return true;
+}
+
+bool MarsJobSource::suspendJob(api::JobPtr in_job, bool& out_isComplete, std::string& out_statusMessage)
+{
+   int ret = -1;
+   try 
+   {
+      ret = mars_api::suspend_job(in_job->Id);
+      out_isComplete = (ret == 0);
+      
+      // The job status watcher will update the job status to SUSPENDED when it shows as suspended in the Mars system.
+      if (!out_isComplete)
+        out_statusMessage = "Suspend job " + in_job->Id + " failed with code " + std::to_string(ret);
+   }
+   catch (const mars_api::mars_exception& e)
+   {
+      out_isComplete = false;
+      out_statusMessage = "Suspend job " + in_job->Id + " failed " + e.what();
+   }
+   
+   return true;
+}
+```
+
+in `MarsJobSource.cpp`.
