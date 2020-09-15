@@ -1144,6 +1144,8 @@ When a request is made to control the state of a Job, the SDK will first validat
 
 The following table describes the possible control job operations, the method that will be invoked for each, the equivalent posix signal, and the list of states that a Job can be in for that operation to be valid.
 
+&nbsp;
+
 Operation  | `IJobSource` method | Equivalent Posix Signal | Valid Job States |
 ---------- | ------------------- | ----------------------- | ---------------- |
 Cancel     | `cancelJob`         | N/A                     | `PENDING`        |
@@ -1151,6 +1153,8 @@ Kill       | `killJob`           | `SIGKILL`               | `RUNNING`        |
 Resume     | `resumeJob`         | `SIGCONT`               | `SUSPENDED`      |
 Stop       | `stopJob`           | `SIGTERM`               | `RUNNING`        |
 Suspend    | `suspendJob`        | `SIGSTOP`               | `RUNNING`        |
+
+&nbsp;
 
 The Plugin is not required to support any of these operations. For any of the methods that the Plugin does not support, the Plugin should return `false`. If the Plugin returns `false` for one of these methods, the SDK will provide a default `"Operation not supported"` error message. However, the Plugin developer may choose to provide a more detailed error message by setting the `out_statusMessage` variable.
 
