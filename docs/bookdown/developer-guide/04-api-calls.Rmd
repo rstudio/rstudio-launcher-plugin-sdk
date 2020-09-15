@@ -208,6 +208,37 @@ Rather than sending a response per open stream, the Plugin sends the Launcher a 
 | status          | The status of the job.                                                                                                              | [JobState](#job-state)
 | statusMessage   | The status message of the job, if any.                                                                                              | String
 
+### Control Job {#control-job}
+
+This API call can be used to control the state of a job. Currently supported operations are cancel, stop, kill, suspend, and resume. The Job must be in the correct state for a given operation to be valid (respectively, pending, running, running, running, and suspended). The SDK will handle Job State validation. The Plugin is only responsible for a best-effort attempt to perform the given operation on the job. If the Plugin indicates that the operation is not supported, the SDK will return an [Error Response](#error).
+
+&nbsp;
+
+**Control Job Request**
+
+|  Field Name     |                                                              Description                                              |  Value
+| --------------- | --------------------------------------------------------------------------------------------------------------------- | -------
+| messageType     | [See above.](#common-fields)                                                                                          | 5
+| requestId       | [See above.](#common-fields)                                                                                          | Int
+| username        | [See above.](#common-fields)                                                                                          | String
+| requestUsername | [See above.](#common-fields)                                                                                          | String
+| jobId           | The ID of the job to control. This field cannot be '*'.                                                               | String
+| encodedJobId    | The Launcher generated encoded job ID which contains extra metadata. Provides extra information only.                 | String
+| operation       | The operation to be performed on the Job.                                                                             | [JobOperation](#job-op)
+
+&nbsp;
+
+**Control Job Response**
+
+|  Field Name       |                                                             Description                                                             |      Value
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ----------------
+| messageType       | [See above.](#common-fields)                                                                                                        | 4
+| requestId         | [See above.](#common-fields)                                                                                                        | Int
+| responseId        | [See above.](#common-fields)                                                                                                        | Int
+| statusMessage     | A message describing the status of the control job operation, if any.                                                               | String
+| operationComplete | Whether the control job operation completed successfully or not.                                                                    | Boolean
+
+
 ### Job Output Stream {#output-stream}
 
 This API call is responsible for streaming a Job's output data. The caller may request the type of output they wish to see (Standard Out, Standard Error, or both) and the Plugin must do its best to report only that type of data.
@@ -389,9 +420,21 @@ This represents a host mount source. If this field is present in a [Mount](#moun
 | valueType    | The type of the custom configuration value. Optional.                       | "string", "int", "float", or "enum"
 | value        | The value of the custom configuration value. Optional.                      | String (convertible to valueType)
 
+### JobOperation {#job-op}
+
+This is a JSON Integer value with a limited set of values. The possible values of a JobOperation field and their meanings are listed in the table below.
+
+| Value |                                                           Description
+| ----- |--------------------------------------------------------------------------------------------------------------------------
+| 0     | The Job should be suspended. Only valid if the Job is currently in the "Running" [JobState](#job-state).
+| 1     | The Job should be resumed. Only valid if the Job is currently in the "Suspended" [JobState](#job-state).
+| 2     | The Job should be stopped. Only valid if the Job is currently in the "Running" [JobState](#job-state).
+| 3     | The Job should be killed. Only valid if the Job is currently in the "Running" [JobState](#job-state).
+| 4     | The Job should be canceled. Only valid if the Job is currently in the "Pending" [JobState](#job-state).
+
 ### JobState {#job-state}
 
-This type is a JSON String value with limited set of valid values, rather than a JSON object like the other types described here. The possible values of a JobState field and their meanings are listed in the table below.
+This type is a JSON String value with limited set of valid values. The possible values of a JobState field and their meanings are listed in the table below.
 
 |   Value   |                                                           Description
 | --------- |--------------------------------------------------------------------------------------------------------------------------
