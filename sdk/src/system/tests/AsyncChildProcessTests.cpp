@@ -174,7 +174,7 @@ TEST_CASE("Create Async Processes")
       CHECK_FALSE(ProcessSupervisor::runAsyncProcess(o5, cb5.Callbacks));
 
 #ifdef NDEBUG
-      CHECK_FALSE(ProcessSupervisor::waitForExit(TimeDuration::Seconds(30));
+      CHECK_FALSE(ProcessSupervisor::waitForExit(TimeDuration::Seconds(30)));
 #else
       // Be more generous with timeouts in debug mode, sometimes stuff is slower.
       CHECK_FALSE(ProcessSupervisor::waitForExit(TimeDuration::Minutes(1)));
@@ -230,7 +230,7 @@ TEST_CASE("Create Async Processes")
       CHECK_FALSE(ProcessSupervisor::runAsyncProcess(opts, cb.Callbacks));
       
 #ifdef NDEBUG
-      CHECK_FALSE(ProcessSupervisor::waitForExit(TimeDuration::Seconds(30));
+      CHECK_FALSE(ProcessSupervisor::waitForExit(TimeDuration::Seconds(30)));
 #else
       // Be more generous with timeouts in debug mode, sometimes stuff is slower.
       CHECK_FALSE(ProcessSupervisor::waitForExit(TimeDuration::Minutes(1)));
@@ -275,7 +275,7 @@ TEST_CASE("Create Async Processes")
       REQUIRE_FALSE(ProcessSupervisor::runAsyncProcess(opts, cbs.Callbacks));
 
 #ifdef NDEBUG
-      CHECK_FALSE(ProcessSupervisor::waitForExit(TimeDuration::Seconds(5));
+      CHECK_FALSE(ProcessSupervisor::waitForExit(TimeDuration::Seconds(5)));
 #else
       // Be more generous with timeouts in debug mode, sometimes stuff is slower.
       CHECK_FALSE(ProcessSupervisor::waitForExit(TimeDuration::Seconds(25)));
