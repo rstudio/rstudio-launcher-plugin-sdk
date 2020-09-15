@@ -81,12 +81,8 @@ constexpr char const* FIELD_STATUS                 = "status";
 constexpr char const* FIELD_STATUS_MESSAGE         = "statusMessage";
 
 // ControlJob request and response fields
-constexpr char const* VALUE_CANCEL_JOB             = "cancel";
-constexpr char const* VALUE_KILL_JOB               = "kill";
 constexpr char const* FIELD_OPERATION              = "operation";
-constexpr char const* VALUE_RESUME_JOB             = "resume";
-constexpr char const* VALUE_STOP_JOB               = "stop";
-constexpr char const* VALUE_SUSPEND_JOB            = "suspend";
+constexpr char const* FIELD_OPERATION_COMPLETE     = "operationComplete";
 
 // OutputStream request and response fields.
 constexpr char const* FIELD_COMPLETE               = "complete";

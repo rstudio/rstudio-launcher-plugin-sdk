@@ -361,7 +361,7 @@ json::Object OutputStreamResponse::toJson() const
 {
    json::Object result = Response::toJson();
    result[FIELD_SEQUENCE_ID] = m_impl->SequenceId;
-   result[FIELD_COMPLETE] = m_impl->IsComplete;
+   result[FIELD_OPERATION_COMPLETE] = m_impl->IsComplete;
 
    if (!m_impl->Output.empty())
    {

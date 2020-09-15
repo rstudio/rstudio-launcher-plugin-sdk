@@ -890,9 +890,9 @@ TEST_CASE("Control Job Requests")
 
    SECTION("Suspend, super user")
    {
+      requestObj[FIELD_OPERATION] = static_cast<int>(ControlJobRequest::Operation::SUSPEND);
       requestObj[FIELD_REAL_USER] = "*";
       requestObj[FIELD_REQUEST_USERNAME] = USER_THREE;
-      requestObj[FIELD_OPERATION] = VALUE_SUSPEND_JOB;
 
       std::shared_ptr<Request> request;
       REQUIRE_FALSE(Request::fromJson(requestObj, request));
@@ -909,7 +909,7 @@ TEST_CASE("Control Job Requests")
 
    SECTION("Resume")
    {
-      requestObj[FIELD_OPERATION] = VALUE_RESUME_JOB;
+      requestObj[FIELD_OPERATION] = static_cast<int>(ControlJobRequest::Operation::RESUME);
 
       std::shared_ptr<Request> request;
       REQUIRE_FALSE(Request::fromJson(requestObj, request));
@@ -926,7 +926,7 @@ TEST_CASE("Control Job Requests")
 
    SECTION("Stop")
    {
-      requestObj[FIELD_OPERATION] = VALUE_STOP_JOB;
+      requestObj[FIELD_OPERATION] = static_cast<int>(ControlJobRequest::Operation::STOP);
 
       std::shared_ptr<Request> request;
       REQUIRE_FALSE(Request::fromJson(requestObj, request));
@@ -943,7 +943,7 @@ TEST_CASE("Control Job Requests")
 
    SECTION("Kill")
    {
-      requestObj[FIELD_OPERATION] = VALUE_KILL_JOB;
+      requestObj[FIELD_OPERATION] = static_cast<int>(ControlJobRequest::Operation::KILL);
 
       std::shared_ptr<Request> request;
       REQUIRE_FALSE(Request::fromJson(requestObj, request));
@@ -960,7 +960,7 @@ TEST_CASE("Control Job Requests")
 
    SECTION("Cancel")
    {
-      requestObj[FIELD_OPERATION] = VALUE_CANCEL_JOB;
+      requestObj[FIELD_OPERATION] = static_cast<int>(ControlJobRequest::Operation::CANCEL);
 
       std::shared_ptr<Request> request;
       REQUIRE_FALSE(Request::fromJson(requestObj, request));
@@ -987,7 +987,7 @@ TEST_CASE("Control Job Requests")
    {
       requestObj[FIELD_JOB_ID] = "*";
       requestObj[FIELD_ENCODED_JOB_ID] = "";
-      requestObj[FIELD_OPERATION] = VALUE_CANCEL_JOB;
+      requestObj[FIELD_OPERATION] = static_cast<int>(ControlJobRequest::Operation::CANCEL);
 
       std::shared_ptr<Request> request;
       REQUIRE(Request::fromJson(requestObj, request));
