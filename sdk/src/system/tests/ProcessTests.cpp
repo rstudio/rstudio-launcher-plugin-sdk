@@ -83,8 +83,13 @@ TEST_CASE("General tests")
       // one for each of the sleeps. On others we're expecting only five - one for the /bin/sh and one for each of the sleeps.
       CHECK(((process.size() == 6) || (process.size() == 5)));
 
-      // Give the processes a chance to exit.
+#ifdef NDEBUG
+      // Give the process a chance to exit. A couple seconds should be more than enough.
       CHECK_FALSE(ProcessSupervisor::waitForExit(TimeDuration::Seconds(2)));
+#else
+      // Give the process a chance to exit. Be more generous in debug mode, sometimes stuff is slower.
+      CHECK_FALSE(ProcessSupervisor::waitForExit(TimeDuration::Seconds(10)));
+#endif
 
       if (ProcessSupervisor::hasRunningChildren())
       {
@@ -117,8 +122,13 @@ TEST_CASE("General tests")
       
       CHECK_FALSE(signalProcess(child.get()->getPid(), sig));
 
+#ifdef NDEBUG
       // Give the process a chance to exit. A second should be more than enough.
       CHECK_FALSE(ProcessSupervisor::waitForExit(TimeDuration::Seconds(1)));
+#else
+      // Give the process a chance to exit. Be more generous in debug mode, sometimes stuff is slower.
+      CHECK_FALSE(ProcessSupervisor::waitForExit(TimeDuration::Seconds(5)));
+#endif
 
       if (ProcessSupervisor::hasRunningChildren())
       {
@@ -158,8 +168,13 @@ TEST_CASE("General tests")
       usleep(500000);
       CHECK_FALSE(signalProcess(child.get()->getPid(), sig, false));
 
-      // Give the process a chance to exit. Half a second should be more than enough.
+#ifdef NDEBUG
+      // Give the process a chance to exit. A half a second should be more than enough.
       CHECK_FALSE(ProcessSupervisor::waitForExit(TimeDuration::Microseconds(5000000)));
+#else
+      // Give the process a chance to exit. Be more generous in debug mode, sometimes stuff is slower.
+      CHECK_FALSE(ProcessSupervisor::waitForExit(TimeDuration::Seconds(5)));
+#endif
       
       if (ProcessSupervisor::hasRunningChildren());
       {
@@ -190,8 +205,13 @@ TEST_CASE("General tests")
       CHECK(stdOut == "");
       CHECK_FALSE(signalProcess(child.get()->getPid(), SIGCONT));
 
-      // Give the process a chance to exit. Two seconds should be enough.
+#ifdef NDEBUG
+      // Give the process a chance to exit. A couple seconds should be more than enough.
       CHECK_FALSE(ProcessSupervisor::waitForExit(TimeDuration::Seconds(2)));
+#else
+      // Give the process a chance to exit. Be more generous in debug mode, sometimes stuff is slower.
+      CHECK_FALSE(ProcessSupervisor::waitForExit(TimeDuration::Seconds(10)));
+#endif
       
       if (ProcessSupervisor::hasRunningChildren());
       {
