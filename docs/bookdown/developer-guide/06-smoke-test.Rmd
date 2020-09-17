@@ -1,6 +1,6 @@
 # Smoke Test Utility {#smoke-test}
 
-The Smoke Test utility is provided with the RStudio Launcher Plugin SDK to provide the Plugin developer a way to exercise the basic functionality of the Plugin, particularly in way that allows the developer to easily attach a debugger to the Plugin. The Smoke Test utility is not intended to replace integration testing with the RStudio Launcher and the RStudio product which will use the launcher.
+The Smoke Test utility is provided with the RStudio Launcher Plugin SDK to provide the Plugin developer a way to exercise the basic functionality of the Plugin, particularly in a way that allows the developer to easily attach a debugger to the Plugin. The Smoke Test utility is not intended to replace integration testing with the RStudio Launcher and the RStudio product which will use the launcher.
 
 ## Plugin Options {#smoke-test-opts}
 
@@ -36,7 +36,7 @@ This section documents what each menu item will do. For an example of how a Plug
 
 ### 1. Get cluster info {#st-menu-1}
 
-This menu item will send a [Cluster Info](#cluster-info) request to the Plugin and print the response. It should include all of maximum and default resource limits, any available placement constraints, the container information, and the available queues. If any of these values are not configured or are not supported by the Plugin, they will not be included in the response.
+This menu item will send a [Cluster Info](#cluster-info) request to the Plugin and print the response. It should include all of the maximum and default resource limits, any available placement constraints, the container information, and the available queues. If any of these values are not configured or are not supported by the Plugin, they will not be included in the response.
 
 ### 2. Get all jobs {#st-menu-2}
 

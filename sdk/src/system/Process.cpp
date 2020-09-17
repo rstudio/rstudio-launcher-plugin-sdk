@@ -1875,7 +1875,7 @@ Error getChildProcesses(pid_t in_parentPid, std::vector<ProcessInfo>& out_proces
          itr->second->Children.push_back(ele.second);
    }
 
-   // Step 3: Put the process itself and all of it's children into the output vector.
+   // Step 3: Put the process itself and all of its children into the output vector.
    out_processes.push_back(root->second->Info);
    std::function<void (std::shared_ptr<Node>, int)> walkChildren;
    walkChildren = [&out_processes, &walkChildren](std::shared_ptr<Node> in_node, int in_depth)->void

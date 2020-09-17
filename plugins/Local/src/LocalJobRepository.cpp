@@ -252,7 +252,7 @@ Error LocalJobRepository::loadJobs(api::JobList& out_jobs) const
          Error error = system::process::ProcessInfo::getProcessInfo(job->Pid.getValueOr(0), procInfo);
          if (isFileNotFoundError(error))
          {
-            // If we couldn't find details about the job it finished between the time the last instance of the Local 
+            // If we couldn't find details about the job, it finished between the time the last instance of the Local 
             // Plugin exited and this instance started. Update the job state to the best of our knowledge to avoid jobs
             // stuck in their states.
             job->Status = api::Job::State::FINISHED;

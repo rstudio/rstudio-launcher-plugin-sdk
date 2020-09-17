@@ -1142,7 +1142,7 @@ QuickStartJobSource.cpp   QuickStartJobSource.cpp
 
 When a request is made to control the state of a Job, the SDK will first validate the state of the job and then invoke the appropriate method on `IJobSource`. If the Job is not in an appropriate state for the control operation that was requested, the SDK will return an error to the Launcher without invoking any methods on the `IJobSource` object.
 
-The following table describes the possible control job operations, the method that will be invoked for each, the equivalent posix signal, and the list of states that a Job can be in for that operation to be valid.
+The following table describes the possible control job operations, the method that will be invoked for each, the equivalent POSIX signal, and the list of states that a Job can be in for that operation to be valid.
 
 &nbsp;
 
@@ -1164,7 +1164,7 @@ Note that the SDK will acquire the `JobLock` of the relevant `Job` object before
 
 ### Example {#todo-15-ex}
 
-Assume that the `mars_api` provides a way to cancel a job via the function `int cancel_job(const char* id)`, a way to suspend a running job via the function `int suspend_job(const char* id)`, a way to resume a suspended function via `int resume_job(const char* id)`, and a way to stop a job via `int stop_job(const char* id, bool force = false)`. In that case, the developer might change
+Assume that the `mars_api` provides a way to cancel a job via the function `int cancel_job(const char* id)`, a way to suspend a running job via the function `int suspend_job(const char* id)`, a way to resume a suspended job via `int resume_job(const char* id)`, and a way to stop a job via `int stop_job(const char* id, bool force = false)`. In that case, the developer might change
 
 ```{Rcpp, eval=FALSE}
 bool QuickStartJobSource::cancelJob(api::JobPtr in_job, bool& out_isComplete, std::string& out_statusMessage)
