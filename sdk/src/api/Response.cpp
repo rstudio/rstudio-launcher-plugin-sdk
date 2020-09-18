@@ -372,6 +372,52 @@ json::Object OutputStreamResponse::toJson() const
    return result;
 }
 
+// Resource Utilization Stream Response ================================================================================
+struct ResourceUtilStreamResponse::Impl
+{
+
+   Impl(const ResourceUtilData& in_data, bool in_isComplete) :
+      Data(in_data),
+      IsComplete(in_isComplete)
+   {
+   }
+
+   ResourceUtilData Data;
+
+   bool IsComplete;
+};
+
+PRIVATE_IMPL_DELETER_IMPL(ResourceUtilStreamResponse);
+
+ResourceUtilStreamResponse::ResourceUtilStreamResponse(
+   StreamSequences in_sequences,
+   const ResourceUtilData& in_resourceData,
+   bool in_isComplete) :
+      MultiStreamResponse(Response::Type::JOB_RESOURCE_UTIL, in_sequences),
+      m_impl(new Impl(in_resourceData, in_isComplete))
+{
+}
+
+json::Object ResourceUtilStreamResponse::toJson() const
+{
+   json::Object result = MultiStreamResponse::toJson();
+   
+   const ResourceUtilData& data = m_impl->Data;
+   if (data.CpuPercent)
+      result[FIELD_CPU_PERCENT] = data.CpuPercent.getValueOr(0.0);
+   if (data.CpuSeconds)
+      result[FIELD_CPU_SECONDS] = data.CpuSeconds.getValueOr(0.0);
+   if (data.VirtualMem)
+      result[FIELD_VIRTUAL_MEM] = data.VirtualMem.getValueOr(0.0);
+   if (data.ResidentMem)
+      result[FIELD_RESIDENT_MEM] = data.ResidentMem.getValueOr(0.0);
+
+   result[FIELD_COMPLETE] = m_impl->IsComplete;
+
+   return result;
+}
+
+
 // Network Response ====================================================================================================
 struct NetworkResponse::Impl
 {

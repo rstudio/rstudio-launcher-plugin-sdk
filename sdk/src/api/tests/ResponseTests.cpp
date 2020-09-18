@@ -569,6 +569,7 @@ TEST_CASE("ResourceUtilStream Response")
 {
    json::Object expected;
    expected[FIELD_MESSAGE_TYPE] = 6;
+   expected[FIELD_REQUEST_ID] = 0;
 
    SECTION("All data empty, complete, one sequence")
    {
@@ -581,6 +582,7 @@ TEST_CASE("ResourceUtilStream Response")
       json::Array seqs;
       seqs.push_back(seq);
 
+      expected[FIELD_RESPONSE_ID] = 19;
       expected[FIELD_SEQUENCES] = seqs;
       expected[FIELD_COMPLETE] = true;
 
@@ -599,6 +601,7 @@ TEST_CASE("ResourceUtilStream Response")
       for (const StreamSequenceId& seq: sequences)
          seqsArr.push_back(seq.toJson());
 
+      expected[FIELD_RESPONSE_ID] = 20;
       expected[FIELD_SEQUENCES] = seqsArr;
       expected[FIELD_COMPLETE] = false;
       expected[FIELD_CPU_PERCENT] = 95.4;
