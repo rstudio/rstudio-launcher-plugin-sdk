@@ -1040,7 +1040,7 @@ TEST_CASE("Parse ResourceUtilStream request")
       CHECK(resourceUtilStreamRequest->getRequestUsername() == USER_TWO);
       CHECK(resourceUtilStreamRequest->getJobId() == "376");
       CHECK(resourceUtilStreamRequest->getEncodedJobId() == "encoded-376");
-      CHECK_FALSE(resourceUtilStreamRequest->isCancelRequest());
+      CHECK(resourceUtilStreamRequest->isCancelRequest());
    }
 
 }
