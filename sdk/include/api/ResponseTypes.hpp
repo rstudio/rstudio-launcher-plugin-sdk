@@ -105,6 +105,27 @@ private:
    PRIVATE_IMPL(m_impl);
 };
 
+/**
+ * @brief Represents the current resource utilization of a job.
+ */
+struct ResourceUtilData
+{
+   /** The percentage of the CPU(s) that are currently in use by the Job. */
+   Optional<double> CpuPercent;
+
+   /** The total CPU time in seconds that the Job has used, from the start until now. */
+   Optional<double> CpuSeconds;
+   
+   /** The amount of virtual memory currently in use by the Job, in MB. */
+   Optional<double> VirtualMem;
+
+   /** The size of resident (actual/physical) memory currently in use by the Job, in MB. */
+   Optional<double> ResidentMem;
+};
+
+/**
+ * @brief Represents the network information for a job.
+ */
 struct NetworkInfo
 {
    /** The hostname of the machine running the job. */
