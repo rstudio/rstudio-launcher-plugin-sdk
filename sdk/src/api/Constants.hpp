@@ -76,9 +76,22 @@ constexpr char const* FIELD_JOBS                   = "jobs";
 
 // JobStatus response fields.
 constexpr char const* FIELD_ID                     = "id";
-constexpr char const* FIELD_JOB_NAME               = "name";
-constexpr char const* FIELD_JOB_STATUS             = "status";
-constexpr char const* FIELD_JOB_STATUS_MESSAGE     = "statusMessage";
+constexpr char const* FIELD_NAME                   = "name";
+constexpr char const* FIELD_STATUS                 = "status";
+constexpr char const* FIELD_STATUS_MESSAGE         = "statusMessage";
+
+// ControlJob request and response fields
+constexpr char const* FIELD_OPERATION              = "operation";
+constexpr char const* FIELD_OPERATION_COMPLETE     = "operationComplete";
+
+// OutputStream request and response fields.
+constexpr char const* FIELD_COMPLETE               = "complete";
+constexpr char const* FIELD_OUTPUT                 = "output";
+constexpr char const* FIELD_OUTPUT_TYPE            = "outputType";
+
+// Network response fields.
+constexpr char const* FIELD_HOST                   = "host";
+constexpr char const* FIELD_IPS                    = "ipAddresses";
 
 // ClusterInfo response fields.
 constexpr char const* FIELD_ALLOW_UNKNOWN_IMAGES   = "allowUnknownImages";
@@ -89,15 +102,6 @@ constexpr char const* FIELD_IMAGES                 = "images";
 constexpr char const* FIELD_PLACEMENT_CONSTRAINTS  = "placementConstraints";
 constexpr char const* FIELD_QUEUES                 = "queues";
 constexpr char const* FIELD_RESOURCE_LIMITS        = "resourceLimits";
-
-// OutputStream request and response fields.
-constexpr char const* FIELD_COMPLETE               = "complete";
-constexpr char const* FIELD_OUTPUT                 = "output";
-constexpr char const* FIELD_OUTPUT_TYPE            = "outputType";
-
-// Network response fields.
-constexpr char const* FIELD_HOST                   = "host";
-constexpr char const* FIELD_IPS                    = "ipAddresses";
 
 } // namespace api
 } // namespace launcher_plugins

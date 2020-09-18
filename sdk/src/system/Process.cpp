@@ -30,6 +30,7 @@
 #include <sys/resource.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+#include <unordered_set>
 
 #include <boost/regex.hpp>
 #include <boost/algorithm/string.hpp>
@@ -212,6 +213,54 @@ struct ChangeUser
    gid_t Gid;
 };
 
+// Forward declarations of anonymous functions =========================================================================
+int getExitCodeFromStatus(int in_status);
+
+// Anonymous functions  ================================================================================================
+/**
+ * @brief Changes the user after fork.
+ * 
+ * @param in_uid     The ID of the user to which to change.
+ * @param in_gid     The group ID of the user to which to change.
+ * 
+ * @return 0 on success; the error code that occurred otherwise.
+ */
+int changeUser(uid_t in_uid, gid_t in_gid)
+{
+   // If it's possible to escalate to the root user before attempting to change users, do so.
+   if (system::posix::realUserIsRoot() && (geteuid() != 0))
+   {
+      int result = ::seteuid(0);
+      if (result != 0)
+         return result;
+   }
+
+   if (in_uid != 0)
+   {
+      if (::setgid(in_gid) == -1)
+         return s_threadSafeExitError;
+      if (::setuid(in_uid) == -1)
+         return s_threadSafeExitError;
+   }
+
+   return 0;
+}
+
+/**
+ * @brief Changes the user after fork.
+ * 
+ * @param in_user    The new user. No action is taken if this object is empty.
+ * 
+ * @return 0 on success; the error code that occurred otherwise.
+ */
+int changeUser(const system::User& in_user)
+{
+   if (in_user.isEmpty())
+      return 0;
+
+   return changeUser(in_user.getUserId(), in_user.getGroupId());
+}
+
 /**
  * @brief Clears the signal mask of the current process.
  *
@@ -358,6 +407,43 @@ Error createPipes(FileDescriptors& out_fds)
    return error;
 }
 
+Error forkAndRun(
+   const std::function<int()>& in_function,
+   const system::User& in_user = system::User(true))
+{
+   pid_t pid = ::fork();
+   if (pid < 0)
+      return systemError(errno, ERROR_LOCATION);
+
+   // If we're in the child process, change users if necessary and then run the requested function.
+   if (pid == 0)
+   {
+      int ret = changeUser(in_user);
+      if (ret != 0)
+         ::_exit(ret);
+
+      ::_exit(in_function());
+   }
+   // Otherwise we're in the parent process, so wait for the child to exit and report the result.
+   else
+   {
+      int status;
+      pid_t result = posix::posixCall<pid_t>(std::bind(::waitpid, pid, &status, 0));
+
+      // Ignore child already reaped errors.
+      if ((result == -1) && (errno != ECHILD))
+         return systemError(errno, ERROR_LOCATION);
+      else if (result == 0)
+      {
+         int exitStatus = getExitCodeFromStatus(status);
+         if (exitStatus != 0)
+            return systemError(errno, ERROR_LOCATION);
+      }
+   }
+   
+   return Success();
+}
+
 /**
  * @brief Gets the process exit code from its exit status.
  *
@@ -449,6 +535,26 @@ Error getOpenFds(pid_t in_pid, std::vector<uint32_t>& out_fds)
    ::free(nameList);
 
    return Success();
+}
+
+/**
+ * @brief Sends a signal to the specified process.
+ * 
+ * @param in_pid        The PID of the process to which to send the signal.
+ * @param in_signal     The signal to send to the process.
+ * 
+ * @return 0 on success; errno of the error that occurred otherwise.
+ */
+int sendSignal(int in_pid, int in_signal)
+{
+   bool isKillSignal = (in_signal == SIGKILL) || (in_signal == SIGTERM);
+
+   // If kill returns -1 for any reason other than the process was already killed when we attempted to kill it, return 
+   // the last errno. (ESRCH means the process doesn't exist).
+   if ((::kill(in_pid, in_signal) == -1) && ((errno != ESRCH) || !isKillSignal))
+      return errno;
+
+   return 0;
 }
 
 /**
@@ -758,6 +864,7 @@ struct AbstractChildProcess::Impl
       json::Object profileObj;
       profileObj["context"] = contextObj;
       profileObj["password"] = in_options.Password;
+      profileObj["encryptionKey"] = "";
       profileObj["executablePath"] = in_options.Executable;
       profileObj["config"] = configObj;
 
@@ -900,12 +1007,9 @@ struct AbstractChildProcess::Impl
       // Change the user, if requested.
       if (NewUser.ShouldChange)
       {
-         result = ::setuid(NewUser.Uid);
-         if (result == -1)
-            ::_exit(s_threadSafeExitError);
-         result = ::setgid(NewUser.Gid);
-         if (result == -1)
-            ::_exit(s_threadSafeExitError);
+         result = changeUser(NewUser.Uid, NewUser.Gid);
+         if (result != 0)
+            ::exit(result);
       }
 
       if (in_environment.isEmpty())
@@ -1578,6 +1682,13 @@ struct ProcessSupervisor::Impl : public std::enable_shared_from_this<Impl>
          in_onExit(in_exitCode);
    }
 
+   /**
+    * @brief Checks whether the supervisor has any running children.
+    *
+    * @param in_lock    The lock on Impl::Mutex, which must already be held.
+    *
+    * @return True if there are any children; false otherwise.
+    */
    bool hasRunningChildren(const std::unique_lock<std::mutex>& in_lock)
    {
       assert(in_lock.owns_lock());
@@ -1701,6 +1812,138 @@ ProcessSupervisor::ProcessSupervisor() :
 }
 
 // Free Functions ======================================================================================================
+Error getChildProcesses(pid_t in_parentPid, std::vector<ProcessInfo>& out_processes)
+{
+   // On posix-like systems, we only have access to the parent and group IDs of a process in the ProcessInfo struct. As
+   // a result, in order to get the children of a process we need to collect the info of all the processes on the system
+   // and work backwards, adding a child to its parent's list of children based on the ppid of the child.
+
+   // A node in the process tree of the system.
+   struct Node
+   {
+      explicit Node(ProcessInfo&& in_info) : Info(in_info) {};
+
+      ProcessInfo Info;
+      std::vector<std::shared_ptr<Node> > Children;
+   };
+
+   // All process mapped by their PIDs.
+   typedef std::map<pid_t, std::shared_ptr<Node> > Tree;
+
+   DIR* dirPtr = nullptr;
+
+   // Step 1: Collect all the process info, making a node for each process.
+   Tree allProcs;
+   try
+   {
+      dirPtr = ::opendir("/proc");
+      if (dirPtr == nullptr)
+         return systemError(errno, "Unable to open /proc to get process information", ERROR_LOCATION);
+
+      struct dirent* direntPtr;
+      while ((direntPtr = ::readdir(dirPtr)) != nullptr)
+      {
+         pid_t pid = safe_convert::stringTo(direntPtr->d_name, -1);
+
+         // Skip directories that aren't process directories.
+         if (pid == -1)
+            continue;
+
+         // If we can't get the information for the given PID, just skip it.
+         ProcessInfo info;
+         Error error = ProcessInfo::getProcessInfo(pid, info);
+         if (error)
+            continue;
+
+         allProcs[pid] = std::make_shared<Node>(std::move(info));
+      }
+   }
+   CATCH_UNEXPECTED_EXCEPTION
+
+   // Find the requested PID's node now, since we can short circuit if it doesn't exist and if it does exist the pointer
+   // will still be valid after it's children are added to it.
+   const Tree::const_iterator end = allProcs.end();
+   auto root = allProcs.find(in_parentPid);
+   if (root == end)
+      return Success();
+
+   // Step 2: Build the relationships.
+   for (Tree::value_type& ele: allProcs)
+   {
+      auto itr = allProcs.find(ele.second->Info.PPid);
+      if (itr != end)
+         itr->second->Children.push_back(ele.second);
+   }
+
+   // Step 3: Put the process itself and all of its children into the output vector.
+   out_processes.push_back(root->second->Info);
+   std::function<void (std::shared_ptr<Node>, int)> walkChildren;
+   walkChildren = [&out_processes, &walkChildren](std::shared_ptr<Node> in_node, int in_depth)->void
+   {
+      // Make sure we don't revisit already visited nodes and that we don't infinitely recurse
+      if (in_depth >= 100)
+         return;
+
+      std::unordered_set<pid_t> visited;
+      for (const auto& child: in_node->Children)
+      {
+         if (visited.count(child->Info.Pid) == 0)
+         {
+            visited.insert(child->Info.Pid);
+            out_processes.push_back(child->Info);
+            walkChildren(child, in_depth + 1);
+         }
+      }
+   };
+
+   walkChildren(root->second, 0);
+
+   return Success();
+}
+
+Error signalProcess(pid_t in_pid, int in_signal, bool in_processGroupOnly)
+{
+   std::function<int()> signalFunction;
+   if (in_processGroupOnly)
+   {
+      signalFunction = [in_pid, in_signal]()
+      {
+          return sendSignal(-in_pid, in_signal);
+      };
+   }
+   else
+   {
+      std::vector<ProcessInfo> children;
+      Error error = getChildProcesses(in_pid, children);
+      if (error)
+         return error;
+
+      signalFunction = [in_pid, in_signal, children]()
+      {
+         // Kill the process and all its children, storing the last error number. It's most improtant that we report
+         // that there was some sort of error killing all these processes, as opposed to reporting each exact error (if
+         // there were multiple).
+         int ret = sendSignal(in_pid, in_signal);
+
+         for (const ProcessInfo& child: children)
+         {
+            int tmp = sendSignal(child.Pid, in_signal);
+            if (tmp != 0)
+               ret = tmp;
+         }
+
+         return ret;
+      };
+   }
+
+   system::User rootUser;
+   Error error = system::User::getUserFromIdentifier(0, rootUser);
+   if (error)
+      return error;
+
+   return forkAndRun(signalFunction, rootUser);
+}
+
 std::string shellEscape(const std::string& in_string)
 {
    boost::regex pattern("'");

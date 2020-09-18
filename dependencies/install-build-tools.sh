@@ -45,7 +45,7 @@ elif [[ $CPU_COUNT -eq 0 ]]; then
 fi
 
 IFS=" " read -r -a CMAKE_VER_ARR <<< "$(cmakeVersion)"
-if [[ ( ${#CMAKE_VER_ARR[@]} -eq 0 ) || ( $CMAKE_MAJOR_VER -lt 3 ) || ( ( $CMAKE_MAJOR_VER -eq 3 ) && ( $CMAKE_MINOR_VER -lt 14 ) ) ]]; then
+if [[ ( ${#CMAKE_VER_ARR[@]} -eq 0 ) || ( ${CMAKE_VER_ARR[0]} -lt 3 ) || ( ( ${CMAKE_VER_ARR[0]} -eq 3 ) && ( ${CMAKE_VER_ARR[1]} -lt 14 ) ) ]]; then
 
     if [[ $(haveCommand "yum") -eq 1 ]]; then
         sudo yum update -y

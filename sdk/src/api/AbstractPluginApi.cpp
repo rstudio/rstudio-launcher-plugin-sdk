@@ -247,6 +247,112 @@ struct AbstractPluginApi::Impl
       LauncherCommunicator->sendResponse(JobStateResponse(in_getJobRequest->getId(), jobs, fields));
    }
 
+   void handleControlJobRequest(const std::shared_ptr<ControlJobRequest>& in_controlJobRequest)
+   {
+      const system::User& requestUser = in_controlJobRequest->getUser();
+      const std::string& jobId = in_controlJobRequest->getJobId();
+      JobPtr job = JobRepo->getJob(jobId, requestUser);
+      if (job == nullptr)
+         return sendErrorResponse(
+            in_controlJobRequest->getId(),
+            ErrorResponse::Type::JOB_NOT_FOUND,
+            "Job " +
+            jobId +
+            " could not be found" +
+            (requestUser.isAllUsers() ? "" : " for user " + requestUser.getUsername()));
+
+      LOCK_JOB(job)
+      {
+         bool opUnsupported = false;
+         bool opComplete = false;
+         std::string message;
+         switch (in_controlJobRequest->getOperation())
+         {
+            case ControlJobRequest::Operation::KILL:
+            {
+               if (job->Status != Job::State::RUNNING)
+                  return sendErrorResponse(
+                     in_controlJobRequest->getId(),
+                     ErrorResponse::Type::INVALID_JOB_STATE,
+                     "Job must be running to kill it");
+
+               opUnsupported = JobSource->killJob(job, opComplete, message);
+               break;
+            }
+            case ControlJobRequest::Operation::SUSPEND:
+            {
+               if (job->Status != Job::State::RUNNING)
+                  return sendErrorResponse(
+                     in_controlJobRequest->getId(),
+                     ErrorResponse::Type::INVALID_JOB_STATE,
+                     "Job must be running to suspend it");
+
+               opUnsupported = JobSource->suspendJob(job, opComplete, message);
+               break;
+            }
+            case ControlJobRequest::Operation::RESUME:
+            {
+               if (job->Status != Job::State::SUSPENDED)
+                  return sendErrorResponse(
+                     in_controlJobRequest->getId(),
+                     ErrorResponse::Type::INVALID_JOB_STATE,
+                     "Job must be suspended to resume it");
+
+               opUnsupported = JobSource->resumeJob(job, opComplete, message);
+               break;
+            }
+            case ControlJobRequest::Operation::STOP:
+            {
+               if (job->Status != Job::State::RUNNING)
+                  return sendErrorResponse(
+                     in_controlJobRequest->getId(),
+                     ErrorResponse::Type::INVALID_JOB_STATE,
+                     "Job must be running to stop it");
+
+               opUnsupported = JobSource->stopJob(job, opComplete, message);
+               break;
+            }
+            case ControlJobRequest::Operation::CANCEL:
+            {
+               if (job->Status != Job::State::PENDING)
+                  return sendErrorResponse(
+                     in_controlJobRequest->getId(),
+                     ErrorResponse::Type::INVALID_JOB_STATE,
+                     "Job must be pending to cancel it");
+
+               opUnsupported = JobSource->cancelJob(job, opComplete, message);
+               break;
+            }
+            default:
+            {
+               assert(false);
+               return sendErrorResponse(
+                  in_controlJobRequest->getId(),
+                  ErrorResponse::Type::UNKNOWN,
+                  "Internal server error: unrecognized control job operation.");
+            }
+
+            if (opUnsupported)
+            {
+               std::string opStr = std::to_string(static_cast<int>(in_controlJobRequest->getOperation()));
+               sendErrorResponse(
+                  in_controlJobRequest->getId(),
+                  ErrorResponse::Type::INVALID_REQUEST,
+                  message.empty() ?
+                     "Operation " + opStr + " not supported." :
+                     message);
+            }
+            else
+            {
+               LauncherCommunicator->sendResponse(
+                  ControlJobResponse(in_controlJobRequest->getId(), message, opComplete));
+            }
+            
+         }
+      }
+      END_LOCK_JOB
+   }
+
    void handleGetNetworkRequest(const std::shared_ptr<NetworkRequest>& in_networkRequest)
    {
       const system::User& requestUser = in_networkRequest->getUser();
@@ -323,6 +429,8 @@ struct AbstractPluginApi::Impl
             return handleGetNetworkRequest(std::static_pointer_cast<NetworkRequest>(in_request));
          case Request::Type::GET_CLUSTER_INFO:
             return handleGetClusterInfo(std::static_pointer_cast<UserRequest>(in_request));
+         case Request::Type::CONTROL_JOB:
+            return handleControlJobRequest(std::static_pointer_cast<ControlJobRequest>(in_request));
          default:
             return sendErrorResponse(
                in_request->getId(),

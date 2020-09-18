@@ -39,15 +39,12 @@ fi
 
 set -e
 
-CMAKE_INSTALL_PREFIX="/usr/lib/rstudio-server"
-
 mkdir -p "${BUILD_DIR}"
 cd "${BUILD_DIR}"
 rm -f CMakeCache.txt
 cmake -DCMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE}"            \
-      -DCMAKE_INSTALL_PREFIX="${CMAKE_INSTALL_PREFIX}"    \
       ..
 
-make ${MAKEFLAGS}
+cmake --build . --target all -- ${MAKEFLAGS}
 
 # TODO: install binaries

@@ -382,7 +382,7 @@ TEST_CASE("Job Status Response Tests")
    expected[FIELD_REQUEST_ID] = 0;
    expected[FIELD_MESSAGE_TYPE] = 3;
    expected[FIELD_ID] = "58";
-   expected[FIELD_JOB_NAME] = "Some Job";
+   expected[FIELD_NAME] = "Some Job";
 
    SECTION("With status message")
    {
@@ -399,8 +399,8 @@ TEST_CASE("Job Status Response Tests")
       seqArr.push_back(seqObj);
 
       expected[FIELD_RESPONSE_ID] = 9;
-      expected[FIELD_JOB_STATUS] = Job::stateToString(Job::State::PENDING);
-      expected[FIELD_JOB_STATUS_MESSAGE] = "Resources";
+      expected[FIELD_STATUS] = Job::stateToString(Job::State::PENDING);
+      expected[FIELD_STATUS_MESSAGE] = "Resources";
       expected[FIELD_SEQUENCES] = seqArr;
 
       JobStatusResponse jobStatusResponse(sequences, job);
@@ -437,7 +437,7 @@ TEST_CASE("Job Status Response Tests")
       seqArr.push_back(seqObj5);
 
       expected[FIELD_RESPONSE_ID] = 10;
-      expected[FIELD_JOB_STATUS] = Job::stateToString(Job::State::RUNNING);
+      expected[FIELD_STATUS] = Job::stateToString(Job::State::RUNNING);
       expected[FIELD_SEQUENCES] = seqArr;
 
       JobStatusResponse jobStatusResponse(sequences, job);
@@ -534,6 +534,33 @@ TEST_CASE("Network Response")
       expected[FIELD_RESPONSE_ID] = 16;
 
       NetworkResponse response(36, networkInfo);
+      CHECK(response.toJson() == expected);
+   }
+}
+
+TEST_CASE("ControlJob Response")
+{
+   json::Object expected;
+   expected[FIELD_REQUEST_ID] = 421;
+   expected[FIELD_MESSAGE_TYPE] = 4;
+
+   SECTION("Not complete, non-empty status")
+   {
+      expected[FIELD_STATUS_MESSAGE] = "Job is not running.";
+      expected[FIELD_OPERATION_COMPLETE] = false;
+      expected[FIELD_RESPONSE_ID] = 17;
+
+      ControlJobResponse response(421, "Job is not running.", false);
+      CHECK(response.toJson() == expected);
+   }
+
+   SECTION("Complete, empty status")
+   {
+      expected[FIELD_STATUS_MESSAGE] = "";
+      expected[FIELD_OPERATION_COMPLETE] = true;
+      expected[FIELD_RESPONSE_ID] = 18;
+
+      ControlJobResponse response(421, "", true);
       CHECK(response.toJson() == expected);
    }
 }

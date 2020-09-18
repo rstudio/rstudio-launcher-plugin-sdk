@@ -29,6 +29,8 @@
 #include <system/PosixSystem.hpp>
 #include <system/Process.hpp>
 
+#include "ProcessTestHelpers.hpp"
+
 namespace rstudio {
 namespace launcher_plugins {
 namespace system {
@@ -75,7 +77,7 @@ struct TestCallbacks
 TEST_CASE("Create Async Processes")
 {
    // Make sure default options are populated.
-   REQUIRE_FALSE(options::Options::getInstance().readOptions(0, nullptr, system::FilePath()));
+   REQUIRE_FALSE(loadOptions());
 
    // Get all the users for future user.
    system::User user1, user2, user3, user4, user5;
@@ -160,7 +162,7 @@ TEST_CASE("Create Async Processes")
       o5.IsShellCommand = false;
       o5.Environment.emplace_back("VAR", "Hello, world!");
       o5.RunAsUser = user3;
-      o5.WorkingDirectory = FilePath::safeCurrentPath(FilePath());
+      o5.WorkingDirectory = user3.getHomePath();
 
       TestCallbacks cb5;
 
@@ -170,7 +172,13 @@ TEST_CASE("Create Async Processes")
       CHECK_FALSE(ProcessSupervisor::runAsyncProcess(o3, cb3.Callbacks));
       CHECK_FALSE(ProcessSupervisor::runAsyncProcess(o4, cb4.Callbacks));
       CHECK_FALSE(ProcessSupervisor::runAsyncProcess(o5, cb5.Callbacks));
+
+#ifdef NDEBUG
       CHECK_FALSE(ProcessSupervisor::waitForExit(TimeDuration::Seconds(30)));
+#else
+      // Be more generous with timeouts in debug mode, sometimes stuff is slower.
+      CHECK_FALSE(ProcessSupervisor::waitForExit(TimeDuration::Minutes(1)));
+#endif
 
       // 1. No redirection, bad command
       CHECK(cb1.StdErr == "Usage: grep [OPTION]... PATTERN [FILE]...\n"
@@ -220,7 +228,14 @@ TEST_CASE("Create Async Processes")
       TestCallbacks cb;
 
       CHECK_FALSE(ProcessSupervisor::runAsyncProcess(opts, cb.Callbacks));
+      
+#ifdef NDEBUG
       CHECK_FALSE(ProcessSupervisor::waitForExit(TimeDuration::Seconds(30)));
+#else
+      // Be more generous with timeouts in debug mode, sometimes stuff is slower.
+      CHECK_FALSE(ProcessSupervisor::waitForExit(TimeDuration::Minutes(1)));
+#endif
+
       CHECK(cb.StdErr == "");
 
       std::string expected = stdOutExpected;
@@ -258,7 +273,14 @@ TEST_CASE("Create Async Processes")
       TestCallbacks cbs;
 
       REQUIRE_FALSE(ProcessSupervisor::runAsyncProcess(opts, cbs.Callbacks));
+
+#ifdef NDEBUG
       CHECK_FALSE(ProcessSupervisor::waitForExit(TimeDuration::Seconds(5)));
+#else
+      // Be more generous with timeouts in debug mode, sometimes stuff is slower.
+      CHECK_FALSE(ProcessSupervisor::waitForExit(TimeDuration::Seconds(25)));
+#endif
+
       CHECK(cbs.ExitCode == 0);
       CHECK(cbs.StdErr == "");
       CHECK(cbs.StdOut == "Mount test passed!");
@@ -268,7 +290,7 @@ TEST_CASE("Create Async Processes")
    ProcessSupervisor::waitForExit();
 }
 
-} //namespace process
+} // namespace process
 } // namespace system
 } // namespace launcher_plugins
 } // namespace rstudio

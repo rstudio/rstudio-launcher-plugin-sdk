@@ -64,7 +64,11 @@ constexpr char const* GET_JOB_OUTPUT_BOTH_REQ = "Stream last job's output (stdou
 constexpr char const* GET_JOB_OUTPUT_STDOUT_REQ = "Stream last job's output (stdout)";
 constexpr char const* GET_JOB_OUTPUT_STDERR_REQ = "Stream last job's output (stderr)";
 constexpr char const* GET_JOB_NETWORK_REQ = "Get last job's network information";
-constexpr char const* EXIT_REQ = "Exit";
+constexpr char const* CANCEL_JOB_REQ = "Submit a slow job and then cancel it";
+constexpr char const* STOP_JOB_REQ = "Submit a slow job and then stop it";
+constexpr char const* KILL_JOB_REQ = "Submit a slow job and then kill it";
+constexpr char const* SUSP_RES_JOB_REQ = "Submit a slow job, suspend it, and then resume it";
+constexpr char const* EXIT_REQ = "Exit (q or Q also exits)";
 
 typedef std::vector<std::string> Requests;
 
@@ -92,6 +96,10 @@ const Requests& getRequests()
          GET_JOB_OUTPUT_STDOUT_REQ,
          GET_JOB_OUTPUT_STDERR_REQ,
          GET_JOB_NETWORK_REQ,
+         CANCEL_JOB_REQ,
+         KILL_JOB_REQ,
+         STOP_JOB_REQ,
+         SUSP_RES_JOB_REQ,
          EXIT_REQ
       };
 
@@ -132,6 +140,19 @@ std::string getAllJobs(const system::User& in_user)
    jobsReq[api::FIELD_REQUEST_USERNAME] = in_user.getUsername();
    jobsReq[api::FIELD_REAL_USER] = in_user.getUsername();
    jobsReq[api::FIELD_JOB_ID] = "*";
+   jobsReq[api::FIELD_ENCODED_JOB_ID] = "";
+
+   return getMessageHandler().formatMessage(jobsReq.write());
+}
+
+std::string getJob(const std::string& in_jobId, const system::User& in_user)
+{
+   json::Object jobsReq;
+   jobsReq[api::FIELD_REQUEST_ID] = ++s_requestId;
+   jobsReq[api::FIELD_MESSAGE_TYPE] = static_cast<int>(api::Request::Type::GET_JOB);
+   jobsReq[api::FIELD_REQUEST_USERNAME] = in_user.getUsername();
+   jobsReq[api::FIELD_REAL_USER] = in_user.getUsername();
+   jobsReq[api::FIELD_JOB_ID] = in_jobId;
    jobsReq[api::FIELD_ENCODED_JOB_ID] = "";
 
    return getMessageHandler().formatMessage(jobsReq.write());
@@ -180,6 +201,7 @@ std::string streamJobStatuses(const system::User& in_user)
    statusReq[api::FIELD_REAL_USER] = in_user.getUsername();
    statusReq[api::FIELD_JOB_ID] = "*";
    statusReq[api::FIELD_ENCODED_JOB_ID] = "";
+   statusReq[api::FIELD_CANCEL_STREAM] = false;
 
    return getMessageHandler().formatMessage(statusReq.write());
 }
@@ -196,6 +218,23 @@ std::string cancelJobStream(const system::User& in_user)
    statusReq[api::FIELD_CANCEL_STREAM] = true;
 
    return getMessageHandler().formatMessage(statusReq.write());
+}
+
+std::string controlJobReq(
+   api::ControlJobRequest::Operation in_operation,
+   const std::string& in_jobId,
+   const system::User& in_user)
+{
+   json::Object controlJobReq;
+   controlJobReq[api::FIELD_REQUEST_ID] = ++s_requestId;
+   controlJobReq[api::FIELD_MESSAGE_TYPE] = static_cast<int>(api::Request::Type::CONTROL_JOB);
+   controlJobReq[api::FIELD_REQUEST_USERNAME] = in_user.getUsername();
+   controlJobReq[api::FIELD_REAL_USER] = in_user.getUsername();
+   controlJobReq[api::FIELD_JOB_ID] = in_jobId;
+   controlJobReq[api::FIELD_ENCODED_JOB_ID] = "";
+   controlJobReq[api::FIELD_OPERATION] = static_cast<int>(in_operation);
+
+   return getMessageHandler().formatMessage(controlJobReq.write());
 }
 
 std::string submitJobReq(const api::Job& in_job)
@@ -259,6 +298,17 @@ std::string submitJob4Req(const system::User& in_user)
    return submitJobReq(job);
 }
 
+std::string submitSlowJobReq(const system::User& in_user)
+{
+   api::Job job;
+   job.User = in_user;
+   job.Command = "sleep 20 && echo Done";
+   job.Name = "Job for signalling";
+   job.Tags = { "signal" };
+
+   return submitJobReq(job);
+}
+
 std::string streamOutput(const std::string& in_jobId, api::OutputType in_type, const system::User& in_user)
 {
    json::Object outputStreamReq;
@@ -296,6 +346,7 @@ std::string networkReq(const std::string& in_jobId, const system::User& in_user)
    networkReq[api::FIELD_REQUEST_USERNAME] = in_user.getUsername();
    networkReq[api::FIELD_REAL_USER] = in_user.getUsername();
    networkReq[api::FIELD_JOB_ID] = in_jobId;
+   networkReq[api::FIELD_ENCODED_JOB_ID] = "";
 
    return getMessageHandler().formatMessage(networkReq.write());
 }
@@ -314,7 +365,8 @@ void parseJobIds(const json::Array& in_jobsArray, std::vector<std::string>& io_i
       if (in_jobsArray[i].isObject())
       {
          json::Object jobObj = in_jobsArray[i].getObject();
-         if (jobObj.hasMember(api::FIELD_ID) && jobObj[api::FIELD_ID].isString())
+         if (jobObj.hasMember(api::FIELD_ID) &&
+            jobObj[api::FIELD_ID].isString())
             io_ids.push_back(jobObj[api::FIELD_ID].getString());
       }
    }
@@ -494,8 +546,13 @@ bool SmokeTest::sendRequest()
    }
    catch (...)
    {
-      std::cout << "Invalid choice (" << line << "). Please enter a positive integer." << std::endl;
-      return true;
+      if ((line == "q") || (line == "Q"))
+         choice = requests.size();
+      else
+      {
+         std::cout << "Invalid choice (" << line << "). Please enter a positive integer." << std::endl;
+         return true;
+      }
    }
 
    bool success = true;
@@ -523,6 +580,14 @@ bool SmokeTest::sendRequest()
          success = sendJobOutputStreamRequest(api::OutputType::STDOUT);
       else if (request == GET_JOB_OUTPUT_STDERR_REQ)
          success = sendJobOutputStreamRequest(api::OutputType::STDERR);
+      else if (request == CANCEL_JOB_REQ)
+         success = sendControlJobReqeust(api::ControlJobRequest::Operation::CANCEL);
+      else if (request == KILL_JOB_REQ)
+         success = sendControlJobReqeust(api::ControlJobRequest::Operation::KILL);
+      else if (request == STOP_JOB_REQ)
+         success = sendControlJobReqeust(api::ControlJobRequest::Operation::STOP);
+      else if (request == SUSP_RES_JOB_REQ)
+         success = sendSupsendResumeJobReqeust();
       else
       {
          std::string message;
@@ -621,9 +686,61 @@ void SmokeTest::stop()
    system::AsioService::waitForExit();
 }
 
+bool SmokeTest::controlLastJobAndPrintStatus(
+   api::ControlJobRequest::Operation in_operation,
+   std::unique_lock<std::mutex>& in_uniqueLock)
+{
+   // Sleep for a second to give the job a chance to start change state if the request is not to cancel it.
+   // We have 20 seconds after the job starts before the output is emitted.
+   if (in_operation != api::ControlJobRequest::Operation::CANCEL)
+      sleep(1);
+
+   std::string controlJobStr = controlJobReq(in_operation, m_submittedJobIds.back(), m_requestUser);
+   m_responseCount[s_requestId] = 0;
+   m_lastRequestType = api::Request::Type::CONTROL_JOB;
+   Error error = m_plugin->writeToStdin(controlJobStr, false);
+   if (error)
+      return handleError(error);
+
+   if (!waitForResponse(s_requestId, 1, in_uniqueLock))
+      return false;
+
+   std::string jobStatusReqStr = getJob(m_submittedJobIds.back(), m_requestUser);
+   m_responseCount[s_requestId] = 0;
+   m_lastRequestType = api::Request::Type::GET_JOB;
+   error = m_plugin->writeToStdin(jobStatusReqStr, false);
+   if (error)
+      return handleError(error);
+
+   return waitForResponse(s_requestId, 1, in_uniqueLock);
+}
+
+bool SmokeTest::sendControlJobReqeust(api::ControlJobRequest::Operation in_operation)
+{
+   UNIQUE_LOCK_MUTEX(m_mutex)
+   {
+      size_t currJobCount = m_submittedJobIds.size();
+      std::string submitJobStr = submitSlowJobReq(m_requestUser);
+      m_responseCount[s_requestId] = 0;
+      m_lastRequestType = api::Request::Type::SUBMIT_JOB;
+
+      Error error = m_plugin->writeToStdin(submitJobStr, false);
+      if (error)
+         return handleError(error);
+
+      if (!waitForResponse(s_requestId, 1, uniqueLock) || (currJobCount >= m_submittedJobIds.size()))
+         return false;
+
+      return controlLastJobAndPrintStatus(in_operation, uniqueLock);
+   }
+   END_LOCK_MUTEX
+
+   // If execution gets here something went wrong.
+   return false;
+}
+
 bool SmokeTest::sendJobOutputStreamRequest(api::OutputType in_outputType)
 {
-   std::string outputStreamMsg;
    UNIQUE_LOCK_MUTEX(m_mutex)
    {
       if (m_submittedJobIds.empty())
@@ -632,7 +749,7 @@ bool SmokeTest::sendJobOutputStreamRequest(api::OutputType in_outputType)
          return true;
       }
 
-      outputStreamMsg = streamOutput(m_submittedJobIds.back(), in_outputType, m_requestUser);
+      std::string outputStreamMsg = streamOutput(m_submittedJobIds.back(), in_outputType, m_requestUser);
       m_outputStreamFinished = false;
       m_responseCount[s_requestId] = 0;
       m_lastRequestType = api::Request::Type::GET_JOB_OUTPUT;
@@ -692,9 +809,25 @@ bool SmokeTest::sendJobStatusStreamRequest()
       return handleError(error);
 
    // Wait for half a second to ensure the stream has time to finish.
-   std::this_thread::sleep_for(std::chrono::microseconds(500));
+   std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
    return true;
+}
+
+bool SmokeTest::sendSupsendResumeJobReqeust()
+{
+   bool result = sendControlJobReqeust(api::ControlJobRequest::Operation::SUSPEND);
+   if (!result)
+      return result;
+
+   UNIQUE_LOCK_MUTEX(m_mutex)
+   {
+      return controlLastJobAndPrintStatus(api::ControlJobRequest::Operation::RESUME, uniqueLock);
+   }
+   END_LOCK_MUTEX
+
+   // If execution gets here something went wrong.
+   return false;
 }
 
 bool SmokeTest::waitForResponse(uint64_t in_requestId, uint64_t in_expectedResponses)

@@ -35,37 +35,80 @@ namespace local {
 
 const constexpr char* s_errorName = "LocalPluginError";
 
+/**
+ * @enum LocalError
+ * @brief Represents the possible Local Launcher Plugin specific errors that may occur.
+ */
 enum class LocalError
 {
+   /** No error. */
    SUCCESS              = 0,
+
+   /** The specified mount type isn't supported. */
    INVALID_MOUNT_TYPE   = 1,
+
+   /** The specified job config isn't supported. */
    INVALID_JOB_CONFIG   = 2,
+
+   /** The job failed to launch. */
    JOB_LAUNCH_ERROR     = 3,
+
+   /** An operation was attempted that requires the job's PID, but the job does not have a PID. */
+   NO_PID               = 4,
+
+   /** The operation is not supported. */
+   UNSUPPORTED_OP       = 5,
 };
 
+/**
+ * @brief Creates a LocalError.
+ *
+ * @param in_code               The error code.
+ * @param in_message            The error message.
+ * @param in_cause              The cause of the error.
+ * @param in_errorLocation      The location at which the error occurred.
+ *
+ * @return The newly created LocalError object.
+ */
 Error createError(
    LocalError in_code,
    const std::string& in_message,
    const Error& in_cause,
-   const ErrorLocation& in_errorLocation)
-{
-   return Error(s_errorName, static_cast<int>(in_code), in_message, in_cause, in_errorLocation);
-}
+   const ErrorLocation& in_errorLocation);
 
-Error createError(LocalError in_code, const std::string& in_message, const ErrorLocation& in_errorLocation)
-{
-   return Error(s_errorName, static_cast<int>(in_code), in_message, in_errorLocation);
-}
+/**
+ * @brief Creates a LocalError.
+ *
+ * @param in_code               The error code.
+ * @param in_message            The error message.
+ * @param in_errorLocation      The location at which the error occurred.
+ *
+ * @return The newly created LocalError object.
+ */
+Error createError(LocalError in_code, const std::string& in_message, const ErrorLocation& in_errorLocation);
 
-Error createError(LocalError in_code, const Error& in_cause, const ErrorLocation& in_errorLocation)
-{
-   return Error(s_errorName, static_cast<int>(in_code), in_cause, in_errorLocation);
-}
 
-Error createError(LocalError in_code, const ErrorLocation& in_errorLocation)
-{
-   return Error(s_errorName, static_cast<int>(in_code), in_errorLocation);
-}
+/**
+ * @brief Creates a LocalError.
+ *
+ * @param in_code               The error code.
+ * @param in_cause              The cause of the error.
+ * @param in_errorLocation      The location at which the error occurred.
+ *
+ * @return The newly created LocalError object.
+ */
+Error createError(LocalError in_code, const Error& in_cause, const ErrorLocation& in_errorLocation);
+
+
+/**
+ * @brief Creates a LocalError.
+ *
+ * @param in_code               The error code.
+ * @param in_errorLocation      The location at which the error occurred.
+ *
+ * @return The newly created LocalError object.
+ */
+Error createError(LocalError in_code, const ErrorLocation& in_errorLocation);
 
 } // namespace local
 } // namespace launcher_plugins

@@ -393,6 +393,29 @@ private:
 };
 
 /**
+ * @brief Gets all the children of the specified process.
+ *
+ * @param in_parentPid      The PID of the process for which to retrieve its child processes.
+ * @param out_processes     The Process Info of the requested process and all its children. If the requested process
+ *                          could not be found this list will be empty.
+ *
+ * @return Success if the system could be searched for the requested process and its children; Error otherwise.
+ */
+Error getChildProcesses(pid_t in_parentPid, std::vector<ProcessInfo>& out_processes);
+
+/**
+ * @brief Sends a signal to the specified process.
+ * 
+ * @param in_pid                 The pid of the process to which to send the signal.
+ * @param in_signal              The integer represetnation of the singal to send.
+ * @param in_processGroupOnly    Whether to send the signal to only the child processes still in the process group
+ *                               (true) or to all child processeds of the provided pid (false). Default: true.
+ * 
+ * @return Success if the process could be found and the signal sent; Error otherwise. 
+ */
+Error signalProcess(pid_t in_pid, int in_signal, bool in_processGroupOnly = true);
+
+/**
  * @brief Shell escapes a string.
  *
  * @param in_toEscape   The string to escape.

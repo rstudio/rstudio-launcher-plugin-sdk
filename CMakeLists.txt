@@ -27,6 +27,12 @@ include(CMakeGlobals.txt)
 
 set(CMAKE_CXX_STANDARD 11)
 
+
+string(TOLOWER "${CMAKE_BUILD_TYPE}" build_type)
+if (NOT build_type STREQUAL "debug")
+   add_compile_definitions(NDEBUG)
+endif()
+
 # include boost
 if (NOT RLPS_BOOST_REQUESTED_VERSION)
    set(RLPS_BOOST_REQUESTED_VERSION 1.70.0)

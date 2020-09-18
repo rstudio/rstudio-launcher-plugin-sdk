@@ -1,0 +1,133 @@
+# Smoke Test Utility {#smoke-test}
+
+The Smoke Test utility is provided with the RStudio Launcher Plugin SDK to provide the Plugin developer a way to exercise the basic functionality of the Plugin, particularly in a way that allows the developer to easily attach a debugger to the Plugin. The Smoke Test utility is not intended to replace integration testing with the RStudio Launcher and the RStudio product which will use the launcher.
+
+## Plugin Options {#smoke-test-opts}
+
+The Smoke Test utility will start the Plugin with the following options, which should not be changed:
+
+`--heartbeat-interval-seconds=0`
+
+`--enable-debug-logging=1`
+
+`--unprivileged=1` if the Smoke Test utility is launched without root privileges
+
+Other options may be changed via the Plugin's configuration file, which is usually located at `/etc/rstudio/launcher.<plugin-name>.conf`.
+
+When running the Smoke Test utility in unprivileged mode (see [Starting the Tester](#smoke-test-start) for more details) it is advisable to change the `scratch-path` option to a location that is readable and writable by the run-as user.
+
+## Starting the Tester {#smoke-test-start}
+
+The Smoke Test utility takes two required arguments: the full or relative path to the Plugin to test, and the user to test as. It can be run in two modes: privileged and unprivileged. To run the Smoke Test utility in privileged mode, start it with root privileges. For example:
+
+`sudo ./rlps-smoke-test ../plugins/MyPlugin/rstudio-myplugin-launcher someUser`.
+
+To run the Smoke test utility in unprivileged mode, start it as the user specified in the second argument.
+
+Privileged mode is the most common running environment for a Plugin; however, there are some situations where the Plugin cannot be run in privileged mode, such as within a Docker container, so it is advisable to test both scenarios.
+
+When the Smoke Test utility starts, it will send the Plugin a [Bootstrap Request](#bootstrap) and print the response. The Bootstrap response must be successful, or future requests will fail. Next the utility will enter a loop of printing the menu, waiting for input, and performing the requested action, until the user explicitly exits the utility. At any time, the user can provide `q` or `Q` as input to exit the utility.
+
+## Using the Tester {#smoke-test-use}
+
+Each time the Smoke Test utility completes a requested action, it will print a menu of available actions. After an action is chosen, the utility will perform the action and print any responses from the Plugin. These responses must be manually verified, as their expected values may vary between Plugin implementations. 
+
+This section documents what each menu item will do. For an example of how a Plugin might respond to each of these tests, the Smoke Test utility may be run using the provided sample Local Launcher Plugin.
+
+### 1. Get cluster info {#st-menu-1}
+
+This menu item will send a [Cluster Info](#cluster-info) request to the Plugin and print the response. It should include all of the maximum and default resource limits, any available placement constraints, the container information, and the available queues. If any of these values are not configured or are not supported by the Plugin, they will not be included in the response.
+
+### 2. Get all jobs {#st-menu-2}
+
+This menu item will send a [Job State](#jobs) request to the plugin with the `jobId` field set to `'*'` and print the response. It should show all RStudio jobs in the underlying Job Scheduling System, regardless of state.
+
+### 3. Get filtered jobs {#st-menu-3}
+
+This menu item will send a [Job State](#jobs) request to the plugin with the `tags` field set to `[ "filter job" ]` and print the response. It should show any jobs that were launched with [menu item 7](#st-menu-7) or [menu item 10](#st-menu-10).
+
+### 4. Get running jobs {#st-menu-4}
+
+This menu item will send a [Job State](#jobs) request to the plugin with the `statuses` field set to `[ "Running" ]` and print the response. It should show any RStudio jobs in the underlying Job Scheduling System that are currently running. It may be useful to run [menu item 10](#st-menu-10) immediately prior to running this menu item in order to have a Job that will still be running.
+
+### 5. Get finished jobs {#st-menu-5}
+
+This menu item will send a [Job State](#jobs) request to the Plugin with the `statuses` field set to `[ "Finished" ]` and print the response. It should show any RStudio jobs in the underlying Job Scheduling System that have finished running without a failure. Note that jobs which were killed (e.g. via [menu item 16](#st-menu-16)) will not be displayed in this response, but jobs which were stopped (e.g. via [menu item 17](#st-menu-17)) should be.
+
+### 6. Get job statuses {#st-menu-6}
+
+This menu item will send a [Job Status Stream](#job-status-stream) request to the Plugin and print the responses. It will attempt to wait for at least one response for each job that was submitted to the Plugin via the Smoke Test utility since it last started, before canceling the stream request. All RStudio Jobs may be included in this response, but it is possible some may not be displayed as the request could be canceled early if there were many RStudio Jobs in the system before the Smoke Test utility was last started.
+
+### 7. Submit quick job (matches filter) {#st-menu-7}
+
+This menu item submits a basic job to the Job Scheduling System via the [Submit Job](#jobs) request and prints the response. This job will match the filter provided to the [Job State](#jobs) request sent in [menu item 3](#st-menu-3). The Job name is `Quick Job 1`.
+
+If this menu item is followed by [menu item 11](#st-menu-11) or [menu item 12](#st-menu-12) the `stdout` output should be `This is an environment variable!` and the stderr output should be empty.
+
+### 8. Submit quick job 2 (doesn't match filter) {#st-menu-8}
+
+This menu item submits another basic job to the Job Scheduling System via the [Submit Job](#jobs) request and prints the response. This job will not match the filter provided to the [Job State](#jobs) request sent in [menu item 3](#st-menu-3). The Job name is `Quick Job 2`.
+
+If this menu item is followed by [menu item 11](#st-menu-11) or [menu item 12](#st-menu-12) the `stdout` output should be `This is a shell command.` and the `stderr` output should be empty.
+
+### 9. Submit stderr job (doesn't match filter) {#st-menu-9}
+
+This menu item submits a job to the Job Scheduling System which will emit `stderr` output via the [Submit Job](#jobs) request and prints the response. This job will not match the filter provided to the [Job State](#jobs) request sent in [menu item 3](#st-menu-3).  The Job name is `Stderr job`.
+
+If this menu item is followed by [menu item 11](#st-menu-11) or [menu item 13](#st-menu-13) the `stdout` output should be empty and the `stderr` output should include an error about the incorrect usage of `grep`.
+
+### 10. Submit long job (matches filter) {#st-menu-10}
+
+This menu item submits a longer running job to the Job Scheduling System via the [Submit Job](#jobs) request and prints the response. This job will match the filter provided to the [Job State](#jobs) request sent in [menu item 3](#st-menu-3). The Job name is `Slow job`.
+
+This job will iterate from `1` to `11`, echoing `${i}...` and then sleeping for `${i}` seconds at each iteration of the loop. It may be useful to use [menu item 11](#st-menu-11) or [menu item 12](#st-menu-12) immediately after this menu item in order to validate that output streaming works correctly when the output is still being written after the stream has been opened.
+
+### 11. Stream last job's output (stdout and stderr) {#st-menu-11}
+
+This menu item sends a [Job Output Stream](#output-stream) request for both `stdout` and `stderr` output to the Plugin for the last Job that was submitted to the Plugin via the Smoke Test utility. If no Job has been submitted to the Plugin since the Smoke Test utility was started, an error will be emitted.
+
+Even if there is no `stdout` or `stderr` output for the last job, there should still be a response from the Plugin indicating that the output is empty.
+
+### 12. Stream last job's output (stdout) {#st-menu-12}
+
+This menu item sends a [Job Output Stream](#output-stream) request for only `stdout` output to the Plugin for the last Job that was submitted to the Plugin via the Smoke Test utility. If no Job has been submitted to the Plugin since the Smoke Test utility was started, an error will be emitted.
+
+Even if there is no `stdout` output for the last job, there should still be a response from the Plugin indicating that the output is empty.
+
+### 13. Stream last job's output (stderr) {#st-menu-13}
+
+This menu item sends a [Job Output Stream](#output-stream) request for only `stderr` output to the Plugin for the last Job that was submitted to the Plugin via the Smoke Test utility. If no Job has been submitted to the Plugin since the Smoke Test utility was started, an error will be emitted.
+
+Even if there is no `stderr` output for the last job, there should still be a response from the Plugin indicating that the output is empty.
+
+### 14. Get last job's network information {#st-menu-14}
+
+This menu item sends a [Job Network](#network) request to the Plugin for the last Job that was submitted to the Plugin via the Smoke Test utility. If no Job has been submitted to the Plugin since the Smoke Test utility was started, an error will be emitted.
+
+The network information displayed in the response should match the network information of the machine which ran the Job, according to the underlying Job Scheduling system.
+
+### 15. Submit a slow job and then cancel it {#st-menu-15}
+
+This menu item submits a slow job to the Job Scheduling System via the [Submit Job](#jobs) request and then attempts to immediately cancel it via the [Control Job](#control-job) request with the `operation` set to `4` (see the [JobOperation](#job-op) section). Depending on the speed of the Job Scheduling system, it is possible that the Job will enter the `Running` state before the Cancel request is received. Because of this, it is not unexpected that an [Error Response](#error) with an error code of [InvalidJobState](#error-codes) may be returned by the Plugin.
+
+If the cancel operation completed successfully, invoking [menu item 11](#st-menu-11), [menu item 12](#st-menu-12), or [menu item 13](#st-menu-13) should show that the Job emitted no output.
+
+### 16. Submit a slow job and then kill it {#st-menu-16}
+
+This menu item submits a slow job to the Job Scheduling System via the [Submit Job](#jobs) request, waits for one second, and then attempts to kill it via the [Control Job](#control-job) request with the `operation` set to `3` (see the [JobOperation](#job-op) section). Depending on the speed of the Job Scheduling system, it is possible that the Job will not have entered the `Running` state before the Kill request is received. Because of this, it is not unexpected that an [Error Response](#error) with an error code of [InvalidJobState](#error-codes) may be returned by the Plugin.
+
+If the kill operation completed successfully, invoking [menu item 11](#st-menu-11), [menu item 12](#st-menu-12), or [menu item 13](#st-menu-13) should show that the Job emitted no output.
+
+### 17. Submit a slow job and then stop it {#st-menu-17}
+
+This menu item submits a slow job to the Job Scheduling System via the [Submit Job](#jobs) request, waits for one second, and then attempts to stop it via the [Control Job](#control-job) request with the `operation` set to `2` (see the [JobOperation](#job-op) section). Depending on the speed of the Job Scheduling system, it is possible that the Job will not have entered the `Running` state before the Kill request is received. Because of this, it is not unexpected that an [Error Response](#error) with an error code of [InvalidJobState](#error-codes) may be returned by the Plugin.
+
+If the kill operation completed successfully, invoking [menu item 11](#st-menu-11), [menu item 12](#st-menu-12), or [menu item 13](#st-menu-13) should show that the Job emitted no output.
+
+### 18. Submit a slow job, suspend it, and then resume it {#st-menu-18}
+
+This menu item submits a slow job to the Job Scheduling System via the [Submit Job](#jobs) request, waits for one second, and then attempts to suspend it via the [Control Job](#control-job) request with the `operation` set to `1` (see the [JobOperation](#job-op) section). Next the utility waits for one second and then attempts to resume the job via the [Control Job](#control-job) request with the `operation` set to `0` (see the [JobOperation](#job-op) section).
+
+Depending on the speed of the Job Scheduling system, it is possible that the Job will not have entered the `Running` state before the Suspend request is received. Because of this, it is not unexpected that an [Error Response](#error) with an error code of [InvalidJobState](#error-codes) may be returned by the Plugin.
+
+If the kill operation completed successfully, invoking [menu item 11](#st-menu-11) or [menu item 12](#st-menu-12) should show that the Job emitted `"Done."` to standard output after the Job finishes.

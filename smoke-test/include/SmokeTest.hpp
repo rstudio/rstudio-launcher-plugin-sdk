@@ -73,6 +73,19 @@ public:
    void stop();
 
 private:
+   bool controlLastJobAndPrintStatus(
+      api::ControlJobRequest::Operation in_operation,
+      std::unique_lock<std::mutex>& in_uniqueLock);
+
+   /**
+    * @brief Starts a job and then sends the request control operation to it. Prints the job status after.
+    * 
+    * @param in_operation     The operation to use on the newly started job.
+    * 
+    * @return True if the plugin responded as expected; false otherwise.
+    */
+   bool sendControlJobReqeust(api::ControlJobRequest::Operation in_operation);
+   
    /**
     * @brief Sends a job output stream request and waits for the response(s).
     *
@@ -88,6 +101,14 @@ private:
     * @return True if the plugin responded as expected; false otherwise.
     */
    bool sendJobStatusStreamRequest();
+
+   /**
+    * @brief Starts a job, sends a suspend signal, prints the job status, and then sends a resume signal and prints the 
+    *        job status again.
+    * 
+    * @return True if the plugin responded as expected; false otherwise.
+    */
+   bool sendSupsendResumeJobReqeust();
 
    /**
     * @brief Waits for the specified number of responses for the specified request.

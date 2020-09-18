@@ -26,12 +26,19 @@
 
 FAILURES=0
 
+sudo cp ./test.sh /home/rlpstestusrthree
+sudo chown rlpstestusrthree:rlpstestgrptwo /home/rlpstestusrthree/test.sh
+
+sudo cp ./test.sh /home/rlpstestusrtwo
+sudo chown rlpstestusrtwo:rlpstestgrpone /home/rlpstestusrtwo/test.sh
+
 for test in ./*-tests;
 do
-  echo "Running ${test}..."
-  if [[ "${test}" =~ .*rlps-process-tests ]]; then
+  if [[ "${test}" =~ .*-process-tests ]]; then
+    echo "Running sudo ${test}..."
     sudo "${test}"
   else
+    echo "Running ${test}..."
     ${test}
   fi
   FAILURES=$((FAILURES + $?))

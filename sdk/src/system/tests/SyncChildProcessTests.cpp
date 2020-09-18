@@ -28,6 +28,7 @@
 #include <system/PosixSystem.hpp>
 #include <system/Process.hpp>
 
+#include "ProcessTestHelpers.hpp"
 #include "../../tests/MockLogDestination.hpp"
 
 namespace rstudio {
@@ -38,7 +39,7 @@ namespace process {
 TEST_CASE("Create Processes")
 {
    // Make sure default options are populated.
-   REQUIRE_FALSE(options::Options::getInstance().readOptions(0, nullptr, system::FilePath()));
+   REQUIRE_FALSE(loadOptions());
 
    // Get all the users for future user.
    system::User user1, user2, user3, user4, user5;
@@ -183,7 +184,7 @@ TEST_CASE("Create Processes")
       opts.IsShellCommand = false;
       opts.Environment.emplace_back("VAR", "Hello, world!");
       opts.RunAsUser = user3;
-      opts.WorkingDirectory = FilePath::safeCurrentPath(FilePath());
+      opts.WorkingDirectory = user3.getHomePath();
 
       ProcessResult result;
       SyncChildProcess child(opts);
@@ -204,7 +205,7 @@ TEST_CASE("Create Processes")
       opts.Environment.emplace_back("VAR2", "Something else!");
       opts.RunAsUser = user2;
       opts.Password = "test-pwd";
-      opts.WorkingDirectory = FilePath::safeCurrentPath(FilePath());
+      opts.WorkingDirectory = user2.getHomePath();
 
       ProcessResult result;
       SyncChildProcess child(opts);

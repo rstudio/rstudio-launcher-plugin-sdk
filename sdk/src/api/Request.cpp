@@ -167,6 +167,11 @@ Error Request::fromJson(const json::Object& in_requestJson, std::shared_ptr<Requ
          out_request.reset(new JobStatusRequest(in_requestJson));
          break;
       }
+      case Type::CONTROL_JOB:
+      {
+         out_request.reset(new ControlJobRequest(in_requestJson));
+         break;
+      }
       case Type::GET_JOB_OUTPUT:
       {
          out_request.reset(new OutputStreamRequest(in_requestJson));
@@ -564,6 +569,59 @@ JobStatusRequest::JobStatusRequest(const json::Object& in_requestJson) :
    m_impl->IsCancelRequest = isCancel.getValueOr(false);
 }
 
+// Control Job Request =================================================================================================
+struct ControlJobRequest::Impl
+{
+   Impl() :
+      JobOperation(Operation::SUSPEND)
+   {
+   }
+
+   Operation JobOperation;
+};
+
+PRIVATE_IMPL_DELETER_IMPL(ControlJobRequest)
+
+ControlJobRequest::Operation ControlJobRequest::getOperation() const
+{
+   return m_impl->JobOperation;
+}
+
+ControlJobRequest::ControlJobRequest(const json::Object& in_requestJson) :
+   JobIdRequest(Request::Type::CONTROL_JOB, in_requestJson),
+   m_impl(new Impl())
+{
+   if (getJobId() == "*")
+   {
+      m_baseImpl->ErrorType = RequestError::INVALID_REQUEST;
+      m_baseImpl->ErrorMessage = "Cannot control all jobs simultaneously. Please specify a single Job ID.";
+      return;
+   }
+
+   int operation;
+   Error error = json::readObject(in_requestJson, FIELD_OPERATION, operation);
+   if (error)
+   {
+      logging::logError(error);
+      m_baseImpl->ErrorType = RequestError::INVALID_REQUEST;
+      return;
+   }
+
+   if ((operation < static_cast<int>(Operation::FIRST)) || (operation >= static_cast<int>(Operation::INVALID)))
+   {
+      m_baseImpl->ErrorType = RequestError::INVALID_REQUEST;
+      m_baseImpl->ErrorMessage = 
+         "Unknown control job operation (" +
+         std::to_string(operation) +
+         ") for job " +
+         getJobId();
+
+      return;
+   }
+
+   m_impl->JobOperation = static_cast<Operation>(operation);
+}
+
 // Output Stream Request ===============================================================================================
 struct OutputStreamRequest::Impl
 {
@@ -612,7 +670,7 @@ OutputStreamRequest::OutputStreamRequest(const json::Object& in_requestJson) :
       int value = outputType.getValueOr(static_cast<int>(OutputType::FIRST));
       if ((value < static_cast<int>(OutputType::FIRST)) || (value >= static_cast<int>(OutputType::LAST)))
       {
-         m_baseImpl->ErrorMessage = "Invalid value for outputType (" + std::to_string(value) + ")";
+         m_baseImpl->ErrorMessage = "Invalid value for " + std::string(FIELD_OUTPUT_TYPE) + " (" + std::to_string(value) + ")";
          m_baseImpl->ErrorType = RequestError::INVALID_REQUEST;
          return;
       }

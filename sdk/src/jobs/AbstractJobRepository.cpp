@@ -119,6 +119,10 @@ JobList AbstractJobRepository::getJobs(const system::User& in_user) const
 
 Error AbstractJobRepository::initialize()
 {
+   Error error = onInitialize();
+   if (error)
+      return error;
+
    WeakThis weakThis = shared_from_this();
    OnJobStatusUpdate onJobStatusUpdate = [weakThis](const JobPtr& in_job)
    {
@@ -129,7 +133,7 @@ Error AbstractJobRepository::initialize()
    };
 
    JobList jobs;
-   Error error = loadJobs(jobs);
+   error = loadJobs(jobs);
    if (error)
       return error;
 
@@ -149,7 +153,7 @@ Error AbstractJobRepository::initialize()
 
    logging::logInfoMessage("Pruned " + std::to_string(pruned) + " jobs...");
 
-   return onInitialize();
+   return Success();
 }
 
 void AbstractJobRepository::removeJob(const std::string& in_jobId)

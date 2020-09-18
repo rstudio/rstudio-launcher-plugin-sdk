@@ -244,6 +244,39 @@ Error LocalJobRepository::loadJobs(api::JobList& out_jobs) const
          continue;
       }
 
+      // Update the status of the job on load.
+      if (!job->isCompleted())
+      {
+         bool jobModified = false;
+         system::process::ProcessInfo procInfo;
+         Error error = system::process::ProcessInfo::getProcessInfo(job->Pid.getValueOr(0), procInfo);
+         if (isFileNotFoundError(error))
+         {
+            // If we couldn't find details about the job, it finished between the time the last instance of the Local 
+            // Plugin exited and this instance started. Update the job state to the best of our knowledge to avoid jobs
+            // stuck in their states.
+            job->Status = api::Job::State::FINISHED;
+            job->LastUpdateTime = system::DateTime();
+            jobModified = true;
+         }
+         else if (!error && (job->Status ==  api::Job::State::PENDING) && (procInfo.Executable != "rsandbox"))
+         {
+            job->Status = api::Job::State::RUNNING;
+            job->LastUpdateTime = system::DateTime();
+            jobModified = true;
+         }
+         else if (error)
+         {
+            job->Status = api::Job::State::FAILED;
+            job->LastUpdateTime = system::DateTime();
+            jobModified = true;
+         }
+         
+
+         if (jobModified)
+            saveJob(job);
+      }
+
       out_jobs.push_back(job);
    }
 

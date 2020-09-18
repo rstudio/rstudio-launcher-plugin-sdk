@@ -1,6 +1,14 @@
 .idea
-cpp-build*/
-cmake-build*/
+*-build-*/
+*_build_*/
+build/
+build-*/
+build_*/
+*-build/
+*_build/
 rstudio-clone/
 *.log
-
+**/settings.json
+**/tasks.json
+**/launch.json
+.Rproj.user

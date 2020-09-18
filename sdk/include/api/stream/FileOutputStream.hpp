@@ -36,6 +36,9 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace api {
 
+/**
+ * @brief Streams job output data from a file.
+ */
 class FileOutputStream : public AbstractOutputStream, public std::enable_shared_from_this<FileOutputStream>
 {
 public:

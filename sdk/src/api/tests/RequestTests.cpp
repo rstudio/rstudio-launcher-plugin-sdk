@@ -819,7 +819,6 @@ TEST_CASE("Parse Network Request")
    SECTION("Specific user, specific job")
    {
       requestObj[FIELD_REAL_USER] = USER_THREE;
-      requestObj[FIELD_JOB_ID] = "*";
       requestObj[FIELD_JOB_ID] = "job-182";
       requestObj[FIELD_ENCODED_JOB_ID] = "Q2x1c3Rlci1qb2ItMTgyCg==";
 
@@ -827,12 +826,12 @@ TEST_CASE("Parse Network Request")
       REQUIRE_FALSE(Request::fromJson(requestObj, request));
       REQUIRE(request->getType() == Request::Type::GET_JOB_NETWORK);
 
-      std::shared_ptr<NetworkRequest> jobStatusRequest = std::static_pointer_cast<NetworkRequest>(request);
-      CHECK(jobStatusRequest->getId() == 43);
-      CHECK(jobStatusRequest->getUser() == user3);
-      CHECK(jobStatusRequest->getRequestUsername().empty());
-      CHECK(jobStatusRequest->getJobId() == "job-182");
-      CHECK(jobStatusRequest->getEncodedJobId() == "Q2x1c3Rlci1qb2ItMTgyCg==");
+      std::shared_ptr<NetworkRequest> networkRequest = std::static_pointer_cast<NetworkRequest>(request);
+      CHECK(networkRequest->getId() == 43);
+      CHECK(networkRequest->getUser() == user3);
+      CHECK(networkRequest->getRequestUsername().empty());
+      CHECK(networkRequest->getJobId() == "job-182");
+      CHECK(networkRequest->getEncodedJobId() == "Q2x1c3Rlci1qb2ItMTgyCg==");
    }
 
    SECTION("Specific user, all jobs")
@@ -856,12 +855,12 @@ TEST_CASE("Parse Network Request")
       REQUIRE_FALSE(Request::fromJson(requestObj, request));
       REQUIRE(request->getType() == Request::Type::GET_JOB_NETWORK);
 
-      std::shared_ptr<NetworkRequest> jobStatusRequest = std::static_pointer_cast<NetworkRequest>(request);
-      CHECK(jobStatusRequest->getId() == 43);
-      CHECK(jobStatusRequest->getUser().isAllUsers());
-      CHECK(jobStatusRequest->getRequestUsername() == USER_FOUR);
-      CHECK(jobStatusRequest->getJobId() == "job-182");
-      CHECK(jobStatusRequest->getEncodedJobId() == "Q2x1c3Rlci1qb2ItMTgyCg==");
+      std::shared_ptr<NetworkRequest> networkRequest = std::static_pointer_cast<NetworkRequest>(request);
+      CHECK(networkRequest->getId() == 43);
+      CHECK(networkRequest->getUser().isAllUsers());
+      CHECK(networkRequest->getRequestUsername() == USER_FOUR);
+      CHECK(networkRequest->getJobId() == "job-182");
+      CHECK(networkRequest->getEncodedJobId() == "Q2x1c3Rlci1qb2ItMTgyCg==");
    }
 
    SECTION("All users, all jobs")
@@ -870,6 +869,125 @@ TEST_CASE("Parse Network Request")
       requestObj[FIELD_REQUEST_USERNAME] = USER_FOUR;
       requestObj[FIELD_JOB_ID] = "*";
       requestObj[FIELD_ENCODED_JOB_ID] = "";
+
+      std::shared_ptr<Request> request;
+      REQUIRE(Request::fromJson(requestObj, request));
+   }
+}
+
+TEST_CASE("Control Job Requests")
+{
+   system::User user1;
+   REQUIRE_FALSE(system::User::getUserFromIdentifier(USER_ONE, user1));
+
+   json::Object requestObj;
+   requestObj[FIELD_MESSAGE_TYPE] = static_cast<int>(Request::Type::CONTROL_JOB);
+   requestObj[FIELD_REQUEST_ID] = 789;
+   requestObj[FIELD_REAL_USER] = USER_ONE;
+   requestObj[FIELD_REQUEST_USERNAME] = USER_ONE;
+   requestObj[FIELD_JOB_ID] = "some-job-id-123";
+   requestObj[FIELD_ENCODED_JOB_ID] = "TG9jYWwtc29tZS1qb2ItaWQtMTIzCg==";
+
+   SECTION("Suspend, super user")
+   {
+      requestObj[FIELD_OPERATION] = static_cast<int>(ControlJobRequest::Operation::SUSPEND);
+      requestObj[FIELD_REAL_USER] = "*";
+      requestObj[FIELD_REQUEST_USERNAME] = USER_THREE;
+
+      std::shared_ptr<Request> request;
+      REQUIRE_FALSE(Request::fromJson(requestObj, request));
+      REQUIRE(request->getType() == Request::Type::CONTROL_JOB);
+
+      std::shared_ptr<ControlJobRequest> controlJobRequest = std::static_pointer_cast<ControlJobRequest>(request);
+      CHECK(controlJobRequest->getId() == 789);
+      CHECK(controlJobRequest->getUser().isAllUsers());
+      CHECK(controlJobRequest->getRequestUsername() == USER_THREE);
+      CHECK(controlJobRequest->getJobId() == "some-job-id-123");
+      CHECK(controlJobRequest->getEncodedJobId() == "TG9jYWwtc29tZS1qb2ItaWQtMTIzCg==");
+      CHECK(controlJobRequest->getOperation() == ControlJobRequest::Operation::SUSPEND);
+   }
+
+   SECTION("Resume")
+   {
+      requestObj[FIELD_OPERATION] = static_cast<int>(ControlJobRequest::Operation::RESUME);
+
+      std::shared_ptr<Request> request;
+      REQUIRE_FALSE(Request::fromJson(requestObj, request));
+      REQUIRE(request->getType() == Request::Type::CONTROL_JOB);
+
+      std::shared_ptr<ControlJobRequest> controlJobRequest = std::static_pointer_cast<ControlJobRequest>(request);
+      CHECK(controlJobRequest->getId() == 789);
+      CHECK(controlJobRequest->getUser() == user1);
+      CHECK(controlJobRequest->getRequestUsername() == USER_ONE);
+      CHECK(controlJobRequest->getJobId() == "some-job-id-123");
+      CHECK(controlJobRequest->getEncodedJobId() == "TG9jYWwtc29tZS1qb2ItaWQtMTIzCg==");
+      CHECK(controlJobRequest->getOperation() == ControlJobRequest::Operation::RESUME);
+   }
+
+   SECTION("Stop")
+   {
+      requestObj[FIELD_OPERATION] = static_cast<int>(ControlJobRequest::Operation::STOP);
+
+      std::shared_ptr<Request> request;
+      REQUIRE_FALSE(Request::fromJson(requestObj, request));
+      REQUIRE(request->getType() == Request::Type::CONTROL_JOB);
+
+      std::shared_ptr<ControlJobRequest> controlJobRequest = std::static_pointer_cast<ControlJobRequest>(request);
+      CHECK(controlJobRequest->getId() == 789);
+      CHECK(controlJobRequest->getUser() == user1);
+      CHECK(controlJobRequest->getRequestUsername() == USER_ONE);
+      CHECK(controlJobRequest->getJobId() == "some-job-id-123");
+      CHECK(controlJobRequest->getEncodedJobId() == "TG9jYWwtc29tZS1qb2ItaWQtMTIzCg==");
+      CHECK(controlJobRequest->getOperation() == ControlJobRequest::Operation::STOP);
+   }
+
+   SECTION("Kill")
+   {
+      requestObj[FIELD_OPERATION] = static_cast<int>(ControlJobRequest::Operation::KILL);
+
+      std::shared_ptr<Request> request;
+      REQUIRE_FALSE(Request::fromJson(requestObj, request));
+      REQUIRE(request->getType() == Request::Type::CONTROL_JOB);
+
+      std::shared_ptr<ControlJobRequest> controlJobRequest = std::static_pointer_cast<ControlJobRequest>(request);
+      CHECK(controlJobRequest->getId() == 789);
+      CHECK(controlJobRequest->getUser() == user1);
+      CHECK(controlJobRequest->getRequestUsername() == USER_ONE);
+      CHECK(controlJobRequest->getJobId() == "some-job-id-123");
+      CHECK(controlJobRequest->getEncodedJobId() == "TG9jYWwtc29tZS1qb2ItaWQtMTIzCg==");
+      CHECK(controlJobRequest->getOperation() == ControlJobRequest::Operation::KILL);
+   }
+
+   SECTION("Cancel")
+   {
+      requestObj[FIELD_OPERATION] = static_cast<int>(ControlJobRequest::Operation::CANCEL);
+
+      std::shared_ptr<Request> request;
+      REQUIRE_FALSE(Request::fromJson(requestObj, request));
+      REQUIRE(request->getType() == Request::Type::CONTROL_JOB);
+
+      std::shared_ptr<ControlJobRequest> controlJobRequest = std::static_pointer_cast<ControlJobRequest>(request);
+      CHECK(controlJobRequest->getId() == 789);
+      CHECK(controlJobRequest->getUser() == user1);
+      CHECK(controlJobRequest->getRequestUsername() == USER_ONE);
+      CHECK(controlJobRequest->getJobId() == "some-job-id-123");
+      CHECK(controlJobRequest->getEncodedJobId() == "TG9jYWwtc29tZS1qb2ItaWQtMTIzCg==");
+      CHECK(controlJobRequest->getOperation() == ControlJobRequest::Operation::CANCEL);
+   }
+
+   SECTION("Invalid operation")
+   {
+      requestObj[FIELD_OPERATION] = "not an operation";
+
+      std::shared_ptr<Request> request;
+      REQUIRE(Request::fromJson(requestObj, request));
+   }
+
+   SECTION("All jobs")
+   {
+      requestObj[FIELD_JOB_ID] = "*";
+      requestObj[FIELD_ENCODED_JOB_ID] = "";
+      requestObj[FIELD_OPERATION] = static_cast<int>(ControlJobRequest::Operation::CANCEL);
 
       std::shared_ptr<Request> request;
       REQUIRE(Request::fromJson(requestObj, request));

@@ -395,6 +395,59 @@ private:
 };
 
 /**
+ * @brief Request from the launcher to control the state of a Job.
+ */
+class ControlJobRequest final : public JobIdRequest
+{
+public:
+   /**
+    * @enum ControlJobRequest::Operation
+    * @brief Enum which represents the operations that can be performed on Jobs.
+    */
+   enum class Operation
+   {
+      /** Indicates that the job should be suspended. This operation should be equivalent to sending SIGSTOP. */
+      FIRST = 0,
+      SUSPEND = 0,
+
+      /** Indicates that the job should be resumed. This operation should be equivalent to sending SIGCONT. */
+      RESUME = 1,
+
+      /** Indicates that the job should be stopped. This operation should be equivalent to sending SIGTERM. */
+      STOP = 2,
+
+      /** Indicates that the job should be killed. This operation should be equivalent to sending SIGKILL. */
+      KILL = 3,
+
+      /** Indicates that a pending job should be canceled, if possible. */
+      CANCEL = 4,
+
+      /** This value must always be last for input validation purposes. */
+      INVALID
+   };
+
+   /**
+    * @brief Gets the control job action which should be taken.
+    *
+    * @return The control job action which should be taken.
+    */
+   Operation getOperation() const;
+
+private:
+   /**
+    * @brief Constructor.
+    *
+    * @param in_requestJson     The JSON Object which represents the control job request.
+    */
+   explicit ControlJobRequest(const json::Object& in_requestJson);
+
+   // The private implementation of ControlJobRequest
+   PRIVATE_IMPL(m_impl);
+
+   friend class Request;
+};
+
+/**
  * @brief Request from the launcher to begin or end a Job Output Stream.
  */
 class OutputStreamRequest final : public JobIdRequest

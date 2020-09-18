@@ -274,11 +274,44 @@ json::Object JobStatusResponse::toJson() const
    json::Object result = MultiStreamResponse::toJson();
 
    result[FIELD_ID] = m_impl->JobId;
-   result[FIELD_JOB_NAME] = m_impl->JobName;
-   result[FIELD_JOB_STATUS] = api::Job::stateToString(m_impl->Status);
+   result[FIELD_NAME] = m_impl->JobName;
+   result[FIELD_STATUS] = api::Job::stateToString(m_impl->Status);
 
    if (!m_impl->StatusMessage.empty())
-      result[FIELD_JOB_STATUS_MESSAGE] = m_impl->StatusMessage;
+      result[FIELD_STATUS_MESSAGE] = m_impl->StatusMessage;
+
+   return result;
+}
+
+// Control Job Response ================================================================================================
+struct ControlJobResponse::Impl
+{
+   Impl(std::string&& in_statusMessage, bool in_isComplete) :
+      StatusMessage(in_statusMessage),
+      IsComplete(in_isComplete)
+   {
+   }
+
+   /** The detailed status of the control job operation. */
+   std::string StatusMessage;
+
+   /** Whether the operation has completed. */
+   bool IsComplete;
+};
+
+PRIVATE_IMPL_DELETER_IMPL(ControlJobResponse)
+
+ControlJobResponse::ControlJobResponse(uint64_t in_requestId, std::string in_statusMessage, bool in_isComplete) :
+   Response(Type::CONTROL_JOB, in_requestId),
+   m_impl(new Impl(std::move(in_statusMessage), in_isComplete))
+{
+}
+
+json::Object ControlJobResponse::toJson() const
+{
+   json::Object result = Response::toJson();
+   result[FIELD_STATUS_MESSAGE] = m_impl->StatusMessage;
+   result[FIELD_OPERATION_COMPLETE] = m_impl->IsComplete;
 
    return result;
 }
