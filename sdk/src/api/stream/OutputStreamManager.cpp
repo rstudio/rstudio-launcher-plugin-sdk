@@ -153,19 +153,17 @@ struct OutputStreamManager::Impl : public std::enable_shared_from_this<Impl>
     * @param in_requestId       The ID of the request for which this response is being sent.
     * @param in_sequenceId      The ID of this response in the sequence of responses for the specified request.
     * @param in_output          The output to send.
-    * @param in_outputType      The type of the output being sent.
     */
    void sendOutputResponse(
       uint64_t in_requestId,
       uint64_t in_sequenceId,
-      const std::string& in_output,
-      OutputType in_outputType)
+      const OutputChunk& in_output)
    {
       UNIQUE_LOCK_MUTEX(Mutex)
       {
          if (ActiveOutputStreams.find(in_requestId) != ActiveOutputStreams.end())
             LauncherCommunicator->sendResponse(
-               OutputStreamResponse(in_requestId, in_sequenceId, in_output, in_outputType));
+               OutputStreamResponse(in_requestId, in_sequenceId, in_output.Data, in_output.Type));
       }
       END_LOCK_MUTEX
    }
@@ -344,12 +342,11 @@ void OutputStreamManager::handleStreamRequest(const std::shared_ptr<OutputStream
                in_outputStreamRequest->getStreamType(),
                job,
                [weakThis, requestId](
-                  const std::string& in_output,
-                  OutputType in_outputType,
+                  const OutputChunk& in_output,
                   uint64_t in_sequenceId)
                {
                   if (Impl::SharedThis sharedThis = weakThis.lock())
-                     sharedThis->sendOutputResponse(requestId, in_sequenceId, in_output, in_outputType);
+                     sharedThis->sendOutputResponse(requestId, in_sequenceId, in_output);
                },
                [weakThis, requestId](uint64_t in_sequenceId)
                {

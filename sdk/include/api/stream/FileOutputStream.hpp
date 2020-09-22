@@ -98,9 +98,8 @@ private:
     * if necessary.
     *
     * @param in_output          The output that was received from the tail process.
-    * @param in_outputType      The type of output that was received.
     */
-   virtual void onOutput(const std::string& in_output, OutputType in_outputType);
+   virtual void onOutput(const OutputChunk& in_output);
 
    /**
     * @brief Starts streaming output from the specified file as the specified output type.

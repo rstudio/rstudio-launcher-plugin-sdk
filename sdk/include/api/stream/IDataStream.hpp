@@ -1,5 +1,5 @@
 /*
- * AbstractOutputStream.cpp
+ * IDataStream.hpp
  *
  * Copyright (C) 2020 by RStudio, PBC
  *
@@ -21,62 +21,62 @@
  *
  */
 
-#include <api/stream/AbstractOutputStream.hpp>
+#ifndef LAUNCHER_PLUGINS_I_DATA_STREAM_HPP
+#define LAUNCHER_PLUGINS_I_DATA_STREAM_HPP
 
-#include <atomic>
+namespace rstudio {
+namespace launcher_plugins {
+
+class Error;
+
+} // namespace launcher_plugins
+} // namespace rstudio
 
 namespace rstudio {
 namespace launcher_plugins {
 namespace api {
 
-struct AbstractOutputStream::Impl
+/**
+ * @brief Represents the common component of any class which streams data. 
+ * 
+ * @tparam DataType  The type of data being streamed.
+ */
+template <typename DataType>
+class IDataStream
 {
-   Impl(OnOutput&& in_onOutput, OnComplete&& in_onComplete, OnError&& in_onError) :
-      OnOutputFunc(in_onOutput),
-      OnCompleteFunc(in_onComplete),
-      OnErrorFunc(in_onError),
-      SequenceId(0)
-   {
-   }
+public:
+   /**
+    * @brief Virtual destructor for inheritance.
+    */
+   virtual ~IDataStream() = default;
 
-   OnOutput OnOutputFunc;
+protected:
+   /**
+    * @brief Reports data to the Launcher.
+    *
+    * @param in_data            The data to be streamed to the Launcher.
+    */
+   virtual void reportData(const DataType& in_data) = 0;
 
-   OnComplete OnCompleteFunc;
+   /**
+    * @brief Reports an error to the Launcher.
+    *
+    * Additional calls to reportError, reportData, or setStreamComplete will be ignored.
+    * 
+    * @param in_error           The error which occurred.
+    */
+   virtual void reportError(const Error& in_error) = 0;
 
-   OnError OnErrorFunc;
-
-   std::atomic_uint64_t SequenceId;
+   /**
+    * @brief Notifies that the data stream has completed.
+    * 
+    * Additional calls to reportError, reportData, or setStreamComplete will be ignored.
+    */
+   virtual void setStreamComplete() = 0;
 };
-
-PRIVATE_IMPL_DELETER_IMPL(AbstractOutputStream)
-
-AbstractOutputStream::AbstractOutputStream(
-   OutputType in_outputType,
-   JobPtr in_job,
-   OnOutput in_onOutput,
-   OnComplete in_onComplete,
-   OnError in_onError):
-      m_outputType(in_outputType),
-      m_job(std::move(in_job)),
-      m_baseImpl(new Impl(std::move(in_onOutput), std::move(in_onComplete), std::move(in_onError)))
-{
-}
-
-void AbstractOutputStream::reportData(const OutputChunk& in_data)
-{
-   m_baseImpl->OnOutputFunc(in_data, ++m_baseImpl->SequenceId);
-}
-
-void AbstractOutputStream::reportError(const Error& in_error)
-{
-   m_baseImpl->OnErrorFunc(in_error);
-}
-
-void AbstractOutputStream::setStreamComplete()
-{
-   m_baseImpl->OnCompleteFunc(++m_baseImpl->SequenceId);
-}
 
 } // namespace api
 } // namespace launcher_plugins
 } // namespace rstudio
+
+#endif
