@@ -21,7 +21,7 @@
  *
  */
 
-#include "AbstractMultiStream.hpp"
+#include <api/stream/AbstractMultiStream.hpp>
 
 #include <atomic>
 #include <api/ResponseTypes.hpp>
@@ -160,7 +160,7 @@ void AbstractMultiStream<R, Args...>::sendResponse(Args... in_responseArgs)
 {
    StreamSequences sequences = m_baseImpl->getSequences();
    if (!sequences.empty())
-   m_baseImpl->LauncherCommunicator->sendResponse(R(sequences, in_responseArgs...));
+      m_baseImpl->LauncherCommunicator->sendResponse(R(sequences, in_responseArgs...));
 }
 
 template <typename R, typename ... Args>
@@ -182,6 +182,7 @@ void AbstractMultiStream<R, Args...>::onRemoveRequest(uint64_t in_requestId)
 template class AbstractMultiStream<R, __VA_ARGS__>;
 
 INSTANTIATE_CLASS(JobStatusResponse, api::JobPtr)
+INSTANTIATE_CLASS(ResourceUtilStreamResponse, ResourceUtilData, bool)
 
 
 } // namespace api
