@@ -98,6 +98,9 @@ private:
    PRIVATE_IMPL(m_resBaseImpl);
 };
 
+// Convenience Typedef
+typedef std::shared_ptr<AbstractResourceStream> AbstractResourceStreamPtr;
+
 } // namespace api
 } // namespace launcher_plugins
 } // namespace rstudio

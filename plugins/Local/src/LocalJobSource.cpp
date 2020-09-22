@@ -166,6 +166,18 @@ Error LocalJobSource::createOutputStream(
    return Success();
 }
 
+Error LocalJobSource::createResourceStream(
+   api::ConstJobPtr,
+   comms::AbstractLauncherCommunicatorPtr,
+   api::AbstractResourceStreamPtr&)
+{
+   return Error(
+      "NotImplemented",
+      2,
+      "Method LocalJobSource::createResourceStream is not implemented.",
+      ERROR_LOCATION);
+}
+
 } // namespace local
 } // namespace launcher_plugins
 } // namespace rstudio

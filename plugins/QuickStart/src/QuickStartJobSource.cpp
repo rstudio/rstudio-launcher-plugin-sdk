@@ -130,6 +130,18 @@ Error QuickStartJobSource::createOutputStream(
       ERROR_LOCATION);
 }
 
+Error QuickStartJobSource::createResourceStream(
+   api::ConstJobPtr,
+   comms::AbstractLauncherCommunicatorPtr,
+   api::AbstractResourceStreamPtr&)
+{
+   return Error(
+      "NotImplemented",
+      2,
+      "Method QuickStartJobSource::createResourceStream is not implemented.",
+      ERROR_LOCATION);
+}
+
 } // namespace quickstart
 } // namespace launcher_plugins
 } // namespace rstudio

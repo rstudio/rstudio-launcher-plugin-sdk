@@ -30,6 +30,7 @@
 #include <api/Job.hpp>
 #include <api/ResponseTypes.hpp>
 #include <api/stream/AbstractOutputStream.hpp>
+#include <api/stream/AbstractResourceStream.hpp>
 #include <jobs/AbstractJobRepository.hpp>
 #include <jobs/JobStatusNotifier.hpp>
 
@@ -248,6 +249,20 @@ public:
       AbstractOutputStream::OnComplete in_onComplete,
       AbstractOutputStream::OnError in_onError,
       OutputStreamPtr& out_outputStream) = 0;
+
+   /**
+    * @brief Creates a resource utilization metric stream for the specified job.
+    * 
+    * @param in_job                       The job for which resource utilization metrics should be streamed.
+    * @param in_launcherCommunicator      The communicator with which to send responses to the Launcher.
+    * @param out_resourceStream           The newly created resource utilization metric stream, on Success.
+    * 
+    * @return Sucess if the stream could be created; the Error that occurred otherwise.
+    */
+   virtual Error createResourceStream(
+      ConstJobPtr in_job,
+      comms::AbstractLauncherCommunicatorPtr in_launcherCommunicator,
+      AbstractResourceStreamPtr& out_resourceStream) = 0;
 
 protected:
    /**
