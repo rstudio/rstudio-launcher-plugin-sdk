@@ -68,6 +68,7 @@ struct PlacementConstraint;
 
 // Convenience Typedefs
 typedef std::shared_ptr<Job> JobPtr;
+typedef std::shared_ptr<const Job> ConstJobPtr;
 
 typedef std::pair<std::string, std::string> EnvVariable;
 typedef std::vector<EnvVariable> EnvironmentList;
