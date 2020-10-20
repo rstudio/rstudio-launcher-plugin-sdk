@@ -27,8 +27,20 @@ namespace rstudio {
 namespace launcher_plugins {
 namespace api {
 
+typedef std::shared_ptr<AbstractResourceStream> SharedThis;
+typedef std::weak_ptr<AbstractResourceStream> WeakThis;
+
 struct AbstractResourceStream::Impl
 {
+   Impl(jobs::JobStatusNotifierPtr&& in_jobStatusNotifier) :
+      Notifier(in_jobStatusNotifier)
+   {
+   }
+
+   jobs::JobStatusNotifierPtr Notifier;
+
+   jobs::SubscriptionHandle Subscription;
+
    bool IsComplete = false;
 };
 
@@ -36,11 +48,49 @@ PRIVATE_IMPL_DELETER_IMPL(AbstractResourceStream);
 
 AbstractResourceStream::AbstractResourceStream(
    const ConstJobPtr& in_job,
+   jobs::JobStatusNotifierPtr in_jobStatusNotifier,
    comms::AbstractLauncherCommunicatorPtr in_launcherCommunicator) :
    AbstractMultiStream(in_launcherCommunicator),
    m_job(in_job),
-   m_resBaseImpl(new Impl())
+   m_resBaseImpl(new Impl(std::move(in_jobStatusNotifier)))
 {
+}
+
+Error AbstractResourceStream::initialize() 
+{
+   bool jobAfterRunning = false;
+   LOCK_MUTEX(m_mutex)
+   {
+      LOCK_JOB(m_job)
+      {
+         if (m_job->Status == Job::State::PENDING)
+         {
+            WeakThis weakThis = weak_from_this();
+            m_resBaseImpl->Subscription = m_resBaseImpl->Notifier->subscribe(
+               m_job->Id,
+               [weakThis](ConstJobPtr in_job)
+               {
+                  if (SharedThis sharedThis = weakThis.lock())
+                  {
+                     Error error = sharedThis->initialize();
+                     if (error)
+                        sharedThis->reportError(error);
+                  }
+               });
+         }
+         else if (m_job->Status == Job::State::RUNNING)
+            return doInitialize();
+         else
+            jobAfterRunning = true;
+      }
+      END_LOCK_JOB
+   }
+   END_LOCK_MUTEX
+
+   if (jobAfterRunning)
+      setStreamComplete();
+
+   return Success();
 }
 
 void AbstractResourceStream::reportData(const ResourceUtilData& in_data)
@@ -76,6 +126,11 @@ void AbstractResourceStream::setStreamComplete()
          sendResponse(ResourceUtilData(), m_resBaseImpl->IsComplete = true);
    }
    END_LOCK_MUTEX
+}
+
+Error AbstractResourceStream::doInitialize()
+{
+   return Success();
 }
 
 } // namespace api
