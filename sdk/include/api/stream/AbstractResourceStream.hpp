@@ -25,7 +25,6 @@
 #define LAUNCHER_PLUGINS_ABSTRACT_RESOURCE_STREAM_HPP
 
 #include <api/stream/AbstractMultiStream.hpp>
-#include <api/stream/IDataStream.hpp>
 
 #include <Error.hpp>
 #include <PImpl.hpp>
@@ -40,7 +39,6 @@ namespace api {
  * @brief Streams job resource utilization data to the Launcher.
  */
 class AbstractResourceStream :
-   public IDataStream<ResourceUtilData>,
    public AbstractMultiStream<ResourceUtilStreamResponse, ResourceUtilData, bool>
 {
 public:
@@ -72,7 +70,7 @@ protected:
     * 
     * @param in_data    The new resource utilization data for this job.
     */
-   void reportData(const ResourceUtilData& in_data) final;
+   void reportData(const ResourceUtilData& in_data);
 
    /**
     * @brief Reports an error to the Launcher.
@@ -81,14 +79,14 @@ protected:
     * 
     * @param in_error           The error which occurred.
     */
-   void reportError(const Error& in_error) final;
+   void reportError(const Error& in_error);
 
    /**
     * @brief Notifies that the data stream has completed.
     * 
     * Additional calls to reportError, reportData, or setStreamComplete will be ignored.
     */
-   void setStreamComplete() final;
+   void setStreamComplete();
 
    /** The job for which resource utilization metrics should be streamed. */
    const ConstJobPtr m_job;
