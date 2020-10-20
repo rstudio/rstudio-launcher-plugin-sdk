@@ -483,6 +483,15 @@ public:
     */
    explicit JobLock(JobPtr in_job);
 
+   /**
+    * @brief Constructor.
+    *
+    * May throw a std::system_error.
+    *
+    * @param in_job     The job to lock.
+    */
+   explicit JobLock(ConstJobPtr in_job);
+
 private:
    // The private implementation of JobLock.
    PRIVATE_IMPL(m_impl);

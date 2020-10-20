@@ -944,6 +944,11 @@ JobLock::JobLock(JobPtr in_job) :
 {
 }
 
+JobLock::JobLock(ConstJobPtr in_job) :
+   m_impl(new Impl(in_job->m_impl->Mutex))
+{
+}
+
 // Mount ===============================================================================================================
 Error Mount::fromJson(const json::Object& in_json, Mount& out_mount)
 {
