@@ -62,9 +62,9 @@ AbstractOutputStream::AbstractOutputStream(
 {
 }
 
-void AbstractOutputStream::reportData(const OutputChunk& in_data)
+void AbstractOutputStream::reportData(const std::string& in_data, OutputType in_outputType)
 {
-   m_baseImpl->OnOutputFunc(in_data, ++m_baseImpl->SequenceId);
+   m_baseImpl->OnOutputFunc(in_data, in_outputType, ++m_baseImpl->SequenceId);
 }
 
 void AbstractOutputStream::reportError(const Error& in_error)

@@ -24,8 +24,6 @@
 #ifndef LAUNCHER_PLUGINS_ABSTRACT_OUTPUT_STREAM_HPP
 #define LAUNCHER_PLUGINS_ABSTRACT_OUTPUT_STREAM_HPP
 
-#include <api/stream/IDataStream.hpp>
-
 #include <memory>
 
 #include <functional>
@@ -59,27 +57,15 @@ enum class OutputType
 };
 
 /**
- * @brief Represents a single chunk of output for the stream.
- */
-struct OutputChunk
-{
-   /** The data of this chunk of output. */
-   std::string Data;
-
-   /** The type of data in this chunk of output. */
-   OutputType Type;
-};
-
-/**
  * @brief Streams job output data to the launcher.
  */
-class AbstractOutputStream : public IDataStream<OutputChunk>
+class AbstractOutputStream
 {
 public:
    /** Definitions for callback functions which will be invoked when certain events occur. */
    typedef std::function<void(uint64_t)> OnComplete;
    typedef std::function<void(const Error&)> OnError;
-   typedef std::function<void(const OutputChunk&, uint64_t)> OnOutput;
+   typedef std::function<void(const std::string&, OutputType, uint64_t)> OnOutput;
 
    /**
     * @brief Virtual destructor for inheritance.
@@ -120,25 +106,22 @@ protected:
     * @brief Reports output to the launcher.
     *
     * @param in_data            The output data.
+    * @param in_outputType      The type of output data.
     */
-   void reportData(const OutputChunk& in_data) final;
+   void reportData(const std::string& in_data, OutputType in_outputType);
 
    /**
     * @brief Reports an error to the launcher.
-    * 
-    * Additional calls to reportError, reportData, or setStreamComplete will be ignored.
     *
     * @param in_error           The error which occurred.
     */
-   void reportError(const Error& in_error) final;
+   void reportError(const Error& in_error);
 
    /**
     * @brief Notifies the base class that the output stream has completed (i.e. all output of the specified type
     *        has been reported).
-    * 
-    * Additional calls to reportError, reportData, or setStreamComplete will be ignored.
     */
-   void setStreamComplete() final;
+   void setStreamComplete();
 
    /** The type of output that should be streamed. */
    OutputType m_outputType;

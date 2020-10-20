@@ -296,9 +296,9 @@ void FileOutputStream::onExitCallback(SharedThis in_sharedThis, OutputType in_ou
    END_LOCK_MUTEX
 }
 
-void FileOutputStream::onOutput(const OutputChunk& in_output)
+void FileOutputStream::onOutput(const std::string& in_output, OutputType in_outputType)
 {
-   reportData(in_output);
+   reportData(in_output, in_outputType);
 }
 
 Error FileOutputStream::startChildStream(OutputType in_outputType, const system::FilePath& in_file)
@@ -340,7 +340,7 @@ Error FileOutputStream::startChildStream(OutputType in_outputType, const system:
             if (!sharedThis->m_impl->WasErrorReported)
             {
                sharedThis->m_impl->WasOutputWritten = true;
-               sharedThis->onOutput( { in_output, in_outputType } );
+               sharedThis->onOutput(in_output, in_outputType);
             }
          }
          END_LOCK_MUTEX
