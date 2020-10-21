@@ -326,14 +326,17 @@ std::string streamOutput(const std::string& in_jobId, api::OutputType in_type, c
 
 std::string cancelOutputStream(const std::string& in_jobId, const system::User& in_user)
 {
-   json::Object statusReq;
-   statusReq[api::FIELD_REQUEST_ID] = s_requestId;
-   statusReq[api::FIELD_MESSAGE_TYPE] = static_cast<int>(api::Request::Type::GET_JOB_STATUS);
-   statusReq[api::FIELD_REQUEST_USERNAME] = in_user.getUsername();
-   statusReq[api::FIELD_REAL_USER] = in_user.getUsername();
-   statusReq[api::FIELD_JOB_ID] = in_jobId;
-   statusReq[api::FIELD_ENCODED_JOB_ID] = "";
-   statusReq[api::FIELD_CANCEL_STREAM] = true;
+   json::Object outputStreamReq;
+   outputStreamReq[api::FIELD_REQUEST_ID] = s_requestId;
+   outputStreamReq[api::FIELD_MESSAGE_TYPE] = static_cast<int>(api::Request::Type::GET_JOB_OUTPUT);
+   outputStreamReq[api::FIELD_REQUEST_USERNAME] = in_user.getUsername();
+   outputStreamReq[api::FIELD_REAL_USER] = in_user.getUsername();
+   outputStreamReq[api::FIELD_JOB_ID] = in_jobId;
+   outputStreamReq[api::FIELD_ENCODED_JOB_ID] = "";
+   outputStreamReq[api::FIELD_CANCEL_STREAM] = true;
+
+   return getMessageHandler().formatMessage(outputStreamReq.write());
+}
 
    return getMessageHandler().formatMessage(statusReq.write());
 }
