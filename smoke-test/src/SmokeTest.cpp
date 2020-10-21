@@ -63,6 +63,7 @@ constexpr char const* SUB_JOB_4_REQ = "Submit stderr job (doesn't match filter)"
 constexpr char const* GET_JOB_OUTPUT_BOTH_REQ = "Stream last job's output (stdout and stderr)";
 constexpr char const* GET_JOB_OUTPUT_STDOUT_REQ = "Stream last job's output (stdout)";
 constexpr char const* GET_JOB_OUTPUT_STDERR_REQ = "Stream last job's output (stderr)";
+constexpr char const* GET_JOB_RESOURCE_REQ = "Stream last job's resource utilization (must be running)";
 constexpr char const* GET_JOB_NETWORK_REQ = "Get last job's network information";
 constexpr char const* CANCEL_JOB_REQ = "Submit a slow job and then cancel it";
 constexpr char const* STOP_JOB_REQ = "Submit a slow job and then stop it";
@@ -95,6 +96,7 @@ const Requests& getRequests()
          GET_JOB_OUTPUT_BOTH_REQ,
          GET_JOB_OUTPUT_STDOUT_REQ,
          GET_JOB_OUTPUT_STDERR_REQ,
+         GET_JOB_RESOURCE_REQ,
          GET_JOB_NETWORK_REQ,
          CANCEL_JOB_REQ,
          KILL_JOB_REQ,
@@ -338,7 +340,32 @@ std::string cancelOutputStream(const std::string& in_jobId, const system::User& 
    return getMessageHandler().formatMessage(outputStreamReq.write());
 }
 
-   return getMessageHandler().formatMessage(statusReq.write());
+std::string streamResource(const std::string& in_jobId, const system::User& in_user)
+{
+   json::Object resourceStreamReq;
+   resourceStreamReq[api::FIELD_REQUEST_ID] = ++s_requestId;
+   resourceStreamReq[api::FIELD_REQUEST_USERNAME] = in_user.getUsername();
+   resourceStreamReq[api::FIELD_REAL_USER] = in_user.getUsername();
+   resourceStreamReq[api::FIELD_JOB_ID] = in_jobId;
+   resourceStreamReq[api::FIELD_ENCODED_JOB_ID] = "";
+   resourceStreamReq[api::FIELD_MESSAGE_TYPE] = static_cast<int>(api::Request::Type::GET_JOB_RESOURCE_UTIL);
+   resourceStreamReq[api::FIELD_CANCEL_STREAM] = false;
+
+   return getMessageHandler().formatMessage(resourceStreamReq.write());
+}
+
+std::string cancelResourceStream(const std::string& in_jobId, const system::User& in_user)
+{
+   json::Object resourceStreamReq;
+   resourceStreamReq[api::FIELD_REQUEST_ID] = s_requestId;
+   resourceStreamReq[api::FIELD_MESSAGE_TYPE] = static_cast<int>(api::Request::Type::GET_JOB_RESOURCE_UTIL);
+   resourceStreamReq[api::FIELD_REQUEST_USERNAME] = in_user.getUsername();
+   resourceStreamReq[api::FIELD_REAL_USER] = in_user.getUsername();
+   resourceStreamReq[api::FIELD_JOB_ID] = in_jobId;
+   resourceStreamReq[api::FIELD_ENCODED_JOB_ID] = "";
+   resourceStreamReq[api::FIELD_CANCEL_STREAM] = true;
+
+   return getMessageHandler().formatMessage(resourceStreamReq.write());
 }
 
 std::string networkReq(const std::string& in_jobId, const system::User& in_user)
@@ -475,10 +502,17 @@ Error SmokeTest::initialize()
                      parseJobIds(obj[api::FIELD_JOBS].getArray(), sharedThis->m_submittedJobIds);
                else if (sharedThis->m_lastRequestType == api::Request::Type::GET_JOB_OUTPUT)
                {
-                  if (obj[api::FIELD_MESSAGE_TYPE].getInt() == -1 )
+                  if (obj[api::FIELD_MESSAGE_TYPE].getInt() == -1)
                      sharedThis->m_outputStreamFinished = true;
                   else if (obj.hasMember(api::FIELD_COMPLETE) && obj[api::FIELD_COMPLETE].isBool())
                      sharedThis->m_outputStreamFinished = obj[api::FIELD_COMPLETE].getBool();
+               }
+               else if (sharedThis->m_lastRequestType == api::Request::Type::GET_JOB_RESOURCE_UTIL)
+               {
+                  if (obj[api::FIELD_MESSAGE_TYPE].getInt() == -1)
+                     sharedThis->m_resourceStreamFinished = true;
+                  else if (obj.hasMember(api::FIELD_COMPLETE) && obj[api::FIELD_COMPLETE].isBool())
+                     sharedThis->m_resourceStreamFinished = obj[api::FIELD_COMPLETE].getBool();
                }
             }
          }
@@ -583,6 +617,8 @@ bool SmokeTest::sendRequest()
          success = sendJobOutputStreamRequest(api::OutputType::STDOUT);
       else if (request == GET_JOB_OUTPUT_STDERR_REQ)
          success = sendJobOutputStreamRequest(api::OutputType::STDERR);
+      else if (request == GET_JOB_RESOURCE_REQ)
+         success = sendJobResourceStreamRequest();
       else if (request == CANCEL_JOB_REQ)
          success = sendControlJobReqeust(api::ControlJobRequest::Operation::CANCEL);
       else if (request == KILL_JOB_REQ)
@@ -776,6 +812,43 @@ bool SmokeTest::sendJobOutputStreamRequest(api::OutputType in_outputType)
    END_LOCK_MUTEX
 
    return true;
+}
+
+bool SmokeTest::sendJobResourceStreamRequest()
+{
+   UNIQUE_LOCK_MUTEX(m_mutex)
+   {
+      if (m_submittedJobIds.empty())
+      {
+         std::cout << "There are no recently submitted jobs. Choose another option." << std::endl;
+         return true;
+      }
+
+      std::string resourceStreamMsg = streamResource(m_submittedJobIds.back(), m_requestUser);
+      m_resourceStreamFinished = false;
+      m_responseCount[s_requestId] = 0;
+      m_lastRequestType = api::Request::Type::GET_JOB_RESOURCE_UTIL;
+
+      Error error = m_plugin->writeToStdin(resourceStreamMsg, false);
+      if (error)
+         return handleError(error);
+
+      bool timedOut = false;
+      while (!(timedOut = !waitForResponse(s_requestId, m_responseCount[s_requestId] + 1, uniqueLock)) &&
+         !m_resourceStreamFinished);
+
+      if (timedOut && !m_resourceStreamFinished)
+      {
+         std::cout << "No resource util stream response received within the last 30 seconds: cancelling..." << std::endl;
+         error = m_plugin->writeToStdin(cancelResourceStream(m_submittedJobIds.back(), m_requestUser), false);
+         if (error)
+            return handleError(error);
+      }
+   }
+   END_LOCK_MUTEX
+
+   return true;
+
 }
 
 bool SmokeTest::sendJobStatusStreamRequest()
