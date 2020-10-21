@@ -26,8 +26,6 @@
 
 #include <api/stream/AbstractMultiStream.hpp>
 
-#include <memory>
-
 #include <Error.hpp>
 #include <PImpl.hpp>
 #include <api/Response.hpp>
@@ -42,15 +40,11 @@ namespace api {
  * @brief Streams job resource utilization data to the Launcher.
  */
 class AbstractResourceStream :
-   public AbstractMultiStream<ResourceUtilStreamResponse, ResourceUtilData, bool>,
-   public std::enable_shared_from_this<AbstractResourceStream>
+   public AbstractMultiStream<ResourceUtilStreamResponse, ResourceUtilData, bool>
 {
 public:
    /**
     * @brief Virtual destructor for inheritance.
-    * 
-    * NOTE: AbstractResourceStream::setStreamComplete() must be called before the destructor is called to ensure 
-    *       consumers of the Launcher are made aware that the connection is closed.
     */
    virtual ~AbstractResourceStream() = default;
 
@@ -59,19 +53,24 @@ public:
     * 
     * @return Success if resource utilization streaming was started correctly; Error otherwise.
     */
-   Error initialize();
+   virtual Error initialize() = 0;
+
+   /**
+    * @brief Cancels the stream.
+    * 
+    * @param in_requestId     The ID of the request for which to cancel the stream. Default: all requests.
+    */
+   void cancel(uint64_t in_requestId = 0);
 
 protected:
    /**
     * @brief Constructor.
     * 
     * @param in_job                    The job for which resource utilization metrics should be streamed.
-    * @param in_jobStatusNotifier      The job status notifier for keeping track of the job status.
     * @param in_launcherCommunicator   The communicator through which messages may be sent to the launcher.
     */
    explicit AbstractResourceStream(
       const ConstJobPtr& in_job,
-      jobs::JobStatusNotifierPtr in_jobStatusNotifier,
       comms::AbstractLauncherCommunicatorPtr in_launcherCommunicator);
 
    /**
@@ -118,15 +117,6 @@ protected:
    const ConstJobPtr m_job;
 
 private:
-   /**
-    * @brief An optional method that allows the child class 
-    * 
-    * This method will only be called once the job is in the running state. If the job is Finished when the stream is
-    * created, a stream complete notification will be sent to the Launcher immediately, without invoking this method.
-    * 
-    * @return Success if the stream was initialized correctly; Error otherwise.
-    */
-   virtual Error doInitialize();
 
    // The private implementation of AbstractResourceStream
    PRIVATE_IMPL(m_resBaseImpl);
