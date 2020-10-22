@@ -77,7 +77,7 @@ protected:
     * @param in_job                    The job for which resource utilization metrics should be streamed.
     * @param in_launcherCommunicator   The communicator through which messages may be sent to the launcher.
     */
-   explicit AbstractResourceStream(
+   AbstractResourceStream(
       const ConstJobPtr& in_job,
       comms::AbstractLauncherCommunicatorPtr in_launcherCommunicator);
 
