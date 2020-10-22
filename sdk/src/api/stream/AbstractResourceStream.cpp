@@ -46,17 +46,22 @@ AbstractResourceStream::AbstractResourceStream(
 {
 }
 
-void AbstractResourceStream::cancel(uint64_t in_requestId) 
+void AbstractResourceStream::addRequest(uint64_t in_requestId, const system::User&)
 {
    LOCK_MUTEX(m_mutex)
    {
-      if (in_requestId != 0)
-      {
-         if (!m_resBaseImpl->IsComplete)
-            sendResponse(ResourceUtilData(), m_resBaseImpl->IsComplete = true);
-      }
-      else if (!m_resBaseImpl->IsComplete)
-         sendResponse( { in_requestId } , ResourceUtilData(), true);
+      // No special action required.
+      onAddRequest(in_requestId);
+   }
+   END_LOCK_MUTEX
+}
+
+void AbstractResourceStream::setStreamComplete()
+{
+   LOCK_MUTEX(m_mutex)
+   {
+      if (!m_resBaseImpl->IsComplete)
+         sendResponse(ResourceUtilData(), m_resBaseImpl->IsComplete = true);
    }
    END_LOCK_MUTEX
 }
@@ -82,16 +87,6 @@ void AbstractResourceStream::reportError(const Error& in_error)
          logging::logError(in_error);
          sendResponse(ResourceUtilData(), m_resBaseImpl->IsComplete = true);
       }
-   }
-   END_LOCK_MUTEX
-}
-
-void AbstractResourceStream::setStreamComplete()
-{
-   LOCK_MUTEX(m_mutex)
-   {
-      if (!m_resBaseImpl->IsComplete)
-         sendResponse(ResourceUtilData(), m_resBaseImpl->IsComplete = true);
    }
    END_LOCK_MUTEX
 }

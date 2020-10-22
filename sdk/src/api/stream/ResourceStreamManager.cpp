@@ -107,7 +107,7 @@ struct ResourceStreamManager::Impl : public std::enable_shared_from_this<Impl>
                   // If the job newly entered a completed state, cancel the stream and forget about it.
                   if (in_job->isCompleted())
                   {
-                     itr->second.Stream->cancel();
+                     itr->second.Stream->setStreamComplete();
                      sharedThis->ActiveStreams.erase(itr);
                   }
                   // If the job recently entered the running state, ensure the stream is initialized.
@@ -120,7 +120,7 @@ struct ResourceStreamManager::Impl : public std::enable_shared_from_this<Impl>
                            "An error occurred while initializing resource utilization metric streaming for Job " +
                               in_job->Id);
                         logging::logError(error);
-                        itr->second.Stream->cancel();
+                        itr->second.Stream->setStreamComplete();
                         sharedThis->ActiveStreams.erase(itr);
                         return;
                      }
@@ -185,7 +185,7 @@ void ResourceStreamManager::handleStreamRequest(
          LOCK_JOB(job)
          {
             if (in_resourceUtilStreamRequest->isCancelRequest() || job->isCompleted())
-               return stream->cancel();
+               return;
 
             if (job->Status == Job::State::RUNNING)
                stream->initialize();
@@ -198,11 +198,12 @@ void ResourceStreamManager::handleStreamRequest(
       {
          if (in_resourceUtilStreamRequest->isCancelRequest())
          {
-            itr->second.Stream->cancel(id);
             itr->second.Stream->removeRequest(id);
             if (itr->second.Stream->isEmpty())
                m_impl->ActiveStreams.erase(itr);
          }
+         else
+            itr->second.Stream->addRequest(id, in_resourceUtilStreamRequest->getUser());
       }
    }
    END_LOCK_MUTEX

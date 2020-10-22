@@ -36,6 +36,16 @@
 
 namespace rstudio {
 namespace launcher_plugins {
+namespace system {
+
+class User;
+
+} // namespace system
+} // namespace launcher_plugins
+} // namespace rstudio
+
+namespace rstudio {
+namespace launcher_plugins {
 namespace api {
 
 /**
@@ -54,6 +64,14 @@ public:
     * @param in_launcherCommunicator    The launcher communicator which will send the responses.
     */
    explicit AbstractMultiStream(comms::AbstractLauncherCommunicatorPtr in_launcherCommunicator);
+
+   /**
+    * @brief Adds a request to the stream.
+    * 
+    * @param in_requestId     The ID of the request.
+    * @param in_requestUser   The user who made the request.
+    */
+   virtual void addRequest(uint64_t in_requestId, const system::User& in_requestUser) = 0;
 
    /**
     * @brief Initializes the response stream.

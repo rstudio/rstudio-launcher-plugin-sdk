@@ -49,6 +49,14 @@ public:
    virtual ~AbstractResourceStream() = default;
 
    /**
+    * @brief Adds a request to the stream.
+    * 
+    * @param in_requestId     The ID of the request.
+    * @param in_requestUser   The user who made the request.
+    */
+   void addRequest(uint64_t in_requestId, const system::User& in_requestUser) override;
+
+   /**
     * @brief Initializes the resource utilization stream.
     * 
     * @return Success if resource utilization streaming was started correctly; Error otherwise.
@@ -56,11 +64,11 @@ public:
    virtual Error initialize() = 0;
 
    /**
-    * @brief Cancels the stream.
+    * @brief Notifies that the data stream has completed.
     * 
-    * @param in_requestId     The ID of the request for which to cancel the stream. Default: all requests.
+    * Additional calls to reportError, reportData, or setStreamComplete will be ignored.
     */
-   void cancel(uint64_t in_requestId = 0);
+   void setStreamComplete();
 
 protected:
    /**
@@ -88,13 +96,6 @@ protected:
     * @param in_error           The error which occurred.
     */
    void reportError(const Error& in_error);
-
-   /**
-    * @brief Notifies that the data stream has completed.
-    * 
-    * Additional calls to reportError, reportData, or setStreamComplete will be ignored.
-    */
-   void setStreamComplete();
 
    /** 
     * @brief The job for which resource utilization metrics should be streamed.

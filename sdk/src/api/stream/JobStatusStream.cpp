@@ -83,7 +83,7 @@ SingleJobStatusStream::SingleJobStatusStream(
 {
 }
 
-void SingleJobStatusStream::addRequest(uint64_t in_requestId)
+void SingleJobStatusStream::addRequest(uint64_t in_requestId, const system::User&)
 {
    LOCK_MUTEX(m_mutex)
    {

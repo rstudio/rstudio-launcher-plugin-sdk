@@ -61,12 +61,12 @@ public:
       comms::AbstractLauncherCommunicatorPtr in_launcherCommunicator);
 
    /**
-    * @brief Adds a request to this JobStatusStream.
-    *
-    * @param in_requestId
-    * @param in_requestUser
+    * @brief Adds a request to the stream.
+    * 
+    * @param in_requestId     The ID of the request.
+    * @param in_requestUser   The user who made the request.
     */
-   void addRequest(uint64_t in_requestId);
+   void addRequest(uint64_t in_requestId, const system::User& in_requestUser) override;
 
    /**
     * @brief Initializes the response stream.
@@ -110,12 +110,12 @@ public:
       comms::AbstractLauncherCommunicatorPtr in_launcherCommunicator);
 
    /**
-    * @brief Adds a request to this JobStatusStream.
-    *
-    * @param in_requestId
-    * @param in_requestUser
+    * @brief Adds a request to the stream.
+    * 
+    * @param in_requestId     The ID of the request.
+    * @param in_requestUser   The user who made the request.
     */
-   void addRequest(uint64_t in_requestId, const system::User& in_requestUser);
+   void addRequest(uint64_t in_requestId, const system::User& in_requestUser) override;
 
    /**
     * @brief Initializes the response stream.
