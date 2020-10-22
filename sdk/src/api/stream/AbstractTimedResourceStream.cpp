@@ -69,6 +69,10 @@ AbstractTimedResourceStream::AbstractTimedResourceStream(
 
 Error AbstractTimedResourceStream::initialize()
 {
+   Error error = onInitialize();
+   if (error)
+      return error;
+
    WeakThis weakThis = weak_from_this();
    system::AsioFunction onTimer = [weakThis]()
    {
@@ -92,6 +96,10 @@ Error AbstractTimedResourceStream::initialize()
    return Success();
 }
 
+Error AbstractTimedResourceStream::onInitialize()
+{
+   return Success();
+}
 
 } // namespace api 
 } // namespace launcher_plugins 

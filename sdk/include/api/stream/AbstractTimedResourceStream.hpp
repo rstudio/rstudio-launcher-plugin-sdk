@@ -64,6 +64,14 @@ protected:
 
 private:
    /**
+    * @brief This method will be invoked when initialized is called on the base class, allowing the inheriting class to 
+    *        optionally do any initialization steps necessarfy.
+    * 
+    * @return Success if the inheriting class initialized correctly; the Error that occurred otherwise.
+    */
+   virtual Error onInitialize();
+
+   /**
     * @brief Polls resource utilization of the job.
     * 
     * This method will be invoked once every configured interval.
