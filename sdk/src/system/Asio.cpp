@@ -435,7 +435,6 @@ struct AsyncTimedEvent::Impl
 
    /** The timer that will invoke the callback function. */
    std::shared_ptr<boost::asio::deadline_timer> Timer;
-
 };
 
 AsyncTimedEvent::AsyncTimedEvent() :
