@@ -32,7 +32,14 @@ typedef std::weak_ptr<AbstractResourceStream> WeakThis;
 
 struct AbstractResourceStream::Impl
 {
+   bool hasData() const
+   {
+      return LastData.CpuPercent || LastData.CpuSeconds || LastData.ResidentMem || LastData.VirtualMem;
+   }
+
    bool IsComplete = false;
+
+   ResourceUtilData LastData;
 };
 
 PRIVATE_IMPL_DELETER_IMPL(AbstractResourceStream);
@@ -50,8 +57,10 @@ void AbstractResourceStream::addRequest(uint64_t in_requestId, const system::Use
 {
    LOCK_MUTEX(m_mutex)
    {
-      // No special action required.
       onAddRequest(in_requestId);
+
+      if (m_resBaseImpl->hasData() || m_resBaseImpl->IsComplete)
+         sendResponse({ in_requestId } , m_resBaseImpl->LastData, m_resBaseImpl->IsComplete);
    }
    END_LOCK_MUTEX
 }
