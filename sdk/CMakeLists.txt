@@ -42,6 +42,7 @@ set(RLPS_SOURCE_FILES
    src/api/stream/AbstractMultiStream.cpp
    src/api/stream/AbstractOutputStream.cpp
    src/api/stream/AbstractResourceStream.cpp
+   src/api/stream/AbstractTimedResourceStream.cpp
    src/api/stream/FileOutputStream.cpp
    src/api/stream/JobStatusStream.cpp
    src/api/stream/JobStatusStreamManager.cpp
