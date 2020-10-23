@@ -31,6 +31,7 @@
 #include <system/Process.hpp>
 
 #include <LocalConstants.hpp>
+#include <LocalResourceStream.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -167,15 +168,16 @@ Error LocalJobSource::createOutputStream(
 }
 
 Error LocalJobSource::createResourceStream(
-   api::ConstJobPtr,
-   comms::AbstractLauncherCommunicatorPtr,
-   api::AbstractResourceStreamPtr&)
+   api::ConstJobPtr in_job,
+   comms::AbstractLauncherCommunicatorPtr in_launcherCommunicator,
+   api::AbstractResourceStreamPtr& out_resourceStream)
 {
-   return Error(
-      "NotImplemented",
-      2,
-      "Method LocalJobSource::createResourceStream is not implemented.",
-      ERROR_LOCATION);
+   out_resourceStream.reset(
+      new LocalResourceStream(
+         system::TimeDuration::Seconds(3),
+         in_job,
+         in_launcherCommunicator));
+   return Success();
 }
 
 } // namespace local
