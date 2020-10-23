@@ -40,6 +40,9 @@ class AbstractTimedResourceStream :
    public std::enable_shared_from_this<AbstractTimedResourceStream>
 {
 public:
+   /**
+    * @brief Virtual destructor.
+    */
    virtual ~AbstractTimedResourceStream();
 
    /**
