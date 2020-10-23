@@ -92,12 +92,14 @@ Error readStatFile(const system::FilePath& in_statFile, std::vector<std::string>
    return Success();
 }
 
-Error readStatFields(const std::vector<std::string>& in_statFields, size_t in_index, std::string& out_value)
+// Something to do with the variadic template arguments is prevent output reference variables from working, so use
+// pointer variables instead.
+Error readStatFields(const std::vector<std::string>& in_statFields, size_t in_index, std::string* out_value)
 {
    if (in_index >= in_statFields.size())
       return systemError(ESPIPE, "stat output did not contain the requested field", ERROR_LOCATION);
 
-   out_value = in_statFields[in_index];
+   *out_value = in_statFields[in_index];
    return Success();
 }
 
@@ -105,7 +107,7 @@ template <typename ...Args>
 Error readStatFields(
    const std::vector<std::string>& in_statFields,
    size_t in_index,
-   std::string& out_value,
+   std::string* out_value,
    Args... in_args)
 {
    Error error = readStatFields(in_statFields, in_index, out_value);
@@ -144,8 +146,8 @@ Error getProcessTicks(pid_t in_rootPid, clock_t& out_ticks)
       system::FilePath statFile = getStatRootPath(pid).completeChildPath("stat");
       Error error = readStatFields(
          statFile,
-         s_userProcTicksField, userTicksStr,
-         s_sysProcTicksField, sysTicksStr);
+         s_userProcTicksField, &userTicksStr,
+         s_sysProcTicksField, &sysTicksStr);
       if (error)
       {
          // If the root process has exited, there's nothing to track so return an error.
@@ -280,8 +282,8 @@ Error LocalResourceStream::getMem(double& out_memPhysical, double& out_memVirtua
       std::string physicalPageCount, virtualPageCount;
       Error error = readStatFields(
          statFile,
-         s_physMemField, physicalPageCount,
-         s_virtMemField, virtualPageCount);
+         s_physMemField, &physicalPageCount,
+         s_virtMemField, &virtualPageCount);
 
       if (error)
       {
