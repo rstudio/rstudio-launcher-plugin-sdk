@@ -282,7 +282,7 @@ std::string submitJob3Req(const system::User& in_user)
    api::Job job;
    job.User = in_user;
    job.Exe = "/bin/bash";
-   job.StandardIn = "#!/bin/bash\nset -e\nfor I in 1 2 3 4 5 6 7 8 9 10 11; do\n  echo \"$I...\"\n  sleep $I\ndone";
+   job.StandardIn = "#!/bin/bash\nset -e\nfor I in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24; do\n  echo \"$I...\"\n  sleep $I\ndone";
    job.Name = "Slow job";
    job.Tags = { "filter job" };
 
