@@ -201,7 +201,7 @@ Error LocalResourceStream::onInitialize()
 
          m_pid = m_job->Pid.getValueOr(0);
 
-
+         return Success();
       }
       END_LOCK_JOB
    }
