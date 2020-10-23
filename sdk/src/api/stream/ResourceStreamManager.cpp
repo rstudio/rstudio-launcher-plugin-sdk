@@ -187,6 +187,7 @@ void ResourceStreamManager::handleStreamRequest(
             if (in_resourceUtilStreamRequest->isCancelRequest() || job->isCompleted())
                return;
 
+            stream->addRequest(id, user);
             if (job->Status == Job::State::RUNNING)
                stream->initialize();
 
