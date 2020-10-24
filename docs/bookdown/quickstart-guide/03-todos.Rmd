@@ -1022,7 +1022,7 @@ TODO Location             Impact
 ------------------------  ------------------------
 QuickStartJobSource.cpp   QuickStartJobSource.cpp
 
-When a request is made to stream job output, the Launcher will retrieve the relevant `Job` object, validate the authorization of the user to access the specified Job, and then invoke `IJobSource::createOutputStream` with the appropriate parameters. The Plugin is then responsible for creating an `AbstractOuptutStream` object which will stream the correct type of job output. If the job output will always be written to a file on a shared location, the Plugin may simply construct a `FileOutputStream` object and return it to the SDK.
+When a request is made to stream job output, the SDK will retrieve the relevant `Job` object, validate the authorization of the user to access the specified Job, and then invoke `IJobSource::createOutputStream` with the appropriate parameters. The Plugin is then responsible for creating an `AbstractOuptutStream` object which will stream the correct type of job output. If the job output will always be written to a file on a shared location, the Plugin may simply construct a `FileOutputStream` object and return it to the SDK.
 
 If there is need to skip some lines of output or in some way further process the Job output, but it can still be read from a file, it is possible to customize the behavior of the base `FileOutputStream` class by inheriting from it. For more details, please refer to the 'Customizing the File Output Stream' subsection of the 'Advanced Features' chapter of the RStudio Launcher Plugin SDK Developer Guide.
 
@@ -1325,3 +1325,17 @@ bool MarsJobSource::suspendJob(api::JobPtr in_job, bool& out_isComplete, std::st
 ```
 
 in `MarsJobSource.cpp`.
+
+## TODO #16: Create a Resource Utilization Stream {#todo-16}
+
+TODO Location                  Impact
+-----------------------------  -----------------------------------------------------------
+QuickStartResourceStream.cpp   QuickStartResourceStream.cpp, QuickStartResourceStream.hpp
+
+When a request is made to stream resource utilization metrics for a Job, the SDK will retrieve the relevant `Job` object, validate the authorization of the user to access the specified Job, and then invoke `IJobSource::createResourceStream` with the appropriate parameters. The Plugin is then responsible for creating an `AbstractResourceStream` object which will stream any resource utilization metrics that it is able to access. Supported resources are CPU Percentage, elapsed CPU Time in seconds, Resident Set size (or Physical Memory size) in MB, and Virtual Memory size in MB.
+
+Streaming resource utilization metrics is a best effort operation. If any of the resource utilization metrics cannot be retrieved through Job Scheduling System, the Plugin may simply omit them from each response. If it is not possible to retrieve any resource utilization metrics through the Job Scheduling System, the Plugin may simply not post any updates. When the Job enters a completed state, the SDK will send a response to the Launcher to indicate that the stream has completed. The provided `QuickStartResourceStream` class already fulfills that requirement for a Job Scheduling System that does not support resource utilization measurement.
+
+### Example {#todo-16-ex}
+
+
