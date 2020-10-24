@@ -33,7 +33,8 @@ set(QUICKSTART_SOURCE_FILES
    src/QuickStartJobSource.cpp
    src/QuickStartJobStatusWatcher.cpp
    src/QuickStartOptions.cpp
-   src/QuickStartPluginApi.cpp)
+   src/QuickStartPluginApi.cpp
+   src/QuickStartResourceStream.cpp)
 
 # include directories
 include_directories(
