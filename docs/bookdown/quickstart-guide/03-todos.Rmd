@@ -559,10 +559,10 @@ The Launcher supports load balancing, which means that it is possible that jobs 
 
 In addition to the assumptions from previous examples, assume the following:
 
-* The `mars_api::job` structure has a `_last_modified` field which is a string in the format `YYYY-MM-DDTHH:mm:ss.sssss[+-]HH:mm`. 
-* The `mars_api::job` structure has a `_status` field which is a string, and the Plugin developer has added a `marsStatusToStatus` method which converts the Mars job status to it's applicable SDK status equivalent.
-* The `mars_api::job` structure has a `_reason` field which is a string describing the reason for the current status.
-* The `mars_api::job` structure has an `_id` field which is an unsigned integer, that the Plugin developer has mapped to an SDK `Job::Id` field by converting the integer value to a string.
+* The `mars_api::job` structure has a `last_modified` field which is a string in the format `YYYY-MM-DDTHH:mm:ss.sssss[+-]HH:mm`. 
+* The `mars_api::job` structure has a `status` field which is a string, and the Plugin developer has added a `marsStatusToStatus` method which converts the Mars job status to it's applicable SDK status equivalent.
+* The `mars_api::job` structure has a `reason` field which is a string describing the reason for the current status.
+* The `mars_api::job` structure has an `id` field which is an unsigned integer, that the Plugin developer has mapped to an SDK `Job::Id` field by converting the integer value to a string.
 
 In that case, the plugin developer might change
 
@@ -599,28 +599,28 @@ Error MarsJobStatusWatcher::pollJobStatus()
       continue; // Skip non-Launcher jobs.
     
     system::DateTime lastModified;
-    Error error = system::DateTime::fromString(job._last_modified, lastModified);
+    Error error = system::DateTime::fromString(job.last_modified, lastModified);
     if (error)
     {
       // Use the current time as the invocation time instead, but log an error.
       logging::logError(error, ERROR_LOCATION);
       error = updateJobStatus(
-        std::to_string(job._id),
-        marsStatusToStatus(job._status),
-        job._reason);
+        std::to_string(job.id),
+        marsStatusToStatus(job.status),
+        job.reason);
     }
     else
     {
       error = updateJobStatus(
-        std::to_string(job._id),
-        marsStatusToStatus(job._status),
-        job._reason,
+        std::to_string(job.id),
+        marsStatusToStatus(job.status),
+        job.reason,
         lastModified);
     }
     
     if (error)
     {
-      logging::logErrorMessage("Failed to update job " + std::to_string(job._id), ERROR_LOCATION);
+      logging::logErrorMessage("Failed to update job " + std::to_string(job.id), ERROR_LOCATION);
       logging::logError(error, ERROR_LOCATION);
     }
   }
