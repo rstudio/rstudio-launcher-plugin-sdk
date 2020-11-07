@@ -796,7 +796,7 @@ struct mount
    std::string dest;
    std::string host;
    bool read_only;
-}
+};
 
 struct job_opts
 {
