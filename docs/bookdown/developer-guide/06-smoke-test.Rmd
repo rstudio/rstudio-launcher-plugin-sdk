@@ -52,7 +52,7 @@ This menu item will send a [Job State](#jobs) request to the plugin with the `st
 
 ### 5. Get finished jobs {#st-menu-5}
 
-This menu item will send a [Job State](#jobs) request to the Plugin with the `statuses` field set to `[ "Finished" ]` and print the response. It should show any RStudio jobs in the underlying Job Scheduling System that have finished running without a failure. Note that jobs which were killed (e.g. via [menu item 16](#st-menu-16)) will not be displayed in this response, but jobs which were stopped (e.g. via [menu item 17](#st-menu-17)) should be.
+This menu item will send a [Job State](#jobs) request to the Plugin with the `statuses` field set to `[ "Finished" ]` and print the response. It should show any RStudio jobs in the underlying Job Scheduling System that have finished running without a failure. Note that jobs which were killed (e.g. via [menu item 17](#st-menu-17)) will not be displayed in this response, but jobs which were stopped (e.g. via [menu item 18](#st-menu-18)) should be.
 
 ### 6. Get job statuses {#st-menu-6}
 
@@ -100,31 +100,39 @@ This menu item sends a [Job Output Stream](#output-stream) request for only `std
 
 Even if there is no `stderr` output for the last job, there should still be a response from the Plugin indicating that the output is empty.
 
-### 14. Get last job's network information {#st-menu-14}
+### 14. Stream last jobs' resource utilization (must be running) {#st-menu-14}
+
+This menu item sends a [Job Resource Utilization Stream](#resource-util-stream) request for the last Job that was submitted to the Plugin via the Smoke Test utility. If no Job has been submitted to the Plugin since the Smoke Test utility was started, an error will be emitted.
+
+The Job must currently be running in order for resource utilization data to be returned. If the Job has already completed, there should be still be a response from the Plugin indicating that the stream is complete. 
+
+Running [menu item 10](#st-menu-10) immediately before this menu item may provide the best possibility of observing resource utilization stream responses from the Plugin.
+
+### 15. Get last job's network information {#st-menu-15}
 
 This menu item sends a [Job Network](#network) request to the Plugin for the last Job that was submitted to the Plugin via the Smoke Test utility. If no Job has been submitted to the Plugin since the Smoke Test utility was started, an error will be emitted.
 
 The network information displayed in the response should match the network information of the machine which ran the Job, according to the underlying Job Scheduling system.
 
-### 15. Submit a slow job and then cancel it {#st-menu-15}
+### 16. Submit a slow job and then cancel it {#st-menu-16}
 
 This menu item submits a slow job to the Job Scheduling System via the [Submit Job](#jobs) request and then attempts to immediately cancel it via the [Control Job](#control-job) request with the `operation` set to `4` (see the [JobOperation](#job-op) section). Depending on the speed of the Job Scheduling system, it is possible that the Job will enter the `Running` state before the Cancel request is received. Because of this, it is not unexpected that an [Error Response](#error) with an error code of [InvalidJobState](#error-codes) may be returned by the Plugin.
 
 If the cancel operation completed successfully, invoking [menu item 11](#st-menu-11), [menu item 12](#st-menu-12), or [menu item 13](#st-menu-13) should show that the Job emitted no output.
 
-### 16. Submit a slow job and then kill it {#st-menu-16}
+### 17. Submit a slow job and then kill it {#st-menu-17}
 
 This menu item submits a slow job to the Job Scheduling System via the [Submit Job](#jobs) request, waits for one second, and then attempts to kill it via the [Control Job](#control-job) request with the `operation` set to `3` (see the [JobOperation](#job-op) section). Depending on the speed of the Job Scheduling system, it is possible that the Job will not have entered the `Running` state before the Kill request is received. Because of this, it is not unexpected that an [Error Response](#error) with an error code of [InvalidJobState](#error-codes) may be returned by the Plugin.
 
 If the kill operation completed successfully, invoking [menu item 11](#st-menu-11), [menu item 12](#st-menu-12), or [menu item 13](#st-menu-13) should show that the Job emitted no output.
 
-### 17. Submit a slow job and then stop it {#st-menu-17}
+### 18. Submit a slow job and then stop it {#st-menu-18}
 
 This menu item submits a slow job to the Job Scheduling System via the [Submit Job](#jobs) request, waits for one second, and then attempts to stop it via the [Control Job](#control-job) request with the `operation` set to `2` (see the [JobOperation](#job-op) section). Depending on the speed of the Job Scheduling system, it is possible that the Job will not have entered the `Running` state before the Kill request is received. Because of this, it is not unexpected that an [Error Response](#error) with an error code of [InvalidJobState](#error-codes) may be returned by the Plugin.
 
 If the kill operation completed successfully, invoking [menu item 11](#st-menu-11), [menu item 12](#st-menu-12), or [menu item 13](#st-menu-13) should show that the Job emitted no output.
 
-### 18. Submit a slow job, suspend it, and then resume it {#st-menu-18}
+### 19. Submit a slow job, suspend it, and then resume it {#st-menu-19}
 
 This menu item submits a slow job to the Job Scheduling System via the [Submit Job](#jobs) request, waits for one second, and then attempts to suspend it via the [Control Job](#control-job) request with the `operation` set to `1` (see the [JobOperation](#job-op) section). Next the utility waits for one second and then attempts to resume the job via the [Control Job](#control-job) request with the `operation` set to `0` (see the [JobOperation](#job-op) section).
 
