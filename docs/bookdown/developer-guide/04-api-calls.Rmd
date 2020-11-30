@@ -243,7 +243,7 @@ This API call can be used to control the state of a job. Currently supported ope
 
 This API call is responsible for streaming a Job's output data. The caller may request the type of output they wish to see (Standard Out, Standard Error, or both) and the Plugin must do its best to report only that type of data.
 
-The SDK will manage all the output streams. The Plugin developer needs to implement `IJobSource::createOutputStream` and may either use the provided `FileOutputStream` class or implement a custom concrete `AbstractOutputStream`. An example using the `FileOutputStream` can be found in 'TODO #8' of the 'RStudio Launcher Plugin SDK QuickStart Guide'. For more details on implementing a custom `AbstractOutputStream` class, see the [Job Status Updates](#status-updates) feature.
+The SDK will manage all the output streams. The Plugin developer needs to implement `IJobSource::createOutputStream` and may either use the provided `FileOutputStream` class or implement a custom concrete `AbstractOutputStream`. An example using the `FileOutputStream` can be found in 'TODO #8' of the 'RStudio Launcher Plugin SDK QuickStart Guide'. For more details on implementing a custom `AbstractOutputStream` class, see the [Custom Output Streams](#out-streams) section.
 
 &nbsp;
 
