@@ -1336,6 +1336,247 @@ When a request is made to stream resource utilization metrics for a Job, the SDK
 
 Streaming resource utilization metrics is a best effort operation. If any of the resource utilization metrics cannot be retrieved through Job Scheduling System, the Plugin may simply omit them from each response. If it is not possible to retrieve any resource utilization metrics through the Job Scheduling System, the Plugin may simply not post any updates. When the Job enters a completed state, the SDK will send a response to the Launcher to indicate that the stream has completed. The provided `QuickStartResourceStream` class already fulfills that requirement for a Job Scheduling System that does not support resource utilization measurement.
 
+The provided sample Local Launcher Plugin implements resource utilization by inheriting from `AbstractTimedResourceStream` because there is no way to stream the information needed from the Operating System directly. The [example below](#todo-16-ex) will show how the `AbstractResourceStream` might be inherited when it is possible to stream the necessary information from the Job Scheduling System.
+
 ### Example {#todo-16-ex}
 
+Assume that the `mars_api` exposes a function with the following signature:
 
+```{Rcpp, eval=FALSE}
+struct stream_handle;
+
+std::shared_ptr<stream_handle> job_stat_stream(
+   const char* id,
+   int freq,
+   std::function<void(int, const mars_api::job_stat*)> on_update);
+```
+
+Where `id` is the ID of the job for which to stream job resource statistics, `freq` is the frequency (in seconds) at which updates should be posted, and `on_update` is the function that will be called every `freq` seconds. The return value of `mars_api::job_stat_stream` is an opaque stream handle that is owned by the caller. The stream will stop if the handle is destroyed.
+
+The first parameter of the `on_update` function is an error code (`0` on success) and the second parameter is the Job resource utilization statistics. Like all `mars_api` functions, `mars_api::job_stat_stream` may throw a `mars_api::mars_exception`. Additionally, `mars_api::job_stat` is defined as follows:
+
+```{Rcpp, eval=FALSE}
+struct job_stat 
+{
+  uint64_t rs_size; // resident set size (bytes)
+  uint64_t vm_size; // virtual memory size (bytes)
+  uint64_t job_seconds; // total run time of the job (seconds)
+  uint64_t cpu_seconds; // total CPU usage time of the job (seconds)
+  double cpu_freq; // CPU frequency of the job (kHz)
+  uint64_t disk_read; // total bytes read from disk by the job
+  uint64_t disk_write; // total bytes written to disk by the job
+  int node_count; // number of compute nodes in use by the job
+  int num_cpus; // number of CPU cores allocated to the job
+};
+```
+
+In that case, the Plugin the developer might change
+
+```{Rcpp, eval=FALSE}
+namespace rstudio {
+namespace launcher_plugins {
+namespace quickstart {
+
+class QuickStartResourceStream : public api::AbstractResourceStream
+{
+public:
+   /**
+    * @brief Constructor.
+    * 
+    * @param in_job                    The job for which resource utilization metrics should be streamed.
+    * @param in_launcherCommunicator   The communicator through which messages may be sent to the launcher.
+    */
+   QuickStartResourceStream(
+      const api::ConstJobPtr& in_job,
+      comms::AbstractLauncherCommunicatorPtr in_launcherCommunicator);
+
+   /**
+    * @brief Initializes the resource utilization stream.
+    * 
+    * @return Success if resource utilization streaming was started correctly; Error otherwise.
+    */
+   Error initialize() override;
+};
+
+} // namespace quickstart
+} // namespace launcher_plugins
+} // namespace rstudio
+```
+
+in QuickStartResourceStream.hpp to
+
+```{Rcpp, eval=FALSE}
+namespace orchid {
+namespace mars {
+
+#include <memory>
+
+class MarsResourceStream : 
+   public api::AbstractResourceStream,
+   public std::enable_shared_from_this<MarsResourceStream>
+{
+public:
+   /**
+    * @brief Constructor.
+    * 
+    * @param in_job                    The job for which resource utilization metrics should be streamed.
+    * @param in_launcherCommunicator   The communicator through which messages may be sent to the launcher.
+    */
+   MarsResourceStream(
+      const api::ConstJobPtr& in_job,
+      comms::AbstractLauncherCommunicatorPtr in_launcherCommunicator);
+
+   /**
+    * @brief Initializes the resource utilization stream.
+    * 
+    * @return Success if resource utilization streaming was started correctly; Error otherwise.
+    */
+   Error initialize() override;
+   
+private:
+   typedef std::shared_ptr<MarsResourceStream> SharedThis;
+   typedef std::weak_ptr<MarsResourceStream> WeakThis;
+  
+   // An opaque handle to the Job statistics stream.
+   std::shared_ptr<mars_api::stream_handle> m_streamHandle;
+   
+   // The last measured number of CPU seconds.
+   int m_lastCpuSeconds;
+   
+   // The last measured number of Job seconds.
+   int m_lastJobSeconds;
+   
+   // Calculates CPU percent from the CPU and Job time.
+   double calcCpuPercent(int in_cpuSeconds, int in_jobSeconds);
+   
+   // Callback function when Job statistic data is available.
+   static void onData(
+      WeakThis in_weakThis,
+      bool in_success,
+      const mars_api::job_stat* in_stats);
+};
+
+} // namespace mars
+} // namespace orchid
+```
+
+in MarsResourceStream.hpp, and 
+
+```{Rcpp, eval=FALSE}
+
+#include <QuickStartResourceStream.hpp>
+
+namespace rstudio {
+namespace launcher_plugins {
+namespace quickstart {
+
+QuickStartResourceStream::QuickStartResourceStream(
+   const api::ConstJobPtr& in_job,
+   comms::AbstractLauncherCommunicatorPtr in_launcherCommunicator) :
+      api::AbstractResourceStream(in_job, in_launcherCommunicator)
+{
+}
+
+Error QuickStartResourceStream::initialize()
+{
+   // TODO #16: Create a resource utilization stream.
+   return Success();
+}
+
+} // namespace quickstart
+} // namespace launcher_plugins
+} // namespace rstudio
+```
+
+in QuickStartResourceStream.cpp to
+
+```{Rcpp, eval=FALSE}
+
+#include <MarsResourceStream.hpp>
+
+#include <Error.hpp>
+
+namespace orchid {
+namespace mars {
+
+MarsResourceStream::MarsResourceStream(
+   const api::ConstJobPtr& in_job,
+   comms::AbstractLauncherCommunicatorPtr in_launcherCommunicator) :
+      api::AbstractResourceStream(in_job, in_launcherCommunicator),
+      m_lastCpuSeconds(0),
+      m_lastJobSeconds(0)
+{
+}
+
+Error MarsResourceStream::initialize()
+{
+   try 
+   {
+      m_streamHandle = mars_api::job_stat_stream(
+         m_job->Id.c_str(),
+         3, // Get updates reasonably often, but don't use too many resources
+         std::bind(&MarsResourceStream::onData, weak_from_this(), std::placeholders::_1, std::placeholders::_2));
+   }
+   catch (const mars_api::mars_exception& e)
+   {
+      return Error("MarsApiError", e.code(), e.what(), ERROR_LOCATION);
+   }
+   
+   return Success();
+}
+
+double MarsResourceStream::calcCpuPercent(int in_cpuSeconds, int in_jobSeconds)
+{
+   // Calculate CPU percent by dividing the change in the CPU seconds by the change in the Job's run time (also seconds)
+   double percent = -1.0;
+  
+   // Avoid diving by zero.
+   if (in_jobSeconds > m_lastJobSeconds)
+   {
+      double cpuChange = in_cpuSeconds - m_lastCpuSeconds;
+      double jobChange = in_jobSecodns - m_lastJobSeconds;
+      
+      percent = (cpuChange / jobChange) * 100.0;
+      
+      m_lastCpuSeconds = in_cpuSeconds;
+      m_lastJobSeconds = in_jobSeconds;
+   }
+   
+   return percent;
+}
+
+static void MarsResourceStream::onData(
+   WeakThis in_weakThis,
+   int in_errorCode,
+   const mars_api::job_stat* in_stats)
+{
+   if (SharedThis sharedThis = in_weakThis.lock())
+   {
+      // Handle the error case first.
+      if (in_errorCode != 0)
+      {
+         logging::logWarningMessage(
+            "Failed to retrieve Job resource utilization data from Mars with error code " + std::to_string(in_errorCode),
+            ERROR_LOCATION);
+      }
+     
+      // Otherwise populate the resource utilization data and post it.
+      rstudio::launcher_plugins::api::ResourceUtilData data;
+      
+      double percent = sharedThis->calcCpuPercent(in_stats->cpu_seconds, in_stats->job_seconds);
+      if (percent >= 0.0)
+        data.CpuPercent = percent;
+      
+      data.CpuSeconds = in_stats->cpuSeconds;
+      
+      // Convert memory from B to MB.
+      data.VirtualMem = in_stats->vm_size / (1024 * 1024);
+      data.ResidentMem = in_stats->rs_size / (1024 * 1024);
+      
+      sharedThis->reportData(data);
+   }
+}
+
+} // namespace mars
+} // namespace orchid
+```
