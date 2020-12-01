@@ -89,6 +89,26 @@ struct ResourceStreamManager::Impl : public std::enable_shared_from_this<Impl>
          ErrorResponse(in_requestId, ErrorResponse::Type::JOB_NOT_FOUND, message));
    }
 
+   /**
+    * @brief Sends a "Job Not Running" error to the Launcher.
+    *
+    * @param in_requestId       The ID of the request for which this response should be sent.
+    * @param in_jobId           The ID of the job which could is not running.
+    */
+   void sendJobNotRunningError(uint64_t in_requestId, const std::string& in_jobId)
+   {
+      LauncherCommunicator->sendResponse(
+         ErrorResponse(in_requestId, ErrorResponse::Type::JOB_NOT_RUNNING, "Job " + in_jobId + " is not running."));
+   }
+
+   /**
+    * @brief Subscribes to job status update notifications for the specified jobs so that the stream may be completed
+    *        when the job finishes running.
+    * 
+    * @param in_jobId   The job to be watched.
+    * 
+    * @return A handle to the newly created subscription.
+    */
    jobs::SubscriptionHandle watchJob(const std::string& in_jobId)
    {
       WeakThis weakThis = weak_from_this();
@@ -184,12 +204,14 @@ void ResourceStreamManager::handleStreamRequest(
 
          LOCK_JOB(job)
          {
-            if (in_resourceUtilStreamRequest->isCancelRequest() || job->isCompleted())
+            if (in_resourceUtilStreamRequest->isCancelRequest())
                return;
 
+            if (job->Status != Job::State::RUNNING)
+               return m_impl->sendJobNotRunningError(id, jobId);
+
             stream->addRequest(id, user);
-            if (job->Status == Job::State::RUNNING)
-               stream->initialize();
+            stream->initialize();
 
             m_impl->ActiveStreams[jobId] = ResourceStream(stream, m_impl->watchJob(jobId));
          }
