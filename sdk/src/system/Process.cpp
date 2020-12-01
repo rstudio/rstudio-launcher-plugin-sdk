@@ -936,13 +936,13 @@ struct AbstractChildProcess::Impl
 
       for (const api::Mount& mount: in_options.Mounts)
       {
-         if (mount.HostSourcePath)
+         if (mount.Source.isHostMountSource())
          {
             Arguments.emplace_back("--mount");
             Arguments.emplace_back(
-                  mount.HostSourcePath.getValueOr(api::HostMountSource()).Path +
+                  mount.Source.asHostMountSource().getPath() +
                   ":" +
-                  mount.DestinationPath +
+                  mount.Destination +
                   (mount.IsReadOnly ? ":ro" : ""));
          }
       }

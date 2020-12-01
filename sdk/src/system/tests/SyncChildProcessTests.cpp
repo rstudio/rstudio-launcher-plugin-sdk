@@ -225,12 +225,14 @@ TEST_CASE("Create Processes")
    {
       const FilePath& mountedPath = user5.getHomePath();
 
-      api::HostMountSource mountSource;
-      mountSource.Path = FilePath::safeCurrentPath(FilePath()).getAbsolutePath();
+      api::MountSource mountSource;
+      mountSource.SourceType = api::MountSource::Type::HOST;
+      mountSource.SourceObject["path"] = FilePath::safeCurrentPath(FilePath()).getAbsolutePath();
+
       api::Mount mount;
-      mount.DestinationPath = mountedPath.getAbsolutePath();
+      mount.Destination = mountedPath.getAbsolutePath();
       mount.IsReadOnly = true;
-      mount.HostSourcePath = mountSource;
+      mount.Source = mountSource;
 
       ProcessOptions opts;
       opts.Executable = "./test.sh";
