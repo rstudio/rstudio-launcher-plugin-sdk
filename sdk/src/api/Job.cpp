@@ -1328,6 +1328,7 @@ Error NfsMountSource::fromJson(const json::Object& in_json, NfsMountSource& out_
    if (error)
       return updateError("nfsMount", in_json, error);
 
+   out_mountSource.SourceObject = in_json.clone().getObject();
    return Success();
 }
 
