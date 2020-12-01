@@ -92,7 +92,7 @@ Error readStatFile(const system::FilePath& in_statFile, std::vector<std::string>
    return Success();
 }
 
-// Something to do with the variadic template arguments is prevent output reference variables from working, so use
+// Something to do with the variadic template arguments is preventing output reference variables from working, so use
 // pointer variables instead.
 Error readStatFields(const std::vector<std::string>& in_statFields, size_t in_index, std::string* out_value)
 {
