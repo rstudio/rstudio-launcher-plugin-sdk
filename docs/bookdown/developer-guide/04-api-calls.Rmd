@@ -276,7 +276,7 @@ The SDK will manage all the output streams. The Plugin developer needs to implem
 
 ### Job Resource Utilization Stream {#resource-util-stream}
 
-This API call is responsible for streaming a Job's resource utilization metrics. Resource utilization  metrics may only be streamed when the Job is in the `Running` [state](#job-state). If the Job has not started, a `JobNotRunning` [error](#error-codes) will be returned by the SDK. If the Job has already completed, the SDK will immediately send a response to the Launcher to indicate that the resource utilization stream is complete. Otherwise, the SDK will invoke `AbstactResourceStream::initialize` and the Plugin should commence streaming resource utilization metrics.
+This API call is responsible for streaming a Job's resource utilization metrics. Resource utilization  metrics may only be streamed when the Job is in the `Running` [state](#job-state). If the Job is not running, a `JobNotRunning` [error](#error-codes) will be returned by the SDK. Otherwise, the SDK will invoke `AbstactResourceStream::initialize` and the Plugin should commence streaming resource utilization metrics.
 
 The SDK will manage all the resource utilization streams. The Plugin developer needs to implement `AbstactResourceStream::initialize` and may either extend `AbstractResourceStream` directly, or extend `AbstractTimedResourceStream` if resource utilization data must be polled. An example of extending `AbstractResourceStream` directly can be found in 'TODO #16' of the 'RStudio Launcher Plugin SDK QuickStart Guide'. The `LocalResourceStream` provided with the sample Local Plugin provides an example of extending `AbstractTimedResourceStream`.
 
