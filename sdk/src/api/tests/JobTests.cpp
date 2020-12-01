@@ -334,7 +334,8 @@ TEST_CASE("From JSON: Mount (host source)")
 
    json::Object mountObj;
    mountObj["mountPath"] = "/path/to/dest/folder";
-   mountObj["hostMount"] = mountSourceObj;
+   mountObj["type"] = "host";
+   mountObj["source"] = mountSourceObj;
 
    Mount mount;
    REQUIRE_FALSE(Mount::fromJson(mountObj, mount));
@@ -358,7 +359,8 @@ TEST_CASE("From JSON: Mount (nfs source)")
 
    json::Object mountObj;
    mountObj["mountPath"] = "/path/to/dest/folder";
-   mountObj["nfsMount"] = mountSourceObj;
+   mountObj["type"] = "nfs";
+   mountObj["source"] = mountSourceObj;
 
    Mount mount;
    REQUIRE_FALSE(Mount::fromJson(mountObj, mount));
@@ -383,7 +385,8 @@ TEST_CASE("From JSON: Mount (nfs source with read-only)")
 
    json::Object mountObj;
    mountObj["mountPath"] = "/path/to/dest/folder";
-   mountObj["nfsMount"] = mountSourceObj;
+   mountObj["type"] = "nfs";
+   mountObj["source"] = mountSourceObj;
    mountObj["readOnly"] = true;
 
    Mount mount;
@@ -1240,7 +1243,7 @@ TEST_CASE("From JSON: Job (all fields, exe)")
    mount2["mountPath"] = "/read/only/dest/path";
    mount2["readOnly"] = true;
    mount2["type"] = "host";
-   mount2["hostMount"] = hostMountSource.SourceObject;
+   mount2["source"] = hostMountSource.SourceObject;
 
    mountsArr.push_back(mount1);
    mountsArr.push_back(mount2);
