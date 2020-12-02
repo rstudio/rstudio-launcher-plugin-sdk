@@ -1160,8 +1160,15 @@ AzureFileMountSource::AzureFileMountSource()
 
 Error AzureFileMountSource::fromJson(const json::Object& in_json, AzureFileMountSource& out_mountSource)
 {
-   std::string secretName, shareName;
-   Error error = json::readObject(in_json, MOUNT_SOURCE_SECRET_NAME, secretName, MOUNT_SOURCE_SHARE_NAME, shareName);
+   Error error = in_json.validate(R"(
+   {
+      "type": "object",
+      "properties": {
+         "secretName": { "type": "string" },
+         "shareName": { "type": "string" }
+      },
+      "required": [ "secretName", "shareName" ]
+   })");
    if (error)
       return updateError(std::string(MOUNT_TYPE_AZURE) + "Mount", in_json, error);
 
@@ -1195,25 +1202,24 @@ CephFsMountSource::CephFsMountSource()
 
 Error CephFsMountSource::fromJson(const json::Object& in_json, CephFsMountSource& out_mountSource)
 {
-   std::vector<std::string> monitors;
-   Optional<std::string> path, user, secretFile, secretRef;
-   Error error = json::readObject(in_json,
-      MOUNT_SOURCE_MONITORS, monitors,
-      MOUNT_SOURCE_PATH, path,
-      MOUNT_SOURCE_USER, user,
-      MOUNT_SOURCE_SECRET_FILE, secretFile,
-      MOUNT_SOURCE_SECRET_REF, secretRef);
+   Error error = in_json.validate(R"(
+   {
+      "type": "object",
+      "properties": {
+         "monitors": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string" }
+         },
+         "path": { "type": "string" },
+         "user": { "type": "string" },
+         "secretFile": { "type": "string" },
+         "secretRef": { "type": "string" }
+      },
+      "required": [ "monitors" ]
+   })");
    if (error)
       return updateError(std::string(MOUNT_TYPE_CEPH) + "Mount", in_json, error);
-
-   if (monitors.empty())
-   {
-      error = jsonReadError(
-         json::JsonReadError::MISSING_MEMBER,
-         "Field \"monitors\" cannot be empty.",
-          ERROR_LOCATION);
-      return updateError(std::string(MOUNT_TYPE_CEPH) + "Mount", in_json, error);
-   }
 
    out_mountSource.SourceObject = in_json.clone().getObject();
    return Success();
@@ -1270,8 +1276,16 @@ GlusterFsMountSource::GlusterFsMountSource()
 
 Error GlusterFsMountSource::fromJson(const json::Object& in_json, GlusterFsMountSource& out_mountSource)
 {
-   std::string endpoints, path;
-   Error error = json::readObject(in_json, MOUNT_SOURCE_ENDPOINTS, endpoints, MOUNT_SOURCE_PATH, path);
+   Error error = in_json.validate(R"(
+   {
+      "type": "object",
+      "properties": {
+         "endpoints": { "type": "string" },
+         "path": { "type": "string" }
+      },
+      "required": [ "endpoints", "path" ]
+   }
+   )");
    if (error)
       return updateError(std::string(MOUNT_TYPE_GLUSTER) + "Mount", in_json, error);
 
@@ -1305,8 +1319,15 @@ HostMountSource::HostMountSource()
 
 Error HostMountSource::fromJson(const json::Object& in_json, HostMountSource& out_mountSource)
 {
-   std::string path;
-   Error error = json::readObject(in_json, MOUNT_SOURCE_PATH, path);
+   Error error = in_json.validate(R"(
+   {
+      "type": "object",
+      "properties": {
+         "path": { "type": "string" }
+      },
+      "required": [ "path" ]
+   }
+   )");
    if (error)
       return updateError(std::string(MOUNT_TYPE_HOST) + "Mount", in_json, error);
 
@@ -1331,10 +1352,16 @@ NfsMountSource::NfsMountSource()
 
 Error NfsMountSource::fromJson(const json::Object& in_json, NfsMountSource& out_mountSource)
 {
-   std::string path, host;
-   Error error = json::readObject(in_json,
-      MOUNT_SOURCE_PATH, path,
-      MOUNT_SOURCE_HOST, host);
+   Error error = in_json.validate(R"(
+   {
+      "type": "object",
+      "properties": {
+         "host": { "type": "string" },
+         "path": { "type": "string" }
+      },
+      "required": [ "host", "path" ]
+   }
+   )");
    if (error)
       return updateError("nfsMount", in_json, error);
 
