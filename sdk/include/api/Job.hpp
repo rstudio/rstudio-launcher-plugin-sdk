@@ -675,9 +675,9 @@ struct AzureFileMountSource final : MountSource
    std::string getSecretName() const;
 
    /**
-    * @brief Gets the name of the share in Azure to which to connect.
+    * @brief Gets the name of the share in Azure to be mounted.
     * 
-    * @return The name of the share in Azure to which to connect.
+    * @return The name of the share in Azure to be mounted.
     */
    std::string getShareName() const;
 
@@ -705,9 +705,9 @@ struct CephFsMountSource final : MountSource
    static Error fromJson(const json::Object& in_json, CephFsMountSource& out_mountSource);
 
    /**
-    * @brief Gets
+    * @brief Gets the list of Ceph monitor addresses.
     * 
-    * @return  
+    * @return The list of Ceph monitor addresses.
     */
    std::vector<std::string> getMonitors() const;
 
@@ -726,16 +726,16 @@ struct CephFsMountSource final : MountSource
    std::string getUser() const;
 
    /**
-    * @brief Gets
+    * @brief Gets the location of the file which contains the Ceph keyring for authentication.
     * 
-    * @return  
+    * @return The location of the file which contains the Ceph keyring for authentication.
     */
    std::string getSecretFile() const;
 
    /**
-    * @brief Gets
+    * @brief Gets the reference to the Ceph authentication secrets which override the Secret File.
     * 
-    * @return  
+    * @return The reference to the Ceph authentication secrets which override the Secret File.
     */
    std::string getSecretRef() const;
 
@@ -767,16 +767,16 @@ struct GlusterFsMountSource final : MountSource
    static Error fromJson(const json::Object& in_json, GlusterFsMountSource& out_mountSource);
 
    /**
-    * @brief Gets the Glusterfs endpoints to which to connect when mounting the path.
+    * @brief Gets the name of the endpoints object that represents a Gluster cluster configuration.
     * 
-    * @return The Glusterfs endpoints to which to connect when mounting the path.
+    * @return The name of the endpoints object that represents a Gluster cluster configuration
     */
    std::string getEndpoints() const;
 
    /**
-    * @brief Gets the path to mount.
+    * @brief Gets the name of the GlusterFs volume mount.
     * 
-    * @return The path to mount.
+    * @return The name of the GlusterFs volume to mount.
     */
    std::string getPath() const;
 };
