@@ -295,6 +295,167 @@ TEST_CASE("From JSON: Azure File Mount Source")
    CHECK(mountSource.asAzureFileMountSource().getShareName() == "aShare");
 }
 
+TEST_CASE("From JSON: Azure File Mount Source (no secret)")
+{
+   json::Object specificObj, mountSourceObj;
+   specificObj["shareName"] = "aShare";
+
+   mountSourceObj["source"] = specificObj;
+   mountSourceObj["type"] = "azureFile";
+
+   MountSource mountSource;
+   REQUIRE(MountSource::fromJson(mountSourceObj, mountSource));
+}
+
+TEST_CASE("From JSON: Azure File Mount Source (no share)")
+{
+   json::Object specificObj, mountSourceObj;
+   specificObj["secretName"] = "aSecret";
+
+   mountSourceObj["source"] = specificObj;
+   mountSourceObj["type"] = "azureFile";
+
+   MountSource mountSource;
+   REQUIRE(MountSource::fromJson(mountSourceObj, mountSource));
+}
+
+TEST_CASE("From JSON: Ceph FS Mount Source (all fields)")
+{
+   std::vector<std::string> monitors = { "123.46.0.1", "10.0.0.1" , "abcde" };
+
+   json::Object specificObj, mountSourceObj;
+   specificObj["monitors"] = json::toJsonArray(monitors);
+   specificObj["path"] = "/a/path/to/somewhere";
+   specificObj["user"] = "somebody";
+   specificObj["secretFile"] = "nameOfAFile.secret";
+   specificObj["secretRef"] = "reference-name";
+
+   mountSourceObj["source"] = specificObj;
+   mountSourceObj["type"] = "cephFs";
+
+   MountSource mountSource;
+   REQUIRE_FALSE(MountSource::fromJson(mountSourceObj, mountSource));
+   REQUIRE(mountSource.isCephFsMountSource());
+   CHECK(mountSource.asCephFsMountSource().getMonitors() == monitors);
+   CHECK(mountSource.asCephFsMountSource().getPath() == "/a/path/to/somewhere");
+   CHECK(mountSource.asCephFsMountSource().getUser() == "somebody");
+   CHECK(mountSource.asCephFsMountSource().getSecretFile() == "nameOfAFile.secret");
+   CHECK(mountSource.asCephFsMountSource().getSecretRef() == "reference-name");
+}
+
+TEST_CASE("From JSON: Ceph FS Mount Source (some opt fields)")
+{
+   std::vector<std::string> monitors = { "123.46.0.1", "10.0.0.1" , "abcde" };
+
+   json::Object specificObj, mountSourceObj;
+   specificObj["monitors"] = json::toJsonArray(monitors);
+   specificObj["path"] = "/a/path/to/somewhere";
+   specificObj["secretRef"] = "reference-name";
+
+   mountSourceObj["source"] = specificObj;
+   mountSourceObj["type"] = "cephFs";
+
+   MountSource mountSource;
+   REQUIRE_FALSE(MountSource::fromJson(mountSourceObj, mountSource));
+   REQUIRE(mountSource.isCephFsMountSource());
+   CHECK(mountSource.asCephFsMountSource().getMonitors() == monitors);
+   CHECK(mountSource.asCephFsMountSource().getPath() == "/a/path/to/somewhere");
+   CHECK(mountSource.asCephFsMountSource().getUser() == "");
+   CHECK(mountSource.asCephFsMountSource().getSecretFile() == "");
+   CHECK(mountSource.asCephFsMountSource().getSecretRef() == "reference-name");
+}
+
+TEST_CASE("From JSON: Ceph FS Mount Source (no opt fields)")
+{
+   std::vector<std::string> monitors = { "123.46.0.1", "10.0.0.1" , "abcde" };
+
+   json::Object specificObj, mountSourceObj;
+   specificObj["monitors"] = json::toJsonArray(monitors);
+
+   mountSourceObj["source"] = specificObj;
+   mountSourceObj["type"] = "cephFs";
+
+   MountSource mountSource;
+   REQUIRE_FALSE(MountSource::fromJson(mountSourceObj, mountSource));
+   REQUIRE(mountSource.isCephFsMountSource());
+   CHECK(mountSource.asCephFsMountSource().getMonitors() == monitors);
+   CHECK(mountSource.asCephFsMountSource().getPath() == "");
+   CHECK(mountSource.asCephFsMountSource().getUser() == "");
+   CHECK(mountSource.asCephFsMountSource().getSecretFile() == "");
+   CHECK(mountSource.asCephFsMountSource().getSecretRef() == "");
+}
+
+TEST_CASE("From JSON: Ceph FS Mount Source (no monitors)")
+{
+   json::Object specificObj, mountSourceObj;
+   specificObj["path"] = "/a/path/to/somewhere";
+   specificObj["user"] = "somebody";
+   specificObj["secretFile"] = "nameOfAFile.secret";
+   specificObj["secretRef"] = "reference-name";
+
+   mountSourceObj["source"] = specificObj;
+   mountSourceObj["type"] = "cephFs";
+
+   MountSource mountSource;
+   REQUIRE(MountSource::fromJson(mountSourceObj, mountSource));
+}
+
+TEST_CASE("From JSON: Ceph FS Mount Source (empty monitors)")
+{
+   json::Object specificObj, mountSourceObj;
+   specificObj["monitors"] = json::Array();
+   specificObj["path"] = "/a/path/to/somewhere";
+   specificObj["user"] = "somebody";
+   specificObj["secretFile"] = "nameOfAFile.secret";
+   specificObj["secretRef"] = "reference-name";
+
+   mountSourceObj["source"] = specificObj;
+   mountSourceObj["type"] = "cephFs";
+
+   MountSource mountSource;
+   REQUIRE(MountSource::fromJson(mountSourceObj, mountSource));
+}
+
+TEST_CASE("From JSON: Glusterfs Mount Source")
+{
+   json::Object specificObj, mountSourceObj;
+   specificObj["path"] = "/path/to/mount/folder";
+   specificObj["endpoints"] = "/anEndpoint";
+
+   mountSourceObj["source"] = specificObj;
+   mountSourceObj["type"] = "glusterFs";
+
+   MountSource mountSource;
+   REQUIRE_FALSE(MountSource::fromJson(mountSourceObj, mountSource));
+   REQUIRE(mountSource.isGlusterFsMountSource());
+   CHECK(mountSource.asGlusterFsMountSource().getEndpoints() == "/anEndpoint");
+   CHECK(mountSource.asGlusterFsMountSource().getPath() == "/path/to/mount/folder");
+}
+
+TEST_CASE("From JSON: Glusterfs Mount Source (no path)")
+{
+   json::Object specificObj, mountSourceObj;
+   specificObj["endpoints"] = "/anEndpoint";
+
+   mountSourceObj["source"] = specificObj;
+   mountSourceObj["type"] = "glusterFs";
+
+   MountSource mountSource;
+   REQUIRE(MountSource::fromJson(mountSourceObj, mountSource));
+}
+
+TEST_CASE("From JSON: Glusterfs Mount Source (no endpoints)")
+{
+   json::Object specificObj, mountSourceObj;
+   specificObj["path"] = "/path/to/mount/folder";
+
+   mountSourceObj["source"] = specificObj;
+   mountSourceObj["type"] = "glusterFs";
+
+   MountSource mountSource;
+   REQUIRE(MountSource::fromJson(mountSourceObj, mountSource));
+}
+
 TEST_CASE("From JSON: Host Mount Source")
 {
    json::Object specificObj, mountSourceObj;
@@ -309,7 +470,7 @@ TEST_CASE("From JSON: Host Mount Source")
    CHECK(mountSource.asHostMountSource().getPath() == "/path/to/mount/folder");
 }
 
-TEST_CASE("From JSON: Host Mount Source no path")
+TEST_CASE("From JSON: Host Mount Source (no path)")
 {
    json::Object specificObj, mountSourceObj;
 

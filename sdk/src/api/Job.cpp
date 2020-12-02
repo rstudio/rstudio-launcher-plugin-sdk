@@ -1212,6 +1212,15 @@ Error CephFsMountSource::fromJson(const json::Object& in_json, CephFsMountSource
    if (error)
       return updateError(std::string(MOUNT_TYPE_CEPH) + "Mount", in_json, error);
 
+   if (monitors.empty())
+   {
+      error = jsonReadError(
+         json::JsonReadError::MISSING_MEMBER,
+         "Field \"monitors\" cannot be empty.",
+          ERROR_LOCATION);
+      return updateError(std::string(MOUNT_TYPE_CEPH) + "Mount", in_json, error);
+   }
+
    out_mountSource.SourceObject = in_json.clone().getObject();
    return Success();
 }
