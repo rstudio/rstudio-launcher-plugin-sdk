@@ -270,6 +270,31 @@ std::string mountTypeToString(MountSource::Type in_type, const std::string& in_c
    return MOUNT_TYPE_PASSTHROUGH;
 }
 
+void throwMountTypeMismatch(
+   MountSource::Type in_expected,
+   const std::string& in_customType,
+   MountSource::Type in_actual)
+{
+   throw std::logic_error(
+      "Attempting to convert a mount of type " +
+         mountTypeToString(in_expected, in_customType) +
+         "Mount to " +
+         mountTypeToString(in_actual, "") +
+         "Mount");
+}
+
+void throwMissingMountSourceField(
+   MountSource::Type in_expected,
+   const std::string& in_customType,
+   const std::string& in_fieldName)
+{
+   throw std::logic_error(
+      "Field " +
+      in_fieldName +
+      " could not be found on mount source object with type " +
+      mountTypeToString(in_expected, in_customType));
+}
+
 template <typename T>
 Error fromJsonArray(const std::string& in_arrayName, const json::Array& in_jsonArray, std::vector<T>& out_array)
 {
@@ -1035,14 +1060,7 @@ AzureFileMountSource& MountSource::asAzureFileMountSource()
 const AzureFileMountSource& MountSource::asAzureFileMountSource() const
 {
    if (!isAzureFileMountSource())
-   {
-      throw std::logic_error(
-         "Attempting to convert a mount of type " +
-            mountTypeToString(SourceType, CustomType) +
-            "Mount to " +
-            MOUNT_TYPE_AZURE +
-            "Mount");
-   }
+      throwMountTypeMismatch(SourceType, CustomType, Type::AZURE_FILE);
 
    return static_cast<const AzureFileMountSource&>(*this);
 }
@@ -1055,14 +1073,7 @@ CephFsMountSource& MountSource::asCephFsMountSource()
 const CephFsMountSource& MountSource::asCephFsMountSource() const
 {
    if (!isCephFsMountSource())
-   {
-      throw std::logic_error(
-         "Attempting to convert a mount of type " +
-            mountTypeToString(SourceType, CustomType) +
-            "Mount to " +
-            MOUNT_TYPE_CEPH +
-            "Mount");
-   }
+      throwMountTypeMismatch(SourceType, CustomType, Type::CEPH_FS);
 
    return static_cast<const CephFsMountSource&>(*this);
 }
@@ -1075,14 +1086,7 @@ GlusterFsMountSource& MountSource::asGlusterFsMountSource()
 const GlusterFsMountSource& MountSource::asGlusterFsMountSource() const
 {
    if (!isGlusterFsMountSource())
-   {
-      throw std::logic_error(
-         "Attempting to convert a mount of type " +
-            mountTypeToString(SourceType, CustomType) +
-            "Mount to " +
-            MOUNT_TYPE_GLUSTER +
-            "Mount");
-   }
+      throwMountTypeMismatch(SourceType, CustomType, Type::GLUSTER_FS);
 
    return static_cast<const GlusterFsMountSource&>(*this);
 }
@@ -1095,14 +1099,7 @@ HostMountSource& MountSource::asHostMountSource()
 const HostMountSource& MountSource::asHostMountSource() const
 {
    if (!isHostMountSource())
-   {
-      throw std::logic_error(
-         "Attempting to convert a mount of type " +
-            mountTypeToString(SourceType, CustomType) +
-            "Mount to " +
-            MOUNT_TYPE_HOST +
-            "Mount");
-   }
+      throwMountTypeMismatch(SourceType, CustomType, Type::HOST);
 
    return static_cast<const HostMountSource&>(*this);
 }
@@ -1115,14 +1112,7 @@ NfsMountSource& MountSource::asNfsMountSource()
 const NfsMountSource& MountSource::asNfsMountSource() const
 {
    if (!isNfsMountSource())
-   {
-      throw std::logic_error(
-         "Attempting to convert a mount of type " +
-            mountTypeToString(SourceType, CustomType) +
-            "Mount to " +
-            MOUNT_TYPE_NFS +
-            "Mount");
-   }
+      throwMountTypeMismatch(SourceType, CustomType, Type::NFS);
 
    return static_cast<const NfsMountSource&>(*this);
 }
@@ -1182,14 +1172,18 @@ Error AzureFileMountSource::fromJson(const json::Object& in_json, AzureFileMount
 std::string AzureFileMountSource::getSecretName() const
 {
    // We should have returned an error during `fromJson` if this is not true.
-   assert(SourceObject.hasMember(MOUNT_SOURCE_SECRET_NAME));
+   if (!SourceObject.hasMember(MOUNT_SOURCE_SECRET_NAME))
+      throwMissingMountSourceField(SourceType, CustomType, MOUNT_SOURCE_SECRET_NAME);
+
    return (*SourceObject.find(MOUNT_SOURCE_SECRET_NAME)).getValue().getString();
 }
 
 std::string AzureFileMountSource::getShareName() const
 {
    // We should have returned an error during `fromJson` if this is not true.
-   assert(SourceObject.hasMember(MOUNT_SOURCE_SHARE_NAME));
+   if (!SourceObject.hasMember(MOUNT_SOURCE_SHARE_NAME))
+      throwMissingMountSourceField(SourceType, CustomType, MOUNT_SOURCE_SHARE_NAME);
+
    return (*SourceObject.find(MOUNT_SOURCE_SHARE_NAME)).getValue().getString();
 }
 
@@ -1230,7 +1224,8 @@ std::vector<std::string> CephFsMountSource::getMonitors() const
    // We should have returned an error during `fromJson` if this is not true.
    std::vector<std::string> monitors;
    Error error = json::readObject(SourceObject, MOUNT_SOURCE_MONITORS, monitors);
-   assert(!error);
+  if (error)
+      throwMissingMountSourceField(SourceType, CustomType, MOUNT_SOURCE_MONITORS);
 
    return std::move(monitors);
 }
@@ -1287,14 +1282,18 @@ Error GlusterFsMountSource::fromJson(const json::Object& in_json, GlusterFsMount
 std::string GlusterFsMountSource::getEndpoints() const
 {
    // We should have returned an error during `fromJson` if this is not true.
-   assert(SourceObject.hasMember(MOUNT_SOURCE_ENDPOINTS));
+   if (!SourceObject.hasMember(MOUNT_SOURCE_ENDPOINTS))
+      throwMissingMountSourceField(SourceType, CustomType, MOUNT_SOURCE_ENDPOINTS);
+
    return (*SourceObject.find(MOUNT_SOURCE_ENDPOINTS)).getValue().getString();
 }
 
 std::string GlusterFsMountSource::getPath() const
 {
    // We should have returned an error during `fromJson` if this is not true.
-   assert(SourceObject.hasMember(MOUNT_SOURCE_PATH));
+   if (!SourceObject.hasMember(MOUNT_SOURCE_PATH))
+      throwMissingMountSourceField(SourceType, CustomType, MOUNT_SOURCE_PATH);
+
    return (*SourceObject.find(MOUNT_SOURCE_PATH)).getValue().getString();
 }
 
@@ -1318,7 +1317,9 @@ Error HostMountSource::fromJson(const json::Object& in_json, HostMountSource& ou
 std::string HostMountSource::getPath() const
 {
    // We should have returned an error during `fromJson` if this is not true.
-   assert(SourceObject.hasMember(MOUNT_SOURCE_PATH));
+   if (!SourceObject.hasMember(MOUNT_SOURCE_PATH))
+      throwMissingMountSourceField(SourceType, CustomType, MOUNT_SOURCE_PATH);
+
    return (*SourceObject.find(MOUNT_SOURCE_PATH)).getValue().getString();
 }
 
@@ -1344,14 +1345,18 @@ Error NfsMountSource::fromJson(const json::Object& in_json, NfsMountSource& out_
 std::string NfsMountSource::getHost() const
 {
    // We should have returned an error during `fromJson` if this is not true.
-   assert(SourceObject.hasMember(MOUNT_SOURCE_HOST));
+   if (!SourceObject.hasMember(MOUNT_SOURCE_HOST))
+      throwMissingMountSourceField(SourceType, CustomType, MOUNT_SOURCE_HOST);
+
    return (*SourceObject.find(MOUNT_SOURCE_HOST)).getValue().getString();
 }
 
 std::string NfsMountSource::getPath() const
 {
    // We should have returned an error during `fromJson` if this is not true.
-   assert(SourceObject.hasMember(MOUNT_SOURCE_PATH));
+   if (!SourceObject.hasMember(MOUNT_SOURCE_PATH))
+      throwMissingMountSourceField(SourceType, CustomType, MOUNT_SOURCE_PATH);
+
    return (*SourceObject.find(MOUNT_SOURCE_PATH)).getValue().getString();
 }
 
