@@ -279,52 +279,85 @@ TEST_CASE("To JSON: JobConfig all fields (string)")
 }
 
 // Mount ===============================================================================================================
+TEST_CASE("From JSON: Azure File Mount Source")
+{
+   json::Object specificObj, mountSourceObj;
+   specificObj["secretName"] = "aSecret";
+   specificObj["shareName"] = "aShare";
+
+   mountSourceObj["source"] = specificObj;
+   mountSourceObj["type"] = "azureFile";
+
+   MountSource mountSource;
+   REQUIRE_FALSE(MountSource::fromJson(mountSourceObj, mountSource));
+   REQUIRE(mountSource.isAzureFileMountSource());
+   CHECK(mountSource.asAzureFileMountSource().getSecretName() == "aSecret");
+   CHECK(mountSource.asAzureFileMountSource().getShareName() == "aShare");
+}
+
 TEST_CASE("From JSON: Host Mount Source")
 {
-   json::Object mountSourceObj;
-   mountSourceObj["path"] = "/path/to/mount/folder";
+   json::Object specificObj, mountSourceObj;
+   specificObj["path"] = "/path/to/mount/folder";
 
-   HostMountSource mountSource;
-   REQUIRE_FALSE(HostMountSource::fromJson(mountSourceObj, mountSource));
-   CHECK(mountSource.getPath() == "/path/to/mount/folder");
+   mountSourceObj["source"] = specificObj;
+   mountSourceObj["type"] = "host";
+
+   MountSource mountSource;
+   REQUIRE_FALSE(MountSource::fromJson(mountSourceObj, mountSource));
+   REQUIRE(mountSource.isHostMountSource());
+   CHECK(mountSource.asHostMountSource().getPath() == "/path/to/mount/folder");
 }
 
 TEST_CASE("From JSON: Host Mount Source no path")
 {
-   json::Object mountSourceObj;
+   json::Object specificObj, mountSourceObj;
 
-   HostMountSource mountSource;
-   REQUIRE(HostMountSource::fromJson(mountSourceObj, mountSource));
+   mountSourceObj["source"] = specificObj;
+   mountSourceObj["type"] = "host";
+
+   MountSource mountSource;
+   REQUIRE(MountSource::fromJson(mountSourceObj, mountSource));
 }
 
 TEST_CASE("From JSON: Nfs Mount Source")
 {
-   json::Object mountSourceObj;
-   mountSourceObj["path"] = "/source/path";
-   mountSourceObj["host"] = "192.168.22.1";
+   json::Object specificObj, mountSourceObj;
+   specificObj["path"] = "/source/path";
+   specificObj["host"] = "192.168.22.1";
 
-   NfsMountSource nfsMountSource;
-   REQUIRE_FALSE(NfsMountSource::fromJson(mountSourceObj, nfsMountSource));
-   CHECK(nfsMountSource.getPath() == "/source/path");
-   CHECK(nfsMountSource.getHost() == "192.168.22.1");
+   mountSourceObj["source"] = specificObj;
+   mountSourceObj["type"] = "nfs";
+
+   MountSource mountSource;
+   REQUIRE_FALSE(MountSource::fromJson(mountSourceObj, mountSource));
+   REQUIRE(mountSource.isNfsMountSource());
+   CHECK(mountSource.asNfsMountSource().getPath() == "/source/path");
+   CHECK(mountSource.asNfsMountSource().getHost() == "192.168.22.1");
 }
 
 TEST_CASE("From JSON: Nfs Mount Source (no host)")
 {
-   json::Object mountSourceObj;
+   json::Object specificObj, mountSourceObj;
    mountSourceObj["path"] = "/source/path";
 
-   NfsMountSource nfsMountSource;
-   REQUIRE(NfsMountSource::fromJson(mountSourceObj, nfsMountSource));
+   mountSourceObj["source"] = specificObj;
+   mountSourceObj["type"] = "nfs";
+
+   MountSource mountSource;
+   REQUIRE(MountSource::fromJson(mountSourceObj, mountSource));
 }
 
 TEST_CASE("From JSON: Nfs Mount Source (no path)")
 {
-   json::Object mountSourceObj;
+   json::Object specificObj, mountSourceObj;
    mountSourceObj["host"] = "192.168.22.1";
 
-   NfsMountSource nfsMountSource;
-   REQUIRE(NfsMountSource::fromJson(mountSourceObj, nfsMountSource));
+   mountSourceObj["source"] = specificObj;
+   mountSourceObj["nfs"] = "azureFile";
+
+   MountSource mountSource;
+   REQUIRE(MountSource::fromJson(mountSourceObj, mountSource));
 }
 
 TEST_CASE("From JSON: Mount (host source)")

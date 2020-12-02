@@ -785,11 +785,6 @@ struct GlusterFsMountSource final : MountSource
 struct HostMountSource final : MountSource
 {
    /**
-    * @brief Constructor.
-    */
-   HostMountSource();
-   
-   /**
     * @brief Constructs a HostMountSource from a JSON object which represents the mount source.
     *
     * @param in_json            The JSON object which represents the mount source.
@@ -805,16 +800,19 @@ struct HostMountSource final : MountSource
     * @return The path on the current host to be mounted.
     */
    std::string getPath() const;
+
+private:
+   /**
+    * @brief Constructor.
+    */
+   HostMountSource();
+   
+   friend class MountSource;
 };
 
 /** @brief Represents an NFS Mount Source. */
 struct NfsMountSource final : MountSource
 {
-   /**
-    * @brief Constructor.
-    */
-   NfsMountSource();
-   
    /**
     * @brief Constructs an NfsMountSource from a JSON object which represents the mount source.
     *
@@ -838,6 +836,14 @@ struct NfsMountSource final : MountSource
     * @return The path on the NFS host to be mounted.
     */
    std::string getPath() const;
+
+private:
+   /**
+    * @brief Constructor.
+    */
+   NfsMountSource();
+   
+   friend class MountSource;
 };
 
 /** @brief Struct which represents an file system mount available to a job. */
