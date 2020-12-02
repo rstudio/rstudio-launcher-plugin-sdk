@@ -567,7 +567,7 @@ struct MountSource
    HostMountSource& asHostMountSource();
 
    /**
-    * @brief Gets this MountSource as an HostMountSource. 
+    * @brief Gets this MountSource as an HostMountSource.
     * 
     * @throw std::logic_error if isHostMountSource() would return false.
     * 
@@ -669,12 +669,16 @@ struct AzureFileMountSource final : MountSource
    /**
     * @brief Gets the name of the Azure Secret used to connect to the Azure File Mount Source.
     * 
+    * @throw std::logic_error if the 'secretName' field cannot be found.
+    * 
     * @return The name of the Azure Secret used to connect to the Azure File Mount Source.
     */
    std::string getSecretName() const;
 
    /**
     * @brief Gets the name of the share in Azure to be mounted.
+    * 
+    * @throw std::logic_error if the 'shareName' field cannot be found.
     * 
     * @return The name of the share in Azure to be mounted.
     */
@@ -705,6 +709,8 @@ struct CephFsMountSource final : MountSource
 
    /**
     * @brief Gets the list of Ceph monitor addresses.
+    * 
+    * @throw std::logic_error if the 'monitors' field cannot be found.
     * 
     * @return The list of Ceph monitor addresses.
     */
@@ -768,12 +774,16 @@ struct GlusterFsMountSource final : MountSource
    /**
     * @brief Gets the name of the endpoints object that represents a Gluster cluster configuration.
     * 
+    * @throw std::logic_error if the 'endpoints' field cannot be found.
+    * 
     * @return The name of the endpoints object that represents a Gluster cluster configuration
     */
    std::string getEndpoints() const;
 
    /**
     * @brief Gets the name of the GlusterFs volume mount.
+    * 
+    * @throw std::logic_error if the 'path' field cannot be found.
     * 
     * @return The name of the GlusterFs volume to mount.
     */
@@ -795,6 +805,8 @@ struct HostMountSource final : MountSource
 
    /**
     * @brief Gets the path on the current host to be mounted.
+    * 
+    * @throw std::logic_error if the 'path' field cannot be found.
     * 
     * @return The path on the current host to be mounted.
     */
@@ -825,12 +837,16 @@ struct NfsMountSource final : MountSource
    /**
     * @brief Gets the NFS host.
     * 
+    * @throw std::logic_error if the 'host' field cannot be found.
+    * 
     * @return The NFS host.
     */
    std::string getHost() const;
 
    /**
     * @brief Gets the path on the NFS host to be mounted.
+    * 
+    * @throw std::logic_error if the 'path' field cannot be found.
     * 
     * @return The path on the NFS host to be mounted.
     */
