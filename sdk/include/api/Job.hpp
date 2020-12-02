@@ -641,10 +641,6 @@ struct MountSource
     * @return The JSON object which represents this NfsMountSource.
     */
    json::Object toJson() const;
-
-   /** The type of the Mount Source for this Mount. */
-   Type SourceType;
-
    /** 
     * An optional field, to represent a custom mount source type. If the type field is not recongized SourceType will 
     * be set to `MountSource::Type::PASSTHROUGH` and CustomType will hold the original value of the field. */
@@ -652,6 +648,9 @@ struct MountSource
 
    /** The JSON object that describes the Mount Source for this Mount. */
    json::Object SourceObject;
+
+   /** The type of the Mount Source for this Mount. */
+   Type SourceType;
 };
 
 /** @brief Represents an Azure File Mount Source. */
