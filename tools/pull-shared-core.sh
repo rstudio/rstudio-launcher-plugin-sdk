@@ -219,6 +219,7 @@ for I in "${!SRC_INCLUDES[@]}"; do
         replace "$DEST_PATH" "(bool\s*operator!=\s*\(\s*const\s*Error&\s*in_other\s*\)\s*const\s*;\s*\n)(.*\n)*\s*bool\s*operator!=\s*\(\s*const\s*boost::[^\)]*\)[^\n]*\n\n" "\1"
         replace "$DEST_PATH" "(Error\s*\(\s*const\s*Error&\s*in_other\s*\)\s*;\s*\n)(.*\n)*\s*Error\s*\(\s*const\s*boost::system::error_condition[^\n]*\n\s*std::string\s*in_message\s*,\s*\n[^\n]*\n[^\n]*\n\n" "\1"
         replace "$DEST_PATH" "(#include <logging/Logger.hpp>\n)(#include <PImpl.hpp>\n)" "\2\1"
+        replace "$DEST_PATH" "//\s*return\s*a\s*printable.*\n//\s*might\s*require.*\nstd::string\s*errorDesc.*\nstd::string\s*errorMess.*\n*//\s*return the error.*\nstd::string\s*systemError.*\n\n" ""
     fi
 
     if [[ "$SRC_FILE" == "FileLogDestination.hpp" ]]; then
@@ -295,6 +296,7 @@ for I in "${!SRC_SOURCES[@]}"; do
         replace "$DEST_PATH" "return\s*Error\((\s*in_error\.code\(\)\.category\(\)[^,]*)([^;]*);" "Error error(\"SystemError\"\2;\n   error.addProperty(\"subcategory\", \1);\n   return error;"
         replace "$DEST_PATH" "return\s*Error\(\s*(in_error\.code\(\)\.category\(\)[^,]*),\n([^\n]*\n)([^\n]*\n)([^\n]*\n)([^;]*;\n)" "Error error(\n      \"SystemError\",\n\2\3\4\5\n   error.addProperty(\"subcategory\", \1);\n   return error;\n"
         replace "$DEST_PATH" "return\s*Error\((in_code[^,]*)([^;]*);" "Error error(\"SystemError\"\2;\n   error.addProperty(\"subcategory\", \1);\n   return error;"
+        replace "$DEST_PATH" "(}\s*//\s*anonymous\s*namespace\s*\n\n)" "\1std::string errorDescription(const Error\& error);\nstd::string errorMessage(const launcher_plugins::Error\& error);\nstd::string systemErrorMessage(int code);\n\n"
     fi
 
     if [[ "$SRC_FILE" == "Logger.cpp" ]]; then
@@ -328,8 +330,7 @@ for I in "${!SRC_SOURCES[@]}"; do
 
     if [[ "$SRC_FILE" == "system/User.cpp" ]]; then
         replace "$DEST_PATH" "<SafeConvert.hpp>" "\"../SafeConvert.hpp\""
-        replace "$DEST_PATH" "<system/PosixSystem.hpp>" "\"PosixSystem.hpp\""
-        replace "$DEST_PATH" "(#include \"../SafeConvert.hpp\"\n)(#include \"PosixSystem.hpp\"\n)" "\n\2\1"
+        replace "$DEST_PATH" "(#include \"../SafeConvert.hpp\"\n)(#include <system/PosixSystem.hpp>\n)" "\2\n\1"
     fi
 done
 
