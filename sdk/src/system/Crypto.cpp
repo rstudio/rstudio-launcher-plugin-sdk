@@ -79,11 +79,11 @@ Error getLastCryptoError(const ErrorLocation& in_location)
    unsigned long ec = ::ERR_get_error();
    if (ec == 0)
    {
-      logging::logWarningMessage("getLastCrytpoError called with no pending error");
+      logging::logWarningMessage("getLastCryptoError called with no pending error");
       return Error(
          "OpenSSLError",
          -1,
-         "lastCrytpoError called with no pending error",
+         "getLastCryptoError called with no pending error",
          in_location);
    }
 

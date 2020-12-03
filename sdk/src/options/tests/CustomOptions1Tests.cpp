@@ -50,9 +50,9 @@ TEST_CASE("custom options")
       system::User serverUser;
       Error error = opts.getServerUser(serverUser);
       CHECK(error);
-      CHECK(error.getProperty("description") == "Failed to get user details.");
+      CHECK(error.getProperty("description") == "User not found.");
       CHECK(error.getProperty("user-value") == "aUser");
-      CHECK(error.getCode() == 13);
+      CHECK(error.getCode() == 2);
       CHECK(error.getName() == systemError(1, ErrorLocation()).getName());
 
       CHECK(opts.getJobExpiryHours() == system::TimeDuration::Hours(11));
