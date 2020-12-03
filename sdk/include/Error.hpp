@@ -48,7 +48,7 @@ class Success;
  */
 class ErrorLock
 {
-   friend class Error ;
+   friend class Error;
    friend class Success;
 
    /**
@@ -394,6 +394,8 @@ public:
 
    /**
     * @brief Sets the property that indicates that this error was expected.
+    *        Errors are unexpected by default; only unexpected errors will be logged.
+    *        Expected errors can be marked as such to suppress logging of those errors.
     */
    void setExpected();
 
@@ -595,6 +597,36 @@ Error systemError(
    const std::system_error& in_error,
    const std::string& in_description,
    const Error& in_cause,
+   const ErrorLocation& in_location);
+
+/**
+ * @brief Function which creates a system error associated with a particular system call.
+ *
+ * @param in_function        The name of the system call associated with this error.
+ * @param in_code            The error code -- typically errno, or an error number returned by the call itself.
+ * @param in_location        The location of the error.
+ *
+ * @return A system error.
+ */
+Error systemCallError(
+   const std::string& in_function,
+   int in_code,
+   const ErrorLocation& in_location);
+
+/**
+ * @brief Function which creates a system error associated with a particular system call.
+ *
+ * @param in_function        The name of the system call associated with this error.
+ * @param in_code            The error code -- typically errno, or an error number returned by the call itself.
+ * @param in_message         The error message. Overrides the default error message associated with the error code.
+ * @param in_location        The location of the error.
+ *
+ * @return A system error.
+ */
+Error systemCallError(
+   const std::string& in_function,
+   int in_code,
+   const std::string& in_message,
    const ErrorLocation& in_location);
 
 /**
