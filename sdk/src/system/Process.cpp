@@ -618,7 +618,7 @@ Error sendFileDescriptors(int in_fd, pid_t in_pid)
    std::vector<uint32_t> openFds;
    Error error = getOpenFds(in_pid, openFds);
    if (error)
-      logging::logError(error);
+      logging::logErrorAsDebug(error);
    else
    {
       // Write them to the closeFd.
