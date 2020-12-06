@@ -86,6 +86,80 @@ struct FileOutputStream::Impl
    {
    };
 
+   void onFilesFound(SharedThis in_sharedThis, OutputType in_outputType)
+   {
+      UNIQUE_LOCK_MUTEX(Mutex)
+      { 
+         bool outputFileEmpty = JobObj->StandardOutFile.empty();
+         bool errorFileEmpty = JobObj->StandardErrFile.empty();
+         system::FilePath outputFile = getRealPath(JobObj->StandardOutFile, JobObj->Mounts);
+         system::FilePath errorFile = getRealPath(JobObj->StandardErrFile, JobObj->Mounts);
+
+         LOCK_JOB(JobObj)
+         {
+            IsStreaming = !JobObj->isCompleted();
+            if (in_outputType == OutputType::BOTH)
+            {
+               if ((outputFile == errorFile) && !outputFileEmpty)
+               {
+                  // The StdErr stream was never started, so it already exited.
+                  StdErrExited = true;
+                  Error error = startChildStream(in_outputType, outputFile, in_sharedThis);
+                  if (error)
+                  {
+                     logging::logError(error);
+                     in_sharedThis->reportError(error);
+                  }
+               }
+               else
+               {
+                  if (!outputFileEmpty)
+                  {
+                     Error error = startChildStream(OutputType::STDOUT, outputFile, in_sharedThis);
+                     if (error)
+                     {
+                        logging::logError(error);
+                        in_sharedThis->reportError(error);
+                     }
+                  }
+                  else
+                     StdOutExited = true;
+                  if (!errorFileEmpty)
+                  {
+                     Error error = startChildStream(OutputType::STDERR, errorFile, in_sharedThis);
+                     if (error)
+                        in_sharedThis->reportError(error);
+                  }
+                  else
+                     StdErrExited = true;
+               }
+            }
+            else if ((in_outputType == OutputType::STDOUT) && !outputFileEmpty)
+            {
+               StdErrExited = true;
+               Error error = startChildStream(OutputType::STDOUT, outputFile, in_sharedThis);
+               if (error)
+               {
+                  logging::logError(error);
+                  in_sharedThis->reportError(error);
+               }
+            }
+            else if ((in_outputType == OutputType::STDERR) && !errorFileEmpty)
+            {
+               StdOutExited = true;
+               Error error = startChildStream(OutputType::STDERR, errorFile, in_sharedThis);
+               if (error)
+               {
+                  logging::logError(error);
+                  in_sharedThis->reportError(error);
+               }
+            }
+         }
+         END_LOCK_JOB
+      }
+      END_LOCK_MUTEX
+   }
+
    /**
     * @brief Starts streaming output from the specified file as the specified output type.
     *
@@ -236,64 +310,7 @@ FileOutputStream::FileOutputStream(
 
 Error FileOutputStream::start()
 {
-   UNIQUE_LOCK_MUTEX(m_impl->Mutex)
-   {
-      bool outputFileEmpty = m_job->StandardOutFile.empty();
-      bool errorFileEmpty = m_job->StandardErrFile.empty();
-      system::FilePath outputFile = getRealPath(m_job->StandardOutFile, m_job->Mounts);
-      system::FilePath errorFile = getRealPath(m_job->StandardErrFile, m_job->Mounts);
-
-      LOCK_JOB(m_job)
-      {
-         SharedThis sharedThis = shared_from_this();
-         m_impl->IsStreaming = !m_job->isCompleted();
-         if (m_outputType == OutputType::BOTH)
-         {
-            if ((outputFile == errorFile) && !outputFileEmpty)
-            {
-               // The StdErr stream was never started, so it already exited.
-               m_impl->StdErrExited = true;
-               return m_impl->startChildStream(m_outputType, outputFile, sharedThis);
-            }
-            else
-            {
-               if (!outputFileEmpty)
-               {
-                  Error error = m_impl->startChildStream(OutputType::STDOUT, outputFile, sharedThis);
-                  if (error)
-                     return error;
-               }
-               else
-                  m_impl->StdOutExited = true;
-               if (!errorFileEmpty)
-               {
-                  Error error = m_impl->startChildStream(OutputType::STDERR, errorFile, sharedThis);
-                  if (error)
-                     return error;
-               }
-               else
-                  m_impl->StdErrExited = true;
-            }
-         }
-         else if ((m_outputType == OutputType::STDOUT) && !outputFileEmpty)
-         {
-            m_impl->StdErrExited = true;
-            Error error = m_impl->startChildStream(OutputType::STDOUT, outputFile, sharedThis);
-            if (error)
-               return error;
-         }
-         else if ((m_outputType == OutputType::STDERR) && !errorFileEmpty)
-         {
-            m_impl->StdOutExited = true;
-            Error error = m_impl->startChildStream(OutputType::STDERR, errorFile, sharedThis);
-            if (error)
-               return error;
-         }
-      }
-      END_LOCK_JOB
-   }
-   END_LOCK_MUTEX
-
+   m_impl->onFilesFound(shared_from_this(), m_outputType);
    return Success();
 }
 
