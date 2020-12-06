@@ -91,7 +91,7 @@ constexpr char const* FIELD_OUTPUT_TYPE            = "outputType";
 
 // ResourceUtilStream response fields.
 constexpr char const* FIELD_CPU_PERCENT            = "cpuPercent";
-constexpr char const* FIELD_CPU_SECONDS            = "cpuSeconds";
+constexpr char const* FIELD_CPU_SECONDS            = "cpuTime";
 constexpr char const* FIELD_VIRTUAL_MEM            = "virtualMemory";
 constexpr char const* FIELD_RESIDENT_MEM           = "residentMemory";
 
