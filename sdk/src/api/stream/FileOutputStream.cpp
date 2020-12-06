@@ -67,14 +67,16 @@ system::FilePath getRealPath(const std::string& in_strPath, const MountList& in_
 
 } // anonymous namespace
 
-typedef std::shared_ptr<system::process::AbstractChildProcess> TailChild;
+typedef std::function<void(const std::string&, OutputType)> OnTypedOutput; 
 typedef std::shared_ptr<FileOutputStream> SharedThis;
+typedef std::shared_ptr<system::process::AbstractChildProcess> TailChild;
 
 struct FileOutputStream::Impl
 {
-   Impl() :
+   explicit Impl(api::JobPtr& in_job) :
       IsStreaming(false),
       IsStopping(false),
+      JobObj(in_job),
       StdErrExited(false),
       StdErrExitCode(0),
       StdOutExited(false),
@@ -84,14 +86,104 @@ struct FileOutputStream::Impl
    {
    };
 
+   /**
+    * @brief Starts streaming output from the specified file as the specified output type.
+    *
+    * @param in_outputType      The type of output that will be streamed.
+    * @param in_file            The file from which to read the output.
+    *
+    * @return Success if the file could be read; Error otherwise.
+    */
+   Error startChildStream(OutputType in_outputType, const system::FilePath& in_file, SharedThis in_sharedThis)
+   {
+      system::process::ProcessOptions procOpts;
+      procOpts.Executable = "tail";
+      procOpts.IsShellCommand = true;
+
+      if (IsStreaming)
+         procOpts.Arguments.emplace_back("-f");
+      procOpts.Arguments.emplace_back("-n+1");
+      procOpts.Arguments.emplace_back(in_file.getAbsolutePath());
+
+      procOpts.RunAsUser = JobObj->User;
+
+      system::process::AsyncProcessCallbacks callbacks;
+      {
+         using namespace std::placeholders;
+         callbacks.OnError = [in_sharedThis](const Error& in_error)
+         {
+            UNIQUE_LOCK_MUTEX(in_sharedThis->m_impl->Mutex)
+            {
+               if (!in_sharedThis->m_impl->WasOutputWritten && !in_sharedThis->m_impl->WasErrorReported)
+               {
+                  in_sharedThis->m_impl->WasErrorReported = true;
+                  in_sharedThis->reportError(in_error);
+               }
+
+               logging::logError(in_error);
+            }
+            END_LOCK_MUTEX
+         };
+
+         callbacks.OnStandardOutput = [in_sharedThis, in_outputType](const std::string& in_output)
+         {
+            UNIQUE_LOCK_MUTEX(in_sharedThis->m_impl->Mutex)
+            {
+               if (!in_sharedThis->m_impl->WasErrorReported)
+               {
+                  in_sharedThis->m_impl->WasOutputWritten = true;
+                  in_sharedThis->onOutput(in_output, in_outputType);
+               }
+            }
+            END_LOCK_MUTEX
+         };
+
+         callbacks.OnStandardError = [in_sharedThis](const std::string& in_output)
+         {
+            std::string message = "Error output received for OutputStream tail command: " + in_output;
+            logging::logErrorMessage(
+               message,
+               ERROR_LOCATION);
+
+            UNIQUE_LOCK_MUTEX(in_sharedThis->m_impl->Mutex)
+            {
+               if (!in_sharedThis->m_impl->WasErrorReported && !in_sharedThis->m_impl->WasOutputWritten)
+               {
+                  in_sharedThis->m_impl->WasErrorReported = true;
+                  in_sharedThis->reportError(
+                     Error(
+                        "FileOutputStreamError",
+                        2,
+                        message,
+                        ERROR_LOCATION));
+               }
+            }
+            END_LOCK_MUTEX
+         };
+
+         callbacks.OnExit = std::bind(FileOutputStream::onExitCallback, in_sharedThis, in_outputType, _1);
+      }
+
+      TailChild& child = (in_outputType == OutputType::STDERR ?  StdErrChild : StdOutChild);
+      Error error = system::process::ProcessSupervisor::runAsyncProcess(procOpts, callbacks, &child);
+      if (error)
+         return error;
+
+      return Success();
+   }
+
    /** Whether the output stream is stopping by request. */
    bool IsStopping;
 
    /** Whether the output stream is really being streamed (as opposed to dumping all the output data at once). */
    bool IsStreaming;
 
+   api::JobPtr JobObj;
+
    /** Mutex to protect members. */
    std::mutex Mutex;
+
+   OnTypedOutput OnOutputFunc;
 
    /** The StdErr tail command child process. */
    TailChild StdErrChild;
@@ -138,7 +230,7 @@ FileOutputStream::FileOutputStream(
          std::move(in_onOutput),
          std::move(in_onComplete),
          std::move(in_onError)),
-      m_impl(new Impl())
+      m_impl(new Impl(m_job))
 {
 }
 
@@ -153,6 +245,7 @@ Error FileOutputStream::start()
 
       LOCK_JOB(m_job)
       {
+         SharedThis sharedThis = shared_from_this();
          m_impl->IsStreaming = !m_job->isCompleted();
          if (m_outputType == OutputType::BOTH)
          {
@@ -160,13 +253,13 @@ Error FileOutputStream::start()
             {
                // The StdErr stream was never started, so it already exited.
                m_impl->StdErrExited = true;
-               return startChildStream(m_outputType, outputFile);
+               return m_impl->startChildStream(m_outputType, outputFile, sharedThis);
             }
             else
             {
                if (!outputFileEmpty)
                {
-                  Error error = startChildStream(OutputType::STDOUT, outputFile);
+                  Error error = m_impl->startChildStream(OutputType::STDOUT, outputFile, sharedThis);
                   if (error)
                      return error;
                }
@@ -174,7 +267,7 @@ Error FileOutputStream::start()
                   m_impl->StdOutExited = true;
                if (!errorFileEmpty)
                {
-                  Error error = startChildStream(OutputType::STDERR, errorFile);
+                  Error error = m_impl->startChildStream(OutputType::STDERR, errorFile, sharedThis);
                   if (error)
                      return error;
                }
@@ -185,14 +278,14 @@ Error FileOutputStream::start()
          else if ((m_outputType == OutputType::STDOUT) && !outputFileEmpty)
          {
             m_impl->StdErrExited = true;
-            Error error = startChildStream(OutputType::STDOUT, outputFile);
+            Error error = m_impl->startChildStream(OutputType::STDOUT, outputFile, sharedThis);
             if (error)
                return error;
          }
          else if ((m_outputType == OutputType::STDERR) && !errorFileEmpty)
          {
             m_impl->StdOutExited = true;
-            Error error = startChildStream(OutputType::STDERR, errorFile);
+            Error error = m_impl->startChildStream(OutputType::STDERR, errorFile, sharedThis);
             if (error)
                return error;
          }
@@ -299,85 +392,6 @@ void FileOutputStream::onExitCallback(SharedThis in_sharedThis, OutputType in_ou
 void FileOutputStream::onOutput(const std::string& in_output, OutputType in_outputType)
 {
    reportData(in_output, in_outputType);
-}
-
-Error FileOutputStream::startChildStream(OutputType in_outputType, const system::FilePath& in_file)
-{
-   system::process::ProcessOptions procOpts;
-   procOpts.Executable = "tail";
-   procOpts.IsShellCommand = true;
-
-   if (m_impl->IsStreaming)
-      procOpts.Arguments.emplace_back("-f");
-   procOpts.Arguments.emplace_back("-n+1");
-   procOpts.Arguments.emplace_back(in_file.getAbsolutePath());
-
-   procOpts.RunAsUser = m_job->User;
-
-   system::process::AsyncProcessCallbacks callbacks;
-   {
-      using namespace std::placeholders;
-      SharedThis sharedThis = shared_from_this();
-      callbacks.OnError = [sharedThis](const Error& in_error)
-      {
-         UNIQUE_LOCK_MUTEX(sharedThis->m_impl->Mutex)
-         {
-            if (!sharedThis->m_impl->WasOutputWritten && !sharedThis->m_impl->WasErrorReported)
-            {
-               sharedThis->m_impl->WasErrorReported = true;
-               sharedThis->reportError(in_error);
-            }
-
-            logging::logError(in_error);
-         }
-         END_LOCK_MUTEX
-      };
-
-      callbacks.OnStandardOutput = [sharedThis, in_outputType](const std::string& in_output)
-      {
-         UNIQUE_LOCK_MUTEX(sharedThis->m_impl->Mutex)
-         {
-            if (!sharedThis->m_impl->WasErrorReported)
-            {
-               sharedThis->m_impl->WasOutputWritten = true;
-               sharedThis->onOutput(in_output, in_outputType);
-            }
-         }
-         END_LOCK_MUTEX
-      };
-
-      callbacks.OnStandardError = [sharedThis](const std::string& in_output)
-      {
-         std::string message = "Error output received for OutputStream tail command: " + in_output;
-         logging::logErrorMessage(
-            message,
-            ERROR_LOCATION);
-
-         UNIQUE_LOCK_MUTEX(sharedThis->m_impl->Mutex)
-         {
-            if (!sharedThis->m_impl->WasErrorReported && !sharedThis->m_impl->WasOutputWritten)
-            {
-               sharedThis->m_impl->WasErrorReported = true;
-               sharedThis->reportError(
-                  Error(
-                     "FileOutputStreamError",
-                     2,
-                     message,
-                     ERROR_LOCATION));
-            }
-         }
-         END_LOCK_MUTEX
-      };
-
-      callbacks.OnExit = std::bind(FileOutputStream::onExitCallback, shared_from_this(), in_outputType, _1);
-   }
-
-   TailChild& child = (in_outputType == OutputType::STDERR ?  m_impl->StdErrChild : m_impl->StdOutChild);
-   Error error = system::process::ProcessSupervisor::runAsyncProcess(procOpts, callbacks, &child);
-   if (error)
-      return error;
-
-   return Success();
 }
 
 void FileOutputStream::waitForStreamEnd(const OnStreamEnd& in_onStreamEnd)

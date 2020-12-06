@@ -103,16 +103,6 @@ private:
    virtual void onOutput(const std::string& in_output, OutputType in_outputType);
 
    /**
-    * @brief Starts streaming output from the specified file as the specified output type.
-    *
-    * @param in_outputType      The type of output that will be streamed.
-    * @param in_file            The file from which to read the output.
-    *
-    * @return Success if the file could be read; Error otherwise.
-    */
-   Error startChildStream(OutputType in_outputType, const system::FilePath& in_file);
-
-   /**
     * @brief Waits for the stream to end and invokes the provided callback function after.
     *
     * The default implementation waits for 2 seconds after the job completes to allow time for all of the output to be
