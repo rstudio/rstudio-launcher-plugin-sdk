@@ -246,6 +246,39 @@ struct FileOutputStream::Impl
       return Success();
    }
 
+   void stopChildProcesses()
+   {
+      UNIQUE_LOCK_MUTEX(Mutex)
+      {
+         stopChildProcesses(uniqueLock);
+      }
+      END_LOCK_MUTEX
+   }
+
+   void stopChildProcesses(const std::unique_lock<std::mutex>& in_lock)
+   {
+      assert(in_lock.owns_lock());
+
+      IsStopping = true;
+      if (StdOutChild)
+      {
+         Error error = StdOutChild->terminate();
+         if (error)
+            logging::logError(error, ERROR_LOCATION);
+
+         StdOutChild.reset();
+      }
+
+      if (StdErrChild)
+      {
+         Error error = StdErrChild->terminate();
+         if (error)
+            logging::logError(error, ERROR_LOCATION);
+
+         StdErrChild.reset();
+      }
+   }
+
    /** Whether the output stream is stopping by request. */
    bool IsStopping;
 
@@ -319,34 +352,8 @@ void FileOutputStream::stop()
    SharedThis sharedThis = shared_from_this();
    OnStreamEnd onStreamEnd = [sharedThis]()
    {
-      UNIQUE_LOCK_MUTEX(sharedThis->m_impl->Mutex)
-      {
-         if (sharedThis->m_impl->StdOutChild)
-         {
-            Error error = sharedThis->m_impl->StdOutChild->terminate();
-            if (error)
-               logging::logError(error, ERROR_LOCATION);
-
-            sharedThis->m_impl->StdOutChild.reset();
-         }
-
-         if (sharedThis->m_impl->StdErrChild)
-         {
-            Error error = sharedThis->m_impl->StdErrChild->terminate();
-            if (error)
-               logging::logError(error, ERROR_LOCATION);
-
-            sharedThis->m_impl->StdErrChild.reset();
-         }
-      }
-      END_LOCK_MUTEX
+      sharedThis->m_impl->stopChildProcesses();
    };
-
-   UNIQUE_LOCK_MUTEX(m_impl->Mutex)
-   {
-      m_impl->IsStopping = true;
-   }
-   END_LOCK_MUTEX
 
    if (m_job->isCompleted())
       waitForStreamEnd(onStreamEnd);
