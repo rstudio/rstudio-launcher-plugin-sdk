@@ -24,7 +24,7 @@ Boost     1.70.0             https://www.boost.org/
 
 ### RStudio Server Pro
 
-This version of the RStudio Launcher Plugin SDK is compatible with RStudio Server Pro v1.4 or greater. To properly test the integration between an RStudio Launcher Plugin and RStudio Server Pro, an RStudio Server Pro license with the launcher feature enabled will be required. To acquire a license please contact sales@rstudio.com.
+This version of the RStudio Launcher Plugin SDK is compatible with RStudio Server Pro version 1.4, or greater. To properly test the integration between a Launcher Plugin and RStudio Server Pro, an RStudio Server Pro license, with the launcher feature enabled, is required. To acquire a license, please contact sales@rstudio.com.
 
 ### Job Scheduling System
 
