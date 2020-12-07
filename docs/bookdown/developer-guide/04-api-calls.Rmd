@@ -270,7 +270,7 @@ The SDK will manage all the output streams. The Plugin developer needs to implem
 | requestId       | [See above.](#common-fields)                                                                                                        | Int
 | responseId      | [See above.](#common-fields)                                                                                                        | Int
 | seqId           | The ID of this response in the stream of output responses.                                                                          | Int
-| outputType      | The type of output to in the response, if any. Standard out, Standard error , or mixed.                                             | String: "stdout", "stderr", or "mixed"
+| outputType      | The type of output to in the response, if any. Standard out, Standard error, or mixed.                                             | String: "stdout", "stderr", or "mixed"
 | output          | The job output, if any.                                                                                                             | String
 | complete        | Whether the output stream is complete. Default: `true`.                                                                             | Boolean
 
