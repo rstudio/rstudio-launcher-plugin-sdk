@@ -618,7 +618,7 @@ Error sendFileDescriptors(int in_fd, pid_t in_pid)
    std::vector<uint32_t> openFds;
    Error error = getOpenFds(in_pid, openFds);
    if (error)
-      logging::logError(error);
+      logging::logErrorAsDebug(error);
    else
    {
       // Write them to the closeFd.
@@ -1138,6 +1138,14 @@ Error AbstractChildProcess::run()
 
    // Now fork the process.
    error = posix::posixCall<pid_t>(::fork, ERROR_LOCATION, &m_baseImpl->Pid);
+   if (error)
+   {
+      closePipe(fds.Input, ERROR_LOCATION);
+      closePipe(fds.Output, ERROR_LOCATION);
+      closePipe(fds.Error, ERROR_LOCATION);
+      closePipe(fds.CloseFd, ERROR_LOCATION);
+      return error;
+   }
 
    // If this is the child process, execute the requested process.
    if (m_baseImpl->Pid == 0)
@@ -1162,9 +1170,9 @@ Error AbstractChildProcess::run()
 
       // Send the list of the child's open pipes to it.
       error = sendFileDescriptors(fds.CloseFd[s_writePipe], m_baseImpl->Pid);
+      if (error)
+         logging::logError(error);
       closePipe(fds.CloseFd[s_writePipe], ERROR_LOCATION);
-
-      return error;
    }
 
    return Success();
