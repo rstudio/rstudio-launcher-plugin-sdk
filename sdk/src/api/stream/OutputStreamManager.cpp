@@ -223,6 +223,8 @@ struct OutputStreamManager::Impl : public std::enable_shared_from_this<Impl>
          Error error = in_outputStream->start();
          if (error)
             return sendJobOutputNotFoundError(in_requestId, error);
+
+         isStarted = true;
       }
 
       WeakThis weakThis = weak_from_this();
