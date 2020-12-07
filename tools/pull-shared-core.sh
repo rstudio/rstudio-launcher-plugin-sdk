@@ -293,10 +293,11 @@ for I in "${!SRC_SOURCES[@]}"; do
         replace "$DEST_PATH" "[ \t]*bool\s*Error::operator==\s*\(\s*const\s*boost::.*\n(.*\n)*\s*(bool\s*Error::operator!=\(\s*const\s*r)" "\2"
         replace "$DEST_PATH" "[ \t]*bool\s*Error::operator!=\s*\(\s*const\s*boost::.*\n(.*\n)*\s*(void\s*Error::addOrUpdateProperty\s*\(\s*const\s*std::string\s*&\s*in_name\s*,\s*const\s*std::)" "\2"
         replace "$DEST_PATH" "using\s*namespace\s*boost[^\n]*\n\s*return\s*Error\([^,]*,[^,]*(,[^\)]*)\);" "boost::system::error_code ec(in_code, boost::system::system_category());\n   Error error(\"SystemError\", in_code, ec.message()\1);\n   error.addProperty(\"subcategory\", ec.category().name());\n   return error;"
-        replace "$DEST_PATH" "return\s*Error\((\s*in_error\.code\(\)\.category\(\)[^,]*)([^;]*);" "Error error(\"SystemError\"\2;\n   error.addProperty(\"subcategory\", \1);\n   return error;"
-        replace "$DEST_PATH" "return\s*Error\(\s*(in_error\.code\(\)\.category\(\)[^,]*),\n([^\n]*\n)([^\n]*\n)([^\n]*\n)([^;]*;\n)" "Error error(\n      \"SystemError\",\n\2\3\4\5\n   error.addProperty(\"subcategory\", \1);\n   return error;\n"
-        replace "$DEST_PATH" "return\s*Error\((in_code[^,]*)([^;]*);" "Error error(\"SystemError\"\2;\n   error.addProperty(\"subcategory\", \1);\n   return error;"
+        replace "$DEST_PATH" "return\s*Error\((\s*in_error\.code\(\)\.category\(\)[^,]*)([^;]*);" "Error error(\"SystemError\"\2;\n   return error;"
+        replace "$DEST_PATH" "return\s*Error\(\s*(in_error\.code\(\)\.category\(\)[^,]*),\n([^\n]*\n)([^\n]*\n)([^\n]*\n)([^;]*;\n)" "Error error(\n      \"SystemError\",\n\2\3\4\5\n   return error;\n"
+        replace "$DEST_PATH" "return\s*Error\((in_code[^,]*)([^;]*);" "Error error(\"SystemError\"\2;\n   return error;"
         replace "$DEST_PATH" "(}\s*//\s*anonymous\s*namespace\s*\n\n)" "\1std::string errorDescription(const Error\& error);\nstd::string errorMessage(const launcher_plugins::Error\& error);\nstd::string systemErrorMessage(int code);\n\n"
+        replace "$DEST_PATH" "(Error\(\")s(ystem)(\",)" "\1S\2Error\3"
     fi
 
     if [[ "$SRC_FILE" == "Logger.cpp" ]]; then
