@@ -202,11 +202,11 @@ int AbstractMain::run(int in_argc, char** in_argv)
             LogLevel::INFO,
             getProgramId())));
 
+   logging::logInfoMessage("Starting plugin...");
+
    // Turn on stderr logging while options are parsed.
    std::shared_ptr<ILogDestination> stderrLogDest(new StderrLogDestination(LogLevel::INFO));
    addLogDestination(stderrLogDest);
-
-   logging::logInfoMessage("Starting plugin ...", ERROR_LOCATION);
 
    // Initialize the default options. This must be done before the custom options are initialized.
    options::Options& options = options::Options::getInstance();

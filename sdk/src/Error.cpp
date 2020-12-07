@@ -411,14 +411,12 @@ Error systemError(int in_code, const ErrorLocation& in_location)
 Error systemError(const std::error_code& in_code, const ErrorLocation& in_location)
 {
    Error error("SystemError", in_code.value(), in_code.message(), in_location);
-   error.addProperty("subcategory", in_code.category().name());
    return error;
 }
 
 Error systemError(const std::system_error& in_error, const ErrorLocation& in_location)
 {
    Error error("SystemError", in_error.code().value(), in_error.what(), in_location);
-   error.addProperty("subcategory", in_error.code().category().name());
    return error;
 }
 
@@ -435,7 +433,6 @@ Error systemError(int in_code,
 Error systemError(const std::error_code& in_code, const Error& in_cause, const ErrorLocation& in_location)
 {
    Error error("SystemError", in_code.value(), in_code.message(), in_cause, in_location);
-   error.addProperty("subcategory", in_code.category().name());
    return error;
 }
 
@@ -448,7 +445,6 @@ Error systemError(const std::system_error& in_error, const Error& in_cause, cons
       in_cause,
       in_location);
 
-   error.addProperty("subcategory", in_error.code().category().name());
    return error;
 }
 
@@ -522,7 +518,7 @@ Error systemCallError(const std::string& in_function,
                       const ErrorLocation& in_location)
 {
    std::string message = in_function + ": " + in_message;
-   return Error("system", in_code, message, in_location);
+   return Error("SystemError", in_code, message, in_location);
 }
 
 Error unknownError(const std::string& in_message, const ErrorLocation&  in_location)
