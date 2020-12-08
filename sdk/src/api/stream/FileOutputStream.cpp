@@ -39,6 +39,44 @@ namespace api {
 namespace {
 
 /**
+ * @brief Checks whether a file exists for a given user.
+ * 
+ * @param in_file          The file to check for existence.
+ * @param in_user          The user for whom to check the file.
+ * @param out_wasFound     True if the specified file existed for the given user; false otherwise.
+ * 
+ * @return Success if the existence of the file could be tested; Error otherwise.
+ */
+Error fileExistsForUser(const system::FilePath& in_file, const system::User& in_user, bool& out_wasFound)
+{
+   system::process::ProcessOptions lsOpts;
+   lsOpts.Executable = "ls";
+   lsOpts.Arguments = { in_file.getAbsolutePath() };
+   lsOpts.RunAsUser = in_user;
+
+   system::process::ProcessResult result;
+   system::process::SyncChildProcess lsProc(lsOpts);
+   Error error = lsProc.run(result);
+   if (error)
+      return error;
+
+   out_wasFound = result.ExitCode == 0;
+
+   if (!out_wasFound)
+   {
+      logging::logDebugMessage(
+         "'ls " +
+         in_file.getAbsolutePath() +
+         "' failed with error code (" +
+         std::to_string(result.ExitCode) +
+         ")" +
+         (result.StdError.empty() ? "" : " and stderr \"" + result.StdError + "\""));
+   }
+
+   return Success();
+}
+
+/**
  * @brief Resolves host mount paths.
  *
  * @param in_strPath    The original path.
