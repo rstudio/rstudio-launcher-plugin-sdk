@@ -32,6 +32,7 @@
 #include <Noncopyable.hpp>
 #include <Optional.hpp>
 #include <PImpl.hpp>
+#include <json/Json.hpp>
 #include <system/DateTime.hpp>
 #include <system/User.hpp>
 #include <utils/MutexUtils.hpp>
@@ -41,11 +42,6 @@ namespace launcher_plugins {
 
 class Error;
 
-namespace json {
-
-class Object;
-
-} // namespace json
 } // namespace launcher_plugins
 } // namespace rstudio
 
@@ -55,13 +51,17 @@ namespace api {
 
 
 // Forward Declarations
+struct AzureFileMountSource;
+struct CephFsMountSource;
 struct Container;
 struct ExposedPort;
+struct GlusterFsMountSource;
 struct HostMountSource;
 struct Job;
 struct JobConfig;
 class JobLock;
 struct Mount;
+struct MountSource;
 struct NfsMountSource;
 struct ResourceLimit;
 struct PlacementConstraint;
@@ -140,30 +140,6 @@ struct ExposedPort
 
    /** The target port. */
    int TargetPort;
-};
-
-/** @brief Struct which represents the source path of an local host system Mount. */
-struct HostMountSource
-{
-   /**
-    * @brief Constructs a HostMountSource from a JSON object which represents the host mount source.
-    *
-    * @param in_json            The JSON object which represents the host mount source.
-    * @param out_mountSource    The populated mount source value. Not valid if an error is returned.
-    *
-    * @return Success if in_json could be parsed as a HostMountSource; Error otherwise.
-    */
-   static Error fromJson(const json::Object& in_json, HostMountSource& out_mountSource);
-
-   /**
-    * @brief Converts this HostMountSource to a JSON object which represents it.
-    *
-    * @return The JSON object which represents this HostMountSource.
-    */
-   json::Object toJson() const;
-
-   /** The source path for the mount. */
-   std::string Path;
 };
 
 /** @brief Structure which represents a job. */
@@ -497,6 +473,404 @@ private:
    PRIVATE_IMPL(m_impl);
 };
 
+/** @brief Struct which represents the source path of an NFS Mount. */
+struct MountSource
+{
+   /** @brief Constants representing the support types of MountSource. */
+   enum class Type
+   {
+      /** Represents an Azure File Mount Source. */
+      AZURE_FILE,
+
+      /** Represents a Ceph File System Mount Source. */
+      CEPH_FS,
+
+      /** Represents a Gluster File System Mount Source. */
+      GLUSTER_FS,
+
+      /** Represents a Host Mount Source. */
+      HOST,
+
+      /** Represents an NFS Mount Source. */
+      NFS,
+
+      /** Represents a Mount Source that will be passed through to the Plugin to handle. */
+      PASSTHROUGH
+   };
+   
+   /**
+    * @brief Virtual destructor for inheritance.
+    */
+   virtual ~MountSource() = default;
+
+   /**
+    * @brief Constructs a MountSource from a JSON object which represents the mount source.
+    *
+    * @param in_json            The JSON object which represents the mount source.
+    * @param out_mountSource    The populated mount source value. Not valid if an error is returned.
+    *
+    * @return Success if in_json could be parsed as a MountSource; Error otherwise.
+    */
+   static Error fromJson(const json::Object& in_json, MountSource& out_mountSource);
+
+   /**
+    * @brief Gets this MountSource as an AzureFileMountSource. 
+    * 
+    * @throw std::logic_error if isAzureFileMountSource() would return false.
+    * 
+    * @return This MountSource as an AzureFileMountSource.
+    */
+   AzureFileMountSource& asAzureFileMountSource();
+
+   /**
+    * @brief Gets this MountSource as an AzureFileMountSource. 
+    * 
+    * @throw std::logic_error if isAzureFileMountSource() would return false.
+    * 
+    * @return This MountSource as an AzureFileMountSource.
+    */
+   const AzureFileMountSource& asAzureFileMountSource() const;
+
+   /**
+    * @brief Gets this MountSource as an CephFsMountSource. 
+    * 
+    * @throw std::logic_error if isCephFsMountSource() would return false.
+    * 
+    * @return This MountSource as an CephFsMountSource.
+    */
+   CephFsMountSource& asCephFsMountSource();
+
+   /**
+    * @brief Gets this MountSource as an CephFsMountSource. 
+    * 
+    * @throw std::logic_error if isCephFsMountSource() would return false.
+    * 
+    * @return This MountSource as an CephFsMountSource.
+    */
+   const CephFsMountSource& asCephFsMountSource() const;
+
+   /**
+    * @brief Gets this MountSource as an GlusterFsMountSource. 
+    * 
+    * @throw std::logic_error if isGlusterFsMountSource() would return false.
+    * 
+    * @return This MountSource as an GlusterFsMountSource.
+    */
+   GlusterFsMountSource& asGlusterFsMountSource();
+
+   /**
+    * @brief Gets this MountSource as an GlusterFsMountSource. 
+    * 
+    * @throw std::logic_error if isGlusterFsMountSource() would return false.
+    * 
+    * @return This MountSource as an GlusterFsMountSource.
+    */
+   const GlusterFsMountSource& asGlusterFsMountSource() const;
+
+   /**
+    * @brief Gets this MountSource as an HostMountSource. 
+    * 
+    * @throw std::logic_error if isHostMountSource() would return false.
+    * 
+    * @return This MountSource as an HostMountSource.
+    */
+   HostMountSource& asHostMountSource();
+
+   /**
+    * @brief Gets this MountSource as an HostMountSource.
+    * 
+    * @throw std::logic_error if isHostMountSource() would return false.
+    * 
+    * @return This MountSource as an HostMountSource.
+    */
+   const HostMountSource& asHostMountSource() const;
+
+   /**
+    * @brief Gets this MountSource as an NfsMountSource. 
+    * 
+    * @throw std::logic_error if isNfsMountSource() would return false.
+    * 
+    * @return This MountSource as an NfsMountSource.
+    */
+   NfsMountSource& asNfsMountSource();
+
+   /**
+    * @brief Gets this MountSource as an NfsMountSource. 
+    * 
+    * @throw std::logic_error if isNfsMountSource() would return false.
+    * 
+    * @return This MountSource as an NfsMountSource.
+    */
+   const NfsMountSource& asNfsMountSource() const;
+
+   /**
+    * @brief Checks whether this MountSource is an AzureFileMountSource.
+    * 
+    * @return True if this MountSource is an AzureFileMountSource; false otherwise.
+    */
+   bool isAzureFileMountSource() const;
+
+   /**
+    * @brief Checks whether this MountSource is an CephFsMountSource.
+    * 
+    * @return True if this MountSource is an CephFsMountSource; false otherwise.
+    */
+   bool isCephFsMountSource() const;
+
+   /**
+    * @brief Checks whether this MountSource is an GlusterFsMountSource.
+    * 
+    * @return True if this MountSource is an GlusterFsMountSource; false otherwise.
+    */
+   bool isGlusterFsMountSource() const;
+
+   /**
+    * @brief Checks whether this MountSource is an HostMountSource.
+    * 
+    * @return True if this MountSource is an HostMountSource; false otherwise.
+    */
+   bool isHostMountSource() const;
+
+   /**
+    * @brief Checks whether this MountSource is an NfsMountSource.
+    * 
+    * @return True if this MountSource is an NfsMountSource; false otherwise.
+    */
+   bool isNfsMountSource() const;
+
+   /**
+    * @brief Checks whether this MountSource is an PassthroughMountSource.
+    * 
+    * @return True if this MountSource is an PassthroughMountSource; false otherwise.
+    */
+   bool isPassthroughMountSource() const;
+
+   /**
+    * @brief Converts this NfsMountSource to a JSON object which represents it.
+    *
+    * @return The JSON object which represents this NfsMountSource.
+    */
+   json::Object toJson() const;
+   /** 
+    * An optional field, to represent a custom mount source type. If the type field is not recongized SourceType will 
+    * be set to `MountSource::Type::PASSTHROUGH` and CustomType will hold the original value of the field. */
+   std::string CustomType;
+
+   /** The JSON object that describes the Mount Source for this Mount. */
+   json::Object SourceObject;
+
+   /** The type of the Mount Source for this Mount. */
+   Type SourceType;
+};
+
+/** @brief Represents an Azure File Mount Source. */
+struct AzureFileMountSource final : MountSource
+{
+   /**
+    * @brief Constructs an AzureMountSource from a JSON object which represents the mount source.
+    *
+    * @param in_json            The JSON object which represents the mount source.
+    * @param out_mountSource    The populated mount source value. Not valid if an error is returned.
+    *
+    * @return Success if in_json could be parsed as an AzureMountSource; Error otherwise.
+    */
+   static Error fromJson(const json::Object& in_json, AzureFileMountSource& out_mountSource);
+
+   /**
+    * @brief Gets the name of the Azure Secret used to connect to the Azure File Mount Source.
+    * 
+    * @throw std::logic_error if the 'secretName' field cannot be found.
+    * 
+    * @return The name of the Azure Secret used to connect to the Azure File Mount Source.
+    */
+   std::string getSecretName() const;
+
+   /**
+    * @brief Gets the name of the share in Azure to be mounted.
+    * 
+    * @throw std::logic_error if the 'shareName' field cannot be found.
+    * 
+    * @return The name of the share in Azure to be mounted.
+    */
+   std::string getShareName() const;
+
+private:
+   /**
+    * @brief Constructor.
+    */
+   AzureFileMountSource();
+
+   friend class MountSource;
+};
+
+
+/** @brief Represents a Ceph File System Mount Source. */
+struct CephFsMountSource final : MountSource
+{
+   /**
+    * @brief Constructs a CephFsMountSource from a JSON object which represents the mount source.
+    *
+    * @param in_json            The JSON object which represents the mount source.
+    * @param out_mountSource    The populated mount source value. Not valid if an error is returned.
+    *
+    * @return Success if in_json could be parsed as a CephFsMountSource; Error otherwise.
+    */
+   static Error fromJson(const json::Object& in_json, CephFsMountSource& out_mountSource);
+
+   /**
+    * @brief Gets the list of Ceph monitor addresses.
+    * 
+    * @throw std::logic_error if the 'monitors' field cannot be found.
+    * 
+    * @return The list of Ceph monitor addresses.
+    */
+   std::vector<std::string> getMonitors() const;
+
+   /**
+    * @brief Gets the path to mount.
+    * 
+    * @return The path to mount.
+    */
+   std::string getPath() const;
+
+   /**
+    * @brief Gets the user to mount the path as.
+    * 
+    * @return The user to mount the path as.
+    */
+   std::string getUser() const;
+
+   /**
+    * @brief Gets the location of the file which contains the Ceph keyring for authentication.
+    * 
+    * @return The location of the file which contains the Ceph keyring for authentication.
+    */
+   std::string getSecretFile() const;
+
+   /**
+    * @brief Gets the reference to the Ceph authentication secrets which override the Secret File.
+    * 
+    * @return The reference to the Ceph authentication secrets which override the Secret File.
+    */
+   std::string getSecretRef() const;
+
+private:
+   /**
+    * @brief Constructor.
+    */
+   CephFsMountSource();
+
+   friend class MountSource;
+};
+
+
+struct GlusterFsMountSource final : MountSource
+{
+   /**
+    * @brief Constructor.
+    */
+   GlusterFsMountSource();
+   
+   /**
+    * @brief Constructs a GlusterFsMountSource from a JSON object which represents the mount source.
+    *
+    * @param in_json            The JSON object which represents the mount source.
+    * @param out_mountSource    The populated mount source value. Not valid if an error is returned.
+    *
+    * @return Success if in_json could be parsed as a GlusterFsMountSource; Error otherwise.
+    */
+   static Error fromJson(const json::Object& in_json, GlusterFsMountSource& out_mountSource);
+
+   /**
+    * @brief Gets the name of the endpoints object that represents a Gluster cluster configuration.
+    * 
+    * @throw std::logic_error if the 'endpoints' field cannot be found.
+    * 
+    * @return The name of the endpoints object that represents a Gluster cluster configuration
+    */
+   std::string getEndpoints() const;
+
+   /**
+    * @brief Gets the name of the GlusterFs volume mount.
+    * 
+    * @throw std::logic_error if the 'path' field cannot be found.
+    * 
+    * @return The name of the GlusterFs volume to mount.
+    */
+   std::string getPath() const;
+};
+
+/** @brief Represents a path to mount on the same host as the Job. */
+struct HostMountSource final : MountSource
+{
+   /**
+    * @brief Constructs a HostMountSource from a JSON object which represents the mount source.
+    *
+    * @param in_json            The JSON object which represents the mount source.
+    * @param out_mountSource    The populated mount source value. Not valid if an error is returned.
+    *
+    * @return Success if in_json could be parsed as a HostMountSource; Error otherwise.
+    */
+   static Error fromJson(const json::Object& in_json, HostMountSource& out_mountSource);
+
+   /**
+    * @brief Gets the path on the current host to be mounted.
+    * 
+    * @throw std::logic_error if the 'path' field cannot be found.
+    * 
+    * @return The path on the current host to be mounted.
+    */
+   std::string getPath() const;
+
+private:
+   /**
+    * @brief Constructor.
+    */
+   HostMountSource();
+   
+   friend class MountSource;
+};
+
+/** @brief Represents an NFS Mount Source. */
+struct NfsMountSource final : MountSource
+{
+   /**
+    * @brief Constructs an NfsMountSource from a JSON object which represents the mount source.
+    *
+    * @param in_json            The JSON object which represents the mount source.
+    * @param out_mountSource    The populated mount source value. Not valid if an error is returned.
+    *
+    * @return Success if in_json could be parsed as an NfsMountSource; Error otherwise.
+    */
+   static Error fromJson(const json::Object& in_json, NfsMountSource& out_mountSource);
+
+   /**
+    * @brief Gets the NFS host.
+    * 
+    * @throw std::logic_error if the 'host' field cannot be found.
+    * 
+    * @return The NFS host.
+    */
+   std::string getHost() const;
+
+   /**
+    * @brief Gets the path on the NFS host to be mounted.
+    * 
+    * @throw std::logic_error if the 'path' field cannot be found.
+    * 
+    * @return The path on the NFS host to be mounted.
+    */
+   std::string getPath() const;
+
+private:
+   /**
+    * @brief Constructor.
+    */
+   NfsMountSource();
+   
+   friend class MountSource;
+};
+
 /** @brief Struct which represents an file system mount available to a job. */
 struct Mount
 {
@@ -509,7 +883,6 @@ struct Mount
     * @return Success if in_json could be parsed as a Mount; Error otherwise.
     */
    static Error fromJson(const json::Object& in_json, Mount& out_mount);
-
    /**
     * @brief Converts this Mount to a JSON object which represents it.
     *
@@ -518,43 +891,13 @@ struct Mount
    json::Object toJson() const;
 
    /** The path to which to mount the source path. */
-   std::string DestinationPath;
+   std::string Destination;
 
    /** Whether the mounted path is read only. */
    bool IsReadOnly;
 
-   /** The source path to mount. Only one of this and NfsSourcePath may be set per Mount object. */
-   Optional<HostMountSource> HostSourcePath;
-
-   /** The source path to mount. Only one of this and HostSourcePath may be set per Mount object. */
-   Optional<NfsMountSource> NfsSourcePath;
-};
-
-/** @brief Struct which represents the source path of an NFS Mount. */
-struct NfsMountSource
-{
-   /**
-    * @brief Constructs an NfsMountSource from a JSON object which represents the mount source.
-    *
-    * @param in_json            The JSON object which represents the NFS mount source.
-    * @param out_mountSource    The populated mount source value. Not valid if an error is returned.
-    *
-    * @return Success if in_json could be parsed as an NfsMountSource; Error otherwise.
-    */
-   static Error fromJson(const json::Object& in_json, NfsMountSource& out_mountSource);
-
-   /**
-    * @brief Converts this NfsMountSource to a JSON object which represents it.
-    *
-    * @return The JSON object which represents this NfsMountSource.
-    */
-   json::Object toJson() const;
-
-   /** The host of the source path. */
-   std::string Host;
-
-   /** The source path for the mount. */
-   std::string Path;
+   /** The source to mount. */
+   MountSource Source;
 };
 
 /**

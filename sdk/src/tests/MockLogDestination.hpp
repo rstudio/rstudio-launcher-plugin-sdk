@@ -117,6 +117,14 @@ public:
    }
 
    /**
+    * @brief Reloads the log destintation. Ensures that the log does not have any stale file handles.
+    */
+   void reload() override
+   {
+      // Nothing to do.
+   }
+
+   /**
     * @brief Writes a message to this log destination.
     *
     * @param in_logLevel    The log level of the message to write.

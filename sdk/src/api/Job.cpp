@@ -104,10 +104,23 @@ constexpr const char* JOB_STATUS_SUSPENDED            = "Suspended";
 // Mount
 constexpr char const* MOUNT_PATH                      = "mountPath";
 constexpr char const* MOUNT_READ_ONLY                 = "readOnly";
-constexpr char const* MOUNT_SOURCE_HOST               = "hostMount";
-constexpr char const* MOUNT_SOURCE_NFS                = "nfsMount";
+constexpr char const* MOUNT_TYPE                      = "type";
+constexpr char const* MOUNT_SOURCE                    = "source";
+constexpr char const* MOUNT_TYPE_AZURE                = "azureFile";
+constexpr char const* MOUNT_TYPE_CEPH                 = "cephFs";
+constexpr char const* MOUNT_TYPE_GLUSTER              = "glusterFs";
+constexpr char const* MOUNT_TYPE_HOST                 = "host";
+constexpr char const* MOUNT_TYPE_NFS                  = "nfs";
+constexpr char const* MOUNT_TYPE_PASSTHROUGH          = "passthrough";
+constexpr char const* MOUNT_SOURCE_ENDPOINTS          = "endpoints";
+constexpr char const* MOUNT_SOURCE_HOST               = "host";
+constexpr char const* MOUNT_SOURCE_MONITORS           = "monitors";
 constexpr char const* MOUNT_SOURCE_PATH               = "path";
-constexpr char const* MOUNT_SOURCE_NFS_HOST           = "host";
+constexpr char const* MOUNT_SOURCE_SECRET_FILE        = "secretFile";
+constexpr char const* MOUNT_SOURCE_SECRET_NAME        = "secretName";
+constexpr char const* MOUNT_SOURCE_SECRET_REF         = "secretRef";
+constexpr char const* MOUNT_SOURCE_SHARE_NAME         = "shareName";
+constexpr char const* MOUNT_SOURCE_USER               = "user";
 
 // Placement Constraint
 constexpr char const* PLACEMENT_CONSTRAINT_NAME       = "name";
@@ -233,6 +246,53 @@ std::string jobStatusToString(const Job::State& in_state)
       default:
          return "";
    }
+}
+
+std::string mountTypeToString(MountSource::Type in_type, const std::string& in_customType)
+{
+   switch (in_type)
+   {
+      case MountSource::Type::AZURE_FILE:
+         return MOUNT_TYPE_AZURE;
+      case MountSource::Type::CEPH_FS:
+         return MOUNT_TYPE_CEPH;
+      case MountSource::Type::GLUSTER_FS:
+         return MOUNT_TYPE_GLUSTER;
+      case MountSource::Type::HOST:
+         return MOUNT_TYPE_HOST;
+      case MountSource::Type::NFS:
+         return MOUNT_TYPE_NFS;
+   };
+
+   if (!in_customType.empty())
+      return in_customType;
+
+   return MOUNT_TYPE_PASSTHROUGH;
+}
+
+void throwMountTypeMismatch(
+   MountSource::Type in_expected,
+   const std::string& in_customType,
+   MountSource::Type in_actual)
+{
+   throw std::logic_error(
+      "Attempting to convert a mount of type " +
+         mountTypeToString(in_expected, in_customType) +
+         "Mount to " +
+         mountTypeToString(in_actual, "") +
+         "Mount");
+}
+
+void throwMissingMountSourceField(
+   MountSource::Type in_expected,
+   const std::string& in_customType,
+   const std::string& in_fieldName)
+{
+   throw std::logic_error(
+      "Field " +
+      in_fieldName +
+      " could not be found on mount source object with type " +
+      mountTypeToString(in_expected, in_customType));
 }
 
 template <typename T>
@@ -394,24 +454,6 @@ json::Object ExposedPort::toJson() const
    exposedPortObj[EXPOSED_PORT_PROTOCOL] = Protocol;
 
    return exposedPortObj;
-}
-
-// Host Mount Source ===================================================================================================
-Error HostMountSource::fromJson(const json::Object& in_json, HostMountSource& out_mountSource)
-{
-   Error error = json::readObject(in_json, MOUNT_SOURCE_PATH, out_mountSource.Path);
-   if (error)
-      return updateError(MOUNT_SOURCE_HOST, in_json, error);
-
-   return Success();
-}
-
-json::Object HostMountSource::toJson() const
-{
-   json::Object mountSourceObj;
-   mountSourceObj[MOUNT_SOURCE_PATH] = Path;
-
-   return mountSourceObj;
 }
 
 // Job =================================================================================================================
@@ -949,52 +991,421 @@ JobLock::JobLock(ConstJobPtr in_job) :
 {
 }
 
+// Mount Source ========================================================================================================
+Error MountSource::fromJson(const json::Object& in_json, MountSource& out_mountSource)
+{
+   std::string type;
+   json::Object source;
+   Error error = readObject(in_json, MOUNT_TYPE, type, MOUNT_SOURCE, source);
+   if (error)
+      return updateError("mountSource", in_json, error);
+
+   if (type == MOUNT_TYPE_AZURE)
+   {
+      AzureFileMountSource mountSource;
+      error = AzureFileMountSource::fromJson(source, mountSource);
+      if (error)
+         return error;
+
+      out_mountSource = mountSource;
+   }
+   else if (type == MOUNT_TYPE_CEPH)
+   {
+      CephFsMountSource mountSource;
+      error = CephFsMountSource::fromJson(source, mountSource);
+      if (error)
+         return error;
+
+      out_mountSource = mountSource;
+   }
+   else if (type == MOUNT_TYPE_GLUSTER)
+   {
+      GlusterFsMountSource mountSource;
+      error = GlusterFsMountSource::fromJson(source, mountSource);
+      if (error)
+         return error;
+
+      out_mountSource = mountSource;
+   }
+   else if (type == MOUNT_TYPE_HOST)
+   {
+      HostMountSource mountSource;
+      error = HostMountSource::fromJson(source, mountSource);
+      if (error)
+         return error;
+
+      out_mountSource = mountSource;
+   }
+   else if (type == MOUNT_TYPE_NFS)
+   {
+      NfsMountSource mountSource;
+      error = NfsMountSource::fromJson(source, mountSource);
+      if (error)
+         return error;
+
+      out_mountSource = mountSource;
+   }
+   else
+   {
+      if (type != MOUNT_TYPE_PASSTHROUGH)
+         out_mountSource.CustomType = type;
+
+      out_mountSource.SourceType = Type::PASSTHROUGH;
+      out_mountSource.SourceObject = source;
+   }
+
+   return Success();
+}
+
+AzureFileMountSource& MountSource::asAzureFileMountSource()
+{
+   return const_cast<AzureFileMountSource&>(const_cast<const MountSource*>(this)->asAzureFileMountSource());
+}
+
+const AzureFileMountSource& MountSource::asAzureFileMountSource() const
+{
+   if (!isAzureFileMountSource())
+      throwMountTypeMismatch(SourceType, CustomType, Type::AZURE_FILE);
+
+   return static_cast<const AzureFileMountSource&>(*this);
+}
+
+CephFsMountSource& MountSource::asCephFsMountSource()
+{
+   return const_cast<CephFsMountSource&>(const_cast<const MountSource*>(this)->asCephFsMountSource());
+}
+
+const CephFsMountSource& MountSource::asCephFsMountSource() const
+{
+   if (!isCephFsMountSource())
+      throwMountTypeMismatch(SourceType, CustomType, Type::CEPH_FS);
+
+   return static_cast<const CephFsMountSource&>(*this);
+}
+
+GlusterFsMountSource& MountSource::asGlusterFsMountSource()
+{
+   return const_cast<GlusterFsMountSource&>(const_cast<const MountSource*>(this)->asGlusterFsMountSource());
+}
+
+const GlusterFsMountSource& MountSource::asGlusterFsMountSource() const
+{
+   if (!isGlusterFsMountSource())
+      throwMountTypeMismatch(SourceType, CustomType, Type::GLUSTER_FS);
+
+   return static_cast<const GlusterFsMountSource&>(*this);
+}
+
+HostMountSource& MountSource::asHostMountSource()
+{
+   return const_cast<HostMountSource&>(const_cast<const MountSource*>(this)->asHostMountSource());
+}
+
+const HostMountSource& MountSource::asHostMountSource() const
+{
+   if (!isHostMountSource())
+      throwMountTypeMismatch(SourceType, CustomType, Type::HOST);
+
+   return static_cast<const HostMountSource&>(*this);
+}
+
+NfsMountSource& MountSource::asNfsMountSource()
+{
+   return const_cast<NfsMountSource&>(const_cast<const MountSource*>(this)->asNfsMountSource());
+}
+
+const NfsMountSource& MountSource::asNfsMountSource() const
+{
+   if (!isNfsMountSource())
+      throwMountTypeMismatch(SourceType, CustomType, Type::NFS);
+
+   return static_cast<const NfsMountSource&>(*this);
+}
+
+bool MountSource::isAzureFileMountSource() const
+{
+   return SourceType == Type::AZURE_FILE;
+}
+
+bool MountSource::isCephFsMountSource() const
+{
+   return SourceType == Type::CEPH_FS;
+}
+
+bool MountSource::isGlusterFsMountSource() const
+{
+   return SourceType == Type::GLUSTER_FS;
+}
+
+bool MountSource::isHostMountSource() const
+{
+   return SourceType == Type::HOST;
+}
+
+bool MountSource::isNfsMountSource() const
+{
+   return SourceType == Type::NFS;
+}
+
+bool MountSource::isPassthroughMountSource() const
+{
+   return SourceType == Type::PASSTHROUGH;
+}
+
+json::Object MountSource::toJson() const
+{
+   return SourceObject;
+}
+
+// Azure File Mount Source =============================================================================================
+AzureFileMountSource::AzureFileMountSource()
+{
+   SourceType = MountSource::Type::AZURE_FILE;
+}
+
+Error AzureFileMountSource::fromJson(const json::Object& in_json, AzureFileMountSource& out_mountSource)
+{
+   Error error = in_json.validate(R"(
+   {
+      "type": "object",
+      "properties": {
+         "secretName": { "type": "string" },
+         "shareName": { "type": "string" }
+      },
+      "required": [ "secretName", "shareName" ]
+   })");
+   if (error)
+      return updateError(std::string(MOUNT_TYPE_AZURE) + "Mount", in_json, error);
+
+   out_mountSource.SourceObject = in_json.clone().getObject();
+   return Success();
+}
+
+std::string AzureFileMountSource::getSecretName() const
+{
+   // We should have returned an error during `fromJson` if this is not true.
+   if (!SourceObject.hasMember(MOUNT_SOURCE_SECRET_NAME))
+      throwMissingMountSourceField(SourceType, CustomType, MOUNT_SOURCE_SECRET_NAME);
+
+   return (*SourceObject.find(MOUNT_SOURCE_SECRET_NAME)).getValue().getString();
+}
+
+std::string AzureFileMountSource::getShareName() const
+{
+   // We should have returned an error during `fromJson` if this is not true.
+   if (!SourceObject.hasMember(MOUNT_SOURCE_SHARE_NAME))
+      throwMissingMountSourceField(SourceType, CustomType, MOUNT_SOURCE_SHARE_NAME);
+
+   return (*SourceObject.find(MOUNT_SOURCE_SHARE_NAME)).getValue().getString();
+}
+
+// Ceph FS Mount Source =============================================================================================
+CephFsMountSource::CephFsMountSource()
+{
+   SourceType = MountSource::Type::CEPH_FS;
+}
+
+Error CephFsMountSource::fromJson(const json::Object& in_json, CephFsMountSource& out_mountSource)
+{
+   Error error = in_json.validate(R"(
+   {
+      "type": "object",
+      "properties": {
+         "monitors": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string" }
+         },
+         "path": { "type": "string" },
+         "user": { "type": "string" },
+         "secretFile": { "type": "string" },
+         "secretRef": { "type": "string" }
+      },
+      "required": [ "monitors" ]
+   })");
+   if (error)
+      return updateError(std::string(MOUNT_TYPE_CEPH) + "Mount", in_json, error);
+
+   out_mountSource.SourceObject = in_json.clone().getObject();
+   return Success();
+}
+
+std::vector<std::string> CephFsMountSource::getMonitors() const
+{
+   // We should have returned an error during `fromJson` if this is not true.
+   std::vector<std::string> monitors;
+   Error error = json::readObject(SourceObject, MOUNT_SOURCE_MONITORS, monitors);
+  if (error)
+      throwMissingMountSourceField(SourceType, CustomType, MOUNT_SOURCE_MONITORS);
+
+   return std::move(monitors);
+}
+
+std::string CephFsMountSource::getPath() const
+{
+   if (SourceObject.hasMember(MOUNT_SOURCE_PATH))
+      return (*SourceObject.find(MOUNT_SOURCE_PATH)).getValue().getString();
+
+   return "";
+}
+
+std::string CephFsMountSource::getUser() const
+{
+   if (SourceObject.hasMember(MOUNT_SOURCE_USER))
+      return (*SourceObject.find(MOUNT_SOURCE_USER)).getValue().getString();
+
+   return "";
+}
+
+std::string CephFsMountSource::getSecretFile() const
+{
+   if (SourceObject.hasMember(MOUNT_SOURCE_SECRET_FILE))
+      return (*SourceObject.find(MOUNT_SOURCE_SECRET_FILE)).getValue().getString();
+
+   return "";
+}
+
+std::string CephFsMountSource::getSecretRef() const
+{
+   if (SourceObject.hasMember(MOUNT_SOURCE_SECRET_REF))
+      return (*SourceObject.find(MOUNT_SOURCE_SECRET_REF)).getValue().getString();
+
+   return "";
+}
+
+// Gluster FS Mount Source =============================================================================================
+GlusterFsMountSource::GlusterFsMountSource()
+{
+   SourceType = MountSource::Type::GLUSTER_FS;
+}
+
+Error GlusterFsMountSource::fromJson(const json::Object& in_json, GlusterFsMountSource& out_mountSource)
+{
+   Error error = in_json.validate(R"(
+   {
+      "type": "object",
+      "properties": {
+         "endpoints": { "type": "string" },
+         "path": { "type": "string" }
+      },
+      "required": [ "endpoints", "path" ]
+   }
+   )");
+   if (error)
+      return updateError(std::string(MOUNT_TYPE_GLUSTER) + "Mount", in_json, error);
+
+   out_mountSource.SourceObject = in_json.clone().getObject();
+   return Success();
+}
+
+std::string GlusterFsMountSource::getEndpoints() const
+{
+   // We should have returned an error during `fromJson` if this is not true.
+   if (!SourceObject.hasMember(MOUNT_SOURCE_ENDPOINTS))
+      throwMissingMountSourceField(SourceType, CustomType, MOUNT_SOURCE_ENDPOINTS);
+
+   return (*SourceObject.find(MOUNT_SOURCE_ENDPOINTS)).getValue().getString();
+}
+
+std::string GlusterFsMountSource::getPath() const
+{
+   // We should have returned an error during `fromJson` if this is not true.
+   if (!SourceObject.hasMember(MOUNT_SOURCE_PATH))
+      throwMissingMountSourceField(SourceType, CustomType, MOUNT_SOURCE_PATH);
+
+   return (*SourceObject.find(MOUNT_SOURCE_PATH)).getValue().getString();
+}
+
+// Host Mount Source ===================================================================================================
+HostMountSource::HostMountSource()
+{
+   SourceType = MountSource::Type::HOST;
+}
+
+Error HostMountSource::fromJson(const json::Object& in_json, HostMountSource& out_mountSource)
+{
+   Error error = in_json.validate(R"(
+   {
+      "type": "object",
+      "properties": {
+         "path": { "type": "string" }
+      },
+      "required": [ "path" ]
+   }
+   )");
+   if (error)
+      return updateError(std::string(MOUNT_TYPE_HOST) + "Mount", in_json, error);
+
+   out_mountSource.SourceObject = in_json.clone().getObject();
+   return Success();
+}
+
+std::string HostMountSource::getPath() const
+{
+   // We should have returned an error during `fromJson` if this is not true.
+   if (!SourceObject.hasMember(MOUNT_SOURCE_PATH))
+      throwMissingMountSourceField(SourceType, CustomType, MOUNT_SOURCE_PATH);
+
+   return (*SourceObject.find(MOUNT_SOURCE_PATH)).getValue().getString();
+}
+
+// NFS Mount Source ====================================================================================================
+NfsMountSource::NfsMountSource()
+{
+   SourceType = MountSource::Type::NFS;
+}
+
+Error NfsMountSource::fromJson(const json::Object& in_json, NfsMountSource& out_mountSource)
+{
+   Error error = in_json.validate(R"(
+   {
+      "type": "object",
+      "properties": {
+         "host": { "type": "string" },
+         "path": { "type": "string" }
+      },
+      "required": [ "host", "path" ]
+   }
+   )");
+   if (error)
+      return updateError("nfsMount", in_json, error);
+
+   out_mountSource.SourceObject = in_json.clone().getObject();
+   return Success();
+}
+
+std::string NfsMountSource::getHost() const
+{
+   // We should have returned an error during `fromJson` if this is not true.
+   if (!SourceObject.hasMember(MOUNT_SOURCE_HOST))
+      throwMissingMountSourceField(SourceType, CustomType, MOUNT_SOURCE_HOST);
+
+   return (*SourceObject.find(MOUNT_SOURCE_HOST)).getValue().getString();
+}
+
+std::string NfsMountSource::getPath() const
+{
+   // We should have returned an error during `fromJson` if this is not true.
+   if (!SourceObject.hasMember(MOUNT_SOURCE_PATH))
+      throwMissingMountSourceField(SourceType, CustomType, MOUNT_SOURCE_PATH);
+
+   return (*SourceObject.find(MOUNT_SOURCE_PATH)).getValue().getString();
+}
+
 // Mount ===============================================================================================================
 Error Mount::fromJson(const json::Object& in_json, Mount& out_mount)
 {
-   Optional<json::Object> hostMountSource, nfsMountSource;
    Optional<bool> isReadOnly;
    Error error = json::readObject(in_json,
-      MOUNT_PATH, out_mount.DestinationPath,
-      MOUNT_SOURCE_HOST, hostMountSource,
-      MOUNT_SOURCE_NFS, nfsMountSource,
+      MOUNT_PATH, out_mount.Destination,
       MOUNT_READ_ONLY, isReadOnly);
 
    if (error)
       return updateError(JOB_MOUNTS, in_json, error);
 
-   if (!hostMountSource && !nfsMountSource)
-      return jobParseError(
-         JobParseError::MISSING_VALUE,
-         "one of " + quoteStr(MOUNT_SOURCE_HOST) + " and " + quoteStr(MOUNT_SOURCE_NFS),
-         JOB_MOUNTS,
-         in_json,
-         ERROR_LOCATION);
-   else if (hostMountSource && nfsMountSource)
-      return jobParseError(
-         JobParseError::CONFLICTING_VALUES,
-         quoteStr(MOUNT_SOURCE_HOST) + " and " + quoteStr(MOUNT_SOURCE_NFS),
-         JOB_MOUNTS,
-         in_json,
-         ERROR_LOCATION);
-   else if (hostMountSource)
-   {
-      HostMountSource mountSource;
-      error = HostMountSource::fromJson(hostMountSource.getValueOr(json::Object()), mountSource);
-      if (error)
-         return updateError(JOB_MOUNTS, in_json, error);
-
-      out_mount.HostSourcePath = mountSource;
-   }
-   else
-   {
-      NfsMountSource mountSource;
-      error = NfsMountSource::fromJson(nfsMountSource.getValueOr(json::Object()), mountSource);
-      if (error)
-         return updateError(JOB_MOUNTS, in_json, error);
-
-      out_mount.NfsSourcePath = mountSource;
-   }
+   error = MountSource::fromJson(in_json, out_mount.Source);
+   if (error)
+      return error;
 
    out_mount.IsReadOnly = isReadOnly.getValueOr(false);
 
@@ -1003,42 +1414,13 @@ Error Mount::fromJson(const json::Object& in_json, Mount& out_mount)
 
 json::Object Mount::toJson() const
 {
-   // There should be exactly one mount source. If both are set, it's a programmer error. Assert, but in release mode
-   // just set both (or no) mount sources on the object.
-   assert((NfsSourcePath && !HostSourcePath) || (!NfsSourcePath && HostSourcePath));
-
    json::Object mountObj;
-   mountObj[MOUNT_PATH] = DestinationPath;
+   mountObj[MOUNT_PATH] = Destination;
    mountObj[MOUNT_READ_ONLY] = IsReadOnly;
-
-   if (HostSourcePath)
-      mountObj[MOUNT_SOURCE_HOST] = HostSourcePath.getValueOr(HostMountSource()).toJson();
-
-   if (NfsSourcePath)
-      mountObj[MOUNT_SOURCE_NFS] = NfsSourcePath.getValueOr(NfsMountSource()).toJson();
+   mountObj[MOUNT_TYPE] = mountTypeToString(Source.SourceType, Source.CustomType);
+   mountObj[MOUNT_SOURCE] = Source.SourceObject;
 
    return mountObj;
-}
-
-// NFS Mount Source ====================================================================================================
-Error NfsMountSource::fromJson(const json::Object& in_json, NfsMountSource& out_mountSource)
-{
-   Error error = json::readObject(in_json,
-      MOUNT_SOURCE_PATH, out_mountSource.Path,
-      MOUNT_SOURCE_NFS_HOST, out_mountSource.Host);
-   if (error)
-      return updateError(MOUNT_SOURCE_NFS, in_json, error);
-
-   return Success();
-}
-
-json::Object NfsMountSource::toJson() const
-{
-   json::Object mountSourceObj;
-   mountSourceObj[MOUNT_SOURCE_PATH] = Path;
-   mountSourceObj[MOUNT_SOURCE_NFS_HOST] = Host;
-
-   return mountSourceObj;
 }
 
 // Placement Constraint ================================================================================================
