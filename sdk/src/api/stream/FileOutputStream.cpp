@@ -457,14 +457,15 @@ FileOutputStream::FileOutputStream(
    api::JobPtr in_job,
    AbstractOutputStream::OnOutput in_onOutput,
    AbstractOutputStream::OnComplete in_onComplete,
-   AbstractOutputStream::OnError in_onError) :
+   AbstractOutputStream::OnError in_onError,
+   system::TimeDuration in_maxWaitTime) :
       AbstractOutputStream(
          in_outputType,
          std::move(in_job),
          std::move(in_onOutput),
          std::move(in_onComplete),
          std::move(in_onError)),
-      m_impl(new Impl(m_job, system::TimeDuration::Seconds(10)))
+      m_impl(new Impl(m_job, std::move(in_maxWaitTime)))
 {
 }
 

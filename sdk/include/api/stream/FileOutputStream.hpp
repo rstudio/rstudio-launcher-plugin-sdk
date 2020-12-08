@@ -31,6 +31,7 @@
 
 #include <PImpl.hpp>
 #include <api/Job.hpp>
+#include <system/DateTime.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -45,18 +46,21 @@ public:
    /**
     * @brief Constructor.
     *
-    * @param in_outputType      The type of job output to stream.
-    * @param in_job             The job for which output should be streamed.
-    * @param in_onOutput        Callback function which will be invoked when data is reported.
-    * @param in_onComplete      Callback function which will be invoked when the stream is complete.
-    * @param in_onError         Callback function which will be invoked if an error occurs.
+    * @param in_outputType       The type of job output to stream.
+    * @param in_job              The job for which output should be streamed.
+    * @param in_onOutput         Callback function which will be invoked when data is reported.
+    * @param in_onComplete       Callback function which will be invoked when the stream is complete.
+    * @param in_onError          Callback function which will be invoked if an error occurs.
+    * @param in_maxWaitTime      The maximum amount of time to wait for the output files to be created before reporting
+    *                            an error.
     */
    FileOutputStream(
       OutputType in_outputType,
       api::JobPtr in_job,
       AbstractOutputStream::OnOutput in_onOutput,
       AbstractOutputStream::OnComplete in_onComplete,
-      AbstractOutputStream::OnError in_onError);
+      AbstractOutputStream::OnError in_onError,
+      system::TimeDuration in_maxWaitTime = system::TimeDuration::Seconds(10));
 
    /**
     * @brief Virtual destructor for inheritance.
