@@ -159,6 +159,9 @@ struct FileOutputStream::Impl
       system::FilePath outputFile = getRealPath(StdOutFile, Mounts);
       system::FilePath errorFile = getRealPath(StdErrFile, Mounts);
 
+      // Set the streaming flag before starting the child processes.
+      IsStreaming = !in_sharedThis->m_job->isCompleted();
+
       if (in_sharedThis->m_outputType == OutputType::BOTH)
       {
          if ((outputFile == errorFile) && !outputFileEmpty)
