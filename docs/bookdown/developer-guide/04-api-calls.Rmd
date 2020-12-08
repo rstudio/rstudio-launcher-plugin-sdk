@@ -372,14 +372,6 @@ This section describes the details of API types which are not simple types, such
 | publishedPort | The published port, if different from the container port.                   | Int
 | protocol      | The network protocol to use. Default: TCP.                                  | String
 
-### HostMount {#host-mount}
-
-This represents a host mount source. If this field is present in a [Mount](#mount) object, the Plugin should attempt to mount the requested path from the Launcher host, or reject the request on the basis that mounting host paths is not supported.
-
-|  Field Name  |                               Description                                   |  Value
-| ------------ | --------------------------------------------------------------------------- | -------
-| path         | The source path to be mounted.                                              | String
-
 ### Job {#job-object}
 
 |      Field Name      |                                            Description                                            |  Value
@@ -449,15 +441,55 @@ This type is a JSON String value with limited set of valid values. The possible 
 ### Mount {#mount}
 
 |  Field Name  |                                                  Description                                                  |  Value
-| ------------ | ------------------------------------------------------------------------------------------------------------- | -------
-| mountPath    | The destination path of the mount.                                                                            | String
-| readOnly     | Whether the source path should be mounted with write permissions (`false`) or not (`true`). Default: `false`. | Boolean
-| hostMount    | The host mount source. Mutually exclusive with 'nfsMount'.                                                    | [HostMount](#host-mount)
-| nfsMount     | The nfs mount source. Mutually exclusive with 'hostMount'.                                                    | [NfsMount](#nfs-mount)
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------
+| mountPath    | The destination path of the mount.                                                                                                                                                       | String
+| readOnly     | Whether the source path should be mounted with write permissions (`false`) or not (`true`). Default: `false`.                                                                            | Boolean
+| type         | The type of mount. The default supported options are 'azureFile', 'cephFs', 'glusterFs', 'host', and 'nfs'. The 'passthrough' value or a custom value may be used for other mount types. | String
+| source       | The mount source description. Must match the specified mount type.                                                                                                                       | [MountSource](#mount-source)
 
-### NfsMount {#nfs-mount}
+### MountSource {#mount-source}
+This object will have a different schema depending on the type of mount specified in the 'type' field of the [Mount](#mount) object. Below, the source object for each of the default supported mount types will be described. If the mount type is 'passthrough' or a custom value, the object definition is determined by the Plugin.
 
-This represents an NFS server mount source. If this field is present in a [Mount](#mount) object, the Plugin should attempt to mount the requested path from the specified NFS server, or reject the request on the basis that mounting NFS paths is not supported.
+#### AzureFileMountSource {#azure-file-mount}
+
+This represents an Azure File source. If the 'type' field in the [Mount](#mount) object is 'azureFile' and the 'source' object follows this schema, the Plugin should attempt to mount the requested share from the Azure File account specified in the secret.
+
+|  Field Name  |                               Description                                             |  Value
+| ------------ | ------------------------------------------------------------------------------------- | -------
+| secretName   | The name of the secret that contains both the Azure storage account name and the key. | String
+| shareName    | The share name to be used.                                                            | String
+
+#### CephFsMountSource {#ceph-fs-mount}
+
+This represents a Ceph File System source. If the 'type' field in the [Mount](#mount) object is 'cephFs' and the 'source' object follows this schema, the Plugin should attempt to mount the requested path as the specified user from the list of Ceph monitor addresses.
+
+|  Field Name  |                               Description                                                              |  Value
+| ------------ | ------------------------------------------------------------------------------------------------------ | -------
+| monitors     | A comma-separated list of Ceph monitor addresses. For example: `192.168.1.200:8765,192.168.1.200:8766` | String Array
+| path         | The path within the Ceph filesystem to mount.                                                          | String
+| user         | The Ceph username to use.                                                                              | String
+| secretFile   | The file which contains the Ceph keyring for authentication.                                           | String
+| secretRef    | Reference to Ceph authentication secrets, which overrides SecretFile if specified.                     | String
+
+
+#### GlusterFsMountSource {#glusterfs-mount}
+This represents a Glusterfs mount source. If the 'type' field in the [Mount](#mount) object is 'glusterFs' and the 'source' object follows this schema, the Plugin should attempt to mount the requested path from the specified Glusterfs endpoints.
+
+|  Field Name  |                               Description                                         |  Value
+| ------------ | --------------------------------------------------------------------------------- | -------
+| endpoints    | The name of the endpoints object that represents a Gluster cluster configuration. | String
+| path         | The name of the GlusterFs volume.                                                 | String
+
+#### HostMountSource {#host-mount}
+
+This represents a host mount source. If the 'type' field in the [Mount](#mount) object is 'host' and the 'source' object follows this schema, the Plugin should attempt to mount the requested path from the Launcher host, or reject the request on the basis that mounting host paths is not supported.
+
+|  Field Name  |                               Description                                   |  Value
+| ------------ | --------------------------------------------------------------------------- | -------
+| path         | The source path to be mounted.                                              | String
+
+#### NfsMountSource {#nfs-mount}
+This represents an NFS server mount source. If the 'type' field in the [Mount](#mount) object is 'nfs' and the 'source' object follows this schema, the Plugin should attempt to mount the requested path from the specified NFS server, or reject the request on the basis that mounting NFS paths is not supported.
 
 |  Field Name  |                               Description                                   |  Value
 | ------------ | --------------------------------------------------------------------------- | -------

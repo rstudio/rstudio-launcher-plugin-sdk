@@ -51,14 +51,18 @@ system::FilePath getRealPath(const std::string& in_strPath, const MountList& in_
    system::FilePath result(in_strPath);
    for (const Mount& mount: in_mounts)
    {
-      if (mount.HostSourcePath && result.isWithin(system::FilePath(mount.DestinationPath)))
+      if (result.isWithin(system::FilePath(mount.Destination)))
       {
          std::string relPathStr = boost::trim_left_copy_if(
-            in_strPath.substr(mount.DestinationPath.size()),
+            in_strPath.substr(mount.Destination.size()),
             boost::is_any_of("/"));
 
-         result = system::FilePath(
-            mount.HostSourcePath.getValueOr(HostMountSource()).Path).completeChildPath(relPathStr);
+         if (mount.Source.isHostMountSource())
+            return system::FilePath(mount.Source.asHostMountSource().getPath());
+         else if (mount.Source.isNfsMountSource())
+            return system::FilePath(mount.Source.asNfsMountSource().getPath());
+         else
+            return system::FilePath();         
       }
    }
 
