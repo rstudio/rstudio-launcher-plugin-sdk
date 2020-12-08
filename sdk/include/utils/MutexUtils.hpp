@@ -35,7 +35,7 @@
 try {                                                 \
    std::lock_guard<std::mutex> lockGuard(in_mutex);   \
    
-#define RECURSIVE_LOCK_MUTEX(in_mutex)                         \
+#define LOCK_RECURSIVE_MUTEX(in_mutex)                         \
 try {                                                          \
    std::lock_guard<std::recursive_mutex> uniqueLock(in_mutex); \
 
@@ -43,7 +43,7 @@ try {                                                          \
 try {                                                 \
    std::unique_lock<std::mutex> uniqueLock(in_mutex); \
 
-#define UNIQUE_RECURSIVE_LOCK_MUTEX(in_mutex)                     \
+#define UNIQUE_LOCK_RECURSIVE_MUTEX(in_mutex)                     \
 try {                                                             \
    std::unique_lock<std::recursive_mutex> uniqueLock(in_mutex);   \
 
