@@ -46,6 +46,6 @@ It will take the following actions:
 
 1. Detect whether the `rstudio-server` system user exists.
 2. Create all the test users, including the `rstudio-server` user if it did not exist already.
-3. Run each of the unit tests, emitting output inidicating the success or failure of the tests.
+3. Run each of the unit tests, emitting output indicating the success or failure of the tests.
 4. Delete all of the users it created in step 2, including the `rstudio-server` user, if it was created.
 5. Output the total number of failed tests.
