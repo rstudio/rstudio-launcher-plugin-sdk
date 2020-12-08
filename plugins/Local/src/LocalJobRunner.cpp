@@ -116,7 +116,7 @@ Error populateProcessOptions(
    // Deal with mounts next, since there could be an invalid one.
    for (const api::Mount& mount: in_job->Mounts)
    {
-      if (mount.NfsSourcePath || !mount.HostSourcePath)
+      if (!mount.Source.isHostMountSource())
          return createError(
             LocalError::INVALID_MOUNT_TYPE,
             "Invalid mount: " + mount.toJson().write() + " - only host mount types are supported.",

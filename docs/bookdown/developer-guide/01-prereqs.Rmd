@@ -2,10 +2,7 @@
 
 ## Platform Support {#plat-support}
 
-The SDK supports the following platforms:
-
-<!-- TODO: Table here? Other Platforms? More details? -->
-* Ubuntu 18
+Plugins developed with the SDK require the RStudio Launcher to work. The SDK is currently compatible with the version of the RStudio Launcher that is shipped with RStudio Server Pro v1.4. As such, the SDK will be supported on all of the platforms supported by RStudio Server Pro v1.4, which can be found on the [Requirements for RStudio Server Pro page](https://docs.rstudio.com/rsp/requirements/).
 
 ## Build Dependencies {#builddep}
 
@@ -24,7 +21,7 @@ Boost     1.70.0             https://www.boost.org/
 
 ## RStudio Server Pro {#rsp}
 
-This version of the RStudio Launcher Plugin SDK is compatible with RStudio Server Pro v1.2.5000 or greater. To properly test the integration between a Launcher Plugin and RStudio Server Pro, an RStudio Server Pro license with the launcher feature enabled will be required. To acquire a license please contact sales@rstudio.com.
+This version of the RStudio Launcher Plugin SDK is compatible with RStudio Server Pro version 1.4, or greater. To properly test the integration between a Launcher Plugin and RStudio Server Pro, an RStudio Server Pro license, with the launcher feature enabled, is required. To acquire a license, please contact sales@rstudio.com.
 
 ## Job Scheduling System {#jss}
 

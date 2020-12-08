@@ -366,7 +366,26 @@ json::Object OutputStreamResponse::toJson() const
    if (!m_impl->Output.empty())
    {
       result[FIELD_OUTPUT] = m_impl->Output;
-      result[FIELD_OUTPUT_TYPE] = std::to_string(static_cast<int>(m_impl->OutType));
+      
+      switch (m_impl->OutType)
+      {
+         case OutputType::STDOUT:
+         {
+            result[FIELD_OUTPUT_TYPE] = "stdout";
+            break;
+         }
+         case OutputType::STDERR:
+         {
+            result[FIELD_OUTPUT_TYPE] = "stderr";
+            break;
+         }
+         default:
+         case OutputType::BOTH:
+         {
+            result[FIELD_OUTPUT_TYPE] = "mixed";
+            break;
+         }
+      }
    }
 
    return result;
