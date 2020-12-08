@@ -165,6 +165,42 @@ public:
    bool operator!=(const TimeDuration& in_other) const;
 
    /**
+    * @brief Less-than comparison operator.
+    * 
+    * @param in_other   The TimeDuration to compare against.
+    * 
+    * @return True if this TimeDuration is less than in_other; false otherwise.
+    */
+   bool operator<(const TimeDuration& in_other) const;
+
+   /**
+    * @brief Less-than-equal comparison operator.
+    * 
+    * @param in_other   The TimeDuration to compare against.
+    * 
+    * @return True if this TimeDuration is less than or equal to in_other; false otherwise.
+    */
+   bool operator<=(const TimeDuration& in_other) const;
+
+   /**
+    * @brief Greater-than comparison operator.
+    * 
+    * @param in_other   The TimeDuration to compare against.
+    * 
+    * @return True if this TimeDuration is greater than in_other; false otherwise.
+    */
+   bool operator>(const TimeDuration& in_other) const;
+
+   /**
+    * @brief Greater-than-equal comparison operator.
+    * 
+    * @param in_other   The TimeDuration to compare against.
+    * 
+    * @return True if this TimeDuration is greater than or equal to in_other; false otherwise.
+    */
+   bool operator>=(const TimeDuration& in_other) const;
+
+   /**
     * @brief Checks whether this TimeDuration represents "any amount of time".
     *
     * @return True if this TimeDuration is "Infinity"; false otherwise.

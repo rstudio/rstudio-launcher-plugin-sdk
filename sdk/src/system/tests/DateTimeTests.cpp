@@ -423,6 +423,234 @@ TEST_CASE("LT/LTE/GT/GTE Comparisons")
       CHECK_FALSE(d > d);
       CHECK(d >= d);
    }
+
+   SECTION("Equal TimeDurations")
+   {
+      TimeDuration ms1 = TimeDuration::Microseconds(8822), ms2 = TimeDuration::Microseconds(8822);
+      TimeDuration s1 = TimeDuration::Seconds(39), s2 = TimeDuration::Seconds(39);
+      TimeDuration m1 = TimeDuration::Minutes(17), m2 = TimeDuration::Minutes(17);
+      TimeDuration h1 = TimeDuration::Hours(658), h2 = TimeDuration::Hours(658);
+      TimeDuration t1(1, 2, 3, 456), t2(1, 2, 3, 456);
+      TimeDuration inf1 = TimeDuration::Infinity(), inf2 = TimeDuration::Infinity();
+
+      CHECK_FALSE(ms1 < ms2);
+      CHECK(ms1 <= ms2);
+      CHECK_FALSE(ms1 > ms2);
+      CHECK(ms1 >= ms2);
+      CHECK_FALSE(ms2 < ms1);
+      CHECK(ms2 <= ms1);
+      CHECK_FALSE(ms2 > ms1);
+      CHECK(ms2 >= ms1);
+
+      CHECK_FALSE(s1 < s2);
+      CHECK(s1 <= s2);
+      CHECK_FALSE(s1 > s2);
+      CHECK(s1 >= s2);
+      CHECK_FALSE(s2 < s1);
+      CHECK(s2 <= s1);
+      CHECK_FALSE(s2 > s1);
+      CHECK(s2 >= s1);
+
+      CHECK_FALSE(m1 < m2);
+      CHECK(m1 <= m2);
+      CHECK_FALSE(m1 > m2);
+      CHECK(m1 >= m2);
+      CHECK_FALSE(m2 < m1);
+      CHECK(m2 <= m1);
+      CHECK_FALSE(m2 > m1);
+      CHECK(m2 >= m1);
+
+      CHECK_FALSE(h1 < h2);
+      CHECK(h1 <= h2);
+      CHECK_FALSE(h1 > h2);
+      CHECK(h1 >= h2);
+      CHECK_FALSE(h2 < h1);
+      CHECK(h2 <= h1);
+      CHECK_FALSE(h2 > h1);
+      CHECK(h2 >= h1);
+
+      CHECK_FALSE(t1 < t2);
+      CHECK(t1 <= t2);
+      CHECK_FALSE(t1 > t2);
+      CHECK(t1 >= t2);
+      CHECK_FALSE(t2 < t1);
+      CHECK(t2 <= t1);
+      CHECK_FALSE(t2 > t1);
+      CHECK(t2 >= t1);
+
+      CHECK_FALSE(inf1 < inf2);
+      CHECK(inf1 <= inf2);
+      CHECK_FALSE(inf1 > inf2);
+      CHECK(inf1 >= inf2);
+      CHECK_FALSE(inf2 < inf1);
+      CHECK(inf2 <= inf1);
+      CHECK_FALSE(inf2 > inf1);
+      CHECK(inf2 >= inf1);
+   }
+
+   SECTION("Positive TimeDurations")
+   {
+      TimeDuration ms1 = TimeDuration::Microseconds(8822), ms2 = TimeDuration::Microseconds(103569);
+      TimeDuration s1 = TimeDuration::Seconds(39), s2 = TimeDuration::Seconds(12);
+      TimeDuration m1 = TimeDuration::Minutes(17), m2 = TimeDuration::Minutes(25);
+      TimeDuration h1 = TimeDuration::Hours(658), h2 = TimeDuration::Hours(99);
+      TimeDuration t1(1, 2, 3, 456), t2(58, 0, 2, 33);
+
+      CHECK(ms1 < ms2);
+      CHECK(ms1 <= ms2);
+      CHECK_FALSE(ms1 > ms2);
+      CHECK_FALSE(ms1 >= ms2);
+      CHECK_FALSE(ms2 < ms1);
+      CHECK_FALSE(ms2 <= ms1);
+      CHECK(ms2 > ms1);
+      CHECK(ms2 >= ms1);
+
+      CHECK_FALSE(s1 < s2);
+      CHECK_FALSE(s1 <= s2);
+      CHECK(s1 > s2);
+      CHECK(s1 >= s2);
+      CHECK(s2 < s1);
+      CHECK(s2 <= s1);
+      CHECK_FALSE(s2 > s1);
+      CHECK_FALSE(s2 >= s1);
+
+      CHECK(m1 < m2);
+      CHECK(m1 <= m2);
+      CHECK_FALSE(m1 > m2);
+      CHECK_FALSE(m1 >= m2);
+      CHECK_FALSE(m2 < m1);
+      CHECK_FALSE(m2 <= m1);
+      CHECK(m2 > m1);
+      CHECK(m2 >= m1);
+
+      CHECK_FALSE(h1 < h2);
+      CHECK_FALSE(h1 <= h2);
+      CHECK(h1 > h2);
+      CHECK(h1 >= h2);
+      CHECK(h2 < h1);
+      CHECK(h2 <= h1);
+      CHECK_FALSE(h2 > h1);
+      CHECK_FALSE(h2 >= h1);
+
+      CHECK(t1 < t2);
+      CHECK(t1 <= t2);
+      CHECK_FALSE(t1 > t2);
+      CHECK_FALSE(t1 >= t2);
+      CHECK_FALSE(t2 < t1);
+      CHECK_FALSE(t2 <= t1);
+      CHECK(t2 > t1);
+      CHECK(t2 >= t1);
+   }
+
+   SECTION("Negative TimeDurations")
+   {
+      TimeDuration ms1 = TimeDuration::Microseconds(-8822), ms2 = TimeDuration::Microseconds(-103569);
+      TimeDuration s1 = TimeDuration::Seconds(-39), s2 = TimeDuration::Seconds(-12);
+      TimeDuration m1 = TimeDuration::Minutes(-17), m2 = TimeDuration::Minutes(-25);
+      TimeDuration h1 = TimeDuration::Hours(-658), h2 = TimeDuration::Hours(-99);
+      TimeDuration t1(-1, -2, -3, -456), t2(-58, -0, -2, -33);
+
+      CHECK_FALSE(ms1 < ms2);
+      CHECK_FALSE(ms1 <= ms2);
+      CHECK(ms1 > ms2);
+      CHECK(ms1 >= ms2);
+      CHECK(ms2 < ms1);
+      CHECK(ms2 <= ms1);
+      CHECK_FALSE(ms2 > ms1);
+      CHECK_FALSE(ms2 >= ms1);
+
+      CHECK(s1 < s2);
+      CHECK(s1 <= s2);
+      CHECK_FALSE(s1 > s2);
+      CHECK_FALSE(s1 >= s2);
+      CHECK_FALSE(s2 < s1);
+      CHECK_FALSE(s2 <= s1);
+      CHECK(s2 > s1);
+      CHECK(s2 >= s1);
+
+      CHECK_FALSE(m1 < m2);
+      CHECK_FALSE(m1 <= m2);
+      CHECK(m1 > m2);
+      CHECK(m1 >= m2);
+      CHECK(m2 < m1);
+      CHECK(m2 <= m1);
+      CHECK_FALSE(m2 > m1);
+      CHECK_FALSE(m2 >= m1);
+
+      CHECK(h1 < h2);
+      CHECK(h1 <= h2);
+      CHECK_FALSE(h1 > h2);
+      CHECK_FALSE(h1 >= h2);
+      CHECK_FALSE(h2 < h1);
+      CHECK_FALSE(h2 <= h1);
+      CHECK(h2 > h1);
+      CHECK(h2 >= h1);
+
+      CHECK_FALSE(t1 < t2);
+      CHECK_FALSE(t1 <= t2);
+      CHECK(t1 > t2);
+      CHECK(t1 >= t2);
+      CHECK(t2 < t1);
+      CHECK(t2 <= t1);
+      CHECK_FALSE(t2 > t1);
+      CHECK_FALSE(t2 >= t1);
+   }
+
+   SECTION("Positive Negative TimeDurations")
+   {
+      TimeDuration ms1 = TimeDuration::Microseconds(8822), ms2 = TimeDuration::Microseconds(-103569);
+      TimeDuration s1 = TimeDuration::Seconds(-39), s2 = TimeDuration::Seconds(12);
+      TimeDuration m1 = TimeDuration::Minutes(17), m2 = TimeDuration::Minutes(-25);
+      TimeDuration h1 = TimeDuration::Hours(-658), h2 = TimeDuration::Hours(99);
+      TimeDuration t1(1, 2, 3, 456), t2(-58, -0, -2, -33);
+
+      CHECK_FALSE(ms1 < ms2);
+      CHECK_FALSE(ms1 <= ms2);
+      CHECK(ms1 > ms2);
+      CHECK(ms1 >= ms2);
+      CHECK(ms2 < ms1);
+      CHECK(ms2 <= ms1);
+      CHECK_FALSE(ms2 > ms1);
+      CHECK_FALSE(ms2 >= ms1);
+
+      CHECK(s1 < s2);
+      CHECK(s1 <= s2);
+      CHECK_FALSE(s1 > s2);
+      CHECK_FALSE(s1 >= s2);
+      CHECK_FALSE(s2 < s1);
+      CHECK_FALSE(s2 <= s1);
+      CHECK(s2 > s1);
+      CHECK(s2 >= s1);
+
+      CHECK_FALSE(m1 < m2);
+      CHECK_FALSE(m1 <= m2);
+      CHECK(m1 > m2);
+      CHECK(m1 >= m2);
+      CHECK(m2 < m1);
+      CHECK(m2 <= m1);
+      CHECK_FALSE(m2 > m1);
+      CHECK_FALSE(m2 >= m1);
+
+      CHECK(h1 < h2);
+      CHECK(h1 <= h2);
+      CHECK_FALSE(h1 > h2);
+      CHECK_FALSE(h1 >= h2);
+      CHECK_FALSE(h2 < h1);
+      CHECK_FALSE(h2 <= h1);
+      CHECK(h2 > h1);
+      CHECK(h2 >= h1);
+
+      CHECK_FALSE(t1 < t2);
+      CHECK_FALSE(t1 <= t2);
+      CHECK(t1 > t2);
+      CHECK(t1 >= t2);
+      CHECK(t2 < t1);
+      CHECK(t2 <= t1);
+      CHECK_FALSE(t2 > t1);
+      CHECK_FALSE(t2 >= t1);
+   }
+
+
 }
 
 TEST_CASE("Assignment")
