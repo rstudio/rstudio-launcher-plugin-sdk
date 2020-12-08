@@ -96,7 +96,7 @@ struct Subscription
 
          if (!m_jobId.empty())
          {
-            UNIQUE_RECURSIVE_LOCK_MUTEX(parent->m_impl->Mutex)
+            UNIQUE_LOCK_RECURSIVE_MUTEX(parent->m_impl->Mutex)
             {
                // Check if this is the last subscription to m_jobId. If so, remove the entry from the map.
                auto itr = parent->m_impl->JobSignalMap.find(m_jobId);
@@ -146,7 +146,7 @@ SubscriptionHandle JobStatusNotifier::subscribe(
    Connection connection;
 
    // Get a connection. This requires accessing the map, so hold the lock.
-   UNIQUE_RECURSIVE_LOCK_MUTEX(m_impl->Mutex)
+   UNIQUE_LOCK_RECURSIVE_MUTEX(m_impl->Mutex)
    {
       auto itr = m_impl->JobSignalMap.find(in_jobId);
       if (itr == m_impl->JobSignalMap.end())
@@ -188,7 +188,7 @@ void JobStatusNotifier::updateJob(
       {
          m_impl->AllJobsSignal(in_job);
 
-         UNIQUE_RECURSIVE_LOCK_MUTEX(m_impl->Mutex)
+         UNIQUE_LOCK_RECURSIVE_MUTEX(m_impl->Mutex)
          {
             auto itr = m_impl->JobSignalMap.find(in_job->Id);
             if (itr != m_impl->JobSignalMap.end())
