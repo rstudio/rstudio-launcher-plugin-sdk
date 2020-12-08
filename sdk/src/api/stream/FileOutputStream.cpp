@@ -84,7 +84,7 @@ Error fileExistsForUser(const system::FilePath& in_file, const system::User& in_
  *
  * @return The resolved path.
  */
-system::FilePath getRealPath(const std::string& in_strPath, const MountList& in_mounts)
+system::FilePath getRealPath(const system::FilePath& in_strPath, const MountList& in_mounts)
 {
    system::FilePath result(in_strPath);
    for (const Mount& mount: in_mounts)
@@ -92,7 +92,7 @@ system::FilePath getRealPath(const std::string& in_strPath, const MountList& in_
       if (mount.HostSourcePath && result.isWithin(system::FilePath(mount.DestinationPath)))
       {
          std::string relPathStr = boost::trim_left_copy_if(
-            in_strPath.substr(mount.DestinationPath.size()),
+            in_strPath.getAbsolutePath().substr(mount.DestinationPath.size()),
             boost::is_any_of("/"));
 
          result = system::FilePath(
@@ -105,76 +105,72 @@ system::FilePath getRealPath(const std::string& in_strPath, const MountList& in_
 
 } // anonymous namespace
 
-typedef std::function<void(const std::string&, OutputType)> OnTypedOutput; 
 typedef std::shared_ptr<FileOutputStream> SharedThis;
 typedef std::shared_ptr<system::process::AbstractChildProcess> TailChild;
 
 struct FileOutputStream::Impl
 {
-   explicit Impl(api::JobPtr& in_job) :
+   /**
+    * @brief Constructor.
+    * 
+    * @param in_job                 The job for which this output stream is being opened.
+    * @param in_findFilesMaxTime    The maximum amount of time to wait for the output files to be created.
+    */
+   Impl(const api::JobPtr& in_job, system::TimeDuration&& in_findFilesMaxTime) :
       IsStreaming(false),
       IsStopping(false),
-      JobObj(in_job),
+      FindFilesRetryCount(0),
+      FindFilesMaxWaitTime(in_findFilesMaxTime),
+      Mounts(in_job->Mounts),
       StdErrExited(false),
       StdErrExitCode(0),
+      StdErrFile(in_job->StandardErrFile),
+      StdErrFileFound(false),
       StdOutExited(false),
       StdOutExitCode(0),
+      StdOutFile(in_job->StandardOutFile),
+      StdOutFileFound(false),
+      User(in_job->User),
       WasErrorReported(false),
       WasOutputWritten(false)
    {
    };
 
-   void onFilesFound(SharedThis in_sharedThis, OutputType in_outputType)
+   /**
+    * @brief Once the files have been found, starts streaming their contents to the caller.
+    * 
+    * @param in_sharedThis       A shared pointer to the parent FileOutputStream object.
+    * @param in_lock             The owned Mutex lock.
+    * @param in_jobLock          The owned lock for the Job.
+    */
+   void onFilesFound(
+      SharedThis in_sharedThis,
+      const std::unique_lock<std::recursive_mutex>& in_lock,
+      const api::JobLock& in_jobLock)
    {
-      UNIQUE_LOCK_MUTEX(Mutex)
-      { 
-         bool outputFileEmpty = JobObj->StandardOutFile.empty();
-         bool errorFileEmpty = JobObj->StandardErrFile.empty();
-         system::FilePath outputFile = getRealPath(JobObj->StandardOutFile, JobObj->Mounts);
-         system::FilePath errorFile = getRealPath(JobObj->StandardErrFile, JobObj->Mounts);
+      assert(in_lock.owns_lock());
+      bool outputFileEmpty = StdOutFile.isEmpty();
+      bool errorFileEmpty = StdErrFile.isEmpty();
+      system::FilePath outputFile = getRealPath(StdOutFile, Mounts);
+      system::FilePath errorFile = getRealPath(StdErrFile, Mounts);
 
-         LOCK_JOB(JobObj)
+      if (in_sharedThis->m_outputType == OutputType::BOTH)
+      {
+         if ((outputFile == errorFile) && !outputFileEmpty)
          {
-            IsStreaming = !JobObj->isCompleted();
-            if (in_outputType == OutputType::BOTH)
+            // The StdErr stream was never started, so it already exited.
+            StdErrExited = true;
+            Error error = startChildStream(in_sharedThis->m_outputType, outputFile, in_sharedThis);
+            if (error)
             {
-               if ((outputFile == errorFile) && !outputFileEmpty)
-               {
-                  // The StdErr stream was never started, so it already exited.
-                  StdErrExited = true;
-                  Error error = startChildStream(in_outputType, outputFile, in_sharedThis);
-                  if (error)
-                  {
-                     logging::logError(error);
-                     in_sharedThis->reportError(error);
-                  }
-               }
-               else
-               {
-                  if (!outputFileEmpty)
-                  {
-                     Error error = startChildStream(OutputType::STDOUT, outputFile, in_sharedThis);
-                     if (error)
-                     {
-                        logging::logError(error);
-                        in_sharedThis->reportError(error);
-                     }
-                  }
-                  else
-                     StdOutExited = true;
-                  if (!errorFileEmpty)
-                  {
-                     Error error = startChildStream(OutputType::STDERR, errorFile, in_sharedThis);
-                     if (error)
-                        in_sharedThis->reportError(error);
-                  }
-                  else
-                     StdErrExited = true;
-               }
+               logging::logError(error);
+               in_sharedThis->reportError(error);
             }
-            else if ((in_outputType == OutputType::STDOUT) && !outputFileEmpty)
+         }
+         else
+         {
+            if (!outputFileEmpty)
             {
-               StdErrExited = true;
                Error error = startChildStream(OutputType::STDOUT, outputFile, in_sharedThis);
                if (error)
                {
@@ -182,20 +178,77 @@ struct FileOutputStream::Impl
                   in_sharedThis->reportError(error);
                }
             }
-            else if ((in_outputType == OutputType::STDERR) && !errorFileEmpty)
-            {
+            else
                StdOutExited = true;
+            if (!errorFileEmpty)
+            {
                Error error = startChildStream(OutputType::STDERR, errorFile, in_sharedThis);
                if (error)
-               {
-                  logging::logError(error);
                   in_sharedThis->reportError(error);
-               }
             }
+            else
+               StdErrExited = true;
          }
-         END_LOCK_JOB
       }
-      END_LOCK_MUTEX
+      else if ((in_sharedThis->m_outputType == OutputType::STDOUT) && !outputFileEmpty)
+      {
+         StdErrExited = true;
+         Error error = startChildStream(OutputType::STDOUT, outputFile, in_sharedThis);
+         if (error)
+         {
+            logging::logError(error);
+            in_sharedThis->reportError(error);
+         }
+      }
+      else if ((in_sharedThis->m_outputType == OutputType::STDERR) && !errorFileEmpty)
+      {
+         StdOutExited = true;
+         Error error = startChildStream(OutputType::STDERR, errorFile, in_sharedThis);
+         if (error)
+         {
+            logging::logError(error);
+            in_sharedThis->reportError(error);
+         }
+      }
+   }
+
+   /**
+    * @brief Checks for the existence of the Job's output files, updating internal flags accordingly.
+    * 
+    * @param in_lock    The owned Mutex lock.
+    * 
+    * @return Success if the existence of the files could be checked; Error on failure to check for the files.
+    */
+   Error onFindFilesTimer(const std::unique_lock<std::recursive_mutex>& in_lock)
+   {
+      assert(in_lock.owns_lock());
+
+      // If the files haven't be found, test them for existince again.
+      if (!StdOutFileFound)
+      {
+         Error error = fileExistsForUser(StdOutFile, User, StdOutFileFound);
+         if (error)
+         {
+            logging::logError(error, ERROR_LOCATION);
+            return error;
+         }
+
+         if (StdOutFile == StdErrFile)
+            StdErrFileFound = StdOutFileFound;
+      }
+
+      if (!StdErrFileFound)
+      {
+         Error error = fileExistsForUser(StdErrFile, User, StdErrFileFound);
+         if (error)
+         {
+            logging::logError(error, ERROR_LOCATION);
+            return error;
+         }
+      }
+
+      // No errors testing for existence - return success
+      return Success();
    }
 
    /**
@@ -217,14 +270,14 @@ struct FileOutputStream::Impl
       procOpts.Arguments.emplace_back("-n+1");
       procOpts.Arguments.emplace_back(in_file.getAbsolutePath());
 
-      procOpts.RunAsUser = JobObj->User;
+      procOpts.RunAsUser = User;
 
       system::process::AsyncProcessCallbacks callbacks;
       {
          using namespace std::placeholders;
          callbacks.OnError = [in_sharedThis](const Error& in_error)
          {
-            UNIQUE_LOCK_MUTEX(in_sharedThis->m_impl->Mutex)
+            UNIQUE_LOCK_RECURSIVE_MUTEX(in_sharedThis->m_impl->Mutex)
             {
                if (!in_sharedThis->m_impl->WasOutputWritten && !in_sharedThis->m_impl->WasErrorReported)
                {
@@ -239,7 +292,7 @@ struct FileOutputStream::Impl
 
          callbacks.OnStandardOutput = [in_sharedThis, in_outputType](const std::string& in_output)
          {
-            UNIQUE_LOCK_MUTEX(in_sharedThis->m_impl->Mutex)
+            UNIQUE_LOCK_RECURSIVE_MUTEX(in_sharedThis->m_impl->Mutex)
             {
                if (!in_sharedThis->m_impl->WasErrorReported)
                {
@@ -257,7 +310,7 @@ struct FileOutputStream::Impl
                message,
                ERROR_LOCATION);
 
-            UNIQUE_LOCK_MUTEX(in_sharedThis->m_impl->Mutex)
+            UNIQUE_LOCK_RECURSIVE_MUTEX(in_sharedThis->m_impl->Mutex)
             {
                if (!in_sharedThis->m_impl->WasErrorReported && !in_sharedThis->m_impl->WasOutputWritten)
                {
@@ -284,16 +337,25 @@ struct FileOutputStream::Impl
       return Success();
    }
 
+   /**
+    * @brief Stops all the child processes of this output stream.
+    */
    void stopChildProcesses()
    {
-      UNIQUE_LOCK_MUTEX(Mutex)
+      UNIQUE_LOCK_RECURSIVE_MUTEX(Mutex)
       {
          stopChildProcesses(uniqueLock);
       }
       END_LOCK_MUTEX
    }
 
-   void stopChildProcesses(const std::unique_lock<std::mutex>& in_lock)
+
+   /**
+    * @brief Stops all the child processes of this output stream.
+    * 
+    * @param in_lock    The owned Mutex lock.
+    */
+   void stopChildProcesses(const std::unique_lock<std::recursive_mutex>& in_lock)
    {
       assert(in_lock.owns_lock());
 
@@ -323,12 +385,23 @@ struct FileOutputStream::Impl
    /** Whether the output stream is really being streamed (as opposed to dumping all the output data at once). */
    bool IsStreaming;
 
-   api::JobPtr JobObj;
+   /** The maximum amount of time to wait for the output files to be created. */
+   system::TimeDuration FindFilesMaxWaitTime;
+
+   /** The number of times we have checked for the existence of the output files. */
+   uint64_t FindFilesRetryCount;
+
+   /** The time at which we started checking for the existence of the output files. */
+   system::DateTime FindFilesStartTime;
+
+   /** The deadline event that triggers a search for the output files. */
+   std::shared_ptr<system::AsyncDeadlineEvent> FindFilesTimer;
+
+   /** A reference to the list of mounts for the Job. */
+   const api::MountList& Mounts;
 
    /** Mutex to protect members. */
-   std::mutex Mutex;
-
-   OnTypedOutput OnOutputFunc;
+   std::recursive_mutex Mutex;
 
    /** The StdErr tail command child process. */
    TailChild StdErrChild;
@@ -338,6 +411,12 @@ struct FileOutputStream::Impl
 
    /** Whether the StdErr tail command child process has exited. */
    bool StdErrExited;
+
+   /** The location of the standard error output file. */
+   system::FilePath StdErrFile;
+
+   /** Whether the StdErr file has been found or not. */
+   bool StdErrFileFound;
 
    /**
     * The StdOut tail command child process. If the output type is BOTH and the stdout and stderr files are the same,
@@ -350,6 +429,15 @@ struct FileOutputStream::Impl
 
    /** Whether the StdOut or mixed tail command child process has exited. */
    bool StdOutExited;
+
+   /** The location of the standard output file. */
+   system::FilePath StdOutFile;
+
+   /** Whether the StdOut file has been found or not. */
+   bool StdOutFileFound;
+
+   /** The user who owns the Job. */
+   system::User User;
 
    /** Whether an error has already been reported to the parent class. */
    bool WasErrorReported;
@@ -375,13 +463,40 @@ FileOutputStream::FileOutputStream(
          std::move(in_onOutput),
          std::move(in_onComplete),
          std::move(in_onError)),
-      m_impl(new Impl(m_job))
+      m_impl(new Impl(m_job, system::TimeDuration::Seconds(10)))
 {
 }
 
 Error FileOutputStream::start()
 {
-   m_impl->onFilesFound(shared_from_this(), m_outputType);
+   UNIQUE_LOCK_RECURSIVE_MUTEX(m_impl->Mutex)
+   {
+      Error error = m_impl->onFindFilesTimer(uniqueLock);
+      if (error)
+         return error;
+
+      if (m_impl->StdOutFileFound && m_impl->StdErrFileFound)
+      {
+         LOCK_JOB(m_job)
+         {
+            m_impl->onFilesFound(shared_from_this(), uniqueLock, jobLock);
+         }
+         END_LOCK_JOB
+      }
+      else
+      {
+         system::TimeDuration firstWaitTime = system::TimeDuration::Microseconds(50000);
+         m_impl->FindFilesTimer.reset(
+            new system::AsyncDeadlineEvent(
+               std::bind(&FileOutputStream::onFindFileTimerCallback, weak_from_this()),
+               (m_impl->FindFilesMaxWaitTime > firstWaitTime) ? firstWaitTime : m_impl->FindFilesMaxWaitTime));
+
+         ++m_impl->FindFilesRetryCount;
+         m_impl->FindFilesStartTime = system::DateTime();
+         m_impl->FindFilesTimer->start();
+      }
+   }
+   END_LOCK_MUTEX
    return Success();
 }
 
@@ -404,7 +519,7 @@ void FileOutputStream::stop()
 void FileOutputStream::onExitCallback(SharedThis in_sharedThis, OutputType in_outputType, int in_exitCode)
 {
    Impl& impl = *in_sharedThis->m_impl;
-   UNIQUE_LOCK_MUTEX(impl.Mutex)
+   UNIQUE_LOCK_RECURSIVE_MUTEX(impl.Mutex)
    {
       // If the streams were stopped explicitly it's expected that the children will exit.
       if (impl.IsStopping)
@@ -451,6 +566,72 @@ void FileOutputStream::onExitCallback(SharedThis in_sharedThis, OutputType in_ou
    END_LOCK_MUTEX
 }
 
+void FileOutputStream::onFindFileTimerCallback(std::weak_ptr<FileOutputStream> in_weakThis)
+{
+   if (SharedThis sharedThis = in_weakThis.lock())
+   {
+      Impl& impl = *sharedThis->m_impl;
+      UNIQUE_LOCK_RECURSIVE_MUTEX(impl.Mutex)
+      {
+         Error error = impl.onFindFilesTimer(uniqueLock);
+         if (error)
+            return sharedThis->reportError(error);
+
+         //
+         if (impl.StdOutFileFound && impl.StdErrFileFound)
+         {
+            LOCK_JOB(sharedThis->m_job)
+            {
+               impl.onFilesFound(sharedThis, uniqueLock, jobLock);
+            }
+            END_LOCK_JOB
+         }
+         else
+         {
+            // Determine if we've run out of time to wait for the files to be created.
+            if ((system::DateTime() - impl.FindFilesStartTime) > impl.FindFilesMaxWaitTime)
+            {
+               std::string errorMessage = "Could not find ";
+               if (!impl.StdOutFileFound)
+                  errorMessage.append("ouput (").append(impl.StdOutFile.getAbsolutePath()).append(")");
+
+               if (!impl.StdErrFileFound)
+               {
+                  std::string errFileMsg = "error (" + impl.StdErrFile.getAbsolutePath() + ")";
+                  if (!impl.StdOutFileFound)
+                     errorMessage.append(" and ").append(errFileMsg).append(" files");
+                  else
+                     errorMessage.append(errFileMsg).append(" file");
+               }
+               else
+                  errorMessage.append(" file");
+
+               errorMessage.append(" within timeout.");
+               
+               logging::logErrorMessage(errorMessage);
+               return sharedThis->reportError(Error("FileOutputStreamError", 1, errorMessage, ERROR_LOCATION));
+            }
+
+            // Otherwise, wait a while and retry. Back-off by 50 milliseconds every time we retry, until we hit .5
+            // seconds. After that, try every second.
+            ++impl.FindFilesRetryCount;
+            system::TimeDuration waitTime = (impl.FindFilesRetryCount <= 10) ? 
+               system::TimeDuration::Microseconds(50000 * impl.FindFilesRetryCount) :
+               (system::TimeDuration::Seconds(1));
+
+            impl.FindFilesTimer.reset(
+               new system::AsyncDeadlineEvent(
+                  std::bind(&FileOutputStream::onFindFileTimerCallback, in_weakThis),
+                  waitTime));
+            
+            impl.FindFilesTimer->start();
+         }
+
+      }
+      END_LOCK_MUTEX
+   }
+}
+
 void FileOutputStream::onOutput(const std::string& in_output, OutputType in_outputType)
 {
    reportData(in_output, in_outputType);
@@ -458,7 +639,7 @@ void FileOutputStream::onOutput(const std::string& in_output, OutputType in_outp
 
 void FileOutputStream::waitForStreamEnd(const OnStreamEnd& in_onStreamEnd)
 {
-   UNIQUE_LOCK_MUTEX(m_impl->Mutex)
+   UNIQUE_LOCK_RECURSIVE_MUTEX(m_impl->Mutex)
    {
       m_impl->WaitForEndEvent.reset(new system::AsyncDeadlineEvent(in_onStreamEnd, system::TimeDuration::Seconds(2)));
       m_impl->WaitForEndEvent->start();

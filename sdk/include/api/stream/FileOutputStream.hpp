@@ -92,6 +92,13 @@ private:
       int in_exitCode);
 
    /**
+    * @brief Callback to be invoked when the existence of the output files should be tested.
+    * 
+    * @param in_weakThis      A copy of a weak pointer to this object.
+    */
+   static void onFindFileTimerCallback(std::weak_ptr<FileOutputStream> in_weakThis);
+
+   /**
     * @brief Invoked when output occurs.
     *
     * The default implementation reports all output. This method may be overridden to skip certain parts of the output,
