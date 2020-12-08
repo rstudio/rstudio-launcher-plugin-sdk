@@ -106,6 +106,7 @@ system::FilePath getRealPath(const system::FilePath& in_strPath, const MountList
 } // anonymous namespace
 
 typedef std::shared_ptr<FileOutputStream> SharedThis;
+typedef std::weak_ptr<FileOutputStream> WeakThis;
 typedef std::shared_ptr<system::process::AbstractChildProcess> TailChild;
 
 struct FileOutputStream::Impl
@@ -326,7 +327,7 @@ struct FileOutputStream::Impl
             END_LOCK_MUTEX
          };
 
-         callbacks.OnExit = std::bind(FileOutputStream::onExitCallback, in_sharedThis, in_outputType, _1);
+         callbacks.OnExit = std::bind(FileOutputStream::onExitCallback, WeakThis(in_sharedThis), in_outputType, _1);
       }
 
       TailChild& child = (in_outputType == OutputType::STDERR ?  StdErrChild : StdOutChild);
@@ -516,9 +517,13 @@ void FileOutputStream::stop()
    }
 }
 
-void FileOutputStream::onExitCallback(SharedThis in_sharedThis, OutputType in_outputType, int in_exitCode)
+void FileOutputStream::onExitCallback(WeakThis in_weakThis, OutputType in_outputType, int in_exitCode)
 {
-   Impl& impl = *in_sharedThis->m_impl;
+   SharedThis sharedThis = in_weakThis.lock();
+   if (!sharedThis)
+      return;
+
+   Impl& impl = *sharedThis->m_impl;
    UNIQUE_LOCK_RECURSIVE_MUTEX(impl.Mutex)
    {
       // If the streams were stopped explicitly it's expected that the children will exit.
@@ -548,7 +553,7 @@ void FileOutputStream::onExitCallback(SharedThis in_sharedThis, OutputType in_ou
          if (!impl.WasOutputWritten && ((impl.StdOutExitCode != 0) || (impl.StdErrExitCode != 0)))
          {
             if (!impl.WasErrorReported)
-               in_sharedThis->reportError(
+               sharedThis->reportError(
                   Error(
                      "FileOutputStreamError",
                      1,
@@ -560,7 +565,7 @@ void FileOutputStream::onExitCallback(SharedThis in_sharedThis, OutputType in_ou
                      ERROR_LOCATION));
          }
          else
-            in_sharedThis->setStreamComplete();
+            sharedThis->setStreamComplete();
       }
    }
    END_LOCK_MUTEX

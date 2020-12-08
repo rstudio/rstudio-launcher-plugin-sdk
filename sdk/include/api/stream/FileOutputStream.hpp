@@ -82,12 +82,12 @@ private:
    /**
     * @brief Callback to be invoked on tail child process exit.
     *
-    * @param in_sharedThis      A copy of a shared pointer to this object.
+    * @param in_weakThis        A copy of a weak pointer to this object.
     * @param in_outputType      The type of output being emitted by the exited process.
     * @param in_exitCode        The exit code of the process.
     */
    static void onExitCallback(
-      std::shared_ptr<FileOutputStream> in_sharedThis,
+      std::weak_ptr<FileOutputStream> in_weakThis,
       OutputType in_outputType,
       int in_exitCode);
 
