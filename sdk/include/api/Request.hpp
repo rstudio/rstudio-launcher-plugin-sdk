@@ -484,6 +484,33 @@ private:
 };
 
 /**
+ * @brief Request from the launcher to begin or end a Resource Utilization Stream.
+ */
+class ResourceUtilStreamRequest final : public JobIdRequest
+{
+public:
+   /**
+    * @brief Gets whether the Resource Utilization Stream should be started (false) or ended (true).
+    *
+    * @return True if the stream should be canceled; false if it should be started.
+    */
+   bool isCancelRequest() const;
+
+private:
+   /**
+    * @brief Constructor.
+    *
+    * @param in_requestJson     The JSON Object which represents the resource utilization stream request.
+    */
+   explicit ResourceUtilStreamRequest(const json::Object& in_requestJson);
+
+   // The private implementation of ResourceUtilStreamRequest
+   PRIVATE_IMPL(m_impl);
+
+   friend class Request;
+};
+
+/**
  * @brief Request from the Launcher to get the network information for a job.
  */
 class NetworkRequest final : public JobIdRequest

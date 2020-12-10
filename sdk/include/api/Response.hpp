@@ -321,7 +321,7 @@ private:
 };
 
 /**
- * @brief Class which represents a Job Output Stream for a specific job.
+ * @brief Class which represents a Job Output Stream response for a specific job.
  */
 class OutputStreamResponse final : public Response
 {
@@ -359,6 +359,36 @@ public:
 
 private:
    // The private implementation of OutputStreamResponse
+   PRIVATE_IMPL(m_impl);
+};
+
+/**
+ * @brief Class which represents a Resource Utilization Stream response for a specific job.
+ */
+class ResourceUtilStreamResponse : public MultiStreamResponse
+{
+public:
+   /**
+    * @brief Constructor.
+    *
+    * @param in_sequences        The stream sequences for which this response will be sent.
+    * @param in_resourceData     The current resource utilization of the job for which the sequenced requests were made.
+    * @param in_isComplete       Whether the stream is complete (true) or not (false).
+    */
+   ResourceUtilStreamResponse(
+      StreamSequences in_sequences,
+      const ResourceUtilData& in_resourceData,
+      bool in_isComplete);
+
+   /**
+    * @brief Converts this resource utilization stream response to a JSON object.
+    *
+    * @return The JSON object which represents this resource utilization stream response.
+    */
+   json::Object toJson() const override;
+
+private:
+   // The private implementation of ResourceUtilStreamResponse
    PRIVATE_IMPL(m_impl);
 };
 

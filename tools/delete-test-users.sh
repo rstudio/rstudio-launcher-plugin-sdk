@@ -24,7 +24,7 @@
 # SOFTWARE.
 #
 
-if [[ $ADD_USER -ne 0 ]]; then
+if [[ -n $1 && $1 -ne 0 ]]; then
   sudo userdel "rstudio-server"
 fi
 

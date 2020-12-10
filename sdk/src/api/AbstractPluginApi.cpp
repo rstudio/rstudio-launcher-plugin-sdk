@@ -31,6 +31,7 @@
 #include <api/Response.hpp>
 #include <api/stream/JobStatusStreamManager.hpp>
 #include <api/stream/OutputStreamManager.hpp>
+#include <api/stream/ResourceStreamManager.hpp>
 #include <json/Json.hpp>
 #include <jobs/JobPruner.hpp>
 #include <options/Options.hpp>
@@ -425,6 +426,8 @@ struct AbstractPluginApi::Impl
             return JobStreamMgr->handleStreamRequest(std::static_pointer_cast<JobStatusRequest>(in_request));
          case Request::Type::GET_JOB_OUTPUT:
             return OutputStreamMgr->handleStreamRequest(std::static_pointer_cast<OutputStreamRequest>(in_request));
+         case Request::Type::GET_JOB_RESOURCE_UTIL:
+            return ResourceStreamMgr->handleStreamRequest(std::static_pointer_cast<ResourceUtilStreamRequest>(in_request));
          case Request::Type::GET_JOB_NETWORK:
             return handleGetNetworkRequest(std::static_pointer_cast<NetworkRequest>(in_request));
          case Request::Type::GET_CLUSTER_INFO:
@@ -458,6 +461,8 @@ struct AbstractPluginApi::Impl
    std::unique_ptr<JobStatusStreamManager> JobStreamMgr;
 
    std::unique_ptr<OutputStreamManager> OutputStreamMgr;
+
+   std::unique_ptr<ResourceStreamManager> ResourceStreamMgr;
 };
 
 PRIVATE_IMPL_DELETER_IMPL(AbstractPluginApi)
@@ -480,6 +485,13 @@ Error AbstractPluginApi::initialize()
 
    m_abstractPluginImpl->OutputStreamMgr.reset(
       new OutputStreamManager(
+         m_abstractPluginImpl->JobSource,
+         m_abstractPluginImpl->JobRepo,
+         m_abstractPluginImpl->Notifier,
+         m_abstractPluginImpl->LauncherCommunicator));
+
+   m_abstractPluginImpl->ResourceStreamMgr.reset(
+      new ResourceStreamManager(
          m_abstractPluginImpl->JobSource,
          m_abstractPluginImpl->JobRepo,
          m_abstractPluginImpl->Notifier,

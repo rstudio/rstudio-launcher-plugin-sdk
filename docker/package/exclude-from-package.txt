@@ -6,7 +6,8 @@ docker
 docs/bookdown
 docs/diagrams
 docs/doxygen
-tools
+tools/generate-documentation.sh
+tools/pull-shared-core.sh
 .git
 .gitignore
 

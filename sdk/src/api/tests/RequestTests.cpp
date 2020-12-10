@@ -994,6 +994,57 @@ TEST_CASE("Control Job Requests")
    }
 }
 
+TEST_CASE("Parse ResourceUtilStream request")
+{
+   system::User user2;
+   REQUIRE_FALSE(system::User::getUserFromIdentifier(USER_TWO, user2));
+
+   json::Object requestObj;
+   requestObj[FIELD_MESSAGE_TYPE] = static_cast<int>(Request::Type::GET_JOB_RESOURCE_UTIL);
+   requestObj[FIELD_REQUEST_ID] = 287;
+   requestObj[FIELD_JOB_ID] = "376";
+   requestObj[FIELD_ENCODED_JOB_ID] = "encoded-376";
+   requestObj[FIELD_REAL_USER] = USER_TWO;
+   requestObj[FIELD_REQUEST_USERNAME] = USER_TWO;
+
+   SECTION("No cancel")
+   {
+      requestObj[FIELD_CANCEL_STREAM] = false;
+
+      std::shared_ptr<Request> request;
+      REQUIRE_FALSE(Request::fromJson(requestObj, request));
+      REQUIRE(request->getType() == Request::Type::GET_JOB_RESOURCE_UTIL);
+      CHECK(request->getId() == 287);
+
+      std::shared_ptr<ResourceUtilStreamRequest> resourceUtilStreamRequest = 
+         std::static_pointer_cast<ResourceUtilStreamRequest>(request);
+      CHECK(resourceUtilStreamRequest->getUser() == user2);
+      CHECK(resourceUtilStreamRequest->getRequestUsername() == USER_TWO);
+      CHECK(resourceUtilStreamRequest->getJobId() == "376");
+      CHECK(resourceUtilStreamRequest->getEncodedJobId() == "encoded-376");
+      CHECK_FALSE(resourceUtilStreamRequest->isCancelRequest());
+   }
+
+   SECTION("Both streams, cancel")
+   {
+      requestObj[FIELD_CANCEL_STREAM] = true;
+
+      std::shared_ptr<Request> request;
+      REQUIRE_FALSE(Request::fromJson(requestObj, request));
+      REQUIRE(request->getType() == Request::Type::GET_JOB_RESOURCE_UTIL);
+      CHECK(request->getId() == 287);
+
+      std::shared_ptr<ResourceUtilStreamRequest> resourceUtilStreamRequest =
+         std::static_pointer_cast<ResourceUtilStreamRequest>(request);
+      CHECK(resourceUtilStreamRequest->getUser() == user2);
+      CHECK(resourceUtilStreamRequest->getRequestUsername() == USER_TWO);
+      CHECK(resourceUtilStreamRequest->getJobId() == "376");
+      CHECK(resourceUtilStreamRequest->getEncodedJobId() == "encoded-376");
+      CHECK(resourceUtilStreamRequest->isCancelRequest());
+   }
+
+}
+
 } // namespace api
 } // namespace launcher_plugins
 } // namespace rstudio

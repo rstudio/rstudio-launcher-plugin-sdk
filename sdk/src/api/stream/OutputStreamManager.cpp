@@ -113,7 +113,7 @@ struct OutputStreamManager::Impl : public std::enable_shared_from_this<Impl>
    }
 
    /**
-    * @brief Sends a "Job Not Found" error to the launcher.
+    * @brief Sends a "Job Not Found" error to the Launcher.
     *
     * @param in_requestId       The ID of the request for which this response should be sent.
     * @param in_jobId           The ID of the job which could not be found.

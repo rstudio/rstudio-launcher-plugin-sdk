@@ -36,13 +36,13 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/range/as_array.hpp>
 
+#include <SafeConvert.hpp>
 #include <json/Json.hpp>
 #include <options/Options.hpp>
 #include <system/Asio.hpp>
 #include <system/PosixSystem.hpp>
 #include <utils/FileUtils.hpp>
 
-#include "../SafeConvert.hpp"
 #include "../utils/ErrorUtils.hpp"
 
 namespace rstudio {

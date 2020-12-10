@@ -197,6 +197,20 @@ public:
       api::AbstractOutputStream::OnError in_onError,
       api::OutputStreamPtr& out_outputStream) override;
 
+   /**
+    * @brief Creates a resource utilization metric stream for the specified job.
+    * 
+    * @param in_job                       The job for which resource utilization metrics should be streamed.
+    * @param in_launcherCommunicator      The communicator with which to send responses to the Launcher.
+    * @param out_resourceStream           The newly created resource utilization metric stream, on Success.
+    * 
+    * @return Sucess if the stream could be created; the Error that occurred otherwise.
+    */
+   Error createResourceStream(
+      api::ConstJobPtr in_job,
+      comms::AbstractLauncherCommunicatorPtr in_launcherCommunicator,
+      api::AbstractResourceStreamPtr& out_resourceStream) override;
+
 private:
    /** The hostname of the machine running this instance of the Local Launcher Plugin. */
    const std::string m_hostname;
