@@ -6,6 +6,7 @@ docker
 docs/bookdown
 docs/diagrams
 docs/doxygen
+docs/*Html
 tools/generate-documentation.sh
 tools/pull-shared-core.sh
 .git
