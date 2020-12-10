@@ -59,7 +59,7 @@ private:
    /**
     * @brief Gets the total elapsed CPU time of the process and all its children in seconds.
     * 
-    * @param out_cpuPercent      The total elapsed CPU Time of the process in seconds, on Success.
+    * @param out_cpuTime         The total elapsed CPU Time of the process in seconds, on Success.
     * 
     * @return Success if the CPU Time could be measured; the Error that occurred otherwise.
     */

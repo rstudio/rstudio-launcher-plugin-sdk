@@ -93,7 +93,7 @@ struct ResourceStreamManager::Impl : public std::enable_shared_from_this<Impl>
     * @brief Sends a "Job Not Running" error to the Launcher.
     *
     * @param in_requestId       The ID of the request for which this response should be sent.
-    * @param in_jobId           The ID of the job which could is not running.
+    * @param in_jobId           The ID of the job which is not running.
     */
    void sendJobNotRunningError(uint64_t in_requestId, const std::string& in_jobId)
    {
