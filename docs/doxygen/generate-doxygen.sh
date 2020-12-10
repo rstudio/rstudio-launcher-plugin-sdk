@@ -37,9 +37,12 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 sed -e "s/\\\${RLPS_VERSION}/${VERSION}/g" Doxyfile.in > Doxyfile
 
 # Generate Doxygen documetnation
-sudo doxygen Doxyfile
+doxygen Doxyfile
 cd latex
-sudo make
+make
 cp refman.pdf "../../RStudio Launcher Plugin SDK API Reference.pdf"
 cd ..
-sudo rm -r latex
+rm -r latex
+
+# Move the HTML docs up for copying
+mv "html" "../ApiRefHtml"
