@@ -189,25 +189,21 @@ Error LocalResourceStream::onInitialize()
 {
    // We really just need the job lock here, but to be safe and avoid a possible deadlock scenario, acquire the base 
    // class' mutex first.
-   LOCK_MUTEX(m_mutex)
+   LOCK_MUTEX_AND_JOB(std::lock_guard, std::mutex, m_mutex, m_job)
    {
-      LOCK_JOB(m_job)
+      if (!m_job->Pid)
       {
-         if (!m_job->Pid)
-         {
-            return createError(
-               LocalError::NO_PID,
-               "Resource Utilization Metrics cannot be streamed for job " + m_job->Id + " because it does not have a PID.",
-               ERROR_LOCATION);
-         }
-
-         m_pid = m_job->Pid.getValueOr(0);
-
-         return Success();
+         return createError(
+            LocalError::NO_PID,
+            "Resource Utilization Metrics cannot be streamed for job " + m_job->Id + " because it does not have a PID.",
+            ERROR_LOCATION);
       }
-      END_LOCK_JOB
+
+      m_pid = m_job->Pid.getValueOr(0);
+
+      return Success();
    }
-   END_LOCK_MUTEX
+   END_LOCK_MUTEX_AND_JOB
 
    return unknownError(
       "An unknown error occurred while attempting to initialize the Resource Utilization Stream for job " + m_job->Id + ".",
