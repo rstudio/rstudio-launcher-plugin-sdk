@@ -86,10 +86,7 @@ addUser()
 }
 
 # Create the RStudio Server User, if it does not already exist
-grep rstudio-server < /etc/passwd >/dev/null
-export ADD_USER=$?
-
-if [[ $ADD_USER -ne 0 ]]; then
+if [[ -n $1 && $1 -ne 0 ]]; then
   echo "Adding rstudio-server user..."
   sudo useradd --system "rstudio-server"
 fi

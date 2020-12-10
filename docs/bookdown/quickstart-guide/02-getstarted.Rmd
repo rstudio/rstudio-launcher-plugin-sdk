@@ -44,6 +44,7 @@ The following describes the purpose of the files and folders which can be found 
    * `QuickStart` - The source code for the QuickStart RStudio Launcher Plugin.
        * `CMakeLists.txt` - The cmake project definition for the QuickStart RStudio Launcher Plugin. This file may be opened in any IDE which supports cmake projects for a view of only the QuickStart RStudio Launcher Plugin.
 * `sdk` - The source code for the RStudio Launcher Plugin SDK.
+* `tools` - This folder contains scripts which are useful when developing and testing the SDK.
 
 ## Development Process {#devproc}
 

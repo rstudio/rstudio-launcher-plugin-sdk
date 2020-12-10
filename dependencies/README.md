@@ -1,10 +1,8 @@
 # Purpose
 
-The scripts in this folder help new RStudio Launcher Plugin SDK developers get started by installing
-the necessary dependencies for the project. Please be advised that these scripts will install
-software to your computer and sometimes modify your environment, such as adding applications to 
-the path in ~/.basrc. Administrator privileges may be required and users should take care before 
-running the scripts.
+The scripts in this folder help new RStudio Launcher Plugin SDK developers get started by installing the necessary dependencies for the project. 
+Please be advised that these scripts will install software to your computer and sometimes modify your environment, such as adding applications to the path in ~/.basrc. 
+Administrator privileges may be required and users should ensure that they understand the impact of running the scripts before running them.
 
 # Getting Started
 

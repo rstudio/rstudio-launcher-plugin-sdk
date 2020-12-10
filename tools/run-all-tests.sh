@@ -40,7 +40,10 @@ runTest()
 }
 
 # Create users for test cases
-tools/create-test-users.sh
+grep rstudio-server < /etc/passwd >/dev/null
+ADD_RSTUDIO_SERVER_USER=$?
+tools/create-test-users.sh $ADD_RSTUDIO_SERVER_USER
+
 RET=$?
 if [[ $RET -ne 0 ]]; then
   echo "Failed to create test users."
@@ -58,7 +61,7 @@ runTest "sdk/src/system/tests"
 # TODO: Integration tests
 
 # Remove test users
-tools/delete-test-users.sh
+tools/delete-test-users.sh $ADD_RSTUDIO_SERVER_USER
 
 # Exit
 echo "Test failures: $TOTAL_FAILURES"
