@@ -35,6 +35,7 @@ set(LOCAL_SOURCE_FILES
    src/LocalJobSource.cpp
    src/LocalOptions.cpp
    src/LocalPluginApi.cpp
+   src/LocalResourceStream.cpp
    src/LocalSecureCookie.cpp
 )
 

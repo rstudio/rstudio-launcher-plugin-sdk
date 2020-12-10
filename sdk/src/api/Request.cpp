@@ -177,6 +177,11 @@ Error Request::fromJson(const json::Object& in_requestJson, std::shared_ptr<Requ
          out_request.reset(new OutputStreamRequest(in_requestJson));
          break;
       }
+      case Type::GET_JOB_RESOURCE_UTIL:
+      {
+         out_request.reset(new ResourceUtilStreamRequest(in_requestJson));
+         break;
+      }
       case Type::GET_JOB_NETWORK:
       {
          out_request.reset(new NetworkRequest( in_requestJson));
@@ -677,6 +682,41 @@ OutputStreamRequest::OutputStreamRequest(const json::Object& in_requestJson) :
 
       // At this point, the value must be 0, 1, or 2, so it's safe to static cast.
       m_impl->StreamType = static_cast<OutputType>(value);
+   }
+}
+
+// Resource Utilization Stream Request =================================================================================
+struct ResourceUtilStreamRequest::Impl
+{
+   Impl() :
+      IsCancel(false)
+   {
+   }
+
+   bool IsCancel;
+};
+
+PRIVATE_IMPL_DELETER_IMPL(ResourceUtilStreamRequest)
+
+bool ResourceUtilStreamRequest::isCancelRequest() const
+{
+   return m_impl->IsCancel;
+}
+
+ResourceUtilStreamRequest::ResourceUtilStreamRequest(const json::Object& in_requestJson) :
+   JobIdRequest(Request::Type::GET_JOB_RESOURCE_UTIL, in_requestJson),
+   m_impl(new Impl())
+{
+   Error error = json::readObject(
+      in_requestJson,
+      FIELD_CANCEL_STREAM, m_impl->IsCancel);
+
+
+   if (error)
+   {
+      logging::logError(error);
+      m_baseImpl->ErrorType = RequestError::INVALID_REQUEST;
+      return;
    }
 }
 

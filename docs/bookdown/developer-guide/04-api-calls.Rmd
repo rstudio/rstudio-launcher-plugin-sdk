@@ -52,7 +52,7 @@ For any request, the Plugin may return an Error response. To return an Error res
 
 |  Field Name  |                               Description                                   |  Value
 | ------------ | --------------------------------------------------------------------------- | -------
-| messageType  | [See above.](#common-fields)                                                | -1
+| messageType  | [See above.](#common-fields)                                                | `Response::Type::ERROR` (-1)
 | requestId    | [See above.](#common-fields)                                                | Int
 | responseId   | [See above.](#common-fields)                                                | Int
 | errorCode    | The error code. More details in the [Error Codes](#error-codes) section.    | Int
@@ -90,7 +90,7 @@ Despite the fact that there will be many heartbeats sent to and from the Launche
 
 |  Field Name  |                               Description                                   |  Value
 | ------------ | --------------------------------------------------------------------------- | -------
-| messageType  | [See above.](#common-fields)                                                | 0
+| messageType  | [See above.](#common-fields)                                                | `Request::Type::HEARTBEAT` (0)
 | requestId    | [See above.](#common-fields)                                                | 0
 
 &nbsp;
@@ -99,7 +99,7 @@ Despite the fact that there will be many heartbeats sent to and from the Launche
 
 |  Field Name  |                               Description                                   |  Value
 | ------------ | --------------------------------------------------------------------------- | -------
-| messageType  | [See above.](#common-fields)                                                | 0
+| messageType  | [See above.](#common-fields)                                                | `Response::Type::HEARTBEAT` (0)
 | requestId    | [See above.](#common-fields)                                                | 0
 | responseId   | [See above.](#common-fields)                                                | 0
 
@@ -113,7 +113,7 @@ This request is sent to the Plugin once, immediately after the Plugin is launche
 
 |  Field Name  |                               Description                                   |  Value
 | ------------ | --------------------------------------------------------------------------- | -------
-| messageType  | [See above.](#common-fields)                                                | 1
+| messageType  | [See above.](#common-fields)                                                | `Request::Type::BOOTSTRAP` (1)
 | requestId    | [See above.](#common-fields)                                                | 0
 | version      | The Launcher Plugin API version in use by the Launcher.                     | [Version](#api-ver)
 
@@ -123,7 +123,7 @@ This request is sent to the Plugin once, immediately after the Plugin is launche
 
 |  Field Name  |                               Description                                   |  Value
 | ------------ | --------------------------------------------------------------------------- | -------
-| messageType  | [See above.](#common-fields)                                                | 1
+| messageType  | [See above.](#common-fields)                                                | `Response::Type::BOOTSTRAP` (1)
 | requestId    | [See above.](#common-fields)                                                | 0
 | responseId   | [See above.](#common-fields)                                                | 0
 | version      | The Launcher Plugin API version in use by the Plugin.                       | [Version](#api-ver)
@@ -138,7 +138,7 @@ There are two API requests which return a Job State Response: the Submit Job and
 
 |  Field Name     |                               Description                                   |  Value
 | --------------- | --------------------------------------------------------------------------- | -------
-| messageType     | [See above.](#common-fields)                                                | 2
+| messageType     | [See above.](#common-fields)                                                | `Request::Type::SUBMIT_JOB` (2)
 | requestId       | [See above.](#common-fields)                                                | Int
 | username        | [See above.](#common-fields)                                                | String
 | requestUsername | [See above.](#common-fields)                                                | String
@@ -150,7 +150,7 @@ There are two API requests which return a Job State Response: the Submit Job and
 
 |  Field Name     |                                                              Description                                                              |  Value
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------- | -------
-| messageType     | [See above.](#common-fields)                                                                                                          | 3
+| messageType     | [See above.](#common-fields)                                                                                                          | `Request::Type::GET_JOB` (3)
 | requestId       | [See above.](#common-fields)                                                                                                          | Int
 | username        | [See above.](#common-fields)                                                                                                          | String
 | requestUsername | [See above.](#common-fields)                                                                                                          | String
@@ -168,7 +168,7 @@ There are two API requests which return a Job State Response: the Submit Job and
 
 |  Field Name     |                               Description                                   |  Value
 | --------------- | --------------------------------------------------------------------------- | -------
-| messageType     | [See above.](#common-fields)                                                | 2
+| messageType     | [See above.](#common-fields)                                                | `Response::Type::JOB_STATE` (2)
 | jobs            | The list of jobs that met the request criteria.                             | [Job](#job-object) Array
 
 ### Job Status Stream {#job-status-stream}
@@ -187,7 +187,7 @@ Rather than sending a response per open stream, the Plugin sends the Launcher a 
 
 |  Field Name     |                                                              Description                                              |  Value
 | --------------- | --------------------------------------------------------------------------------------------------------------------- | -------
-| messageType     | [See above.](#common-fields)                                                                                          | 4
+| messageType     | [See above.](#common-fields)                                                                                          | `Request::Type::GET_JOB_STATUS` (4)
 | requestId       | [See above.](#common-fields)                                                                                          | Int
 | username        | [See above.](#common-fields)                                                                                          | String
 | requestUsername | [See above.](#common-fields)                                                                                          | String
@@ -201,7 +201,7 @@ Rather than sending a response per open stream, the Plugin sends the Launcher a 
 
 |  Field Name     |                                                             Description                                                             |      Value
 | --------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ----------------
-| messageType     | [See above.](#common-fields)                                                                                                        | 3
+| messageType     | [See above.](#common-fields)                                                                                                        | `Response::Type::JOB_STATUS` (3)
 | sequences       | An array of requests which are waiting for this stream response and the sequence ID of this response, relative to each request ID.  | [StreamSequence](#stream-sequence) Array
 | id              | The ID of the job.                                                                                                                  | String
 | name            | The name of the job.                                                                                                                | String
@@ -218,7 +218,7 @@ This API call can be used to control the state of a job. Currently supported ope
 
 |  Field Name     |                                                              Description                                              |  Value
 | --------------- | --------------------------------------------------------------------------------------------------------------------- | -------
-| messageType     | [See above.](#common-fields)                                                                                          | 5
+| messageType     | [See above.](#common-fields)                                                                                          | `Request::Type::CONTROL_JOB` (5)
 | requestId       | [See above.](#common-fields)                                                                                          | Int
 | username        | [See above.](#common-fields)                                                                                          | String
 | requestUsername | [See above.](#common-fields)                                                                                          | String
@@ -232,7 +232,7 @@ This API call can be used to control the state of a job. Currently supported ope
 
 |  Field Name       |                                                             Description                                                             |      Value
 | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ----------------
-| messageType       | [See above.](#common-fields)                                                                                                        | 4
+| messageType       | [See above.](#common-fields)                                                                                                        | `Response::Type::CONTROL_JOB` (4)
 | requestId         | [See above.](#common-fields)                                                                                                        | Int
 | responseId        | [See above.](#common-fields)                                                                                                        | Int
 | statusMessage     | A message describing the status of the control job operation, if any.                                                               | String
@@ -243,7 +243,7 @@ This API call can be used to control the state of a job. Currently supported ope
 
 This API call is responsible for streaming a Job's output data. The caller may request the type of output they wish to see (Standard Out, Standard Error, or both) and the Plugin must do its best to report only that type of data.
 
-The SDK will manage all the output streams. The Plugin developer needs to implement `IJobSource::createOutputStream` and may either use the provided `FileOutputStream` class or implement a custom concrete `AbstractOutputStream`. An example using the `FileOutputStream` can be found in 'TODO #8' of the 'RStudio Launcher Plugin SDK QuickStart Guide'. For more details on implementing a custom `AbstractOutputStream` class, see the [Job Status Updates](#status-updates) feature.
+The SDK will manage all the output streams. The Plugin developer needs to implement `IJobSource::createOutputStream` and may either use the provided `FileOutputStream` class or implement a custom concrete `AbstractOutputStream`. An example using the `FileOutputStream` can be found in 'TODO #8' of the 'RStudio Launcher Plugin SDK QuickStart Guide'. For more details on implementing a custom `AbstractOutputStream` class, see the [Custom Output Streams](#out-streams) section.
 
 &nbsp;
 
@@ -251,7 +251,7 @@ The SDK will manage all the output streams. The Plugin developer needs to implem
 
 |  Field Name     |                                                              Description                                              |  Value
 | --------------- | --------------------------------------------------------------------------------------------------------------------- | -------
-| messageType     | [See above.](#common-fields)                                                                                          | 6
+| messageType     | [See above.](#common-fields)                                                                                          | `Request::Type::GET_JOB_OUTPUT` (6)
 | requestId       | [See above.](#common-fields)                                                                                          | Int
 | username        | [See above.](#common-fields)                                                                                          | String
 | requestUsername | [See above.](#common-fields)                                                                                          | String
@@ -266,13 +266,49 @@ The SDK will manage all the output streams. The Plugin developer needs to implem
 
 |  Field Name     |                                                             Description                                                             |      Value
 | --------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ----------------
-| messageType     | [See above.](#common-fields)                                                                                                        | 5
+| messageType     | [See above.](#common-fields)                                                                                                        | `Response::Type::JOB_OUTPUT` (5)
 | requestId       | [See above.](#common-fields)                                                                                                        | Int
 | responseId      | [See above.](#common-fields)                                                                                                        | Int
 | seqId           | The ID of this response in the stream of output responses.                                                                          | Int
 | outputType      | The type of output to in the response, if any. Standard out, Standard error, or mixed.                                             | String: "stdout", "stderr", or "mixed"
 | output          | The job output, if any.                                                                                                             | String
-| complete        | Whether the output stream is complete. Default: `true`.                                                                             | Boolean
+| complete        | Whether the output stream is complete.                                                                                              | Boolean
+
+### Job Resource Utilization Stream {#resource-util-stream}
+
+This API call is responsible for streaming a Job's resource utilization metrics. Resource utilization  metrics may only be streamed when the Job is in the `Running` [state](#job-state). If the Job is not running, a `JobNotRunning` [error](#error-codes) will be returned by the SDK. Otherwise, the SDK will invoke `AbstactResourceStream::initialize` and the Plugin should commence streaming resource utilization metrics.
+
+The SDK will manage all the resource utilization streams. The Plugin developer needs to implement `AbstactResourceStream::initialize` and may either extend `AbstractResourceStream` directly, or extend `AbstractTimedResourceStream` if resource utilization data must be polled. An example of extending `AbstractResourceStream` directly can be found in 'TODO #16' of the 'RStudio Launcher Plugin SDK QuickStart Guide'. The `LocalResourceStream` provided with the sample Local Plugin provides an example of extending `AbstractTimedResourceStream`.
+
+&nbsp;
+
+**Job Resource Utilization Stream Request**
+
+|  Field Name     |                                                              Description                                              |  Value
+| --------------- | --------------------------------------------------------------------------------------------------------------------- | -------
+| messageType     | [See above.](#common-fields)                                                                                          | `Request::Type::GET_JOB_RESOURCE_UTIL` (7)
+| requestId       | [See above.](#common-fields)                                                                                          | Int
+| username        | [See above.](#common-fields)                                                                                          | String
+| requestUsername | [See above.](#common-fields)                                                                                          | String
+| jobId           | The ID of the job for which to stream resource utilization metrics.                                                   | String
+| encodedJobId    | The Launcher generated encoded job ID which contains extra metadata. Provides extra information only.                 | String
+| cancel          | Whether the stream should be started (`false`) or canceled (`true`). Default: `false`.                                | Boolean
+
+&nbsp;
+
+**Job Resource Utilization Stream Response**
+
+|  Field Name     |                                                             Description                                                             |      Value
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ----------------
+| messageType     | [See above.](#common-fields)                                                                                                        | `Response::Type::JOB_RESOURCE_UTIL` (6)
+| requestId       | [See above.](#common-fields)                                                                                                        | Int
+| responseId      | [See above.](#common-fields)                                                                                                        | Int
+| seqId           | The ID of this response in the stream of resource utilization responses.                                                            | Int
+| cpuPercent      | The percentage of CPU utilization of the Job, if available. Optional.                                                               | String
+| cpuSeconds      | The total run time of the Job, in seconds, if available. Optional.                                                                  | String
+| virtualMemory   | The current size of virtual memory in use by the Job, in MB, if available. Optional.                                                | String
+| residentMemory  | The current size of the resident set in use by the Job, in MB, if available. Optional.                                              | String
+| complete        | Whether the resource utilization stream is complete.                                                                                | Boolean
 
 ### Job Network {#job-network}
 
@@ -286,7 +322,7 @@ For an example of how to implement `IJobSource::getNetworkInfo`, see 'TODO #14' 
 
 |  Field Name     |                                                              Description                                              |  Value
 | --------------- | --------------------------------------------------------------------------------------------------------------------- | -------
-| messageType     | [See above.](#common-fields)                                                                                          | 8
+| messageType     | [See above.](#common-fields)                                                                                          | `Request::Type::GET_JOB_NETWORK` (8)
 | requestId       | [See above.](#common-fields)                                                                                          | Int
 | username        | [See above.](#common-fields)                                                                                          | String
 | requestUsername | [See above.](#common-fields)                                                                                          | String
@@ -299,7 +335,7 @@ For an example of how to implement `IJobSource::getNetworkInfo`, see 'TODO #14' 
 
 |  Field Name     |                                                             Description                                                             |      Value
 | --------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ----------------
-| messageType     | [See above.](#common-fields)                                                                                                        | 7
+| messageType     | [See above.](#common-fields)                                                                                                        | `Response::Type::GET_JOB_NETWORK` (7)
 | requestId       | [See above.](#common-fields)                                                                                                        | Int
 | responseId      | [See above.](#common-fields)                                                                                                        | Int
 | host            | The hostname of the machine running the job.                                                                                        | String
@@ -321,7 +357,7 @@ For a simple example of implementing this method, see 'TODO #7' in the 'RStudio 
 
 |  Field Name     |                               Description                                   |  Value
 | --------------- | --------------------------------------------------------------------------- | -------
-| messageType     | [See above.](#common-fields)                                                | 9
+| messageType     | [See above.](#common-fields)                                                | `Request::Type::GET_CLUSTER_INFO` (9)
 | requestId       | [See above.](#common-fields)                                                | Int
 | username        | [See above.](#common-fields)                                                | String
 | requestUsername | [See above.](#common-fields)                                                | String
@@ -332,7 +368,7 @@ For a simple example of implementing this method, see 'TODO #7' in the 'RStudio 
 
 |  Field Name          |                               Description                                                                              |  Value
 | -------------------- | ---------------------------------------------------------------------------------------------------------------------- | ----------------------------------------
-| messageType          | [See above.](#common-fields)                                                                                           | 8
+| messageType          | [See above.](#common-fields)                                                                                           |`Response::Type::CLUSTER_INFO` (8)
 | requestId            | [See above.](#common-fields)                                                                                           | Int
 | responseId           | [See above.](#common-fields)                                                                                           | Int
 | supportsContainers   | Whether or not the job scheduling system supports containers.                                                          | Boolean

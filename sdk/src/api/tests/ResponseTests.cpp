@@ -565,6 +565,61 @@ TEST_CASE("ControlJob Response")
    }
 }
 
+TEST_CASE("ResourceUtilStream Response")
+{
+   json::Object expected;
+   expected[FIELD_MESSAGE_TYPE] = 6;
+   expected[FIELD_REQUEST_ID] = 0;
+
+   SECTION("All data empty, complete, one sequence")
+   {
+      StreamSequences sequences;
+      sequences.emplace_back(3, 0);
+
+      json::Object seq;
+      seq[FIELD_REQUEST_ID] = 3;
+      seq[FIELD_SEQUENCE_ID] = 0;
+      json::Array seqs;
+      seqs.push_back(seq);
+
+      expected[FIELD_RESPONSE_ID] = 19;
+      expected[FIELD_SEQUENCES] = seqs;
+      expected[FIELD_COMPLETE] = true;
+
+      ResourceUtilStreamResponse response(sequences, ResourceUtilData(), true);
+      CHECK(response.toJson() == expected);
+   }
+
+   SECTION("All data existing, not complete, multi sequences")
+   {
+      StreamSequences sequences;
+      sequences.emplace_back(3, 12);
+      sequences.emplace_back(12, 0);
+      sequences.emplace_back(4, 3);
+
+      json::Array seqsArr;
+      for (const StreamSequenceId& seq: sequences)
+         seqsArr.push_back(seq.toJson());
+
+      expected[FIELD_RESPONSE_ID] = 20;
+      expected[FIELD_SEQUENCES] = seqsArr;
+      expected[FIELD_COMPLETE] = false;
+      expected[FIELD_CPU_PERCENT] = 95.4;
+      expected[FIELD_CPU_SECONDS] = 3561.0;
+      expected[FIELD_VIRTUAL_MEM] = 1282.0;
+      expected[FIELD_RESIDENT_MEM] = 922.0;
+
+      ResourceUtilData data;
+      data.CpuPercent = 95.4;
+      data.CpuSeconds = 3561.0;
+      data.VirtualMem = 1282.0;
+      data.ResidentMem = 922.0;
+
+      ResourceUtilStreamResponse response(sequences, data, false);
+      CHECK(response.toJson() == expected);
+   }
+}
+
 } // namespace api
 } // namespace launcher_plugins
 } // namespace rstudio

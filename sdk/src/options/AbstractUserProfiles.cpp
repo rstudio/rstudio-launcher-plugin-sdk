@@ -34,10 +34,10 @@
 #include <boost/property_tree/ini_parser.hpp>
 
 #include <Error.hpp>
+#include <SafeConvert.hpp>
 #include <system/User.hpp>
 #include <system/FilePath.hpp>
 #include <utils/FileUtils.hpp>
-#include "../SafeConvert.hpp"
 
 namespace rstudio {
 namespace launcher_plugins {

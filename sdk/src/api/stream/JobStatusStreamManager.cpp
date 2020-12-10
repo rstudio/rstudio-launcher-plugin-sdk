@@ -109,7 +109,7 @@ struct JobStatusStreamManager::Impl
                LauncherCommunicator);
 
             itr = ActiveJobStreams.find(in_jobId);
-            itr->second->addRequest(in_requestId);
+            itr->second->addRequest(in_requestId, in_requestUser);
             Error error = itr->second->initialize();
             if (error)
             {
@@ -118,7 +118,7 @@ struct JobStatusStreamManager::Impl
             }
          }
          else
-            itr->second->addRequest(in_requestId);
+            itr->second->addRequest(in_requestId, in_requestUser);
       }
 
       return Success();

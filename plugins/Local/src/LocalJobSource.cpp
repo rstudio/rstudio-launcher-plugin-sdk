@@ -31,6 +31,7 @@
 #include <system/Process.hpp>
 
 #include <LocalConstants.hpp>
+#include <LocalResourceStream.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -163,6 +164,19 @@ Error LocalJobSource::createOutputStream(
    api::OutputStreamPtr& out_outputStream)
 {
    out_outputStream.reset(new api::FileOutputStream(in_outputType, in_job, in_onOutput, in_onComplete, in_onError));
+   return Success();
+}
+
+Error LocalJobSource::createResourceStream(
+   api::ConstJobPtr in_job,
+   comms::AbstractLauncherCommunicatorPtr in_launcherCommunicator,
+   api::AbstractResourceStreamPtr& out_resourceStream)
+{
+   out_resourceStream.reset(
+      new LocalResourceStream(
+         system::TimeDuration::Seconds(3),
+         in_job,
+         in_launcherCommunicator));
    return Success();
 }
 

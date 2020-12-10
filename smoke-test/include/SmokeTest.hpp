@@ -96,6 +96,13 @@ private:
    bool sendJobOutputStreamRequest(api::OutputType in_outputType);
 
    /**
+    * @brief Sends a job resource stream request and waits for the response(s).
+    * 
+    * @return True if the plugin responded as expected; false otherwise.
+    */
+   bool sendJobResourceStreamRequest();
+
+   /**
     * @brief Sends a job status stream request and waits for the response(s).
     *
     * @return True if the plugin responded as expected; false otherwise.
@@ -145,6 +152,7 @@ private:
    api::Request::Type m_lastRequestType;
 
    bool m_outputStreamFinished;
+   bool m_resourceStreamFinished;
 };
 
 typedef std::shared_ptr<SmokeTest> SmokeTestPtr;

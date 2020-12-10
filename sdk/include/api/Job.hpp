@@ -68,6 +68,7 @@ struct PlacementConstraint;
 
 // Convenience Typedefs
 typedef std::shared_ptr<Job> JobPtr;
+typedef std::shared_ptr<const Job> ConstJobPtr;
 
 typedef std::pair<std::string, std::string> EnvVariable;
 typedef std::vector<EnvVariable> EnvironmentList;
@@ -457,6 +458,15 @@ public:
     * @param in_job     The job to lock.
     */
    explicit JobLock(JobPtr in_job);
+
+   /**
+    * @brief Constructor.
+    *
+    * May throw a std::system_error.
+    *
+    * @param in_job     The job to lock.
+    */
+   explicit JobLock(ConstJobPtr in_job);
 
 private:
    // The private implementation of JobLock.
@@ -1029,7 +1039,16 @@ try                                                         \
    rstudio::launcher_plugins::api::JobLock jobLock(in_job); \
 
 
+#define LOCK_MUTEX_AND_JOB(in_lockType, in_mutexType, in_mutex, in_job)    \
+try                                                                        \
+{                                                                          \
+   in_lockType<in_mutexType> mutexLock(in_mutex);                          \
+   rstudio::launcher_plugins::api::JobLock jobLock(in_job);                \
+
+
 #define END_LOCK_JOB END_LOCK_MUTEX
+
+#define END_LOCK_MUTEX_AND_JOB END_LOCK_JOB 
 
 } // namespace api
 } // namespace launcher_plugins

@@ -24,6 +24,7 @@
 #include <QuickStartJobSource.hpp>
 
 #include <Error.hpp>
+#include <QuickStartResourceStream.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -128,6 +129,15 @@ Error QuickStartJobSource::createOutputStream(
       2,
       "Method QuickStartJobSource::createOutputStream is not implemented.",
       ERROR_LOCATION);
+}
+
+Error QuickStartJobSource::createResourceStream(
+   api::ConstJobPtr in_job,
+   comms::AbstractLauncherCommunicatorPtr in_launcherCommunicator,
+   api::AbstractResourceStreamPtr& out_resourceStream)
+{
+   out_resourceStream.reset(new QuickStartResourceStream(in_job, in_launcherCommunicator));
+   return Success();
 }
 
 } // namespace quickstart
