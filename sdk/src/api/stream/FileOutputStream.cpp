@@ -30,6 +30,7 @@
 #include <system/FilePath.hpp>
 #include <system/User.hpp>
 #include <system/Process.hpp>
+#include <system/PosixSystem.hpp>
 #include <utils/MutexUtils.hpp>
 
 namespace rstudio {
@@ -62,7 +63,15 @@ Error fileExistsForUser(const system::FilePath& in_file, const system::User& in_
 
    out_wasFound = result.ExitCode == 0;
 
-   if (!out_wasFound)
+   // This means we couldn't find the 'ls' executable.
+   if (result.ExitCode == 127)
+   {
+      std::string pathVar = system::posix::getEnvironmentVariable("PATH");
+      logging::logDebugMessage(
+         "The 'ls' executable could not be found. Please verify that the 'ls' executable "
+         "exists and has appropriate permissions on the PATH: \"" + pathVar + "\"");
+   }
+   else if (!out_wasFound)
    {
       logging::logDebugMessage(
          "'ls " +
