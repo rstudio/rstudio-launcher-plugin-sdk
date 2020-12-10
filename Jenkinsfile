@@ -47,7 +47,7 @@ def create_package() {
 }
 
 def generate_documentation() {
-    def version = "${rlpSdkVersionMajor}.${rlpVersionMinor}.${rlpSdkVersionPatch}"
+    def version = "${rlpSdkVersionMajor}.${rlpSdkVersionMinor}.${rlpSdkVersionPatch}"
   sh "tools/generate-documentation.sh '${version}'"
 
   if (params.get('UPLOAD_PACKAGE') == true) {
