@@ -36,6 +36,13 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 # update the version number
 sed -e "s/\\\${RLPS_VERSION}/${VERSION}/g" _bookdown.yml.in > _bookdown.yml
 
+# Make the PDF version
 RSTUDIO_PANDOC="/usr/lib/rstudio/bin/pandoc" Rscript -e "bookdown::render_book(\"index.Rmd\", \"bookdown::pdf_book\", params = list(version = '${VERSION}'))"
-
 cp "_book/rlps-${VERSION}-quickstart-guide.pdf" "../../RStudio Launcher Plugin SDK QuickStart Guide.pdf"
+
+# Clean up the output for the PDF version
+rm -r _book
+
+# Make the HTML version
+RSTUDIO_PANDOC="/usr/lib/rstudio/bin/pandoc" Rscript -e "bookdown::render_book(\"index.Rmd\", \"bookdown::gitbook\", params = list(version = '${VERSION}'))"
+mv "_book" "../../QuickStartHtml"
