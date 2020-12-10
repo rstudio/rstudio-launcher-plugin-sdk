@@ -91,9 +91,9 @@ void AbstractResourceStream::reportError(const Error& in_error)
    {
       if (!m_resBaseImpl->IsComplete)
       {
-         logging::logErrorMessage(
-            "An error occurred while streaming resource utilization metrics for Job " + m_job->Id);
-         logging::logError(in_error);
+         Error error = in_error;
+         error.addProperty("Job ID", m_job->Id);
+         logging::logError(error, ERROR_LOCATION);
          sendResponse(ResourceUtilData(), m_resBaseImpl->IsComplete = true);
       }
    }
