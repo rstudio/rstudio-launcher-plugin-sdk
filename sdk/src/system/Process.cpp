@@ -1098,20 +1098,7 @@ Error AbstractChildProcess::terminate()
    if (m_baseImpl->Pid == -1)
       return systemError(ESRCH, ERROR_LOCATION);
 
-   // Try sending SIGTERM for the whole process group of the child.
-   if (::kill(-m_baseImpl->Pid, SIGTERM) == -1)
-   {
-      // When killing an entire process group EPERM can be returned if even a single one of the subprocesses couldn't be
-      // killed. In this case the signal is still delivered and other subprocesses may have been killed so we don't log
-      // an error.
-      // We also don't consider it an error if the process couldn't be killed because it had already exited (ESRCH).
-      if ((errno == EPERM) || (errno == ESRCH))
-         return Success();
-
-      return systemError(errno, ERROR_LOCATION);
-   }
-
-   return Success();
+   return signalProcess(m_baseImpl->Pid, SIGTERM);
 }
 
 AbstractChildProcess::AbstractChildProcess(const ProcessOptions& in_options) :

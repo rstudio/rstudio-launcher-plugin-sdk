@@ -31,6 +31,7 @@
 
 #include <PImpl.hpp>
 #include <api/Job.hpp>
+#include <system/DateTime.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -45,18 +46,21 @@ public:
    /**
     * @brief Constructor.
     *
-    * @param in_outputType      The type of job output to stream.
-    * @param in_job             The job for which output should be streamed.
-    * @param in_onOutput        Callback function which will be invoked when data is reported.
-    * @param in_onComplete      Callback function which will be invoked when the stream is complete.
-    * @param in_onError         Callback function which will be invoked if an error occurs.
+    * @param in_outputType       The type of job output to stream.
+    * @param in_job              The job for which output should be streamed.
+    * @param in_onOutput         Callback function which will be invoked when data is reported.
+    * @param in_onComplete       Callback function which will be invoked when the stream is complete.
+    * @param in_onError          Callback function which will be invoked if an error occurs.
+    * @param in_maxWaitTime      The maximum amount of time to wait for the output files to be created before reporting
+    *                            an error.
     */
    FileOutputStream(
       OutputType in_outputType,
       api::JobPtr in_job,
       AbstractOutputStream::OnOutput in_onOutput,
       AbstractOutputStream::OnComplete in_onComplete,
-      AbstractOutputStream::OnError in_onError);
+      AbstractOutputStream::OnError in_onError,
+      system::TimeDuration in_maxWaitTime = system::TimeDuration::Seconds(10));
 
    /**
     * @brief Virtual destructor for inheritance.
@@ -82,14 +86,21 @@ private:
    /**
     * @brief Callback to be invoked on tail child process exit.
     *
-    * @param in_sharedThis      A copy of a shared pointer to this object.
+    * @param in_weakThis        A copy of a weak pointer to this object.
     * @param in_outputType      The type of output being emitted by the exited process.
     * @param in_exitCode        The exit code of the process.
     */
    static void onExitCallback(
-      std::shared_ptr<FileOutputStream> in_sharedThis,
+      std::weak_ptr<FileOutputStream> in_weakThis,
       OutputType in_outputType,
       int in_exitCode);
+
+   /**
+    * @brief Callback to be invoked when the existence of the output files should be tested.
+    * 
+    * @param in_weakThis      A copy of a weak pointer to this object.
+    */
+   static void onFindFileTimerCallback(std::weak_ptr<FileOutputStream> in_weakThis);
 
    /**
     * @brief Invoked when output occurs.
@@ -101,16 +112,6 @@ private:
     * @param in_outputType      The type of output that was received.
     */
    virtual void onOutput(const std::string& in_output, OutputType in_outputType);
-
-   /**
-    * @brief Starts streaming output from the specified file as the specified output type.
-    *
-    * @param in_outputType      The type of output that will be streamed.
-    * @param in_file            The file from which to read the output.
-    *
-    * @return Success if the file could be read; Error otherwise.
-    */
-   Error startChildStream(OutputType in_outputType, const system::FilePath& in_file);
 
    /**
     * @brief Waits for the stream to end and invokes the provided callback function after.

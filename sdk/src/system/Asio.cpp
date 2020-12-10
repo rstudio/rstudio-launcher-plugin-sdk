@@ -505,7 +505,14 @@ AsyncDeadlineEvent::AsyncDeadlineEvent(const AsioFunction& in_work, const TimeDu
 
 AsyncDeadlineEvent::~AsyncDeadlineEvent()
 {
-   cancel();
+   try
+   {
+      cancel();
+   }
+   catch (...)
+   {
+      // Don't allow exceptions in destructors.
+   }
 }
 
 void AsyncDeadlineEvent::cancel()

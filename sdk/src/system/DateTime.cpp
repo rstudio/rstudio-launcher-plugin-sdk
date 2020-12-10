@@ -144,6 +144,40 @@ bool TimeDuration::operator!=(const TimeDuration& in_other) const
    return !(*this == in_other);
 }
 
+bool TimeDuration::operator<(const TimeDuration& in_other) const
+{
+   if (isInfinity() && in_other.isInfinity())
+      return false;
+   else if (isInfinity())
+      return false;
+   else if (in_other.isInfinity())
+      return true;
+   
+   return m_impl->Time < in_other.m_impl->Time;
+}
+
+bool TimeDuration::operator<=(const TimeDuration& in_other) const
+{
+   return !(*this > in_other);
+}
+
+bool TimeDuration::operator>(const TimeDuration& in_other) const
+{
+   if (isInfinity() && in_other.isInfinity())
+      return false;
+   else if (isInfinity())
+      return true;
+   else if (in_other.isInfinity())
+      return false;
+   
+   return m_impl->Time > in_other.m_impl->Time;
+}
+
+bool TimeDuration::operator>=(const TimeDuration& in_other) const
+{
+   return !(*this < in_other);
+}
+
 bool TimeDuration::isInfinity() const
 {
    return (m_impl == nullptr) || (m_impl->Time.is_not_a_date_time());
