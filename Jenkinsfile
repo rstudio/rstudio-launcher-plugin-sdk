@@ -31,8 +31,8 @@ properties([
                               artifactNumToKeepStr: '',
                               daysToKeepStr: '',
                               numToKeepStr: '100')),
-    parameters([string(name: 'RLP_SDK_VERSION_MAJOR', defaultValue: '0', description: 'RStudio Launcher Plugin SDK Major Version'),
-                string(name: 'RLP_SDK_VERSION_MINOR', defaultValue: '1', description: 'RStudio Launcher Plugin SDK Minor Version'),
+    parameters([string(name: 'RLP_SDK_VERSION_MAJOR', defaultValue: '1', description: 'RStudio Launcher Plugin SDK Major Version'),
+                string(name: 'RLP_SDK_VERSION_MINOR', defaultValue: '0', description: 'RStudio Launcher Plugin SDK Minor Version'),
                 string(name: 'SLACK_CHANNEL', defaultValue: '#ide-builds', description: 'Slack channel to publish build message.'),
                 booleanParam(name: 'UPLOAD_PACKAGE', description: 'When checked, pushes the generated package to AWS S3.')
                 ])
