@@ -1039,7 +1039,16 @@ try                                                         \
    rstudio::launcher_plugins::api::JobLock jobLock(in_job); \
 
 
+#define LOCK_MUTEX_AND_JOB(in_lockType, in_mutexType, in_mutex, in_job)    \
+try                                                                        \
+{                                                                          \
+   in_lockType<in_mutexType> mutexLock(in_mutex);                          \
+   rstudio::launcher_plugins::api::JobLock jobLock(in_job);                \
+
+
 #define END_LOCK_JOB END_LOCK_MUTEX
+
+#define END_LOCK_MUTEX_AND_JOB END_LOCK_JOB 
 
 } // namespace api
 } // namespace launcher_plugins
