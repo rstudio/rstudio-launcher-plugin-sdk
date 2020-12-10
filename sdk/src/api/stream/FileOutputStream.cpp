@@ -166,7 +166,8 @@ struct FileOutputStream::Impl
       {
          if ((outputFile == errorFile) && !outputFileEmpty)
          {
-            // The StdErr stream was never started, so it already exited.
+            // The StdErr data is in the same file as the StdOut data, so there's no separate StdErr stream to clean up
+            // afterward. Treat it as having already exited.
             StdErrExited = true;
             Error error = startChildStream(in_sharedThis->m_outputType, outputFile, in_sharedThis);
             if (error)
@@ -188,6 +189,7 @@ struct FileOutputStream::Impl
             }
             else
                StdOutExited = true;
+
             if (!errorFileEmpty)
             {
                Error error = startChildStream(OutputType::STDERR, errorFile, in_sharedThis);
@@ -590,7 +592,7 @@ void FileOutputStream::onFindFileTimerCallback(std::weak_ptr<FileOutputStream> i
          if (error)
             return sharedThis->reportError(error);
 
-         //
+         // If both files are found, start streaming the output.
          if (impl.StdOutFileFound && impl.StdErrFileFound)
          {
             LOCK_JOB(sharedThis->m_job)
