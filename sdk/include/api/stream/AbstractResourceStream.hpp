@@ -104,15 +104,11 @@ protected:
     *       when the job lock is acquired, and the job lock must be released before the mutex lock is released. For 
     *       consistency, it is recommended to use the following block of code to acquire both locks:
     * 
-    * LOCK_MUTEX(m_mutex)
+    * LOCK_MUTEX_AND_JOB(std::lock_guard, std::mutex, m_mutex, m_job)
     * {
-    *    LOCK_JOB(m_job)
-    *    {
-    *       // Do tasks which require the job lock.
-    *    }
-    *    END_LOCK_JOB
+    *    // Do tasks which require the Job Lock.
     * }
-    * END_LOCK_MUTEX
+    * END_LOCK_MUTEX_AND_JOB
     * 
     */
    const ConstJobPtr m_job;
