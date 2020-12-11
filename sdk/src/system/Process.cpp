@@ -838,14 +838,14 @@ struct AbstractChildProcess::Impl
       json::Object env;
       for (const auto& envVar: in_options.Environment)
       {
-         if (envVar.first == "PATH")
+         if (boost::iequals(envVar.first, "PATH"))
             pathFound = true;
 
          env[envVar.first] = envVar.second;
       }
 
       if (!pathFound)
-         env["PATH"] = posix::getEnvironmentVariable("PATH");
+         env["PATH"] = posix::getEnvironmentVariable("PATH").append(":/bin");
 
       json::Object configObj;
       configObj["args"] = args;
