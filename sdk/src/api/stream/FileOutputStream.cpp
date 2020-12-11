@@ -51,7 +51,7 @@ namespace {
 Error fileExistsForUser(const system::FilePath& in_file, const system::User& in_user, bool& out_wasFound)
 {
    system::process::ProcessOptions lsOpts;
-   lsOpts.Executable = "/bin/ls";
+   lsOpts.Executable = "ls";
    lsOpts.Arguments = { in_file.getAbsolutePath() };
    lsOpts.RunAsUser = in_user;
 
@@ -66,8 +66,10 @@ Error fileExistsForUser(const system::FilePath& in_file, const system::User& in_
    // This means we couldn't find the 'ls' executable.
    if (result.ExitCode == 127)
    {
+      std::string pathVar = system::posix::getEnvironmentVariable("PATH");
       logging::logDebugMessage(
-         "The 'ls' executable could not be found. Please verify that '/bin/ls' exists and has appropriate permissions.");
+         "The 'ls' executable could not be found. Please verify that the 'ls' executable "
+         "exists and has appropriate permissions on the PATH: \"" + pathVar + "\"");
    }
    else if (!out_wasFound)
    {
