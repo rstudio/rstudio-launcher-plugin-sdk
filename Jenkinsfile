@@ -47,7 +47,19 @@ def create_package() {
 }
 
 def generate_documentation() {
-  sh "tools/generate-documentation.sh '${rlpSdkVersionMajor}.${rlpSdkVersionMinor}.${rlpSdkVersionPatch}'"
+    def version = "${rlpSdkVersionMajor}.${rlpSdkVersionMinor}.${rlpSdkVersionPatch}"
+  sh "tools/generate-documentation.sh '${version}'"
+
+  if (params.get('UPLOAD_PACKAGE') == true) {
+    sh "aws s3 sync docs/ApiRefHtml s3://docs.rstudio.com/rlps/apiref/${version}"
+    sh "aws s3 sync docs/ApiRefHtml s3://docs.rstudio.com/rlps/apiref/latest"
+
+    sh "aws s3 sync docs/QuickStartHtml s3://docs.rstudio.com/rlps/quickstart/${version}"
+    sh "aws s3 sync docs/QuickStartHtml s3://docs.rstudio.com/rlps/quickstart/latest"
+
+    sh "aws s3 sync docs/DevGuideHtml s3://docs.rstudio.com/rlps/devguide/${version}"
+    sh "aws s3 sync docs/DevGuideHtml s3://docs.rstudio.com/rlps/devguide/latest"
+  }
 }
 
 def build_source(type) {
