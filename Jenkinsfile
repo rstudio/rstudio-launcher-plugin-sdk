@@ -47,19 +47,7 @@ def create_package() {
 }
 
 def generate_documentation() {
-    def version = "${rlpSdkVersionMajor}.${rlpSdkVersionMinor}.${rlpSdkVersionPatch}"
-  sh "tools/generate-documentation.sh '${version}'"
-
-  if (params.get('UPLOAD_PACKAGE') == true) {
-    sh "aws s3 sync docs/ApiRefHtml s3://docs.rstudio.com/rlps/apiref/${version}"
-    sh "aws s3 sync docs/ApiRefHtml s3://docs.rstudio.com/rlps/apiref/latest"
-
-    sh "aws s3 sync docs/QuickStartHtml s3://docs.rstudio.com/rlps/quickstart/${version}"
-    sh "aws s3 sync docs/QuickStartHtml s3://docs.rstudio.com/rlps/quickstart/latest"
-
-    sh "aws s3 sync docs/DevGuideHtml s3://docs.rstudio.com/rlps/devguide/${version}"
-    sh "aws s3 sync docs/DevGuideHtml s3://docs.rstudio.com/rlps/devguide/latest"
-  }
+  sh "tools/generate-documentation.sh '${rlpSdkVersionMajor}.${rlpSdkVersionMinor}.${rlpSdkVersionPatch}'"
 }
 
 def build_source(type) {
@@ -80,14 +68,25 @@ def run_tests(type) {
 }
 
 def s3_upload() {
+  def version = "${rlpSdkVersionMajor}.${rlpSdkVersionMinor}.${rlpSdkVersionPatch}"
   def buildFolder = "docker/package"
   def packageFile = sh (
-      script: "basename `ls ${buildFolder}/*-${rlpSdkVersionMajor}.${rlpSdkVersionMinor}.${rlpSdkVersionPatch}.tar.gz`",
+      script: "basename `ls ${buildFolder}/*-${version}.tar.gz`",
       returnStdout: true
   ).trim()
 
   // copy installer to s3
   sh "aws s3 cp ${buildFolder}/${packageFile} s3://rstudio-launcher-plugin-sdk/"
+  
+  // copy documentation to s3
+  sh "aws s3 sync docs/ApiRefHtml s3://docs.rstudio.com/rlps/apiref/${version}/"
+  sh "aws s3 sync docs/ApiRefHtml s3://docs.rstudio.com/rlps/apiref/latest/"
+    
+  sh "aws s3 sync docs/QuickStartHtml s3://docs.rstudio.com/rlps/quickstart/${version}/"
+  sh "aws s3 sync docs/QuickStartHtml s3://docs.rstudio.com/rlps/quickstart/latest/"
+    
+  sh "aws s3 sync docs/DevGuideHtml s3://docs.rstudio.com/rlps/devguide/${version}/"
+  sh "aws s3 sync docs/DevGuideHtml s3://docs.rstudio.com/rlps/devguide/latest/"
 }
 
 def jenkins_user_build_args() {
