@@ -66,7 +66,8 @@ Error fileExistsForUser(const system::FilePath& in_file, const system::User& in_
    // This means we couldn't find the 'ls' executable.
    if (result.ExitCode == 127)
    {
-      std::string pathVar = system::posix::getEnvironmentVariable("PATH");
+      // :/bin will be appended to the PATH by the Process.cpp code since PATH is not explicitly set in lsOpts.
+      std::string pathVar = system::posix::getEnvironmentVariable("PATH").append(":/bin");
       logging::logDebugMessage(
          "The 'ls' executable could not be found. Please verify that the 'ls' executable "
          "exists and has appropriate permissions on the PATH: \"" + pathVar + "\"");
