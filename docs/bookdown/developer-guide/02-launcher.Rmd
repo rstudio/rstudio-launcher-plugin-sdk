@@ -18,7 +18,7 @@ Receiving requests, formatting and sending responses, and listening for signals 
 
 ## Network Architecture Requirements {#net-arch}
 
-As mentioned in section \@ref(launcher-pub), it is not necessary for the Launcher and the RStudio product which will make use of it to be running on the same machine. The RStudio product which will use the Launcher needs to be able to communicate with the launcher over HTTP or HTTPS on the configured port. The default Launcher port is `5559`, but it can be modified in `launcher.rstudio.conf`. In figure \@ref(fig:simple-net), a very simple network architecture is shown in which RStudio Server Pro is running on Host A and the Launcher and its Plugins are running on Host B. The Plugins must also be able to reach and communicate with their respective job scheduling systems (or compute clusters).
+As mentioned in section \@ref(launcher-pub), it is not necessary for the Launcher and the RStudio product which will make use of it to be running on the same machine. The RStudio product which will use the Launcher needs to be able to communicate with the launcher over HTTP or HTTPS on the configured port. The default Launcher port is `5559`, but it can be modified in `launcher.rstudio.conf`. In figure \@ref(fig:simple-net), a very simple network architecture is shown in which RStudio Server Pro is running on Host A and the Launcher and its Plugins are running on Host B. The Plugins must also be able to reach and communicate with their respective job scheduling systems.
 
 ```{r simple-net, echo=FALSE, eval=TRUE, fig.cap="Simple Launcher Network Architecture", fig.align="center"}
 knitr::include_graphics("images/simple-two-machine.png")
