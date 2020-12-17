@@ -21,13 +21,13 @@ Receiving requests, formatting and sending responses, and listening for signals 
 As mentioned in section \@ref(launcher-pub), it is not necessary for the Launcher and the RStudio product which will make use of it to be running on the same machine. The RStudio product which will use the Launcher needs to be able to communicate with the launcher over HTTP or HTTPS on the configured port. The default Launcher port is `5559`, but it can be modified in `launcher.rstudio.conf`. In figure \@ref(fig:simple-net), a very simple network architecture is shown in which RStudio Server Pro is running on Host A and the Launcher and its Plugins are running on Host B. The Plugins must also be able to reach and communicate with their respective job scheduling systems (or compute clusters).
 
 ```{r simple-net, echo=FALSE, eval=TRUE, fig.cap="Simple Launcher Network Architecture", fig.align="center"}
-knitr::include_graphics("images/simple-two-machine.drawio.svg")
+knitr::include_graphics("images/simple-two-machine.png")
 ```
 
 It is possible to load balance multiple instances of the Launcher for improved request throughput. An example with two Launcher instances is depicted in figure \@ref(fig:load-balanced-net), below.
 
 ```{r load-balanced-net, echo=FALSE, eval=TRUE, fig.cap="Load Balanced Launcher Network Architecture", fig.align="center"}
-knitr::include_graphics("images/load-balanced.drawio.svg")
+knitr::include_graphics("images/load-balanced.png")
 ```
 
 In order to work correctly with a load balanced architecture, the Plugin implementation must be able to return the same output from any Plugin which is part of the Launcher cluster. As each API call is described in detail in the following sections, requirements for an implementation of that API call which supports load balancing will be discussed.
@@ -39,13 +39,13 @@ When integrating the Launcher with RStudio Server Pro, there are two additional 
 When using Launcher Sessions, the RStudio Server Pro process must be able to communicate with the R, Jupyter, or other session over TCP on an arbitrary port.
 
 ```{r session-net, echo=FALSE, eval=TRUE, fig.cap="Launcher Sessions", fig.align="center"}
-knitr::include_graphics("images/simple-two-machine-sessions.drawio.svg")
+knitr::include_graphics("images/simple-two-machine-sessions.png")
 ```
 
 When using Launcher Jobs without Launcher Sessions, there are no special network considerations. However, when using Launcher Jobs with Launcher Sessions the R sessions must be able to communicate with RStudio Server Pro over HTTP(S), in the same way as an RStudio IDE user would.
 
 ```{r session-job-net, echo=FALSE, eval=TRUE, fig.cap="Launcher Jobs with Launcher Sessions", fig.align="center"}
-knitr::include_graphics("images/sessions-and-jobs.drawio.svg")
+knitr::include_graphics("images/sessions-and-jobs.png")
 ```
 
 For more details about configuring the RStudio Server and the Launcher, see the [RStudio Server Pro Administration Guide](https://docs.rstudio.com/ide/server-pro/).

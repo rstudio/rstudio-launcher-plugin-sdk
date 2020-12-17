@@ -3,7 +3,7 @@
 The RStudio Launcher Plugin SDK is designed to allow the Plugin developer to implement as little code as possible in order to get a working Plugin. Figure \@ref(fig:sdk-arch) describes the architecture of the SDK at a high, component level. The Plugin developer only needs to be concerned with those components which interface directly with the job scheduling system: Job Status Watcher, Job Source, Resource Utilization Stream, and Output Stream. Nevertheless, it can be useful to have a more full understanding of the workings of the SDK when making complex implementation decisions.
 
 ```{r sdk-arch, echo=FALSE, eval=TRUE, fig.cap="High Level Architecture", fig.align="center"}
-knitr::include_graphics("images/sdk-arch.drawio.svg")
+knitr::include_graphics("images/sdk-arch.png")
 ```
 
 
