@@ -13,9 +13,8 @@ Figure \@ref(fig:rl-arch) depicts the architecture of the RStudio Launcher, usin
 6. The Kubernetes Plugin will report either success or failure to the RStudio Launcher via the JSON RStudio Launcher Plugin API, based on the response from the Kubernetes HTTP API.
 7. The RStudio Launcher will forward the result to RStudio Server Pro via the RStudio Launcher HTTP API.
 
-<!-- TODO: Get a better diagram. -->
-```{r rl-arch, echo=FALSE, fig.cap="RStudio Launcher Archeticture"}
-knitr::include_graphics("images/SimpleLauncher.png")
+```{r rl-arch, echo=FALSE, fig.cap="RStudio Launcher Archeticture", fig.align="center"}
+knitr::include_graphics("images/simple-launcher.png")
 ```
 
 Many of the steps listed above are the same regardless of the job scheduling system in use. The RStudio Launcher Plugin SDK aims to reduce the development time and maintenance cost of RStudio Launcher Plugins by implementing common functionality and providing a straightforward framework for implementing the job scheduling system specific components of the RStudio Launcher Plugin.
