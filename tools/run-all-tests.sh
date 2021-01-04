@@ -26,6 +26,7 @@
 
 # Get the build dir
 BUILD_DIR=$1
+TOOLS_DIR="$(readlink -e "$(dirname "${BASH_SOURCE[0]}")")"
 
 TOTAL_FAILURES=0
 runTest()
@@ -42,7 +43,7 @@ runTest()
 # Create users for test cases
 grep rstudio-server < /etc/passwd >/dev/null
 ADD_RSTUDIO_SERVER_USER=$?
-tools/create-test-users.sh $ADD_RSTUDIO_SERVER_USER
+"${TOOLS_DIR}/create-test-users.sh" $ADD_RSTUDIO_SERVER_USER
 
 RET=$?
 if [[ $RET -ne 0 ]]; then
@@ -61,7 +62,7 @@ runTest "sdk/src/system/tests"
 # TODO: Integration tests
 
 # Remove test users
-tools/delete-test-users.sh $ADD_RSTUDIO_SERVER_USER
+"${TOOLS_DIR}/delete-test-users.sh" $ADD_RSTUDIO_SERVER_USER
 
 # Exit
 echo "Test failures: $TOTAL_FAILURES"
