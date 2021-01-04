@@ -3,10 +3,8 @@
 ## Prerequisites {#prereq}
 
 ### Platform Support
-The RStudio Launcher Plugin SDK supports the following platforms:
 
-<!-- TODO: Table here? Other Platforms? More details? -->
-* Ubuntu 18
+Plugins developed with the SDK require the RStudio Launcher to work. The SDK is currently compatible with the version of the RStudio Launcher that is shipped with RStudio Server Pro v1.4. As such, the SDK will be supported on all of the platforms supported by RStudio Server Pro v1.4, which can be found on the [Requirements for RStudio Server Pro page](https://docs.rstudio.com/rsp/requirements/).
 
 ### Build Dependencies
 
