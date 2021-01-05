@@ -26,10 +26,10 @@
 
 FAILURES=0
 
-sudo cp ./test.sh /home/rlpstestusrthree
+sudo cp ./test.sh /home/rlpstestusrthree/test.sh
 sudo chown rlpstestusrthree:rlpstestgrptwo /home/rlpstestusrthree/test.sh
 
-sudo cp ./test.sh /home/rlpstestusrtwo
+sudo cp ./test.sh /home/rlpstestusrtwo/test.sh
 sudo chown rlpstestusrtwo:rlpstestgrpone /home/rlpstestusrtwo/test.sh
 
 for test in ./*-tests;
