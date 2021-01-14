@@ -13,7 +13,7 @@ Figure \@ref(fig:rl-arch) depicts the architecture of the RStudio Launcher, usin
 6. The Kubernetes Plugin will report either success or failure to the RStudio Launcher via the JSON RStudio Launcher Plugin API, based on the response from the Kubernetes HTTP API.
 7. The RStudio Launcher will forward the result to RStudio Server Pro via the RStudio Launcher HTTP API.
 
-```{r rl-arch, echo=FALSE, fig.cap="RStudio Launcher Archeticture", fig.align="center"}
+```{r rl-arch, echo=FALSE, fig.cap="RStudio Launcher Architecture", fig.align="center"}
 knitr::include_graphics("images/simple-launcher.png")
 ```
 
