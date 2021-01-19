@@ -4,7 +4,7 @@
 
 ### Platform Support
 
-Plugins developed with the SDK require the RStudio Launcher to work. The SDK is currently compatible with the version of the RStudio Launcher that is shipped with RStudio Workbench v1.4.1. As such, the SDK will be supported on all of the platforms supported by RStudio Workbench v1.4.1, which can be found on the [Requirements for RStudio Workbench page](https://docs.rstudio.com/rsp/requirements/).
+Plugins developed with the SDK require the RStudio Launcher to work. The SDK is currently compatible with the version of the RStudio Launcher that is shipped with RStudio Workbench v1.4. As such, the SDK will be supported on all of the platforms supported by RStudio Workbench v1.4, which can be found on the [Requirements for RStudio Workbench page](https://docs.rstudio.com/rsp/requirements/).
 
 ### Build Dependencies
 
@@ -22,7 +22,7 @@ Boost     1.70.0             https://www.boost.org/
 
 ### RStudio Workbench
 
-This version of the RStudio Launcher Plugin SDK is compatible with RStudio Workbench version 1.4.1, or greater. To properly test the integration between a Launcher Plugin and RStudio Workbench, an RStudio Workbench license, with the launcher feature enabled, is required. To acquire a license, please contact sales@rstudio.com.
+This version of the RStudio Launcher Plugin SDK is compatible with RStudio Workbench version 1.4, or greater. To properly test the integration between a Launcher Plugin and RStudio Workbench, an RStudio Workbench license, with the launcher feature enabled, is required. To acquire a license, please contact sales@rstudio.com.
 
 ### Job Scheduling System
 
