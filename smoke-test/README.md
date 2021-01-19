@@ -27,4 +27,4 @@ Caveats
 The smoke test tool does not test all required functionality for each request type. It is meant as a 
 utility to help ensure that the Plugin is behaving as expected in the basic case, and to facilitate 
 debugging requests. To ensure that the Plugin is fully functional, it should be tested against 
-RStudio Server Pro with the RStudio Launcher enabled.
+RStudio Workbench with the RStudio Launcher enabled.

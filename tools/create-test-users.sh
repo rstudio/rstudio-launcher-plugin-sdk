@@ -85,7 +85,7 @@ addUser()
   echo "Done."
 }
 
-# Create the RStudio Server User, if it does not already exist
+# Create the RStudio Workbench server user, if it does not already exist
 if [[ -n $1 && $1 -ne 0 ]]; then
   echo "Adding rstudio-server user..."
   sudo useradd --system "rstudio-server"

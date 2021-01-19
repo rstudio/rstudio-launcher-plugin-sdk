@@ -454,7 +454,7 @@ Error MarsJobSource::initialize()
 
 ## Custom Job Source Configuration {#job-config-feature}
 
-> Important: This feature is not exposed through the RStudio Server Pro job launching UI. The use of this feature will require a feature request to the RStudio IDE project. This feature should only be used when there are no other alternatives.
+> Important: This feature is not exposed through the RStudio Workbench job launching UI. The use of this feature will require a feature request to the RStudio IDE project. This feature should only be used when there are no other alternatives.
 
 The [Cluster Info Response](#cluster-info) is used to report the configuration and capabilities of the Plugin. The RStudio Launcher Plugin SDK QuickStart Guide describes how the Plugin Developer may declare support for various types of resource limits, containers, custom job placement constraints, and job queues. In the event that there is some job configuration setting that is not covered by one of those built-in job settings, the Job Config feature may used.
 
@@ -677,7 +677,7 @@ Error MarsJobStatusWatcher::getJobDetails(const std::string& in_jobId, api::JobP
 
 ### Other Methods {#status-updates-other}
 
-It is possible that neither streaming nor polling are the best solution for keeping job statuses up to date. The use of an `AbstractJobStatusWatcher` is completely optional, and the Plugin developer may choose to implement this feature in any way that best suits the Job Scheduling System. For example, the provided sample Local Plugin does not use an `AbstractJobStatusWatcher`. Jobs are launched on the local system by forking a new processes and running the requested command in that process. The Local Plugin receives notifications when the child process writes to standard out, standard error, or exits. When the process exits, the Job state is transitioned from `Job::State::RUNNING` to `Job::State::FINISHED`. The Local Plugin also keeps track of when the process should transition from `Job::State::PENDING` to `Job::State::RUNNING` by checking whether the executable name has changed from `rsandbox` (a utility for launching processes in an isolated environment provided with the RStudio Server Pro installation) to the name of the actual executable for the Job.
+It is possible that neither streaming nor polling are the best solution for keeping job statuses up to date. The use of an `AbstractJobStatusWatcher` is completely optional, and the Plugin developer may choose to implement this feature in any way that best suits the Job Scheduling System. For example, the provided sample Local Plugin does not use an `AbstractJobStatusWatcher`. Jobs are launched on the local system by forking a new processes and running the requested command in that process. The Local Plugin receives notifications when the child process writes to standard out, standard error, or exits. When the process exits, the Job state is transitioned from `Job::State::RUNNING` to `Job::State::FINISHED`. The Local Plugin also keeps track of when the process should transition from `Job::State::PENDING` to `Job::State::RUNNING` by checking whether the executable name has changed from `rsandbox` (a utility for launching processes in an isolated environment provided with the RStudio Workbench installation) to the name of the actual executable for the Job.
 
 ## Customizing the Job Repository {#job-repo}
 
