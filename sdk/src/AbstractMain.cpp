@@ -183,6 +183,14 @@ private:
    std::condition_variable m_exitConditionVar;
 };
 
+int AbstractMain::run(int in_argc, std::vector<std::string> in_argv) {
+   std::vector<char*> argv;
+   argv.reserve(in_argv.size());
+   for (auto& arg: in_argv) argv.push_back(const_cast<char *>(arg.c_str()));
+
+   return run(in_argc, argv.data());
+}
+
 int AbstractMain::run(int in_argc, char** in_argv)
 {
    // Initialize Main. This should initialize the plugin-specific options, and any other plugin specific elements needed

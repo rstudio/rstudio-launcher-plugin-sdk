@@ -53,13 +53,22 @@ public:
     */
    int run(int in_argCount, char** in_argList);
 
+   /**
+    * @brief Runs the plugin.
+    *
+    * @param in_argCount    The number of arguments in in_argList.
+    * @param in_argList     The argument list to the program.
+    *
+    * @return 0 on a successful exit. A non-zero error code, otherwise.
+    */
+   int run(int in_argCount, std::vector<std::string> in_argList);
+
 protected:
    /**
     * @brief Default Constructor.
     */
    AbstractMain();
 
-private:
    /**
     * @brief Creates the Launcher Plugin API.
     *
@@ -99,6 +108,7 @@ private:
      */
     virtual Error initialize() = 0;
 
+private:
     // Private implementation of abstract main.
     PRIVATE_IMPL_SHARED(m_abstractMainImpl);
 };
