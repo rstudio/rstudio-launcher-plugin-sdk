@@ -26,7 +26,7 @@ project(rlp_sdk_all)
 include(CMakeGlobals.txt)
 
 set(CMAKE_CXX_STANDARD 11)
-
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 string(TOLOWER "${CMAKE_BUILD_TYPE}" build_type)
 if (NOT build_type STREQUAL "debug")
