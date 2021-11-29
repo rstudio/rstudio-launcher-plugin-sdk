@@ -270,7 +270,7 @@ struct Options::Impl
    Impl() :
       OptionsDescription("program"),
       IsInitialized(false),
-      EnableDebugLogging(false),
+      EnableDebugLogging(true),
       JobExpiryHours(0),
       HeartbeatIntervalSeconds(0),
       LauncherConfigFile(""),
