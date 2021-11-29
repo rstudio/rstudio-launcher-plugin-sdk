@@ -241,12 +241,12 @@ int AbstractMain::run(int in_argc, char** in_argv)
    }
    
    if(options.getEnableDebugLogging())
-     {
-        std::string logName = "rstudio-launcher-debug";
-        addLogDestination(
+   {
+      std::string logName = "rstudio-launcher-debug";
+      addLogDestination(
            std::unique_ptr<ILogDestination>(
                new FileLogDestination(
-               2,
+               4,
                logging::LogLevel::DEBUG,
                logName,
                logging::FileLogOptions(
