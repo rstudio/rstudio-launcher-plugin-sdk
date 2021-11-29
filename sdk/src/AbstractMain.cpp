@@ -219,6 +219,7 @@ int AbstractMain::run(int in_argc, char** in_argv)
    system::User serverUser;
    error = options.getServerUser(serverUser);
    CHECK_ERROR(error)
+   
 
    // Ensure the scratch path exists and is configured correctly.
    int ret = configureScratchPath(options.getScratchPath(), serverUser, options.useUnprivilegedMode()) ;
@@ -238,7 +239,20 @@ int AbstractMain::run(int in_argc, char** in_argv)
                getProgramId(),
                options.getScratchPath())));
    }
-
+   
+   if(options.getEnableDebugLogging())
+     {
+        std::string logName = "rstudio-launcher-debug";
+        addLogDestination(
+           std::unique_ptr<ILogDestination>(
+               new FileLogDestination(
+               2,
+               logging::LogLevel::DEBUG,
+               logName,
+               logging::FileLogOptions(
+                options.getLoggingDir()
+               ))));
+     }
    // Create the launcher communicator. For now this is always an StdIO communicator. Later, it could be dependant on
    // the options.
    std::shared_ptr<comms::AbstractLauncherCommunicator> launcherCommunicator(

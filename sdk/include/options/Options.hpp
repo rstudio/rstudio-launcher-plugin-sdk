@@ -256,6 +256,13 @@ public:
    const system::FilePath& getRSandboxPath() const;
 
   /**
+   * @brief Gets path where debug logs should be written.
+   *
+   * @return The pathwhere debug logs should be written.
+   */
+   const system::FilePath& getLoggingDir() const;
+
+  /**
    * @brief Gets the scratch path to which log files and other plugin data may be written.
    *
    * Note that this does not include job output. Job output should be written in the location specified by the user
@@ -287,6 +294,12 @@ public:
     * @return True if the plugin should run in uprivileged mode; false otherwise.
     */
    bool useUnprivilegedMode() const;
+   /**
+    * @brief Gets whether debug logging is activates.
+    *
+    * @return True if the enableDebugLogging is true; false otherwise.
+    */
+   bool getEnableDebugLogging() const;
 
 private:
    /**

@@ -153,6 +153,7 @@ namespace {
 
 constexpr char const* s_defaultSandboxPath = "/usr/lib/rstudio-server/bin/rsandbox";
 constexpr char const* s_defaultScratchPath = "/var/lib/rstudio-launcher/";
+constexpr char const* s_defaultLoggingDir = "var/log/rstudio/launcher";
 
 enum class OptionsError
 {
@@ -276,6 +277,7 @@ struct Options::Impl
       MaxLogLevel(logging::LogLevel::OFF),
       ScratchPath(""),
       ServerUser(),
+      LoggingDir(""),
       ThreadPoolSize(0)
    { };
 
@@ -321,8 +323,10 @@ struct Options::Impl
                "the number of threads in the thread pool")
             ("unprivileged",
                value<bool>(&UseUnprivilegedMode)->default_value(false),
-               "special unprivileged mode - does not change user, runs without root, no impersonation, single user");
-
+               "special unprivileged mode - does not change user, runs without root, no impersonation, single user")
+             ("logging-dir",
+               value<system::FilePath>(&LoggingDir)->default_value(system::FilePath(s_defaultLoggingDir)),
+               "specifies path where debug logs should be written");
          IsInitialized = true;
       }
    }
@@ -346,6 +350,7 @@ struct Options::Impl
    std::string PluginName;
    system::FilePath RSandboxPath;
    system::FilePath ScratchPath;
+   system::FilePath LoggingDir;
    std::string ServerUser;
    size_t ThreadPoolSize;
    bool UseUnprivilegedMode;
@@ -503,7 +508,10 @@ const system::FilePath& Options::getRSandboxPath() const
 {
    return m_impl->RSandboxPath;
 }
-
+const system::FilePath& Options::getLoggingDir() const
+{
+   return m_impl->LoggingDir;
+}
 const system::FilePath& Options::getScratchPath() const
 {
    return m_impl->ScratchPath;
@@ -522,6 +530,11 @@ size_t Options::getThreadPoolSize() const
 bool Options::useUnprivilegedMode() const
 {
    return m_impl->UseUnprivilegedMode;
+}
+
+bool Options::getEnableDebugLogging() const
+{
+   return m_impl->EnableDebugLogging;
 }
 
 Options::Options() :
