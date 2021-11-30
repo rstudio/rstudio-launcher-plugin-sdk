@@ -426,7 +426,7 @@ Error SmokeTest::initialize()
    pluginOpts.IsShellCommand = false;
    pluginOpts.CloseStdIn = false;
    pluginOpts.UseSandbox = false;
-   pluginOpts.Arguments = { "--heartbeat-interval-seconds=0", "--enable-debug-logging=1", "--logging-dir=/var/log/rstudio/launcher" };
+   pluginOpts.Arguments = { "--heartbeat-interval-seconds=0", "--enable-debug-logging=1", "--logging-dir=/var/lib/rstudio-launcher/" };
    pluginOpts.RunAsUser = system::User(true); // Don't change users - run as whoever launched this.
 
    if (!system::posix::realUserIsRoot())

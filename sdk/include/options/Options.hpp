@@ -258,7 +258,7 @@ public:
   /**
    * @brief Gets path where debug logs should be written.
    *
-   * @return The pathwhere debug logs should be written.
+   * @return The path where debug logs should be written.
    */
    const system::FilePath& getLoggingDir() const;
 

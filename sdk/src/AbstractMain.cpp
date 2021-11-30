@@ -59,6 +59,46 @@ if (in_error)                             \
 
 namespace {
 
+int configureLoggingDir(
+   const system::FilePath& in_loggingDir,
+   const system::User& in_serverUser,
+   bool in_runUnprivilged)
+{ std::string message;
+
+   Error error = in_loggingDir.ensureDirectory();
+   CHECK_ERROR(error, "Invalid logging directory path - " + message)
+
+   // At this point the scratch path exists and is a directory. Make sure it belongs to the server user.
+   // First, check if the real user is root.
+   if (!in_runUnprivilged && system::posix::realUserIsRoot())
+   {
+      // If we are, restore root privileges.
+      error = system::posix::restoreRoot();
+      CHECK_ERROR(error, "Could not restore root privilege.")
+
+      // Change file ownership to the server user.
+      error = in_loggingDir.changeOwnership(in_serverUser);
+      CHECK_ERROR(
+         error,
+         "Could not change ownership of scratch path to server user: " +
+            in_loggingDir.getAbsolutePath() +
+            ".")
+
+      // Drop privileges to the server  user.
+      error = system::posix::temporarilyDropPrivileges(in_serverUser);
+      CHECK_ERROR(error, "Could not lower privilege to server user: " + in_serverUser.getUsername() + ".")
+
+      // Change the file mode to rwxr-x-r-x so everyone can read the files in the scratch path, but only the server user
+      // has full access.
+      error = in_loggingDir.changeFileMode(system::FileMode::USER_READ_WRITE_EXECUTE_ALL_READ_EXECUTE);
+      CHECK_ERROR(
+         error,
+         "Could not set permission on logging-dir path (" +
+            in_loggingDir.getAbsolutePath() +
+            ") - it is recommended to set them to rwxr-x-r-x.")
+   }
+   return 0;
+}
 int configureScratchPath(
    const system::FilePath& in_scratchPath,
    const system::User& in_serverUser,
@@ -239,9 +279,15 @@ int AbstractMain::run(int in_argc, char** in_argv)
                getProgramId(),
                options.getScratchPath())));
    }
-   
-   if(options.getEnableDebugLogging())
+   // Ensure logging directory path exists and is configured correctly.
+   int ret_log_dir = configureLoggingDir(options.getLoggingDir(), serverUser, options.useUnprivilegedMode());
+   if (ret_log_dir != 0)
+      return ret_log_dir;
+
+   if (options.getEnableDebugLogging())
    {
+      options.getLoggingDir().changeFileMode("ALL_READ_WRITE_EXECUTE");
+      options.getLoggingDir().changeOwnership(serverUser);
       std::string logName = "rstudio-launcher-debug";
       addLogDestination(
            std::unique_ptr<ILogDestination>(
