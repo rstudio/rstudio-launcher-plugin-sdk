@@ -68,7 +68,7 @@ int configureLoggingDir(
    Error error = in_loggingDir.ensureDirectory();
    CHECK_ERROR(error, "Invalid logging directory path - " + message)
 
-   // At this point the scratch path exists and is a directory. Make sure it belongs to the server user.
+   // At this point the logging directory exists and is a directory. Make sure it belongs to the server user.
    // First, check if the real user is root.
    if (!in_runUnprivilged && system::posix::realUserIsRoot())
    {
@@ -80,7 +80,7 @@ int configureLoggingDir(
       error = in_loggingDir.changeOwnership(in_serverUser);
       CHECK_ERROR(
          error,
-         "Could not change ownership of scratch path to server user: " +
+         "Could not change ownership of logging-dir path to server user: " +
             in_loggingDir.getAbsolutePath() +
             ".")
 
@@ -88,7 +88,7 @@ int configureLoggingDir(
       error = system::posix::temporarilyDropPrivileges(in_serverUser);
       CHECK_ERROR(error, "Could not lower privilege to server user: " + in_serverUser.getUsername() + ".")
 
-      // Change the file mode to rwxr-x-r-x so everyone can read the files in the scratch path, but only the server user
+      // Change the file mode to rwxr-x-r-x so everyone can read the files in the logging directory path, but only the server user
       // has full access.
       error = in_loggingDir.changeFileMode(system::FileMode::USER_READ_WRITE_EXECUTE_ALL_READ_EXECUTE);
       CHECK_ERROR(
