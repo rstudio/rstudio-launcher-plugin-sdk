@@ -1,7 +1,7 @@
 /*
  * FilePath.hpp
  *
- * Copyright (C) 2020 by RStudio, PBC
+ * Copyright (C) 2021 by RStudio, PBC
  *
  * Unless you have received this program directly from RStudio pursuant to the terms of a commercial license agreement
  * with RStudio, then this program is licensed to you under the following terms:
@@ -693,7 +693,9 @@ public:
    /**
     * @brief Checks if a file can be written to by opening the file.
     *
-    * To be successful, the file must already exist on the system.
+    * To be successful, the file must be a regular file (not a directory, etc.) and already exist on
+    * the system.
+    *
     * If write access is not absolutely necessary, use isWriteable instead.
     *
     * @return Success if file can be written to; system error otherwise (e.g. EPERM, ENOENT, etc.)

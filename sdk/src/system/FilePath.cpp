@@ -1,7 +1,7 @@
 /*
  * FilePath.cpp
  *
- * Copyright (C) 2020 by RStudio, PBC
+ * Copyright (C) 2021 by RStudio, PBC
  *
  * Unless you have received this program directly from RStudio pursuant to the terms of a commercial license agreement
  * with RStudio, then this program is licensed to you under the following terms:
@@ -35,10 +35,10 @@
 #include <boost/filesystem.hpp>
 #undef BOOST_NO_CXX11_SCOPED_ENUMS
 
+#include <boost/bind/bind.hpp>
+#include <boost/make_shared.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/algorithm/string/predicate.hpp>
-#include <boost/bind.hpp>
-#include <boost/make_shared.hpp>
 
 #include <Error.hpp>
 #include <logging/Logger.hpp>
@@ -47,6 +47,8 @@
 #include <utils/ErrorUtils.hpp>
 
 typedef boost::filesystem::path path_t;
+
+using namespace boost::placeholders;
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -83,6 +85,7 @@ MimeType s_mimeTypes[] =
       { "ttf",          "application/x-font-ttf" },
       { "woff",         "application/font-woff" },
       { "woff2",        "application/font-woff2" },
+      { "wasm",         "application/wasm"},
 
       // markdown types
       { "md",           "text/x-markdown" },
@@ -1393,6 +1396,14 @@ void FilePath::setLastWriteTime(std::time_t in_time) const
 
 Error FilePath::testWritePermissions() const
 {
+   // This check only works on ordinary files; it is an error to use it on directories.
+   if (isDirectory())
+   {
+      Error error = systemError(boost::system::errc::is_a_directory, ERROR_LOCATION);
+      error.addProperty("path", getAbsolutePath());
+      return error;
+   }
+
    std::ostream* pStream = nullptr;
    try
    {
