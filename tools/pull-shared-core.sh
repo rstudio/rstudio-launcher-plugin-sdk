@@ -289,6 +289,7 @@ for I in "${!SRC_SOURCES[@]}"; do
     if [[ "$SRC_FILE" == "Error.cpp" ]] || [[ "$SRC_FILE" == "FileLogDestination.cpp" ]]; then
         replace "$DEST_PATH" "\n\s*namespace\s*rstudio\s*\{" "\n\nusing namespace rstudio::launcher_plugins::system;\n\nnamespace rstudio \{"
         replace "$DEST_PATH" "(#include <ostream>)" "\1\n\n#include <boost/system/error_code.hpp>"
+        replace "$DEST_PATH" "Optional<Error> Cause" "Error Cause"
         replace "$DEST_PATH" "[ \t]*Error::Error\s*\(\s*const\s*boost::system::error_code\s*&\s*in_ec\s*,\s*const\s*ErrorLocation\s*&\s*in_location\s*\).*\n(.*\n)*\s*(Error::Error\(std::string\s*in_name\s*,\s*int\s*in_code\s*,\s*const\s*ErrorL)" "\2"
         replace "$DEST_PATH" "[ \t]*bool\s*Error::operator==\s*\(\s*const\s*boost::.*\n(.*\n)*\s*(bool\s*Error::operator!=\(\s*const\s*r)" "\2"
         replace "$DEST_PATH" "[ \t]*bool\s*Error::operator!=\s*\(\s*const\s*boost::.*\n(.*\n)*\s*(void\s*Error::addOrUpdateProperty\s*\(\s*const\s*std::string\s*&\s*in_name\s*,\s*const\s*std::)" "\2"

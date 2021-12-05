@@ -329,7 +329,7 @@ bool Error::hasCause() const
 }
 
 const Error& Error::getCause() const
-{ 
+{
    return impl().Cause;
 }
 
