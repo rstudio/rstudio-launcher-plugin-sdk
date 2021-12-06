@@ -84,10 +84,6 @@ int configureLoggingDir(
             in_loggingDir.getAbsolutePath() +
             ".")
 
-      // Drop privileges to the server  user.
-      error = system::posix::temporarilyDropPrivileges(in_serverUser);
-      CHECK_ERROR(error, "Could not lower privilege to server user: " + in_serverUser.getUsername() + ".")
-
       // Change the file mode to rwxr-x-r-x so everyone can read the files in the scratch path, but only the server user
       // has full access.
       error = in_loggingDir.changeFileMode(system::FileMode::USER_READ_WRITE_EXECUTE_ALL_READ_EXECUTE);
