@@ -153,7 +153,7 @@ namespace {
 
 constexpr char const* s_defaultSandboxPath = "/usr/lib/rstudio-server/bin/rsandbox";
 constexpr char const* s_defaultScratchPath = "/var/lib/rstudio-launcher/";
-constexpr char const* s_defaultLoggingDir = "var/log/rstudio/launcher";
+constexpr char const* s_defaultLoggingDir = "/var/log/rstudio/launcher";
 
 enum class OptionsError
 {
@@ -270,7 +270,7 @@ struct Options::Impl
    Impl() :
       OptionsDescription("program"),
       IsInitialized(false),
-      EnableDebugLogging(true),
+      EnableDebugLogging(false),
       JobExpiryHours(0),
       HeartbeatIntervalSeconds(0),
       LauncherConfigFile(""),
@@ -532,7 +532,7 @@ bool Options::useUnprivilegedMode() const
    return m_impl->UseUnprivilegedMode;
 }
 
-bool Options::useEnableDebugLogging() const
+bool Options::enableDebugLogging() const
 {
    return m_impl->EnableDebugLogging;
 }

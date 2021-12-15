@@ -265,25 +265,13 @@ int AbstractMain::run(int in_argc, char** in_argv)
    // Remove the stderr log destination.
    removeLogDestination(stderrLogDest->getId());
 
-   if (options.getLogLevel() > LogLevel::INFO)
-   {
-      addLogDestination(
-         std::unique_ptr<ILogDestination>(
-            new FileLogDestination(
-               3,
-               options.getLogLevel(),
-               getProgramId(),
-               options.getScratchPath())));
-   }
    // Ensure logging directory path exists and is configured correctly.
    int ret_log_dir = configureLoggingDir(options.getLoggingDir(), serverUser, options.useUnprivilegedMode());
    if (ret_log_dir != 0)
       return ret_log_dir;
 
-   if (options.useEnableDebugLogging())
+   if (options.enableDebugLogging())
    {
-      options.getLoggingDir().changeFileMode("ALL_READ_WRITE_EXECUTE");
-      options.getLoggingDir().changeOwnership(serverUser);
       std::string logName = getProgramId() + "-debug";
       addLogDestination(
            std::unique_ptr<ILogDestination>(

@@ -299,7 +299,7 @@ public:
     *
     * @return True if the enableDebugLogging is true; false otherwise.
     */
-   bool useEnableDebugLogging() const;
+   bool enableDebugLogging() const;
 
 private:
    /**
