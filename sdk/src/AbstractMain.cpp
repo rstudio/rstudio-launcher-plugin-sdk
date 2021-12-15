@@ -66,7 +66,7 @@ int configureLoggingDir(
 { std::string message;
 
    Error error = in_loggingDir.ensureDirectory();
-   CHECK_ERROR(error, "Invalid logging directory path - " + message)
+   CHECK_ERROR(error, "Invalid logging directory path at " + in_loggingDir.getCanonicalPath() + message)
 
    // At this point the logging directory exists and is a directory. Make sure it belongs to the server user.
    // First, check if the real user is root.
@@ -280,11 +280,11 @@ int AbstractMain::run(int in_argc, char** in_argv)
    if (ret_log_dir != 0)
       return ret_log_dir;
 
-   if (options.getEnableDebugLogging())
+   if (options.useEnableDebugLogging())
    {
       options.getLoggingDir().changeFileMode("ALL_READ_WRITE_EXECUTE");
       options.getLoggingDir().changeOwnership(serverUser);
-      std::string logName = "rstudio-launcher-debug";
+      std::string logName = getProgramId() + "-debug";
       addLogDestination(
            std::unique_ptr<ILogDestination>(
                new FileLogDestination(

@@ -295,11 +295,11 @@ public:
     */
    bool useUnprivilegedMode() const;
    /**
-    * @brief Gets whether debug logging is activates.
+    * @brief Gets whether debug logging is activated.
     *
     * @return True if the enableDebugLogging is true; false otherwise.
     */
-   bool getEnableDebugLogging() const;
+   bool useEnableDebugLogging() const;
 
 private:
    /**
