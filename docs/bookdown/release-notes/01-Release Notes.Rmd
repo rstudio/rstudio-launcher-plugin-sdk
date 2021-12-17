@@ -1,3 +1,0 @@
-# SDK Release Notes
-
-## The debug logs are now written to `/var/log/rstudio/launcher` by default, instead of the plugins scratch path.
