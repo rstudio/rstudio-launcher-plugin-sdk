@@ -1,7 +1,7 @@
 /*
  * FilePath.hpp
  *
- * Copyright (C) 2021 by RStudio, PBC
+ * Copyright (C) 2022 by RStudio, PBC
  *
  * Unless you have received this program directly from RStudio pursuant to the terms of a commercial license agreement
  * with RStudio, then this program is licensed to you under the following terms:
@@ -64,6 +64,7 @@ enum class FileMode
    USER_READ_WRITE_GROUP_READ,
    USER_READ_WRITE_ALL_READ,
    USER_READ_WRITE_EXECUTE_ALL_READ_EXECUTE,
+   USER_READ_WRITE_EXECUTE_GROUP_READ_WRITE_EXECUTE_ALL_READ_EXECUTE,
    ALL_READ,
    ALL_READ_WRITE,
    ALL_READ_WRITE_EXECUTE
@@ -109,6 +110,13 @@ public:
     * @param in_absolutePath    The string representation of the path.
     */
    explicit FilePath(const std::string& in_absolutePath);
+
+   /**
+    * @brief Constructor.
+    *
+    * @param in_absolutePath    The string representation of the path.
+    */
+   explicit FilePath(const char* in_absolutePath);
 
    /**
     * @brief Comparison operator. File paths are equal if their absolute representations are equal.

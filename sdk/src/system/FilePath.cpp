@@ -1,7 +1,7 @@
 /*
  * FilePath.cpp
  *
- * Copyright (C) 2021 by RStudio, PBC
+ * Copyright (C) 2022 by RStudio, PBC
  *
  * Unless you have received this program directly from RStudio pursuant to the terms of a commercial license agreement
  * with RStudio, then this program is licensed to you under the following terms:
@@ -102,6 +102,7 @@ MimeType s_mimeTypes[] =
       { "stan",         "text/x-stan" },
       { "clj",          "text/x-clojure" },
       { "ts",           "text/x-typescript"},
+      { "ojs",          "text/javascript" },
       { "lua",          "text/x-lua"},
 
       // other types we are likely to serve
@@ -138,6 +139,7 @@ MimeType s_mimeTypes[] =
       { "Rmd",          "text/x-r-markdown" },
       { "Rhtml",        "text/x-r-html" },
       { "Rpres",        "text/x-r-presentation" },
+      { "qmd",          "text/x-quarto-markdown"},
       { "Rout",         "text/plain" },
       { "po",           "text/plain" },
       { "pot",          "text/plain" },
@@ -335,6 +337,17 @@ FilePath::FilePath() :
 FilePath::FilePath(const std::string& in_absolutePath) :
    m_impl(new Impl(fromString(std::string(in_absolutePath.c_str())))) // thwart ref-count
 {
+}
+
+FilePath::FilePath(const char* in_absolutePath) :
+   m_impl(in_absolutePath ? 
+            new Impl(fromString(in_absolutePath)) :
+            new Impl())
+{
+   if (in_absolutePath == nullptr)
+   {
+      logging::logDebugMessage("Creating an empty FilePath from a null path", ERROR_LOCATION);
+   }
 }
 
 bool FilePath::operator==(const FilePath& in_other) const
@@ -551,6 +564,10 @@ Error FilePath::changeFileMode(FileMode in_fileMode, bool in_setStickyBit) const
 
       case FileMode::ALL_READ_WRITE_EXECUTE:
          mode = S_IRWXU | S_IRWXG | S_IRWXO;
+         break;
+
+      case FileMode::USER_READ_WRITE_EXECUTE_GROUP_READ_WRITE_EXECUTE_ALL_READ_EXECUTE:
+         mode = S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH;
          break;
 
       default:
@@ -913,6 +930,8 @@ Error FilePath::getFileMode(FileMode& out_fileMode) const
       out_fileMode = FileMode::ALL_READ_WRITE_EXECUTE;
    else if (mode == "rwxr-xr-x")
       out_fileMode = FileMode::USER_READ_WRITE_EXECUTE_ALL_READ_EXECUTE;
+   else if (mode == "rwxrwxr-x")
+      out_fileMode = FileMode::USER_READ_WRITE_EXECUTE_GROUP_READ_WRITE_EXECUTE_ALL_READ_EXECUTE;
    else
       return systemError(boost::system::errc::not_supported, ERROR_LOCATION);
 
