@@ -196,16 +196,16 @@ int AbstractMain::run(int in_argc, char** in_argv)
    setProgramId(getProgramId());
 
    // Add a syslog destination.
-   addLogDestination(
+   /*addLogDestination(
       std::shared_ptr<ILogDestination>(
          new SyslogDestination(
-            LogLevel::INFO,
-            getProgramId())));
+            getProgramId()))),
+            INFO;*/
 
    logging::logInfoMessage("Starting plugin...");
 
    // Turn on stderr logging while options are parsed.
-   std::shared_ptr<ILogDestination> stderrLogDest(new StderrLogDestination(LogLevel::INFO));
+   std::shared_ptr<ILogDestination> stderrLogDest(new StderrLogDestination(getProgramId(), LogLevel::INFO, LogMessageFormatType::PRETTY,true));
    addLogDestination(stderrLogDest);
 
    // Initialize the default options. This must be done before the custom options are initialized.
@@ -227,17 +227,6 @@ int AbstractMain::run(int in_argc, char** in_argv)
 
    // Remove the stderr log destination.
    removeLogDestination(stderrLogDest->getId());
-
-   if (options.getLogLevel() > LogLevel::INFO)
-   {
-      addLogDestination(
-         std::unique_ptr<ILogDestination>(
-            new FileLogDestination(
-               3,
-               options.getLogLevel(),
-               getProgramId(),
-               options.getScratchPath())));
-   }
 
    // Create the launcher communicator. For now this is always an StdIO communicator. Later, it could be dependant on
    // the options.

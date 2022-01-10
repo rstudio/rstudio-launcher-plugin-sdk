@@ -69,7 +69,8 @@ SRC_INCLUDES=(
   "FilePath.hpp"                      #  7
   "system/Crypto.hpp"                 #  8
   "system/User.hpp"                   #  9
-  "system/PosixSystem.hpp")           # 10
+  "system/PosixSystem.hpp"            # 10
+  "DateTime.hpp")                     # 11
 DEST_INCLUDES=(
   "Error.hpp"                         #  1
   "PImpl.hpp"                         #  2
@@ -80,7 +81,8 @@ DEST_INCLUDES=(
   "system/FilePath.hpp"               #  7
   "system/Crypto.hpp"                 #  8
   "system/User.hpp"                   #  9
-  "system/PosixSystem.hpp")           # 10
+  "system/PosixSystem.hpp"            # 10
+  "system/DateTime.hpp")              # 11
 
 SRC_SOURCES=(
   "Error.cpp"                         #  1
