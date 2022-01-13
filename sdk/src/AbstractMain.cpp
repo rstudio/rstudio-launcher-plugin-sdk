@@ -56,59 +56,6 @@ if (in_error)                             \
 #define CHECK_ERROR(in_error, ...) CHECK_ERROR_GET_MACRO(_0, ##__VA_ARGS__, CHECK_ERROR_1, CHECK_ERROR_0) \
    (in_error, __VA_ARGS__)                                                                                \
 
-
-namespace {
-
-int configureScratchPath(
-   const system::FilePath& in_scratchPath,
-   const system::User& in_serverUser,
-   bool in_runUnprivilged)
-{
-   std::string message;
-   if (!in_scratchPath.exists())
-      message = "please ensure that it exists.";
-   else
-      message = "please ensure that it is a directory.";
-
-   Error error = in_scratchPath.ensureDirectory();
-   CHECK_ERROR(error, "Invalid scratch path - " + message)
-
-   // At this point the scratch path exists and is a directory. Make sure it belongs to the server user.
-   // First, check if the real user is root.
-   if (!in_runUnprivilged && system::posix::realUserIsRoot())
-   {
-      // If we are, restore root privileges.
-      error = system::posix::restoreRoot();
-      CHECK_ERROR(error, "Could not restore root privilege.")
-
-      // Change file ownership to the server user.
-      error = in_scratchPath.changeOwnership(in_serverUser);
-      CHECK_ERROR(
-         error,
-         "Could not change ownership of scratch path to server user: " +
-            in_scratchPath.getAbsolutePath() +
-            ".")
-
-      // Drop privileges to the server  user.
-      error = system::posix::temporarilyDropPrivileges(in_serverUser);
-      CHECK_ERROR(error, "Could not lower privilege to server user: " + in_serverUser.getUsername() + ".")
-
-      // Change the file mode to rwxr-x-r-x so everyone can read the files in the scratch path, but only the server user
-      // has full access.
-      error = in_scratchPath.changeFileMode(system::FileMode::USER_READ_WRITE_EXECUTE_ALL_READ_EXECUTE);
-      CHECK_ERROR(
-         error,
-         "Could not set permission on scratch path (" +
-            in_scratchPath.getAbsolutePath() +
-            ") - it is recommended to set them to rwxr-x-r-x.")
-   }
-
-   return 0;
-}
-
-} // namespace
-
-
 struct AbstractMain::Impl
 {
    /**
@@ -223,18 +170,11 @@ int AbstractMain::run(int in_argc, char** in_argv)
    error = options.getServerUser(serverUser);
    CHECK_ERROR(error)
 
-   // Ensure the scratch path exists and is configured correctly.
-   int ret = configureScratchPath(options.getScratchPath(), serverUser, options.useUnprivilegedMode()) ;
-   if (ret != 0)
-      return ret;
-
    // Remove the stderr log destination.
    removeLogDestination(stderrLogDest->getId());
    
-   // Ensure logging directory path exists and is configured correctly.
-   /*int ret_log_dir = configureLoggingDir(options.getLoggingDir(), serverUser, options.useUnprivilegedMode());
-   if (ret_log_dir != 0)
-      return ret_log_dir;*/
+   
+   // Create debug logging file.
   
    if (options.enableDebugLogging())
    {
@@ -244,7 +184,7 @@ int AbstractMain::run(int in_argc, char** in_argv)
    if (options.getLogLevel() > LogLevel::INFO)
    {   
    std::unique_ptr<ILogDestination> infoLogDest(new FileLogDestination("4",LogLevel::INFO, LogMessageFormatType::PRETTY, getProgramId().c_str(), options.getScratchPath(), false));
-               
+   
    }
 
    // Create the launcher communicator. For now this is always an StdIO communicator. Later, it could be dependant on
