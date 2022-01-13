@@ -1,7 +1,7 @@
 /*
  * SafeConvert.hpp
  *
- * Copyright (C) 2020 by RStudio, PBC
+ * Copyright (C) 2022 by RStudio, PBC
  *
  * Unless you have received this program directly from RStudio pursuant to the terms of a commercial license agreement
  * with RStudio, then this program is licensed to you under the following terms:
@@ -33,7 +33,6 @@
 #include <boost/numeric/conversion/cast.hpp>
 #include <Optional.hpp>
 
-#include <logging/Logger.hpp>
 #include <Error.hpp>
 
 namespace rstudio {

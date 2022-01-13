@@ -1,7 +1,7 @@
 /*
  * Crypto.hpp
  *
- * Copyright (C) 2020 by RStudio, PBC
+ * Copyright (C) 2022 by RStudio, PBC
  *
  * Unless you have received this program directly from RStudio pursuant to the
  * terms of a commercial license agreement with RStudio, then this program is
@@ -87,6 +87,20 @@ Error aesEncrypt(
    const std::vector<unsigned char>& in_key,
    const std::vector<unsigned char>& in_iv,
    std::vector<unsigned char>& out_encrypted);
+
+/**
+ * Overloaded version of aesEncrypt for use without an initialization vector.
+ *
+ * @param in_data           The data to be encrypted.
+ * @param in_key            The key with which to encrypt the data.
+ * @param out_encrypted     The encrypted data.
+ *
+ * @return Success if the data could be AES encrypted; Error otherwise.
+ */
+Error aesEncrypt(
+    const std::vector<unsigned char>& in_data,
+    const std::vector<unsigned char>& in_key,
+    std::vector<unsigned char>& out_encrypted);
 
 /**
  * @brief Base-64 decodes a string.

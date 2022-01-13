@@ -1,7 +1,7 @@
 /*
  * Error.hpp
  *
- * Copyright (C) 2020 by RStudio, PBC
+ * Copyright (C) 2022 by RStudio, PBC
  *
  * Unless you have received this program directly from RStudio pursuant to the terms of a commercial license agreement
  * with RStudio, then this program is licensed to you under the following terms:
@@ -175,9 +175,9 @@ class Error : public virtual ErrorLock
 {
 public:
    /**
-    * @brief Default constructor.
+    * @brief Constructor.
     */
-   Error() = default;
+   Error();
 
    /**
     * @brief Copy constructor.
@@ -327,6 +327,13 @@ public:
     */
    std::string asString() const;
 
+   /**
+    * @brief Checks whether this error was caused by a separate error.
+    *
+    * @return True if the error has an associated cause.
+    */
+   bool hasCause() const;
+   
    /**
     * @brief Gets the error which caused this error.
     *
