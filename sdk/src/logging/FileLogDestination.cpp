@@ -418,7 +418,7 @@ struct FileLogDestination::Impl
          if (endPos != std::string::npos)
          {
             timeStr = line.substr(pos, endPos - pos);
-            if (launcher_plugins::system::DateTime::parseUtcTimeFromIso8601String(timeStr, &time))
+            if (rstudio::launcher_plugins::system::DateTime::parseUtcTimeFromIso8601String(timeStr, &time))
                return time;
          }
       }
@@ -430,7 +430,7 @@ struct FileLogDestination::Impl
          if (pos != std::string::npos)
          {
             timeStr = line.substr(0, pos - 1);
-            if (launcher_plugins::system::DateTime::parseUtcTimeFromFormatString(timeStr, "%d %b %Y %H:%M:%S", &time))
+            if (DateTime::parseUtcTimeFromFormatString(timeStr, "%d %b %Y %H:%M:%S", &time))
                return time;
          }
       }
@@ -553,7 +553,7 @@ FileLogDestination::FileLogDestination(
       // We need to duplicate warn/error logs to syslog
       // To accomplish this, we will manage or own SyslogDestination which we will
       // forward logging calls to
-      m_impl->SyslogDest = std::make_shared<launcher_plugins::system::SyslogDestination>(
+      m_impl->SyslogDest = std::make_shared<launcher_plugins::logging::SyslogDestination>(
                in_id, logging::LogLevel::WARN, in_formatType, in_programId);
    }
 }
@@ -578,10 +578,10 @@ void FileLogDestination::refresh(const RefreshParams& in_refreshParams)
    {
       // If we can, change the log owner to the currently running user id to ensure
       // that we can continue writing to the log if we just changed our running user
-      m_impl->chownLogs(m_impl->LogFile, in_refreshParams.newUser.get());
+      m_impl->chownLogs(m_impl->LogFile, in_refreshParams.newUser.getValueOr();
 
       if (in_refreshParams.chownLogDir)
-         m_impl->setLogDirOwner(in_refreshParams.newUser.get());
+         m_impl->setLogDirOwner(in_refreshParams.newUser.getValueOr());
    }
 
    if (m_impl->SyslogDest)
