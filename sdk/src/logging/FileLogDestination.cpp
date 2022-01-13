@@ -35,6 +35,9 @@
 
 #include <system/PosixSystem.hpp>
 #include <logging/SyslogDestination.hpp>
+#include <boost/date_time/local_time/local_time.hpp>
+#include <boost/date_time/gregorian/greg_duration.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 using namespace rstudio::launcher_plugins::system;
 
@@ -343,7 +346,7 @@ struct FileLogDestination::Impl
          // Check to see if the logfile is stale
          // If so, we will delete it instead of rotating it
          std::time_t lastWrite = logFile.getLastWriteTime();
-         boost::posix_time::ptime lastWriteTime = lastWrite != 0 ? launcher_plugins::date_time::timeFromStdTime(lastWrite) :
+         boost::posix_time::ptime lastWriteTime = lastWrite != 0 ? launcher_plugins::system::DateTime::timeFromStdTime(lastWrite) :
                                                                    boost::posix_time::microsec_clock::universal_time();
          boost::posix_time::ptime now = boost::posix_time::microsec_clock::universal_time();
          if ((now - lastWriteTime) > boost::posix_time::hours(24) * LogOptions.getDeletionDays())
@@ -401,7 +404,7 @@ struct FileLogDestination::Impl
       if (pos != std::string::npos)
       {
          timeStr = line.substr(0, pos);
-         if (launcher_plugins::date_time::parseUtcTimeFromIso8601String(timeStr, &time))
+         if (system::DateTime::parseUtcTimeFromIso8601String(timeStr, &time))
             return time;
       }
 
@@ -415,7 +418,7 @@ struct FileLogDestination::Impl
          if (endPos != std::string::npos)
          {
             timeStr = line.substr(pos, endPos - pos);
-            if (launcher_plugins::date_time::parseUtcTimeFromIso8601String(timeStr, &time))
+            if (launcher_plugins::system::DateTime::parseUtcTimeFromIso8601String(timeStr, &time))
                return time;
          }
       }
@@ -427,7 +430,7 @@ struct FileLogDestination::Impl
          if (pos != std::string::npos)
          {
             timeStr = line.substr(0, pos - 1);
-            if (launcher_plugins::date_time::parseUtcTimeFromFormatString(timeStr, "%d %b %Y %H:%M:%S", &time))
+            if (launcher_plugins::system::DateTime::parseUtcTimeFromFormatString(timeStr, "%d %b %Y %H:%M:%S", &time))
                return time;
          }
       }
@@ -532,7 +535,7 @@ struct FileLogDestination::Impl
    std::shared_ptr<std::ostream> LogOutputStream;
    Optional<boost::posix_time::ptime> FirstLogLineTime;
 
-   std::shared_ptr<launcher_plugins::system::SyslogDestination> SyslogDest;
+   std::shared_ptr<launcher_plugins::logging::SyslogDestination> SyslogDest;
 };
 
 FileLogDestination::FileLogDestination(

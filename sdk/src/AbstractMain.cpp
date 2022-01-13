@@ -196,16 +196,19 @@ int AbstractMain::run(int in_argc, char** in_argv)
    setProgramId(getProgramId());
 
    // Add a syslog destination.
-   addLogDestination(
+   /*addLogDestination(
       std::shared_ptr<ILogDestination>(
          new SyslogDestination(
+            1,
             LogLevel::INFO,
-            getProgramId())));
+            LogMessageFormatType::PRETTY,
+            getProgramId().c_str(),
+            false)));*/
 
    logging::logInfoMessage("Starting plugin...");
 
    // Turn on stderr logging while options are parsed.
-   std::shared_ptr<ILogDestination> stderrLogDest(new StderrLogDestination(LogLevel::INFO));
+   std::shared_ptr<ILogDestination> stderrLogDest(new StderrLogDestination(getProgramId().c_str(),LogLevel::INFO, LogMessageFormatType::PRETTY, false));
    addLogDestination(stderrLogDest);
 
    // Initialize the default options. This must be done before the custom options are initialized.
@@ -227,16 +230,21 @@ int AbstractMain::run(int in_argc, char** in_argv)
 
    // Remove the stderr log destination.
    removeLogDestination(stderrLogDest->getId());
-
-   if (options.getLogLevel() > LogLevel::INFO)
+   
+   // Ensure logging directory path exists and is configured correctly.
+   /*int ret_log_dir = configureLoggingDir(options.getLoggingDir(), serverUser, options.useUnprivilegedMode());
+   if (ret_log_dir != 0)
+      return ret_log_dir;*/
+  
+   if (options.enableDebugLogging())
    {
-      addLogDestination(
-         std::unique_ptr<ILogDestination>(
-            new FileLogDestination(
-               3,
-               options.getLogLevel(),
-               getProgramId(),
-               options.getScratchPath())));
+       
+        std::unique_ptr<ILogDestination> debugLogDest(new FileLogDestination("3",LogLevel::INFO, LogMessageFormatType::PRETTY, getProgramId().c_str(), options.getLoggingDir(), false));
+     }
+   if (options.getLogLevel() > LogLevel::INFO)
+   {   
+   std::unique_ptr<ILogDestination> infoLogDest(new FileLogDestination("4",LogLevel::INFO, LogMessageFormatType::PRETTY, getProgramId().c_str(), options.getScratchPath(), false));
+               
    }
 
    // Create the launcher communicator. For now this is always an StdIO communicator. Later, it could be dependant on

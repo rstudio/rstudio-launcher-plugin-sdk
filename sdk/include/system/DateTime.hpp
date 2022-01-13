@@ -25,7 +25,11 @@
 #define LAUNCHER_PLUGINS_DATE_TIME_HPP
 
 #include <string>
-
+#include <system/PosixSystem.hpp>
+#include <logging/SyslogDestination.hpp>
+#include <boost/date_time/local_time/local_time.hpp>
+#include <boost/date_time/gregorian/greg_duration.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 #include <PImpl.hpp>
 
 namespace rstudio {
@@ -44,6 +48,7 @@ namespace system {
 // Forward Declaration
 class DateTime;
 
+constexpr const char* kIso8601Format {"%Y-%m-%dT%H:%M:%S%FZ"};
 /**
  * @brief Represents an duration of time (e.g. 5 hours, 43 minutes, and 21 seconds) as opposed to a point in time.
  */
@@ -427,7 +432,66 @@ public:
     * @return This DateTime, as a string with the specified format.
     */
    std::string toString(const std::string& in_format) const;
+   static inline boost::posix_time::ptime timeFromStdTime(std::time_t t)
+{
+   return boost::posix_time::ptime(boost::gregorian::date(1970,1,1)) +
+         boost::posix_time::seconds(static_cast<long>(t));
+}
 
+template <typename TimeType>
+std::string format(const TimeType& time,
+                   const std::string& format)
+{
+   using namespace boost::posix_time;
+
+   // facet for http date (construct w/ a_ref == 1 so we manage memory)
+   time_facet httpDateFacet(1);
+   httpDateFacet.format(format.c_str());
+
+   // output and return the date
+   std::ostringstream dateStream;
+   dateStream.imbue(std::locale(dateStream.getloc(), &httpDateFacet));
+   dateStream << time;
+   return dateStream.str();
+}
+
+static inline bool parseUtcTimeFromFormatString(const std::string& timeStr,
+                                         const std::string& formatStr,
+                                         boost::posix_time::ptime *pOutTime)
+{
+   using namespace boost::local_time;
+
+   std::stringstream ss(timeStr);
+   local_time_input_facet* ifc = new local_time_input_facet(formatStr);
+
+   ss.imbue(std::locale(ss.getloc(), ifc));
+
+   local_date_time ldt(not_a_date_time);
+
+   if (ss >> ldt)
+   {
+      *pOutTime = ldt.utc_time();
+      return true;
+   }
+
+   return false;
+}
+
+static inline bool parseUtcTimeFromIsoString(const std::string& timeStr,
+                                      boost::posix_time::ptime *pOutTime)
+{
+   return parseUtcTimeFromFormatString(timeStr,
+                                       "%Y-%m-%d %H:%M:%S %ZP",
+                                       pOutTime);
+}
+
+static inline bool parseUtcTimeFromIso8601String(const std::string& timeStr,
+                                          boost::posix_time::ptime *pOutTime)
+{
+   return parseUtcTimeFromFormatString(timeStr,
+                                       kIso8601Format,
+                                       pOutTime);
+}
 private:
    // The private implementation of DateTime.
    PRIVATE_IMPL(m_impl);

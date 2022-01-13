@@ -330,7 +330,7 @@ bool Error::hasCause() const
 
 const Error& Error::getCause() const
 {
-   return *impl().Cause;
+   return impl().Cause;
 }
 
 int Error::getCode() const
