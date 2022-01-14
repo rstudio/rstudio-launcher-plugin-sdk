@@ -66,24 +66,26 @@ public:
    /**
     * @brief Constructor.
     * 
-    * @param in_id       The level of detail at which the message was logged.
-    * @param in_message     The message which was logged.
     * The most detailed log level is always used
     */
-   MockLogDestination() :
-      ILogDestination("", LogLevel::DEBUG, LogMessageFormatType::PRETTY, false)
-   {
-   }
+  MockLogDestination() :
+
+     ILogDestination("", LogLevel::DEBUG, LogMessageFormatType::PRETTY, false)
+     {
+
+     }
+
 
   /**
   * @brief Gets the unique ID of the log destination.
   *
   * @return The unique ID of the log destination.
   */
-  unsigned int getId() const 
+  std::string getId() const override
   {
      // Choose a random number, but this destination should only be used alone, for testing.
-     return 10;
+     std::string ret = "10";
+     return ret;
   };
 
    /**
@@ -121,10 +123,11 @@ public:
    /**
     * @brief Reloads the log destintation. Ensures that the log does not have any stale file handles.
     */
-   void reload() 
+   void refresh(const RefreshParams&) override
    {
-      // Nothing to do.
+
    }
+
 
    /**
     * @brief Writes a message to this log destination.

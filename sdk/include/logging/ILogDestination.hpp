@@ -54,7 +54,7 @@ public:
    explicit ILogDestination(const std::string& in_id,
                             LogLevel in_logLevel,
                             LogMessageFormatType in_formatType,
-                            bool in_reloadable) : m_id(in_id), m_logLevel(in_logLevel), m_formatType(in_formatType), m_reloadable(in_reloadable) {}
+                            bool in_reloadable) : m_id(in_id), m_logLevel(in_logLevel), m_formatType(in_formatType), m_reloadable(in_reloadable) {};
 
 
    /**
@@ -67,7 +67,7 @@ public:
     *
     * @return The unique ID of the log destination.
     */
-   std::string getId() const { return m_id; }
+   virtual std::string getId() const { return m_id; }
 
    /**
     * @brief Gets the maximum level of logs that will be written to this log destination.
