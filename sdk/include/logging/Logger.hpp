@@ -31,6 +31,7 @@
 #include <vector>
 
 #include <boost/any.hpp>
+#include <boost/optional.hpp>
 #include <boost/function.hpp>
 #include <Optional.hpp>
 
@@ -70,8 +71,8 @@ struct RefreshParams
     * @brief An optional user to become the new owner of any open file logs. Used when
     *        changing process running user to ensure logs can still be written to.
     */
-   Optional<launcher_plugins::system::User> newUser;
-   bool chownLogDir;
+    boost::optional<system::User> newUser;
+    bool chownLogDir;
 };
 
 /**

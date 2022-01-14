@@ -29,6 +29,7 @@
 #include <unordered_map>
 
 #include <boost/algorithm/string.hpp>
+#include <boost/none.hpp>
 #include <Noncopyable.hpp>
 #include <Optional.hpp>
 
@@ -254,7 +255,7 @@ std::string formatLogMessage(
    {
       std::ostringstream oss;
 
-      oss << launcher_plugins::date_time::format(time, launcher_plugins::date_time::kIso8601Format)
+      oss << system::DateTime::format(time, "kIso8601Format")
           << " [" << in_programId << "] ";
 
       if (in_error)
@@ -264,7 +265,7 @@ std::string formatLogMessage(
 
       if (in_properties)
       {
-          std::string properties = logMessagePropertiesToString(in_properties.get());
+          std::string properties = logMessagePropertiesToString(in_properties.data());
           oss << " " << properties;
       }
 
@@ -278,7 +279,7 @@ std::string formatLogMessage(
    else
    {
       json::Object logObject;
-      logObject["time"] = launcher_plugins::date_time::format(time, launcher_plugins::date_time::kIso8601Format);
+      logObject["time"] = launcher_plugins::system::DateTime::format(time, "kIso8601Format");
       logObject["service"] = in_programId;
 
       std::ostringstream logLevel;

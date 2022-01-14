@@ -438,8 +438,8 @@ public:
          boost::posix_time::seconds(static_cast<long>(t));
 }
 
-template <typename TimeType>
-std::string format(const TimeType& time,
+ template <typename TimeType>
+ static  std::string format(const TimeType& time,
                    const std::string& format)
 {
    using namespace boost::posix_time;

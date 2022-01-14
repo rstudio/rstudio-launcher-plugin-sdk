@@ -24,6 +24,9 @@
 #include <logging/FileLogDestination.hpp>
 
 #include <boost/algorithm/string.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/optional.hpp>
+
 #include <mutex>
 
 #include <vector>
@@ -35,9 +38,6 @@
 
 #include <system/PosixSystem.hpp>
 #include <logging/SyslogDestination.hpp>
-#include <boost/date_time/local_time/local_time.hpp>
-#include <boost/date_time/gregorian/greg_duration.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
 
 using namespace rstudio::launcher_plugins::system;
 
@@ -404,7 +404,7 @@ struct FileLogDestination::Impl
       if (pos != std::string::npos)
       {
          timeStr = line.substr(0, pos);
-         if (system::DateTime::parseUtcTimeFromIso8601String(timeStr, &time))
+         if (launcher_plugins::system::DateTime::parseUtcTimeFromIso8601String(timeStr, &time))
             return time;
       }
 
@@ -418,7 +418,7 @@ struct FileLogDestination::Impl
          if (endPos != std::string::npos)
          {
             timeStr = line.substr(pos, endPos - pos);
-            if (rstudio::launcher_plugins::system::DateTime::parseUtcTimeFromIso8601String(timeStr, &time))
+            if (launcher_plugins::system::DateTime::parseUtcTimeFromIso8601String(timeStr, &time))
                return time;
          }
       }
@@ -430,7 +430,7 @@ struct FileLogDestination::Impl
          if (pos != std::string::npos)
          {
             timeStr = line.substr(0, pos - 1);
-            if (DateTime::parseUtcTimeFromFormatString(timeStr, "%d %b %Y %H:%M:%S", &time))
+            if (launcher_plugins::system::DateTime::parseUtcTimeFromFormatString(timeStr, "%d %b %Y %H:%M:%S", &time))
                return time;
          }
       }
@@ -481,7 +481,7 @@ struct FileLogDestination::Impl
 
       if (FirstLogLineTime)
       {
-         if ((now - FirstLogLineTime.get()) >= rotateTime)
+         if ((now - FirstLogLineTime.getValueOr(now)) >= rotateTime)
          {
             // We should rotate based on the cached entry, but it's possible we were already rotated
             // by some other logger - check the timestamp again
@@ -499,7 +499,7 @@ struct FileLogDestination::Impl
          FirstLogLineTime = getFirstEntryTimestamp();
       }
 
-      return ((now - FirstLogLineTime.get()) >= rotateTime);
+      return ((now - FirstLogLineTime.getValueOr(now)) >= rotateTime);
    }
 
    // Returns true if it is safe to log; false otherwise.
@@ -578,10 +578,10 @@ void FileLogDestination::refresh(const RefreshParams& in_refreshParams)
    {
       // If we can, change the log owner to the currently running user id to ensure
       // that we can continue writing to the log if we just changed our running user
-      m_impl->chownLogs(m_impl->LogFile, in_refreshParams.newUser.getValueOr();
+      m_impl->chownLogs(m_impl->LogFile, in_refreshParams.newUser.get());
 
       if (in_refreshParams.chownLogDir)
-         m_impl->setLogDirOwner(in_refreshParams.newUser.getValueOr());
+         m_impl->setLogDirOwner(in_refreshParams.newUser.get());
    }
 
    if (m_impl->SyslogDest)
@@ -646,4 +646,3 @@ void FileLogDestination::writeLog(LogLevel in_logLevel, const std::string& in_me
 } // namespace logging
 } // namespace launcher_plugins
 } // namespace rstudio
-
