@@ -27,7 +27,7 @@
 set -e # exit on failed commands.
 
 # Get the optional branch parameter
-BRANCH="master"
+BRANCH="main"
 if [[ -n $1 ]]; then
     BRANCH=$1
 fi
