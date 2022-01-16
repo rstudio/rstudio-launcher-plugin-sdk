@@ -1,7 +1,7 @@
 /*
  * FilePath.cpp
  *
- * Copyright (C) 2020 by RStudio, PBC
+ * Copyright (C) 2022 by RStudio, PBC
  *
  * Unless you have received this program directly from RStudio pursuant to the terms of a commercial license agreement
  * with RStudio, then this program is licensed to you under the following terms:
@@ -35,10 +35,10 @@
 #include <boost/filesystem.hpp>
 #undef BOOST_NO_CXX11_SCOPED_ENUMS
 
+#include <boost/bind/bind.hpp>
+#include <boost/make_shared.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/algorithm/string/predicate.hpp>
-#include <boost/bind.hpp>
-#include <boost/make_shared.hpp>
 
 #include <Error.hpp>
 #include <logging/Logger.hpp>
@@ -47,6 +47,8 @@
 #include <utils/ErrorUtils.hpp>
 
 typedef boost::filesystem::path path_t;
+
+using namespace boost::placeholders;
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -83,6 +85,7 @@ MimeType s_mimeTypes[] =
       { "ttf",          "application/x-font-ttf" },
       { "woff",         "application/font-woff" },
       { "woff2",        "application/font-woff2" },
+      { "wasm",         "application/wasm"},
 
       // markdown types
       { "md",           "text/x-markdown" },
@@ -99,6 +102,7 @@ MimeType s_mimeTypes[] =
       { "stan",         "text/x-stan" },
       { "clj",          "text/x-clojure" },
       { "ts",           "text/x-typescript"},
+      { "ojs",          "text/javascript" },
       { "lua",          "text/x-lua"},
 
       // other types we are likely to serve
@@ -135,6 +139,7 @@ MimeType s_mimeTypes[] =
       { "Rmd",          "text/x-r-markdown" },
       { "Rhtml",        "text/x-r-html" },
       { "Rpres",        "text/x-r-presentation" },
+      { "qmd",          "text/x-quarto-markdown"},
       { "Rout",         "text/plain" },
       { "po",           "text/plain" },
       { "pot",          "text/plain" },
@@ -332,6 +337,17 @@ FilePath::FilePath() :
 FilePath::FilePath(const std::string& in_absolutePath) :
    m_impl(new Impl(fromString(std::string(in_absolutePath.c_str())))) // thwart ref-count
 {
+}
+
+FilePath::FilePath(const char* in_absolutePath) :
+   m_impl(in_absolutePath ? 
+            new Impl(fromString(in_absolutePath)) :
+            new Impl())
+{
+   if (in_absolutePath == nullptr)
+   {
+      logging::logDebugMessage("Creating an empty FilePath from a null path", ERROR_LOCATION);
+   }
 }
 
 bool FilePath::operator==(const FilePath& in_other) const
@@ -548,6 +564,10 @@ Error FilePath::changeFileMode(FileMode in_fileMode, bool in_setStickyBit) const
 
       case FileMode::ALL_READ_WRITE_EXECUTE:
          mode = S_IRWXU | S_IRWXG | S_IRWXO;
+         break;
+
+      case FileMode::USER_READ_WRITE_EXECUTE_GROUP_READ_WRITE_EXECUTE_ALL_READ_EXECUTE:
+         mode = S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH;
          break;
 
       default:
@@ -910,6 +930,8 @@ Error FilePath::getFileMode(FileMode& out_fileMode) const
       out_fileMode = FileMode::ALL_READ_WRITE_EXECUTE;
    else if (mode == "rwxr-xr-x")
       out_fileMode = FileMode::USER_READ_WRITE_EXECUTE_ALL_READ_EXECUTE;
+   else if (mode == "rwxrwxr-x")
+      out_fileMode = FileMode::USER_READ_WRITE_EXECUTE_GROUP_READ_WRITE_EXECUTE_ALL_READ_EXECUTE;
    else
       return systemError(boost::system::errc::not_supported, ERROR_LOCATION);
 
@@ -1131,7 +1153,9 @@ bool FilePath::isSymlink() const
 {
    try
    {
-      return exists() && boost::filesystem::is_symlink(m_impl->Path);
+      // NOTE: we omit the exists() check here as that will
+      // return false for existing but broken symlinks
+      return !isEmpty() && boost::filesystem::is_symlink(m_impl->Path);
    }
    catch(const boost::filesystem::filesystem_error& e)
    {
@@ -1393,6 +1417,14 @@ void FilePath::setLastWriteTime(std::time_t in_time) const
 
 Error FilePath::testWritePermissions() const
 {
+   // This check only works on ordinary files; it is an error to use it on directories.
+   if (isDirectory())
+   {
+      Error error = systemError(boost::system::errc::is_a_directory, ERROR_LOCATION);
+      error.addProperty("path", getAbsolutePath());
+      return error;
+   }
+
    std::ostream* pStream = nullptr;
    try
    {
