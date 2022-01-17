@@ -27,6 +27,9 @@
 #include <string>
 
 #include <PImpl.hpp>
+#include "boost/date_time/posix_time/posix_time.hpp"
+
+#include <boost/date_time/local_time/local_time.hpp>
 
 namespace rstudio {
 namespace launcher_plugins {
@@ -40,6 +43,7 @@ class Error;
 namespace rstudio {
 namespace launcher_plugins {
 namespace system {
+
 
 // Forward Declaration
 class DateTime;
@@ -246,6 +250,8 @@ private:
 class DateTime final
 {
 public:
+  static constexpr const char* kIso8601Format {"%Y-%m-%dT%H:%M:%S%FZ"};
+
    /**
     * @brief Constructor.
     *
@@ -282,7 +288,64 @@ public:
     *
     * @return Success if in_timeStr is a valid ISO 8601 representation of a date and time; Error otherwise.
     */
-   static Error fromString(const std::string& in_timeStr, DateTime& out_dateTime);
+    
+    template <typename TimeType>
+     static std::string format(const TimeType& time,
+                   const std::string& format)
+      {
+      using namespace boost::posix_time;
+
+      // facet for http date (construct w/ a_ref == 1 so we manage memory)
+      time_facet httpDateFacet(1);
+      httpDateFacet.format(format.c_str());
+
+       // output and return the date
+         std::ostringstream dateStream;
+         dateStream.imbue(std::locale(dateStream.getloc(), &httpDateFacet));
+         dateStream << time;
+         return dateStream.str();
+      }
+    static inline boost::posix_time::ptime timeFromStdTime(std::time_t t)
+     {
+   return boost::posix_time::ptime(boost::gregorian::date(1970,1,1)) +
+         boost::posix_time::seconds(static_cast<long>(t));
+    }
+   static inline bool parseUtcTimeFromFormatString(const std::string& timeStr,
+                                         const std::string& formatStr,
+                                         boost::posix_time::ptime *pOutTime)
+{
+   using namespace boost::local_time;
+
+   std::stringstream ss(timeStr);
+   local_time_input_facet* ifc = new local_time_input_facet(formatStr);
+
+   ss.imbue(std::locale(ss.getloc(), ifc));
+
+   local_date_time ldt(not_a_date_time);
+
+   if (ss >> ldt)
+   {
+      *pOutTime = ldt.utc_time();
+      return true;
+   }
+
+   return false;
+}
+static inline bool parseUtcTimeFromIsoString(const std::string& timeStr,
+                                      boost::posix_time::ptime *pOutTime)
+{
+   return parseUtcTimeFromFormatString(timeStr,
+                                       "%Y-%m-%d %H:%M:%S %ZP",
+                                       pOutTime);
+}
+static inline bool parseUtcTimeFromIso8601String(const std::string& timeStr,
+                                          boost::posix_time::ptime *pOutTime)
+{
+   return parseUtcTimeFromFormatString(timeStr,
+                                       kIso8601Format,
+                                       pOutTime);
+}
+static Error fromString(const std::string& in_timeStr, DateTime& out_dateTime);
 
    /**
     * @brief Assignment operator.
