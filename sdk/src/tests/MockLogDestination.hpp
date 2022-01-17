@@ -69,7 +69,7 @@ public:
     * The most detailed log level is always used
     */
    MockLogDestination() :
-      ILogDestination(LogLevel::DEBUG)
+      ILogDestination("",LogLevel::DEBUG, LogMessageFormatType::PRETTY, false)
    {
    }
 
@@ -78,10 +78,10 @@ public:
   *
   * @return The unique ID of the log destination.
   */
-  unsigned int getId() const override
+  std::string getId() const override
   {
      // Choose a random number, but this destination should only be used alone, for testing.
-     return 10;
+     return "10";
   };
 
    /**
@@ -117,9 +117,9 @@ public:
    }
 
    /**
-    * @brief Reloads the log destintation. Ensures that the log does not have any stale file handles.
+    * @brief Refreshes the log destintation. Ensures that the log does not have any stale file handles.
     */
-   void reload() override
+   void refresh(const RefreshParams&) override
    {
       // Nothing to do.
    }
