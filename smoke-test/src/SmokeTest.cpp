@@ -416,7 +416,7 @@ Error SmokeTest::initialize()
    // Add an stderr logger.
    logging::addLogDestination(
       std::shared_ptr<logging::ILogDestination>(
-         new logging::StderrLogDestination(logging::LogLevel::DEBUG)));
+         new logging::StderrLogDestination("3",logging::LogLevel::DEBUG, logging::LogMessageFormatType::PRETTY)));
 
    // There must be at least 2 threads.
    system::AsioService::startThreads(2);
