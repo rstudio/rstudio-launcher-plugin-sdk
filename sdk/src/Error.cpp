@@ -182,7 +182,7 @@ struct Error::Impl
    std::string Name;
    std::string Message;
    ErrorProperties Properties;
-   Optional<Error> Cause;
+   Error Cause;
    ErrorLocation Location;
    bool Expected = false;
 };
@@ -330,7 +330,7 @@ bool Error::hasCause() const
 
 const Error& Error::getCause() const
 {
-   return *impl().Cause;
+   return impl().Cause;
 }
 
 int Error::getCode() const
