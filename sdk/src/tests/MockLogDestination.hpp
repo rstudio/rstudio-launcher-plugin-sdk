@@ -69,21 +69,10 @@ public:
     * The most detailed log level is always used
     */
    MockLogDestination() :
-      ILogDestination("",LogLevel::DEBUG, LogMessageFormatType::PRETTY, false)
+      ILogDestination("10",LogLevel::DEBUG, LogMessageFormatType::PRETTY, false)
    {
    }
-
-  /**
-  * @brief Gets the unique ID of the log destination.
-  *
-  * @return The unique ID of the log destination.
-  */
-  std::string getId() const override
-  {
-     // Choose a random number, but this destination should only be used alone, for testing.
-     return "10";
-  };
-
+   
    /**
     * @brief Gets the number of log records that are currently stored.
     *

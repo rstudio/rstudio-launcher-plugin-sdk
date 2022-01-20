@@ -182,7 +182,7 @@ struct Error::Impl
    std::string Name;
    std::string Message;
    ErrorProperties Properties;
-   Error Cause;
+   Optional<Error> Cause;
    ErrorLocation Location;
    bool Expected = false;
 };
@@ -314,7 +314,7 @@ std::string Error::asString() const
 
    if (hasCause())
    {
-      ostr << logging::s_delim << " " << s_causedBy << ": " << getCause().asString();
+      ostr << logging::s_delim << " " << s_causedBy << ": " << getCause().getValueOr(Error()).asString();
    }
 
    return ostr.str();
@@ -328,7 +328,7 @@ bool Error::hasCause() const
       return false;
 }
 
-const Error& Error::getCause() const
+const Optional<Error>& Error::getCause() const
 {
    return impl().Cause;
 }
