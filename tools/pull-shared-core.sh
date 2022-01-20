@@ -210,6 +210,7 @@ for I in "${!SRC_INCLUDES[@]}"; do
         replace "$DEST_PATH" "FilePath(\s*[^;])" "system::FilePath\1"
         replace "$DEST_PATH" "#include <boost/current_function.hpp>\n" ""
         replace "$DEST_PATH" "#include <boost/system/error_code.hpp>\n\n" ""
+        replace "$DEST_PATH" "([ \t]*const\s*)(Error)(&\sgetCause\(\)\s*const)" "\1Optional<\2>\3"
         replace "$DEST_PATH" "([\\])[ \t]*(\n)" "                \1\2"
         replace "$DEST_PATH" "(ErrorLocation\()[ \t]*([\\])" "\1 \2"
         replace "$DEST_PATH" "([+])[ \t]*([\\])" "\1   \2"
@@ -289,6 +290,13 @@ for I in "${!SRC_SOURCES[@]}"; do
     if [[ "$SRC_FILE" == "Error.cpp" ]] || [[ "$SRC_FILE" == "FileLogDestination.cpp" ]]; then
         replace "$DEST_PATH" "\n\s*namespace\s*rstudio\s*\{" "\n\nusing namespace rstudio::launcher_plugins::system;\n\nnamespace rstudio \{"
         replace "$DEST_PATH" "(#include <ostream>)" "\1\n\n#include <boost/system/error_code.hpp>"
+        replace "$DEST_PATH" "([ \t]*const\s*)(Error)(&\s*Error::getCause\(\)\s*const)" "\1Optional<\2>\3"
+        replace "$DEST_PATH" "(.*?)(launcher_plugins::date_time::)" "\1launcher_plugins::system::DateTime::"
+        replace "$DEST_PATH" "([ \t]*return\s*)(\*)(impl\(\)\.Cause;)" "\1\3"
+        replace "$DEST_PATH" "(.*?\.newUser\.)(get\(\))" "\1getValueOr\(User\(\)\)"
+        replace "$DEST_PATH" "(.*?FirstLogLineTime\.)(get\(\))" "\1getValueOr\({}\)"
+        replace "$DEST_PATH" "([ \t]*::)(system)(::SyslogDestination>)" "\1logging\3"
+        replace "$DEST_PATH" "([ \t]*getCause\(\)\.)(asString\(\))" "\1getValueOr\(Error\(\)\)\.\2"
         replace "$DEST_PATH" "[ \t]*Error::Error\s*\(\s*const\s*boost::system::error_code\s*&\s*in_ec\s*,\s*const\s*ErrorLocation\s*&\s*in_location\s*\).*\n(.*\n)*\s*(Error::Error\(std::string\s*in_name\s*,\s*int\s*in_code\s*,\s*const\s*ErrorL)" "\2"
         replace "$DEST_PATH" "[ \t]*bool\s*Error::operator==\s*\(\s*const\s*boost::.*\n(.*\n)*\s*(bool\s*Error::operator!=\(\s*const\s*r)" "\2"
         replace "$DEST_PATH" "[ \t]*bool\s*Error::operator!=\s*\(\s*const\s*boost::.*\n(.*\n)*\s*(void\s*Error::addOrUpdateProperty\s*\(\s*const\s*std::string\s*&\s*in_name\s*,\s*const\s*std::)" "\2"
@@ -302,6 +310,10 @@ for I in "${!SRC_SOURCES[@]}"; do
 
     if [[ "$SRC_FILE" == "Logger.cpp" ]]; then
         replace "$DEST_PATH" "<system/ReaderWriterMutex.hpp>" "\"../system/ReaderWriterMutex.hpp\""
+        replace "$DEST_PATH" "(.*?in_properties\.)(get\(\))" "\1getValueOr\(LogMessageProperties\(\)\)"
+        replace "$DEST_PATH" "(.*?in_error\.getCause\(\))" "\1\.getValueOr(Error\(\)\)"
+        replace "$DEST_PATH" "(.*?)(launcher_plugins::)(date_time)(::format\(time, launcher_plugins::)(date_time::)(kIso8601Format)" "\1\2system::DateTime\4system::DateTime::\6"
+        replace "$DEST_PATH" "([ \t]*boost::none)" "{}"
         replace "$DEST_PATH" "(#include <sstream>\n\n)" "\1#include <boost/algorithm/string.hpp>\n\n"
         replace "$DEST_PATH" "(#include <Noncopyable.hpp>\n#include <Optional.hpp>\n)\n(#include <system/DateTime.hpp>\n)(#include <Error.hpp>\n)(#include <logging/ILogDestination.hpp>\n)" "\3\1\4\2"
         replace "$DEST_PATH" "using\s*namespace\s*boost::posix_time;\n\s*ptime[^;]*;\n\n\s*oss[^,]*,\s*([^)]*)\)" "oss << system::DateTime().toString(\1)"

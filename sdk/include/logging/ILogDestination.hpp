@@ -67,7 +67,7 @@ public:
     *
     * @return The unique ID of the log destination.
     */
-   virtual std::string getId() const { return m_id; }
+   std::string getId() const { return m_id; }
 
    /**
     * @brief Gets the maximum level of logs that will be written to this log destination.

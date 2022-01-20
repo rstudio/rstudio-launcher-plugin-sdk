@@ -24,7 +24,6 @@
 #include <logging/FileLogDestination.hpp>
 
 #include <boost/algorithm/string.hpp>
-#include "boost/date_time/posix_time/posix_time.hpp"
 #include <mutex>
 
 #include <vector>
@@ -479,7 +478,7 @@ struct FileLogDestination::Impl
 
       if (FirstLogLineTime)
       {
-         if ((now - FirstLogLineTime.getValueOr(boost::posix_time::ptime())) >= rotateTime)
+         if ((now - FirstLogLineTime.getValueOr({})) >= rotateTime)
          {
             // We should rotate based on the cached entry, but it's possible we were already rotated
             // by some other logger - check the timestamp again
@@ -497,7 +496,7 @@ struct FileLogDestination::Impl
          FirstLogLineTime = getFirstEntryTimestamp();
       }
 
-      return ((now - FirstLogLineTime.getValueOr(boost::posix_time::ptime())) >= rotateTime);
+      return ((now - FirstLogLineTime.getValueOr({})) >= rotateTime);
    }
 
    // Returns true if it is safe to log; false otherwise.
@@ -576,10 +575,10 @@ void FileLogDestination::refresh(const RefreshParams& in_refreshParams)
    {
       // If we can, change the log owner to the currently running user id to ensure
       // that we can continue writing to the log if we just changed our running user
-      m_impl->chownLogs(m_impl->LogFile, in_refreshParams.newUser.getValueOr(system::User()));
+      m_impl->chownLogs(m_impl->LogFile, in_refreshParams.newUser.getValueOr(User()));
 
       if (in_refreshParams.chownLogDir)
-         m_impl->setLogDirOwner(in_refreshParams.newUser.getValueOr(system::User()));
+         m_impl->setLogDirOwner(in_refreshParams.newUser.getValueOr(User()));
    }
 
    if (m_impl->SyslogDest)

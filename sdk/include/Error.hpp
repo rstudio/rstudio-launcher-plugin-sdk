@@ -339,7 +339,7 @@ public:
     *
     * @return The error which caused this error.
     */
-   const Error& getCause() const;
+   const Optional<Error>& getCause() const;
 
    /**
     * @brief Gets the error code.
