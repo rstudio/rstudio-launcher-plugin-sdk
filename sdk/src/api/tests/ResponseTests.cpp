@@ -215,17 +215,17 @@ TEST_CASE("Job State Response")
                last3Str      = "2020-03-30T04:55:46.009387",
                submitted4Str = "2020-03-31T12:48:01.932001";
    system::DateTime submitted1, submitted2, last2, submitted3, last3, submitted4;
-  /* REQUIRE_FALSE(system::DateTime::fromString(submitted1Str, submitted1));
+   REQUIRE_FALSE(system::DateTime::fromString(submitted1Str, submitted1));
    REQUIRE_FALSE(system::DateTime::fromString(submitted2Str, submitted2));
    REQUIRE_FALSE(system::DateTime::fromString(last2Str, last2));
    REQUIRE_FALSE(system::DateTime::fromString(submitted3Str, submitted3));
    REQUIRE_FALSE(system::DateTime::fromString(last3Str, last3));
-   REQUIRE_FALSE(system::DateTime::fromString(submitted4Str, submitted4));*/
+   REQUIRE_FALSE(system::DateTime::fromString(submitted4Str, submitted4));
 
    system::User user2, user3, user4;
-  /* REQUIRE_FALSE(system::User::getUserFromIdentifier(USER_TWO, user2));
+   REQUIRE_FALSE(system::User::getUserFromIdentifier(USER_TWO, user2));
    REQUIRE_FALSE(system::User::getUserFromIdentifier(USER_THREE, user3));
-   REQUIRE_FALSE(system::User::getUserFromIdentifier(USER_FOUR, user4));*/
+   REQUIRE_FALSE(system::User::getUserFromIdentifier(USER_FOUR, user4));
 
    JobPtr job1(new Job()), job2(new Job()), job3(new Job()), job4(new Job());
    job1->Id = "12";
