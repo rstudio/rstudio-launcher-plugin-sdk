@@ -195,22 +195,7 @@ int AbstractMain::run(int in_argc, char** in_argv)
    using namespace logging;
    setProgramId(getProgramId());
 
-   // Add a syslog destination.
-   addLogDestination(
-      std::shared_ptr<ILogDestination>(
-         new SyslogDestination(
-            "",
-            LogLevel::INFO,
-            LogMessageFormatType::PRETTY,
-            getProgramId().c_str())));
-
-   logging::logInfoMessage("Starting plugin...");
-
-   // Turn on stderr logging while options are parsed.
-   std::shared_ptr<ILogDestination> stderrLogDest(new StderrLogDestination("",LogLevel::INFO, LogMessageFormatType::PRETTY));
-   addLogDestination(stderrLogDest);
-
-   // Initialize the default options. This must be done before the custom options are initialized.
+    // Initialize the default options. This must be done before the custom options are initialized.
    options::Options& options = options::Options::getInstance();
 
    // Read the options.
@@ -227,22 +212,25 @@ int AbstractMain::run(int in_argc, char** in_argv)
    if (ret != 0)
       return ret;
 
-   // Remove the stderr log destination.
-   removeLogDestination(stderrLogDest->getId());
-
-   if (options.getLogLevel() > LogLevel::INFO)
-   {
-       
-        addLogDestination(
+   addLogDestination(
          std::unique_ptr<ILogDestination>(
             new FileLogDestination(
-               "3",
+               "MainLogDestination",
                options.getLogLevel(),
                LogMessageFormatType::PRETTY,
                getProgramId(),
-               logging::FileLogOptions(options.getScratchPath())
+               logging::FileLogOptions(options.getLoggingDir())
                )));
-  }
+
+   logging::logInfoMessage("Starting plugin...");
+
+   // Turn on stderr logging while options are parsed.
+   std::shared_ptr<ILogDestination> stderrLogDest(new StderrLogDestination("StderrLogging",LogLevel::INFO, LogMessageFormatType::PRETTY));
+   addLogDestination(stderrLogDest);
+
+
+   // Remove the stderr log destination.
+   removeLogDestination(stderrLogDest->getId());
 
    // Create the launcher communicator. For now this is always an StdIO communicator. Later, it could be dependant on
    // the options.
