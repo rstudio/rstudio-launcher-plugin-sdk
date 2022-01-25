@@ -306,11 +306,11 @@ public:
          return dateStream.str();
       }
 static inline boost::posix_time::ptime timeFromStdTime(std::time_t t)
-     {
-   return boost::posix_time::ptime(boost::gregorian::date(1970,1,1)) +
+{
+       return boost::posix_time::ptime(boost::gregorian::date(1970,1,1)) +
          boost::posix_time::seconds(static_cast<long>(t));
-    }
-   static inline bool parseUtcTimeFromFormatString(const std::string& timeStr,
+}
+static inline bool parseUtcTimeFromFormatString(const std::string& timeStr,
                                          const std::string& formatStr,
                                          boost::posix_time::ptime *pOutTime)
 {
