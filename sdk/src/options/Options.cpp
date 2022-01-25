@@ -532,11 +532,6 @@ bool Options::useUnprivilegedMode() const
 {
    return m_impl->UseUnprivilegedMode;
 }
-bool Options::enableDebugLogging() const
-{
-   return m_impl->EnableDebugLogging;
-}
-
 Options::Options() :
    m_impl(new Options::Impl())
 {
