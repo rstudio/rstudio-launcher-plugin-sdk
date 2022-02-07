@@ -25,6 +25,7 @@
 
 #include <mutex>
 
+#include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/trim.hpp>
 
 #include <Error.hpp>
@@ -202,20 +203,20 @@ inline std::string quoteStr(const std::string& in_str)
 bool jobStatusFromString(const std::string& io_statusStr, Job::State& out_state)
 {
    std::string statusStr = boost::trim_copy(io_statusStr);
-   if (statusStr == JOB_STATUS_CANCELED)
+   if (boost::iequals(statusStr, JOB_STATUS_CANCELED))
       out_state = Job::State::CANCELED;
-   else if (statusStr == JOB_STATUS_FAILED)
-      out_state =  Job::State::FAILED;
-   else if (statusStr == JOB_STATUS_FINISHED)
-      out_state =  Job::State::FINISHED;
-   else if (statusStr == JOB_STATUS_KILLED)
-      out_state =  Job::State::KILLED;
-   else if (statusStr == JOB_STATUS_PENDING)
-      out_state =  Job::State::PENDING;
-   else if (statusStr == JOB_STATUS_RUNNING)
-      out_state =  Job::State::RUNNING;
-   else if (statusStr == JOB_STATUS_SUSPENDED)
-      out_state =  Job::State::SUSPENDED;
+   else if (boost::iequals(statusStr, JOB_STATUS_FAILED))
+      out_state = Job::State::FAILED;
+   else if (boost::iequals(statusStr, JOB_STATUS_FINISHED))
+      out_state = Job::State::FINISHED;
+   else if (boost::iequals(statusStr, JOB_STATUS_KILLED))
+      out_state = Job::State::KILLED;
+   else if (boost::iequals(statusStr, JOB_STATUS_PENDING))
+      out_state = Job::State::PENDING;
+   else if (boost::iequals(statusStr, JOB_STATUS_RUNNING))
+      out_state = Job::State::RUNNING;
+   else if (boost::iequals(statusStr, JOB_STATUS_SUSPENDED))
+      out_state = Job::State::SUSPENDED;
    else if (!statusStr.empty())
       return false;
    else
