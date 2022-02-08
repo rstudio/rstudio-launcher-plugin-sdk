@@ -272,6 +272,13 @@ public:
     * @param in_other       The DateTime to moved into this.
     */
    DateTime(DateTime&& in_other) noexcept;
+   
+   /**
+    * @brief Constructor.
+    *
+    * @param in_time       The time to copy into DateTime.
+    */
+    DateTime(std::time_t& in_time) noexcept;
 
    /**
     * @brief Constructs a DateTime from an ISO 8601 string representation. The string must be in UTC time.
@@ -345,6 +352,7 @@ static inline bool parseUtcTimeFromIso8601String(const std::string& timeStr,
                                        kIso8601Format,
                                        pOutTime);
 }
+static Error fromStdTime(const std::string& in_timeStr, DateTime& out_dateTime);
 static Error fromString(const std::string& in_timeStr, DateTime& out_dateTime);
 
    /**
@@ -480,6 +488,7 @@ static Error fromString(const std::string& in_timeStr, DateTime& out_dateTime);
     * @return This DateTime, as a string with the specified format.
     */
    std::string toString(const char* in_format) const;
+   std::time_t returnDateTime() const;
 
    /**
     * @brief Converts this DateTime to a string representation defined by the provided format.
