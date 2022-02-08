@@ -234,11 +234,17 @@ DateTime::DateTime() :
 {
 }
 
- DateTime::DateTime(std::time_t& in_time) noexcept :
+DateTime::DateTime(std::time_t& in_time) noexcept :
    m_impl(new Impl())
 {
    m_impl->Time = boost::posix_time::ptime(boost::gregorian::date(1970,1,1)) +
       boost::posix_time::seconds(static_cast<long>(in_time));
+}
+
+ DateTime::DateTime(boost::posix_time::ptime Time) noexcept :
+   m_impl(new Impl())
+{
+   m_impl->Time = Time;
 }
 
 DateTime::DateTime(const DateTime& in_other) :
@@ -250,13 +256,7 @@ DateTime::DateTime(DateTime&& in_other) noexcept :
    m_impl(std::move(in_other.m_impl))
 {
 }
-
-boost::posix_time::ptime returnDateTime(DateTime& in_other) 
-{
-   return in_other.m_impl->Time;
-}
-
-Error DateTime::fromString(const std::string& in_timeStr, DateTime& out_dateTime)
+Error DateTime::fromString(const std::string& in_timeStr, const std::string& in_format, DateTime& out_dateTime)
 {
    // Invalidate the DateTime so it won't act as the current time if this function fails.
    out_dateTime.m_impl->Time = boost::posix_time::not_a_date_time;
@@ -264,7 +264,15 @@ Error DateTime::fromString(const std::string& in_timeStr, DateTime& out_dateTime
    using namespace boost::local_time;
 
    std::stringstream ss(in_timeStr);
-   std::unique_ptr<local_time_input_facet> facet(new local_time_input_facet(ISO_8601_INPUT_FORMAT));
+   
+   if(in_format == "")
+   {
+    std::unique_ptr<local_time_input_facet> facet(new local_time_input_facet(ISO_8601_INPUT_FORMAT));
+   }
+   else
+   {
+       std::unique_ptr<local_time_input_facet> facet(new local_time_input_facet(in_format));
+   }
 
    // Locale takes ownership of facet.
    ss.imbue(std::locale(ss.getloc(), facet.release()));

@@ -353,9 +353,8 @@ static inline bool parseUtcTimeFromIso8601String(const std::string& timeStr,
                                        pOutTime);
 }
 
-boost::posix_time::ptime returnDateTime(DateTime& in_other);
 static Error fromStdTime(const std::string& in_timeStr, DateTime& out_dateTime);
-static Error fromString(const std::string& in_timeStr, DateTime& out_dateTime);
+static Error fromString(const std::string& in_timeStr, const std::string& in_format, DateTime& out_dateTime);
 
 
    /**
