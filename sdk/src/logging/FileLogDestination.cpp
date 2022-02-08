@@ -343,10 +343,9 @@ struct FileLogDestination::Impl
          // Check to see if the logfile is stale
          // If so, we will delete it instead of rotating it
          std::time_t lastWrite = logFile.getLastWriteTime();
-         boost::posix_time::ptime lastWriteTime = lastWrite != 0 ? DateTime(lastWrite).returnDateTime() :
-                                                                   boost::posix_time::microsec_clock::universal_time();
-         boost::posix_time::ptime now = boost::posix_time::microsec_clock::universal_time();
-         if ((now - lastWriteTime) > boost::posix_time::hours(24) * LogOptions.getDeletionDays())
+         DateTime lastWriteTime = lastWrite != 0 ? DateTime(lastWrite) : DateTime();
+         DateTime now;
+         if ((now - lastWriteTime).getHours() > TimeDuration(24).getHours() * LogOptions.getDeletionDays())
          {
             logFile.remove();
             return true;
@@ -387,13 +386,13 @@ struct FileLogDestination::Impl
       LogOptions.getDirectory().changeOwnership(user);
    }
 
-   boost::posix_time::ptime getTimestampFromLogLine(const std::string& line)
+   DateTime getTimestampFromLogLine(const std::string& line)
    {
       // Empty line means the file hasn't actually been written to yet, so bail early
       if (line.empty())
-         return boost::posix_time::microsec_clock::universal_time();
+         return DateTime();
 
-      boost::posix_time::ptime time;
+      DateTime time;
       std::string timeStr;
 
       // Check for time in human readable log format first
@@ -401,7 +400,7 @@ struct FileLogDestination::Impl
       if (pos != std::string::npos)
       {
          timeStr = line.substr(0, pos);
-         if (launcher_plugins::system::DateTime::parseUtcTimeFromIso8601String(timeStr, &time))
+         if (launcher_plugins::system::DateTime::fromString(timeStr, "", time))
             return time;
       }
 
@@ -415,7 +414,7 @@ struct FileLogDestination::Impl
          if (endPos != std::string::npos)
          {
             timeStr = line.substr(pos, endPos - pos);
-            if (launcher_plugins::system::DateTime::parseUtcTimeFromIso8601String(timeStr, &time))
+            if (launcher_plugins::system::DateTime::fromString(timeStr,"", time))
                return time;
          }
       }
@@ -427,16 +426,16 @@ struct FileLogDestination::Impl
          if (pos != std::string::npos)
          {
             timeStr = line.substr(0, pos - 1);
-            if (launcher_plugins::system::DateTime::parseUtcTimeFromFormatString(timeStr, "%d %b %Y %H:%M:%S", &time))
+            if (launcher_plugins::system::DateTime::fromString(timeStr, "%d %b %Y %H:%M:%S", time))
                return time;
          }
       }
 
       // Couldn't find it - return the current time to ensure no rotation is actually done
-      return boost::posix_time::microsec_clock::universal_time();
+      return DateTime();
    }
 
-   boost::posix_time::ptime getFirstEntryTimestamp()
+   DateTime getFirstEntryTimestamp()
    {
       std::string firstLogLine;
 
@@ -444,7 +443,7 @@ struct FileLogDestination::Impl
       std::shared_ptr<std::istream> fileStream;
       Error error = LogFile.openForRead(fileStream);
       if (error)
-         return boost::posix_time::microsec_clock::universal_time();
+         return DateTime();
 
       try
       {
@@ -458,7 +457,7 @@ struct FileLogDestination::Impl
       catch (const std::exception&)
       {
          // Swallow errors - we can't log them!
-         return boost::posix_time::microsec_clock::universal_time();
+         return DateTime();
       }
    }
 
@@ -473,12 +472,12 @@ struct FileLogDestination::Impl
       // if another process or another logger within this same process rotates the file without us realizing,
       // this logger should still never rotate sooner than X days after what we read as the initial timestamp.
       // We will periodically recheck the initial timestamp again, but caching it will greatly improve performance
-      boost::posix_time::ptime now = boost::posix_time::microsec_clock::universal_time();
-      boost::posix_time::time_duration rotateTime = boost::posix_time::hours(24) * LogOptions.getRotationDays();
+      DateTime now;
+      TimeDuration rotateTime = TimeDuration(24 * LogOptions.getRotationDays());
 
       if (FirstLogLineTime)
       {
-         if ((now - FirstLogLineTime.getValueOr({})) >= rotateTime)
+         if ((now.t - FirstLogLineTime.getValueOr({})) >= rotateTime)
          {
             // We should rotate based on the cached entry, but it's possible we were already rotated
             // by some other logger - check the timestamp again
