@@ -224,7 +224,6 @@ struct DateTime::Impl
    }
 
    Impl(const Impl& in_other) = default;
-
    boost::posix_time::ptime Time;
 };
 
@@ -250,6 +249,11 @@ DateTime::DateTime(const DateTime& in_other) :
 DateTime::DateTime(DateTime&& in_other) noexcept :
    m_impl(std::move(in_other.m_impl))
 {
+}
+
+boost::posix_time::ptime returnDateTime(DateTime& in_other) 
+{
+   return in_other.m_impl->Time;
 }
 
 Error DateTime::fromString(const std::string& in_timeStr, DateTime& out_dateTime)
@@ -444,10 +448,6 @@ std::string DateTime::toString(const char* in_format) const
 std::string DateTime::toString(const std::string& in_format) const
 {
    return toString(in_format.c_str());
-}
-
-std::time_t returnDateTime() const{
-   return m_impl->Time;
 }
 
 } // namespace system

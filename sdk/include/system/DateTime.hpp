@@ -352,8 +352,11 @@ static inline bool parseUtcTimeFromIso8601String(const std::string& timeStr,
                                        kIso8601Format,
                                        pOutTime);
 }
+
+boost::posix_time::ptime returnDateTime(DateTime& in_other);
 static Error fromStdTime(const std::string& in_timeStr, DateTime& out_dateTime);
 static Error fromString(const std::string& in_timeStr, DateTime& out_dateTime);
+
 
    /**
     * @brief Assignment operator.
@@ -488,7 +491,6 @@ static Error fromString(const std::string& in_timeStr, DateTime& out_dateTime);
     * @return This DateTime, as a string with the specified format.
     */
    std::string toString(const char* in_format) const;
-   std::time_t returnDateTime() const;
 
    /**
     * @brief Converts this DateTime to a string representation defined by the provided format.
