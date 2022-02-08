@@ -235,6 +235,13 @@ DateTime::DateTime() :
 {
 }
 
+ DateTime::DateTime(std::time_t& in_time) noexcept :
+   m_impl(new Impl())
+{
+   m_impl->Time = boost::posix_time::ptime(boost::gregorian::date(1970,1,1)) +
+      boost::posix_time::seconds(static_cast<long>(in_time));
+}
+
 DateTime::DateTime(const DateTime& in_other) :
    m_impl(new Impl(*in_other.m_impl))
 {
@@ -437,6 +444,10 @@ std::string DateTime::toString(const char* in_format) const
 std::string DateTime::toString(const std::string& in_format) const
 {
    return toString(in_format.c_str());
+}
+
+std::time_t returnDateTime() const{
+   return m_impl->Time;
 }
 
 } // namespace system
