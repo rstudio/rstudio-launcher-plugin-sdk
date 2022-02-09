@@ -292,8 +292,8 @@ TEST_CASE("Parse complete get job request")
    MockLogPtr logDest = getMockLogDest();
 
    system::DateTime expectedEnd, expectedStart;
-   REQUIRE_FALSE(system::DateTime::fromString("2020-03-15T18:00:00", expectedEnd));
-   REQUIRE_FALSE(system::DateTime::fromString("2020-03-15T15:00:00", expectedStart));
+   REQUIRE_FALSE(system::DateTime::fromString("2020-03-15T18:00:00","", expectedEnd));
+   REQUIRE_FALSE(system::DateTime::fromString("2020-03-15T15:00:00","", expectedStart));
 
    std::set<std::string> expectedFields, expectedTags;
    expectedFields.insert("id");

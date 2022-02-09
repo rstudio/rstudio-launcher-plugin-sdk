@@ -295,6 +295,7 @@ for I in "${!SRC_SOURCES[@]}"; do
         replace "$DEST_PATH" "([ \t]*return\s*)(\*)(impl\(\)\.Cause;)" "\1\3"
         replace "$DEST_PATH" "(.*?\.newUser\.)(get\(\))" "\1getValueOr\(User\(\)\)"
         replace "$DEST_PATH" "(.*?FirstLogLineTime\.)(get\(\))" "\1getValueOr\({}\)"
+        replace "$DEST_PATH" ""
         replace "$DEST_PATH" "([ \t]*::)(system)(::SyslogDestination>)" "\1logging\3"
         replace "$DEST_PATH" "([ \t]*getCause\(\)\.)(asString\(\))" "\1getValueOr\(Error\(\)\)\.\2"
         replace "$DEST_PATH" "[ \t]*Error::Error\s*\(\s*const\s*boost::system::error_code\s*&\s*in_ec\s*,\s*const\s*ErrorLocation\s*&\s*in_location\s*\).*\n(.*\n)*\s*(Error::Error\(std::string\s*in_name\s*,\s*int\s*in_code\s*,\s*const\s*ErrorL)" "\2"

@@ -264,16 +264,13 @@ Error DateTime::fromString(const std::string& in_timeStr, const std::string& in_
    using namespace boost::local_time;
 
    std::stringstream ss(in_timeStr);
-   
-   if(in_format == "")
-   {
-    std::unique_ptr<local_time_input_facet> facet(new local_time_input_facet(ISO_8601_INPUT_FORMAT));
-   }
-   else
-   {
-       std::unique_ptr<local_time_input_facet> facet(new local_time_input_facet(in_format));
-   }
+   std::unique_ptr<local_time_input_facet> facet(new local_time_input_facet(ISO_8601_INPUT_FORMAT));
 
+   if(in_format != "")
+   {
+      facet.release();
+      std::unique_ptr<local_time_input_facet> facet(new local_time_input_facet(in_format));
+   }
    // Locale takes ownership of facet.
    ss.imbue(std::locale(ss.getloc(), facet.release()));
 
