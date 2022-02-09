@@ -400,7 +400,7 @@ struct FileLogDestination::Impl
       if (pos != std::string::npos)
       {
          timeStr = line.substr(0, pos);
-         if (launcher_plugins::system::DateTime::fromString(timeStr, "", time))
+         if (launcher_plugins::system::DateTime::fromString(timeStr,"",time))
             return time;
       }
 
@@ -473,11 +473,11 @@ struct FileLogDestination::Impl
       // this logger should still never rotate sooner than X days after what we read as the initial timestamp.
       // We will periodically recheck the initial timestamp again, but caching it will greatly improve performance
       DateTime now;
-      TimeDuration rotateTime = TimeDuration(24 * LogOptions.getRotationDays());
+      TimeDuration rotateTime(TimeDuration(24).getHours() * LogOptions.getRotationDays());
 
       if (FirstLogLineTime)
       {
-         if ((now.t - FirstLogLineTime.getValueOr({})) >= rotateTime)
+         if ((now - FirstLogLineTime.getValueOr({})) >= rotateTime)
          {
             // We should rotate based on the cached entry, but it's possible we were already rotated
             // by some other logger - check the timestamp again
@@ -529,7 +529,7 @@ struct FileLogDestination::Impl
    std::string LogName;
    std::mutex Mutex;
    std::shared_ptr<std::ostream> LogOutputStream;
-   Optional<boost::posix_time::ptime> FirstLogLineTime;
+   Optional<DateTime> FirstLogLineTime;
 
    std::shared_ptr<launcher_plugins::logging::SyslogDestination> SyslogDest;
 };

@@ -279,7 +279,7 @@ public:
     * @param in_time       The time to copy into DateTime.
     */
     DateTime(std::time_t& in_time) noexcept;
-
+    DateTime(boost::posix_time::ptime Time) noexcept;
    /**
     * @brief Constructs a DateTime from an ISO 8601 string representation. The string must be in UTC time.
     *

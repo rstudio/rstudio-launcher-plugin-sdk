@@ -682,7 +682,7 @@ Error Job::fromJson(const json::Object& in_json, Job& out_job)
    if (lastUpTime)
    {
       system::DateTime lastUpdateTime;
-      error = system::DateTime::fromString(lastUpTime.getValueOr(""), lastUpdateTime);
+      error = system::DateTime::fromString(lastUpTime.getValueOr(""), "", lastUpdateTime);
       if (error)
          return updateError("lastUpdateTime", in_json, error);
 
@@ -691,7 +691,7 @@ Error Job::fromJson(const json::Object& in_json, Job& out_job)
 
    if (submitTime)
    {
-      error = system::DateTime::fromString(submitTime.getValueOr(""), result.SubmissionTime);
+      error = system::DateTime::fromString(submitTime.getValueOr(""),"", result.SubmissionTime);
       if (error)
          return updateError("submissionTime", in_json, error);
    }

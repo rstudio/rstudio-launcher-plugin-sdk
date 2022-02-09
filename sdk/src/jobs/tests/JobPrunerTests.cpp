@@ -84,10 +84,10 @@ TEST_CASE("Prune job")
    job1->LastUpdateTime = system::DateTime();
 
    system::DateTime sdt, ldt1, ldt2, idt;
-   REQUIRE_FALSE(system::DateTime::fromString("2019-12-30T11:34:09.210984", sdt));
-   REQUIRE_FALSE(system::DateTime::fromString("2019-12-30T15:34:09.210984", ldt1));
-   REQUIRE_FALSE(system::DateTime::fromString("2019-12-30T15:34:09.210984", ldt2));
-   REQUIRE_FALSE(system::DateTime::fromString("2019-12-30T17:34:09.210984", idt));
+   REQUIRE_FALSE(system::DateTime::fromString("2019-12-30T11:34:09.210984","", sdt));
+   REQUIRE_FALSE(system::DateTime::fromString("2019-12-30T15:34:09.210984","", ldt1));
+   REQUIRE_FALSE(system::DateTime::fromString("2019-12-30T15:34:09.210984","", ldt2));
+   REQUIRE_FALSE(system::DateTime::fromString("2019-12-30T17:34:09.210984","", idt));
 
    job2->Id = "2";
    job2->Status = api::Job::State::PENDING;
