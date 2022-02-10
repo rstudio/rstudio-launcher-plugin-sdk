@@ -73,8 +73,8 @@ Error LocalSecureCookie::initialize()
       error = options::Options::getInstance().getServerUser(serverUser);
       if (error)
          return error;
-
-      error = system::posix::temporarilyDropPrivileges(serverUser);
+      Optional<system::GidType> groupUser;
+      error = system::posix::temporarilyDropPrivileges(serverUser,groupUser);
       if (error)
          return error;
    }
