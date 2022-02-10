@@ -348,6 +348,7 @@ for I in "${!SRC_SOURCES[@]}"; do
     if [[ "$SRC_FILE" == "system/PosixSystem.cpp" ]]; then
         replace "$DEST_PATH" "(<pwd.h>)\n" "\1"
         replace "$DEST_PATH" "\n\n}" "\n}"
+        replace "$DEST_PATH" "GidType targetGID = in_group.value_or\(in_user.getGroupId\(\)\);" "GidType targetGID = in_group.getValueOr\(\(in_user.getGroupId\(\)\)\);"
     fi
 
     if [[ "$SRC_FILE" == "system/User.cpp" ]]; then

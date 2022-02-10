@@ -250,7 +250,7 @@ Error temporarilyDropPrivileges(const User& in_user, const Optional<GidType>& in
    // clear error state
    errno = 0;
 
-   GidType targetGID = in_group.value_or(in_user.getGroupId());
+   GidType targetGID = in_group.getValueOr((in_user.getGroupId()));
 
    // init supplemental group list
    // NOTE: We are intentionally specifying the user's primary group here
