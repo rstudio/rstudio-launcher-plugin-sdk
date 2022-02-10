@@ -343,9 +343,10 @@ struct FileLogDestination::Impl
          // Check to see if the logfile is stale
          // If so, we will delete it instead of rotating it
          std::time_t lastWrite = logFile.getLastWriteTime();
-         DateTime lastWriteTime = lastWrite != 0 ? DateTime(lastWrite) : DateTime();
+         DateTime lastWriteTime = lastWrite != 0 ? DateTime(lastWrite) :
+                                                                   DateTime();
          DateTime now;
-         if ((now - lastWriteTime).getHours() > TimeDuration(24).getHours() * LogOptions.getDeletionDays())
+          if ((now - lastWriteTime).getHours() > TimeDuration(24).getHours() * LogOptions.getDeletionDays())
          {
             logFile.remove();
             return true;
@@ -414,7 +415,7 @@ struct FileLogDestination::Impl
          if (endPos != std::string::npos)
          {
             timeStr = line.substr(pos, endPos - pos);
-            if (launcher_plugins::system::DateTime::fromString(timeStr,"", time))
+            if (launcher_plugins::system::DateTime::fromString(timeStr,"",time))
                return time;
          }
       }

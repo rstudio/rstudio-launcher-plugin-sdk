@@ -61,59 +61,59 @@ popd
 # These arrays need to have the same length and order (e.g. index of source Json.hpp == index of destination Json.hpp). We're not using maps because Bash 3 doesn't support them.
 SRC_INCLUDES=(
   "Error.hpp"                         #  1
-  "PImpl.hpp"                         #  2
-  "json/Json.hpp"                     #  3
-  "ILogDestination.hpp"               #  4
-  "FileLogDestination.hpp"            #  5
-  "Logger.hpp"                        #  6
-  "FilePath.hpp"                      #  7
-  "system/Crypto.hpp"                 #  8
-  "system/User.hpp"                   #  9
-  "system/PosixSystem.hpp")           # 10
+  "SafeConvert.hpp"                   #  2
+  "PImpl.hpp"                         #  3
+  "json/Json.hpp"                     #  4
+  "ILogDestination.hpp"               #  5
+  "FileLogDestination.hpp"            #  6
+  "Logger.hpp"                        #  7
+  "FilePath.hpp"                      #  8
+  "system/Crypto.hpp"                 #  9
+  "system/User.hpp"                   # 10
+  "system/PosixSystem.hpp")           # 11
 DEST_INCLUDES=(
   "Error.hpp"                         #  1
-  "PImpl.hpp"                         #  2
-  "json/Json.hpp"                     #  3
-  "logging/ILogDestination.hpp"       #  4
-  "logging/FileLogDestination.hpp"    #  5
-  "logging/Logger.hpp"                #  6
-  "system/FilePath.hpp"               #  7
-  "system/Crypto.hpp"                 #  8
-  "system/User.hpp"                   #  9
-  "system/PosixSystem.hpp")           # 10
+  "SafeConvert.hpp"                   #  2
+  "PImpl.hpp"                         #  3
+  "json/Json.hpp"                     #  4
+  "logging/ILogDestination.hpp"       #  5
+  "logging/FileLogDestination.hpp"    #  6
+  "logging/Logger.hpp"                #  7
+  "system/FilePath.hpp"               #  8
+  "system/Crypto.hpp"                 #  9
+  "system/User.hpp"                   # 10
+  "system/PosixSystem.hpp")           # 11
 
 SRC_SOURCES=(
   "Error.cpp"                         #  1
-  "SafeConvert.hpp"                   #  2
-  "json/Json.cpp"                     #  3
-  "FileLogDestination.cpp"            #  4
-  "Logger.cpp"                        #  5
-  "StderrLogDestination.hpp"          #  6
-  "StderrLogDestination.cpp"          #  7
-  "system/SyslogDestination.hpp"      #  8
-  "system/SyslogDestination.cpp"      #  9
-  "FilePath.cpp"                      # 10
-  "ReaderWriterMutex.hpp"             # 11
-  "ReaderWriterMutex.cpp"             # 12
-  "system/Crypto.cpp"                 # 13
-  "system/User.cpp"                   # 14
-  "system/PosixSystem.cpp")           # 15
+  "json/Json.cpp"                     #  2
+  "FileLogDestination.cpp"            #  3
+  "Logger.cpp"                        #  4
+  "StderrLogDestination.hpp"          #  5
+  "StderrLogDestination.cpp"          #  6
+  "system/SyslogDestination.hpp"      #  7
+  "system/SyslogDestination.cpp"      #  8
+  "FilePath.cpp"                      #  9
+  "ReaderWriterMutex.hpp"             # 10
+  "ReaderWriterMutex.cpp"             # 11
+  "system/Crypto.cpp"                 # 12
+  "system/User.cpp"                   # 13
+  "system/PosixSystem.cpp")           # 14
 DEST_SOURCES=(
   "Error.cpp"                         #  1
-  "SafeConvert.hpp"                   #  2
-  "json/Json.cpp"                     #  3
-  "logging/FileLogDestination.cpp"    #  4
-  "logging/Logger.cpp"                #  5
-  "logging/StderrLogDestination.hpp"  #  6
-  "logging/StderrLogDestination.cpp"  #  7
-  "logging/SyslogDestination.hpp"     #  8
-  "logging/SyslogDestination.cpp"     #  9
-  "system/FilePath.cpp"               # 10
-  "system/ReaderWriterMutex.hpp"      # 11
-  "system/ReaderWriterMutex.cpp"      # 12
-  "system/Crypto.cpp"                 # 13
-  "system/User.cpp"                   # 14
-  "system/PosixSystem.cpp")           # 15
+  "json/Json.cpp"                     #  2
+  "logging/FileLogDestination.cpp"    #  3
+  "logging/Logger.cpp"                #  4
+  "logging/StderrLogDestination.hpp"  #  5
+  "logging/StderrLogDestination.cpp"  #  6
+  "logging/SyslogDestination.hpp"     #  7
+  "logging/SyslogDestination.cpp"     #  8
+  "system/FilePath.cpp"               #  9
+  "system/ReaderWriterMutex.hpp"      # 10
+  "system/ReaderWriterMutex.cpp"      # 11
+  "system/Crypto.cpp"                 # 12
+  "system/User.cpp"                   # 13
+  "system/PosixSystem.cpp")           # 14
 
 replace()
 {
@@ -292,10 +292,16 @@ for I in "${!SRC_SOURCES[@]}"; do
         replace "$DEST_PATH" "(#include <ostream>)" "\1\n\n#include <boost/system/error_code.hpp>"
         replace "$DEST_PATH" "([ \t]*const\s*)(Error)(&\s*Error::getCause\(\)\s*const)" "\1Optional<\2>\3"
         replace "$DEST_PATH" "(.*?)(launcher_plugins::date_time::)" "\1launcher_plugins::system::DateTime::"
+        replace "$DEST_PATH" "boost::posix_time::ptime now = boost::posix_time::microsec_clock::universal_time\(\);" "DateTime now;"
+        replace "$DEST_PATH" "([ \t]*)(boost::posix_time::microsec_clock::universal_time\(\));" "\1DateTime\(\);"
+        replace "$DEST_PATH" "boost::posix_time::time_duration rotateTime = boost::posix_time::hours\(24\) \* LogOptions.getRotationDays\(\);" "TimeDuration rotateTime\(TimeDuration\(24\).getHours\(\) \* LogOptions.getRotationDays\(\)\);"
         replace "$DEST_PATH" "([ \t]*return\s*)(\*)(impl\(\)\.Cause;)" "\1\3"
         replace "$DEST_PATH" "(.*?\.newUser\.)(get\(\))" "\1getValueOr\(User\(\)\)"
         replace "$DEST_PATH" "(.*?FirstLogLineTime\.)(get\(\))" "\1getValueOr\({}\)"
-        replace "$DEST_PATH" ""
+        replace "$DEST_PATH" "Optional<boost::posix_time::ptime> FirstLogLineTime;" "Optional<DateTime> FirstLogLineTime;"
+        replace "$DEST_PATH" "boost::posix_time::ptime" "DateTime"
+        replace "$DEST_PATH" "([ \t]*)(if \(launcher_plugins::system::DateTime::parseUtcTimeFromIso8601String\(timeStr, \&time\)\))" "\1if \(launcher_plugins::system::DateTime::fromString\(timeStr,\"\",time\)\)"
+        replace "$DEST_PATH" "([ \t]*)(if \(launcher_plugins::system::DateTime::parseUtcTimeFromFormatString\(timeStr, \"%d %b %Y %H:%M:%S\", \&time\)\))" "\1if \(launcher_plugins::system::DateTime::fromString\(timeStr, \"%d %b %Y %H:%M:%S\", time\)\)"
         replace "$DEST_PATH" "([ \t]*::)(system)(::SyslogDestination>)" "\1logging\3"
         replace "$DEST_PATH" "([ \t]*getCause\(\)\.)(asString\(\))" "\1getValueOr\(Error\(\)\)\.\2"
         replace "$DEST_PATH" "[ \t]*Error::Error\s*\(\s*const\s*boost::system::error_code\s*&\s*in_ec\s*,\s*const\s*ErrorLocation\s*&\s*in_location\s*\).*\n(.*\n)*\s*(Error::Error\(std::string\s*in_name\s*,\s*int\s*in_code\s*,\s*const\s*ErrorL)" "\2"
@@ -307,6 +313,8 @@ for I in "${!SRC_SOURCES[@]}"; do
         replace "$DEST_PATH" "return\s*Error\((in_code[^,]*)([^;]*);" "Error error(\"SystemError\"\2;\n   return error;"
         replace "$DEST_PATH" "(}\s*//\s*anonymous\s*namespace\s*\n\n)" "\1std::string errorDescription(const Error\& error);\nstd::string errorMessage(const launcher_plugins::Error\& error);\nstd::string systemErrorMessage(int code);\n\n"
         replace "$DEST_PATH" "(Error\(\")s(ystem)(\",)" "\1S\2Error\3"
+        replace "$DEST_PATH" "([ \t]*)(DateTime lastWriteTime = lastWrite != 0 \? launcher_plugins::system::DateTime::timeFromStdTime\(lastWrite\) :)" "\1DateTime lastWriteTime = lastWrite != 0 \? DateTime\(lastWrite\) :"
+        replace "$DEST_PATH" "([ \t]*)(if \(\(now - lastWriteTime\) > boost::posix_time::hours\(24\))( \* LogOptions.getDeletionDays\(\))" "\1 if \(\(now - lastWriteTime\).getHours\(\) > TimeDuration\(24\).getHours\(\)\3"
     fi
 
     if [[ "$SRC_FILE" == "Logger.cpp" ]]; then
