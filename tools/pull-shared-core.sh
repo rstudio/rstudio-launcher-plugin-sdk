@@ -293,14 +293,14 @@ for I in "${!SRC_SOURCES[@]}"; do
         replace "$DEST_PATH" "([ \t]*const\s*)(Error)(&\s*Error::getCause\(\)\s*const)" "\1Optional<\2>\3"
         replace "$DEST_PATH" "(.*?)(launcher_plugins::date_time::)" "\1launcher_plugins::system::DateTime::"
         replace "$DEST_PATH" "boost::posix_time::ptime now = boost::posix_time::microsec_clock::universal_time\(\);" "DateTime now;"
-        replace "$DEST_PATH" "([ \t]*)(boost::posix_time::microsec_clock::universal_time\(\));" "\1DateTime\(\);"
+        replace "$DEST_PATH" "([ \t]*)(boost::posix_time::microsec_clock::universal_time\(\));" "        DateTime\(\);"
         replace "$DEST_PATH" "boost::posix_time::time_duration rotateTime = boost::posix_time::hours\(24\) \* LogOptions.getRotationDays\(\);" "TimeDuration rotateTime\(TimeDuration\(24\).getHours\(\) \* LogOptions.getRotationDays\(\)\);"
         replace "$DEST_PATH" "([ \t]*return\s*)(\*)(impl\(\)\.Cause;)" "\1\3"
         replace "$DEST_PATH" "(.*?\.newUser\.)(get\(\))" "\1getValueOr\(User\(\)\)"
         replace "$DEST_PATH" "(.*?FirstLogLineTime\.)(get\(\))" "\1getValueOr\({}\)"
         replace "$DEST_PATH" "Optional<boost::posix_time::ptime> FirstLogLineTime;" "Optional<DateTime> FirstLogLineTime;"
         replace "$DEST_PATH" "boost::posix_time::ptime" "DateTime"
-        replace "$DEST_PATH" "([ \t]*)(if \(launcher_plugins::system::DateTime::parseUtcTimeFromIso8601String\(timeStr, \&time\)\))" "\1if \(launcher_plugins::system::DateTime::fromString\(timeStr,\"\",time\)\)"
+        replace "$DEST_PATH" "([ \t]*)(if \(launcher_plugins::system::DateTime::parseUtcTimeFromIso8601String\(timeStr, \&time\)\))" "\1if \(launcher_plugins::system::DateTime::fromString\(timeStr,time\)\)"
         replace "$DEST_PATH" "([ \t]*)(if \(launcher_plugins::system::DateTime::parseUtcTimeFromFormatString\(timeStr, \"%d %b %Y %H:%M:%S\", \&time\)\))" "\1if \(launcher_plugins::system::DateTime::fromString\(timeStr, \"%d %b %Y %H:%M:%S\", time\)\)"
         replace "$DEST_PATH" "([ \t]*::)(system)(::SyslogDestination>)" "\1logging\3"
         replace "$DEST_PATH" "([ \t]*getCause\(\)\.)(asString\(\))" "\1getValueOr\(Error\(\)\)\.\2"
@@ -352,7 +352,7 @@ for I in "${!SRC_SOURCES[@]}"; do
     fi
 
     if [[ "$SRC_FILE" == "system/User.cpp" ]]; then
-        replace "$DEST_PATH" "<SafeConvert.hpp>" "\"../SafeConvert.hpp\""
+        replace "$DEST_PATH" "<SafeConvert.hpp>" "\"SafeConvert.hpp\""
         replace "$DEST_PATH" "(#include \"../SafeConvert.hpp\"\n)(#include <system/PosixSystem.hpp>\n)" "\2\n\1"
     fi
 done

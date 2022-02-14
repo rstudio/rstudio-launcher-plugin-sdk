@@ -94,6 +94,7 @@ int configureScratchPath(
       error = system::posix::temporarilyDropPrivileges(in_serverUser, in_group);
       CHECK_ERROR(error, "Could not lower privilege to server user: " + in_serverUser.getUsername() + ".")
 
+      logging::refreshAllLogDestinations();
       // Change the file mode to rwxr-x-r-x so everyone can read the files in the scratch path, but only the server user
       // has full access.
       error = in_scratchPath.changeFileMode(system::FileMode::USER_READ_WRITE_EXECUTE_ALL_READ_EXECUTE);
@@ -196,22 +197,8 @@ int AbstractMain::run(int in_argc, char** in_argv)
    using namespace logging;
    setProgramId(getProgramId());
 
-    // Initialize the default options. This must be done before the custom options are initialized.
+   // Initialize the default options. This must be done before the custom options are initialized.
    options::Options& options = options::Options::getInstance();
-
-   // Read the options.
-   error = options.readOptions(in_argc, in_argv, getConfigFile());
-   CHECK_ERROR(error)
-
-   // Ensure the server user exists.
-   system::User serverUser;
-   error = options.getServerUser(serverUser);
-   CHECK_ERROR(error)
-
-   // Ensure the scratch path exists and is configured correctly.
-   int ret = configureScratchPath(options.getScratchPath(), serverUser, options.useUnprivilegedMode()) ;
-   if (ret != 0)
-      return ret;
 
    addLogDestination(
          std::unique_ptr<ILogDestination>(
@@ -229,6 +216,19 @@ int AbstractMain::run(int in_argc, char** in_argv)
    std::shared_ptr<ILogDestination> stderrLogDest(new StderrLogDestination("StderrLogging",LogLevel::INFO, LogMessageFormatType::PRETTY));
    addLogDestination(stderrLogDest);
 
+   // Read the options.
+   error = options.readOptions(in_argc, in_argv, getConfigFile());
+   CHECK_ERROR(error)
+
+   // Ensure the server user exists.
+   system::User serverUser;
+   error = options.getServerUser(serverUser);
+   CHECK_ERROR(error)
+
+   // Ensure the scratch path exists and is configured correctly.
+   int ret = configureScratchPath(options.getScratchPath(), serverUser, options.useUnprivilegedMode()) ;
+   if (ret != 0)
+      return ret;
 
    // Remove the stderr log destination.
    removeLogDestination(stderrLogDest->getId());
