@@ -254,7 +254,7 @@ std::string formatLogMessage(
    {
       std::ostringstream oss;
 
-      oss << launcher_plugins::system::DateTime::format(time, launcher_plugins::system::DateTime::kIso8601Format)
+      oss << launcher_plugins::system::DateTime::format(time, launcher_plugins::system::DateTime::ISO_8601_INPUT_FORMAT)
           << " [" << in_programId << "] ";
 
       if (in_error)
@@ -278,7 +278,7 @@ std::string formatLogMessage(
    else
    {
       json::Object logObject;
-      logObject["time"] = launcher_plugins::system::DateTime::format(time, launcher_plugins::system::DateTime::kIso8601Format);
+      logObject["time"] = launcher_plugins::system::DateTime::format(time, launcher_plugins::system::DateTime::ISO_8601_INPUT_FORMAT);
       logObject["service"] = in_programId;
 
       std::ostringstream logLevel;

@@ -250,7 +250,8 @@ private:
 class DateTime final
 {
 public:
-  static constexpr const char* kIso8601Format {"%Y-%m-%dT%H:%M:%S%FZ"};
+
+   static constexpr char const* ISO_8601_INPUT_FORMAT  = "%Y-%m-%dT%H:%M:%S%F%ZP";
 
    /**
     * @brief Constructor.

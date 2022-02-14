@@ -315,7 +315,7 @@ for I in "${!SRC_SOURCES[@]}"; do
         replace "$DEST_PATH" "return\s*Error\((in_code[^,]*)([^;]*);" "Error error(\"SystemError\"\2;\n   return error;"
         replace "$DEST_PATH" "(}\s*//\s*anonymous\s*namespace\s*\n\n)" "\1std::string errorDescription(const Error\& error);\nstd::string errorMessage(const launcher_plugins::Error\& error);\nstd::string systemErrorMessage(int code);\n\n"
         replace "$DEST_PATH" "(Error\(\")s(ystem)(\",)" "\1S\2Error\3"
-        replace "$DEST_PATH" "([ \t]*)(DateTime lastWriteTime = lastWrite != 0 \? launcher_plugins::system::DateTime::timeFromStdTime\(lastWrite\) :)" "\1DateTime lastWriteTime = lastWrite != 0 \? DateTime\(lastWrite\) :"
+        replace "$DEST_PATH" "([ \t]*)(DateTime lastWriteTime = lastWrite != 0 \? DateTime::timeFromStdTime\(lastWrite\) :)" "\1DateTime lastWriteTime = lastWrite != 0 \? DateTime\(lastWrite\) :"
         replace "$DEST_PATH" "([ \t]*)(if \(\(now - lastWriteTime\) > boost::posix_time::hours\(24\))( \* LogOptions.getDeletionDays\(\))" "\1 if \(\(now - lastWriteTime\).getHours\(\) > TimeDuration\(24\).getHours\(\)\3"
     fi
 
@@ -323,7 +323,7 @@ for I in "${!SRC_SOURCES[@]}"; do
         replace "$DEST_PATH" "<system/ReaderWriterMutex.hpp>" "\"../system/ReaderWriterMutex.hpp\""
         replace "$DEST_PATH" "(.*?in_properties\.)(get\(\))" "\1getValueOr\(LogMessageProperties\(\)\)"
         replace "$DEST_PATH" "(.*?in_error\.getCause\(\))" "\1\.getValueOr(Error\(\)\)"
-        replace "$DEST_PATH" "(.*?)(launcher_plugins::)(date_time)(::format\(time, launcher_plugins::)(date_time::)(kIso8601Format)" "\1\2system::DateTime\4system::DateTime::\6"
+        replace "$DEST_PATH" "(.*?)(launcher_plugins::)(date_time)(::format\(time, launcher_plugins::)(date_time::)(kIso8601Format)" "\1\2system::DateTime\4system::DateTime::ISO_8601_INPUT_FORMAT"
         replace "$DEST_PATH" "([ \t]*boost::none)" "{}"
         replace "$DEST_PATH" "(#include <sstream>\n\n)" "\1#include <boost/algorithm/string.hpp>\n\n"
         replace "$DEST_PATH" "(#include <Noncopyable.hpp>\n#include <Optional.hpp>\n)\n(#include <system/DateTime.hpp>\n)(#include <Error.hpp>\n)(#include <logging/ILogDestination.hpp>\n)" "\3\1\4\2"
