@@ -197,24 +197,12 @@ int AbstractMain::run(int in_argc, char** in_argv)
    using namespace logging;
    setProgramId(getProgramId());
 
-   // Initialize the default options. This must be done before the custom options are initialized.
-   options::Options& options = options::Options::getInstance();
-
-   addLogDestination(
-         std::unique_ptr<ILogDestination>(
-            new FileLogDestination(
-               "MainLogDestination",
-               options.getLogLevel(),
-               LogMessageFormatType::PRETTY,
-               getProgramId(),
-               logging::FileLogOptions(options.getLoggingDir())
-               )));
-
-   logging::logInfoMessage("Starting plugin...");
-
    // Turn on stderr logging while options are parsed.
    std::shared_ptr<ILogDestination> stderrLogDest(new StderrLogDestination("StderrLogging",LogLevel::INFO, LogMessageFormatType::PRETTY));
    addLogDestination(stderrLogDest);
+
+   // Initialize the default options. This must be done before the custom options are initialized.
+   options::Options& options = options::Options::getInstance();
 
    // Read the options.
    error = options.readOptions(in_argc, in_argv, getConfigFile());
@@ -230,6 +218,17 @@ int AbstractMain::run(int in_argc, char** in_argv)
    if (ret != 0)
       return ret;
 
+   addLogDestination(
+         std::unique_ptr<ILogDestination>(
+            new FileLogDestination(
+               "MainLogDestination",
+               options.getLogLevel(),
+               LogMessageFormatType::PRETTY,
+               getProgramId(),
+               logging::FileLogOptions(options.getLoggingDir())
+               )));
+
+   logging::logInfoMessage("Starting plugin...");
    // Remove the stderr log destination.
    removeLogDestination(stderrLogDest->getId());
 
