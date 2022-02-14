@@ -241,11 +241,11 @@ DateTime::DateTime(std::time_t& in_time) noexcept :
       boost::posix_time::seconds(static_cast<long>(in_time));
 }
 
- DateTime::DateTime(boost::posix_time::ptime Time) noexcept :
+/* DateTime::DateTime(boost::posix_time::ptime Time) noexcept :
    m_impl(new Impl())
 {
    m_impl->Time = Time;
-}
+}*/
 
 DateTime::DateTime(const DateTime& in_other) :
    m_impl(new Impl(*in_other.m_impl))
@@ -256,20 +256,6 @@ DateTime::DateTime(DateTime&& in_other) noexcept :
    m_impl(std::move(in_other.m_impl))
 {
 
-}
-template <typename TimeType> static std::string format(const TimeType& time,const std::string& format)
-{
-   using namespace boost::posix_time;
-
-   // facet for http date (construct w/ a_ref == 1 so we manage memory)
-   time_facet httpDateFacet(1);
-   httpDateFacet.format(format.c_str());
-
-   // output and return the date
-   std::ostringstream dateStream;
-   dateStream.imbue(std::locale(dateStream.getloc(), &httpDateFacet));
-   dateStream << time;
-   return dateStream.str();
 }
 
 Error DateTime::fromString(const std::string& in_timeStr,DateTime& out_dateTime)
