@@ -344,7 +344,7 @@ struct FileLogDestination::Impl
          // If so, we will delete it instead of rotating it
          std::time_t lastWrite = logFile.getLastWriteTime();
          DateTime lastWriteTime = lastWrite != 0 ? DateTime(lastWrite) :
-                                                                   DateTime();
+ DateTime();
          DateTime now;
           if ((now - lastWriteTime).getHours() > TimeDuration(24).getHours() * LogOptions.getDeletionDays())
          {
@@ -401,7 +401,7 @@ struct FileLogDestination::Impl
       if (pos != std::string::npos)
       {
          timeStr = line.substr(0, pos);
-         if (launcher_plugins::system::DateTime::fromString(timeStr,"",time))
+         if (launcher_plugins::system::DateTime::fromString(timeStr,time))
             return time;
       }
 
@@ -415,7 +415,7 @@ struct FileLogDestination::Impl
          if (endPos != std::string::npos)
          {
             timeStr = line.substr(pos, endPos - pos);
-            if (launcher_plugins::system::DateTime::fromString(timeStr,"",time))
+            if (launcher_plugins::system::DateTime::fromString(timeStr,time))
                return time;
          }
       }

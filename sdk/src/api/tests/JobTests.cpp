@@ -1852,8 +1852,8 @@ TEST_CASE("To JSON: Job (all fields)")
    port.PublishedPort = 443;
 
    system::DateTime last, submitted;
-   REQUIRE_FALSE(system::DateTime::fromString("1987-04-03T13:51:19.000381Z","", last));
-   REQUIRE_FALSE(system::DateTime::fromString("1987-04-03T13:21:05.412398Z","",submitted));
+   REQUIRE_FALSE(system::DateTime::fromString("1987-04-03T13:51:19.000381Z",last));
+   REQUIRE_FALSE(system::DateTime::fromString("1987-04-03T13:21:05.412398Z",submitted));
 
    MountSource nfsSource, hostSource1, hostSource2;
    nfsSource.SourceType = MountSource::Type::NFS;
@@ -2002,8 +2002,8 @@ TEST_CASE("To JSON: Job (all fields)")
 TEST_CASE("To JSON: Job (some fields)")
 {
    system::DateTime last, submitted;
-   REQUIRE_FALSE(system::DateTime::fromString("1987-04-03T13:51:19.000381Z","",last));
-   REQUIRE_FALSE(system::DateTime::fromString("1987-04-03T13:21:05.412398Z","",submitted));
+   REQUIRE_FALSE(system::DateTime::fromString("1987-04-03T13:51:19.000381Z",last));
+   REQUIRE_FALSE(system::DateTime::fromString("1987-04-03T13:21:05.412398Z",submitted));
 
    ResourceLimit limit1, limit2;
    limit1.ResourceType = ResourceLimit::Type::MEMORY_SWAP;
@@ -2069,7 +2069,7 @@ TEST_CASE("To JSON: Job (some fields)")
 TEST_CASE("To JSON: Job (each state type)")
 {
    Job job;
-   REQUIRE_FALSE(system::DateTime::fromString("2019-06-05T10:56:05.559977Z","",job.SubmissionTime));
+   REQUIRE_FALSE(system::DateTime::fromString("2019-06-05T10:56:05.559977Z",job.SubmissionTime));
 
    json::Object expected;
    expected["args"] = json::Array();

@@ -38,7 +38,7 @@ TEST_CASE("Deadline")
 {
    AsioRaii init;
    DateTime expired;
-   REQUIRE_FALSE(DateTime::fromString("2019-03-08T12:12:12Z","", expired));
+   REQUIRE_FALSE(DateTime::fromString("2019-03-08T12:12:12Z",expired));
 
    DateTime threeSecLater = DateTime() + TimeDuration::Seconds(3),
             oneHourLater = DateTime() + TimeDuration::Hours(1);
