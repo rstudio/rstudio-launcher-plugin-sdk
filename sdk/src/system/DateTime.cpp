@@ -257,6 +257,21 @@ DateTime::DateTime(DateTime&& in_other) noexcept :
 {
 
 }
+template <typename TimeType> static std::string format(const TimeType& time,const std::string& format)
+{
+   using namespace boost::posix_time;
+
+   // facet for http date (construct w/ a_ref == 1 so we manage memory)
+   time_facet httpDateFacet(1);
+   httpDateFacet.format(format.c_str());
+
+   // output and return the date
+   std::ostringstream dateStream;
+   dateStream.imbue(std::locale(dateStream.getloc(), &httpDateFacet));
+   dateStream << time;
+   return dateStream.str();
+}
+
 Error DateTime::fromString(const std::string& in_timeStr,DateTime& out_dateTime)
 {
    return fromString(in_timeStr, ISO_8601_INPUT_FORMAT, out_dateTime);

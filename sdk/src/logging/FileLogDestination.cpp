@@ -344,7 +344,7 @@ struct FileLogDestination::Impl
          // If so, we will delete it instead of rotating it
          std::time_t lastWrite = logFile.getLastWriteTime();
          DateTime lastWriteTime = lastWrite != 0 ? DateTime(lastWrite) :
-        DateTime();
+         DateTime();
          DateTime now;
           if ((now - lastWriteTime).getHours() > TimeDuration(24).getHours() * LogOptions.getDeletionDays())
          {
@@ -391,7 +391,7 @@ struct FileLogDestination::Impl
    {
       // Empty line means the file hasn't actually been written to yet, so bail early
       if (line.empty())
-         return        DateTime();
+         return         DateTime();
 
       DateTime time;
       std::string timeStr;
@@ -433,7 +433,7 @@ struct FileLogDestination::Impl
       }
 
       // Couldn't find it - return the current time to ensure no rotation is actually done
-      return        DateTime();
+      return         DateTime();
    }
 
    DateTime getFirstEntryTimestamp()
@@ -444,7 +444,7 @@ struct FileLogDestination::Impl
       std::shared_ptr<std::istream> fileStream;
       Error error = LogFile.openForRead(fileStream);
       if (error)
-         return        DateTime();
+         return         DateTime();
 
       try
       {
@@ -458,7 +458,7 @@ struct FileLogDestination::Impl
       catch (const std::exception&)
       {
          // Swallow errors - we can't log them!
-         return        DateTime();
+         return         DateTime();
       }
    }
 
