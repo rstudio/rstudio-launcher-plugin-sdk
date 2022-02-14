@@ -35,7 +35,7 @@ namespace system {
 
 namespace {
 
-constexpr char const* ISO_8601_INPUT_FORMAT  = "%Y-%m-%dT%H:%M:%S%F%ZP";
+
 constexpr char const* ISO_8601_OUTPUT_FORMAT = "%Y-%m-%dT%H:%M:%S%FZ";
 
 } // anonymous namespace
