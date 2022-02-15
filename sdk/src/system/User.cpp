@@ -31,7 +31,6 @@
 #include <system/FilePath.hpp>
 #include "SafeConvert.hpp"
 #include <system/PosixSystem.hpp>
-
 namespace rstudio {
 namespace launcher_plugins {
 namespace system {
