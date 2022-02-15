@@ -459,7 +459,7 @@ Error JobStateRequest::getEndTime(Optional<system::DateTime>& out_endTime) const
    if (m_impl->EndTime)
    {
       system::DateTime endTime;
-      Error error = system::DateTime::fromString(m_impl->EndTime.getValueOr(""),endTime);
+      Error error = system::DateTime::fromString(m_impl->EndTime.getValueOr(""), endTime);
       if (error)
          return error;
 
@@ -479,7 +479,7 @@ Error JobStateRequest::getStartTime(Optional<system::DateTime>& out_startTime) c
    if (m_impl->StartTime)
    {
       system::DateTime startTime;
-      Error error = system::DateTime::fromString(m_impl->StartTime.getValueOr(""),startTime);
+      Error error = system::DateTime::fromString(m_impl->StartTime.getValueOr(""), startTime);
       if (error)
          return error;
 

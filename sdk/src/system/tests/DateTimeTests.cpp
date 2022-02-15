@@ -186,7 +186,7 @@ TEST_CASE("Construction and simple toString")
       std::string timeStr = "2019-02-15T11:23:44.039876Z";
       DateTime d;
 
-      REQUIRE_FALSE(DateTime::fromString(timeStr,d));
+      REQUIRE_FALSE(DateTime::fromString(timeStr, d));
       CHECK(d.toString() == timeStr);
    }
 
@@ -197,7 +197,7 @@ TEST_CASE("Construction and simple toString")
 
       DateTime d;
 
-      REQUIRE_FALSE(DateTime::fromString(timeStr,d));
+      REQUIRE_FALSE(DateTime::fromString(timeStr, d));
       CHECK(d.toString() == expectedTime);
    }
 
@@ -208,7 +208,7 @@ TEST_CASE("Construction and simple toString")
 
       DateTime d;
 
-      REQUIRE_FALSE(DateTime::fromString(timeStr,d));
+      REQUIRE_FALSE(DateTime::fromString(timeStr, d));
       CHECK(d.toString() == expectedTime);
    }
 
@@ -219,7 +219,7 @@ TEST_CASE("Construction and simple toString")
 
       DateTime d;
 
-      REQUIRE_FALSE(DateTime::fromString(timeStr,d));
+      REQUIRE_FALSE(DateTime::fromString(timeStr, d));
       CHECK(d.toString() == expectedTime);
    }
 
@@ -240,7 +240,7 @@ TEST_CASE("Complex toString")
       std::string timeStr = "2019-02-15T11:23:44.039876Z";
       DateTime d;
 
-      REQUIRE_FALSE(DateTime::fromString(timeStr,d));
+      REQUIRE_FALSE(DateTime::fromString(timeStr, d));
       CHECK(d.toString() == timeStr);
       CHECK(d.toString("%y/%m/%d %H:%M:%S%Q") == "19/02/15 11:23:44");
    }
@@ -250,7 +250,7 @@ TEST_CASE("Complex toString")
       std::string timeStr = "2019-02-15T11:23:44.039876Z";
       DateTime d;
 
-      REQUIRE_FALSE(DateTime::fromString(timeStr,d));
+      REQUIRE_FALSE(DateTime::fromString(timeStr, d));
       CHECK(d.toString() == timeStr);
       CHECK(d.toString("%b %d, %Y") == "Feb 15, 2019");
    }
@@ -260,7 +260,7 @@ TEST_CASE("Complex toString")
       std::string timeStr = "2019-02-15T23:23:44.039876Z";
       DateTime d;
 
-      REQUIRE_FALSE(DateTime::fromString(timeStr,d));
+      REQUIRE_FALSE(DateTime::fromString(timeStr, d));
       CHECK(d.toString() == timeStr);
       CHECK(d.toString("%A, %B %d %I:%M:%S %p") == "Friday, February 15 11:23:44 PM");
    }
@@ -277,15 +277,15 @@ TEST_CASE("Equality and Inequality")
    SECTION("Current time and other time")
    {
       DateTime d1, d2;
-      REQUIRE_FALSE(DateTime::fromString("2019-02-15T11:23:44.039876Z",d2));
+      REQUIRE_FALSE(DateTime::fromString("2019-02-15T11:23:44.039876Z", d2));
       CHECK(d1 != d2);
    }
 
    SECTION("Two non-current times (same initial TZ)")
    {
       DateTime d1, d2;
-      REQUIRE_FALSE(DateTime::fromString("2019-02-15T11:23:44.039876Z",d1));
-      REQUIRE_FALSE(DateTime::fromString("2019-02-15T11:23:44.039876Z",d2));
+      REQUIRE_FALSE(DateTime::fromString("2019-02-15T11:23:44.039876Z", d1));
+      REQUIRE_FALSE(DateTime::fromString("2019-02-15T11:23:44.039876Z", d2));
 
       CHECK(d1 == d2);
    }
@@ -293,8 +293,8 @@ TEST_CASE("Equality and Inequality")
    SECTION("Two non-current times (different initial TZ)")
    {
       DateTime d1, d2;
-      REQUIRE_FALSE(DateTime::fromString("2019-02-15T03:23:44.039876-8:00",d1));
-      REQUIRE_FALSE(DateTime::fromString("2019-02-15T11:23:44.039876Z",d2));
+      REQUIRE_FALSE(DateTime::fromString("2019-02-15T03:23:44.039876-8:00", d1));
+      REQUIRE_FALSE(DateTime::fromString("2019-02-15T11:23:44.039876Z", d2));
 
       CHECK(d1 == d2);
    }
@@ -313,8 +313,8 @@ TEST_CASE("Equality and Inequality")
    SECTION("Two non-current times (inequal, different TZ)")
    {
       DateTime d1, d2;
-      REQUIRE_FALSE(DateTime::fromString("2019-02-15T03:23:44.039876-5:00",d1));
-      REQUIRE_FALSE(DateTime::fromString("2019-02-15T11:23:44.039876Z",d2));
+      REQUIRE_FALSE(DateTime::fromString("2019-02-15T03:23:44.039876-5:00", d1));
+      REQUIRE_FALSE(DateTime::fromString("2019-02-15T11:23:44.039876Z", d2));
 
       CHECK(d1 != d2);
    }
@@ -341,7 +341,7 @@ TEST_CASE("LT/LTE/GT/GTE Comparisons")
    SECTION("Current time and other time")
    {
       DateTime d1, d2;
-      REQUIRE_FALSE(DateTime::fromString("2019-02-15T11:23:44.039876Z",d2));
+      REQUIRE_FALSE(DateTime::fromString("2019-02-15T11:23:44.039876Z", d2));
 
       CHECK_FALSE(d1 < d2);
       CHECK_FALSE(d1 <= d2);
@@ -357,8 +357,8 @@ TEST_CASE("LT/LTE/GT/GTE Comparisons")
    SECTION("Two non-current times (same initial TZ)")
    {
       DateTime d1, d2;
-      REQUIRE_FALSE(DateTime::fromString("2019-02-15T11:23:44.039876Z",d1));
-      REQUIRE_FALSE(DateTime::fromString("2019-02-15T11:23:44.039876Z",d2));
+      REQUIRE_FALSE(DateTime::fromString("2019-02-15T11:23:44.039876Z", d1));
+      REQUIRE_FALSE(DateTime::fromString("2019-02-15T11:23:44.039876Z", d2));
 
       CHECK_FALSE(d1 < d2);
       CHECK(d1 <= d2);
@@ -369,8 +369,8 @@ TEST_CASE("LT/LTE/GT/GTE Comparisons")
    SECTION("Two non-current times (different initial TZ)")
    {
       DateTime d1, d2;
-      REQUIRE_FALSE(DateTime::fromString("2019-02-15T03:23:44.039876-8:00",d1));
-      REQUIRE_FALSE(DateTime::fromString("2019-02-15T11:23:44.039876Z",d2));
+      REQUIRE_FALSE(DateTime::fromString("2019-02-15T03:23:44.039876-8:00", d1));
+      REQUIRE_FALSE(DateTime::fromString("2019-02-15T11:23:44.039876Z", d2));
 
       CHECK_FALSE(d1 < d2);
       CHECK(d1 <= d2);
@@ -400,8 +400,8 @@ TEST_CASE("LT/LTE/GT/GTE Comparisons")
    SECTION("Two non-current times (inequal, different TZ)")
    {
       DateTime d1, d2;
-      REQUIRE_FALSE(DateTime::fromString("2019-02-15T03:23:44.039876-5:00",d1));
-      REQUIRE_FALSE(DateTime::fromString("2019-02-15T11:23:44.039876Z",d2));
+      REQUIRE_FALSE(DateTime::fromString("2019-02-15T03:23:44.039876-5:00", d1));
+      REQUIRE_FALSE(DateTime::fromString("2019-02-15T11:23:44.039876Z", d2));
 
       CHECK(d1 < d2);
       CHECK(d1 <= d2);
@@ -668,7 +668,7 @@ TEST_CASE("Assignment")
    {
       DateTime d1, d2;
 
-      REQUIRE_FALSE(DateTime::fromString("2019-02-15T11:23:44.039876Z",d2));
+      REQUIRE_FALSE(DateTime::fromString("2019-02-15T11:23:44.039876Z", d2));
       d2 = d1;
 
       CHECK(d1 == d2);
@@ -680,7 +680,7 @@ TEST_CASE("Assignment")
    {
       DateTime d1, d2;
 
-      REQUIRE_FALSE(DateTime::fromString("2019-02-15T11:23:44.039876Z",d2));
+      REQUIRE_FALSE(DateTime::fromString("2019-02-15T11:23:44.039876Z", d2));
       d1 = d2;
 
       CHECK(d1 == d2);
@@ -692,8 +692,8 @@ TEST_CASE("Assignment")
    {
       DateTime d1, d2;
 
-      REQUIRE_FALSE(DateTime::fromString("2020-02-15T11:23:44.039876Z",d1));
-      REQUIRE_FALSE(DateTime::fromString("2019-02-15T11:23:44.039876Z",d2));
+      REQUIRE_FALSE(DateTime::fromString("2020-02-15T11:23:44.039876Z", d1));
+      REQUIRE_FALSE(DateTime::fromString("2019-02-15T11:23:44.039876Z", d2));
       d2 = d1;
 
       CHECK(d1 == d2);
@@ -705,7 +705,7 @@ TEST_CASE("Assignment")
 TEST_CASE("Add times")
 {
    DateTime d;
-   REQUIRE_FALSE(DateTime::fromString("2019-02-15T11:23:44.039876Z",d));
+   REQUIRE_FALSE(DateTime::fromString("2019-02-15T11:23:44.039876Z", d));
 
    SECTION("Hours")
    {
@@ -762,8 +762,8 @@ TEST_CASE("Add times")
 TEST_CASE("Add and Subtract Tests")
 {
    DateTime later, earlier;
-   REQUIRE_FALSE(DateTime::fromString("2019-02-15T18:43:49.040876Z",later));
-   REQUIRE_FALSE(DateTime::fromString("2019-02-15T11:23:44.039876Z",earlier));
+   REQUIRE_FALSE(DateTime::fromString("2019-02-15T18:43:49.040876Z", later));
+   REQUIRE_FALSE(DateTime::fromString("2019-02-15T11:23:44.039876Z", earlier));
 
    TimeDuration difference(7, 20, 5, 1000),
       negDifference(-7, -20, -5, -1000);
