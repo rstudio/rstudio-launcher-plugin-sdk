@@ -302,7 +302,7 @@ for I in "${!SRC_SOURCES[@]}"; do
         replace "$DEST_PATH" "(.*?FirstLogLineTime\.)(get\(\))" "\1getValueOr\({}\)"
         replace "$DEST_PATH" "Optional<boost::posix_time::ptime> FirstLogLineTime;" "Optional<DateTime> FirstLogLineTime;"
         replace "$DEST_PATH" "boost::posix_time::ptime" "DateTime"
-        replace "$DEST_PATH" "([ \t]*)(if \(DateTime::parseUtcTimeFromIso8601String\(timeStr, \&time\)\))" "\1if \(launcher_plugins::system::DateTime::fromString\(timeStr,time\)\)"
+        replace "$DEST_PATH" "([ \t]*)(if \(DateTime::parseUtcTimeFromIso8601String\(timeStr, \&time\)\))" "\1if \(launcher_plugins::system::DateTime::fromString\(timeStr, time\)\)"
         replace "$DEST_PATH" "([ \t]*)(if \(DateTime::parseUtcTimeFromFormatString\(timeStr, \"%d %b %Y %H:%M:%S\", \&time\)\))" "\1if \(launcher_plugins::system::DateTime::fromString\(timeStr, \"%d %b %Y %H:%M:%S\", time\)\)"
         replace "$DEST_PATH" "([ \t]*::)(system)(::SyslogDestination>)" "\1logging\3"
         replace "$DEST_PATH" "([ \t]*getCause\(\)\.)(asString\(\))" "\1getValueOr\(Error\(\)\)\.\2"
