@@ -241,12 +241,6 @@ DateTime::DateTime(std::time_t& in_time) noexcept :
       boost::posix_time::seconds(static_cast<long>(in_time));
 }
 
-/* DateTime::DateTime(boost::posix_time::ptime Time) noexcept :
-   m_impl(new Impl())
-{
-   m_impl->Time = Time;
-}*/
-
 DateTime::DateTime(const DateTime& in_other) :
    m_impl(new Impl(*in_other.m_impl))
 {
