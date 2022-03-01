@@ -94,7 +94,6 @@ int configureScratchPath(
       error = system::posix::temporarilyDropPrivileges(in_serverUser, in_group);
       CHECK_ERROR(error, "Could not lower privilege to server user: " + in_serverUser.getUsername() + ".")
 
-      logging::refreshAllLogDestinations();
       // Change the file mode to rwxr-x-r-x so everyone can read the files in the scratch path, but only the server user
       // has full access.
       error = in_scratchPath.changeFileMode(system::FileMode::USER_READ_WRITE_EXECUTE_ALL_READ_EXECUTE);
@@ -205,7 +204,7 @@ int AbstractMain::run(int in_argc, char** in_argv)
 
    // Initialize the default options. This must be done before the custom options are initialized.
    options::Options& options = options::Options::getInstance();
-
+   
    // Read the options.
    error = options.readOptions(in_argc, in_argv, getConfigFile());
    CHECK_ERROR(error)
@@ -220,6 +219,13 @@ int AbstractMain::run(int in_argc, char** in_argv)
    if (ret != 0)
       return ret;
 
+   // If we are, restore root privileges.
+   if (!options.useUnprivilegedMode() && system::posix::realUserIsRoot())
+   {
+   error = system::posix::restoreRoot();
+   CHECK_ERROR(error, "Could not restore root privilege.")
+   }
+
    addLogDestination(
          std::unique_ptr<ILogDestination>(
             new FileLogDestination(
@@ -230,8 +236,19 @@ int AbstractMain::run(int in_argc, char** in_argv)
                logging::FileLogOptions(options.getLoggingDir())
                )));
 
+   // Ensure log directory is owned by the server user.
+   refreshAllLogDestinations(RefreshParams{ Optional<system::User> (serverUser), true});
+
    // Remove the stderr log destination.
-   removeLogDestination(stderrLogDest->getId());
+   rstudio::launcher_plugins::logging::removeLogDestination(stderrLogDest->getId());
+   
+   // Drop privileges to the server  user.
+   if (system::posix::realUserIsRoot())
+   {
+   const Optional<system::GidType> in_group;
+   error = system::posix::temporarilyDropPrivileges(serverUser, in_group);
+   CHECK_ERROR(error, "Could not lower privilege to server user: " + serverUser.getUsername() + ".")
+   }
 
    // Create the launcher communicator. For now this is always an StdIO communicator. Later, it could be dependant on
    // the options.
