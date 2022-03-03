@@ -344,7 +344,7 @@ struct FileLogDestination::Impl
          // If so, we will delete it instead of rotating it
          std::time_t lastWrite = logFile.getLastWriteTime();
          DateTime lastWriteTime = lastWrite != 0 ? DateTime(lastWrite) :
-
+			DateTime();
          DateTime now;
           if ((now - lastWriteTime).getHours() > TimeDuration(24).getHours() * LogOptions.getDeletionDays())
          {
