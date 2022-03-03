@@ -204,7 +204,7 @@ int AbstractMain::run(int in_argc, char** in_argv)
 
    // Initialize the default options. This must be done before the custom options are initialized.
    options::Options& options = options::Options::getInstance();
-   
+
    // Read the options.
    error = options.readOptions(in_argc, in_argv, getConfigFile());
    CHECK_ERROR(error)
@@ -241,7 +241,7 @@ int AbstractMain::run(int in_argc, char** in_argv)
 
    // Remove the stderr log destination.
    rstudio::launcher_plugins::logging::removeLogDestination(stderrLogDest->getId());
-   
+
    // Drop privileges to the server  user.
    if (system::posix::realUserIsRoot())
    {
