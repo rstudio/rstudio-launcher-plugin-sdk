@@ -222,8 +222,8 @@ int AbstractMain::run(int in_argc, char** in_argv)
    // If we are, restore root privileges.
    if (!options.useUnprivilegedMode() && system::posix::realUserIsRoot())
    {
-   error = system::posix::restoreRoot();
-   CHECK_ERROR(error, "Could not restore root privilege.")
+      error = system::posix::restoreRoot();
+      CHECK_ERROR(error, "Could not restore root privilege.")
    }
 
    addLogDestination(
@@ -242,12 +242,12 @@ int AbstractMain::run(int in_argc, char** in_argv)
    // Remove the stderr log destination.
    rstudio::launcher_plugins::logging::removeLogDestination(stderrLogDest->getId());
 
-   // Drop privileges to the server  user.
+   // Drop privileges to the server user.
    if (system::posix::realUserIsRoot())
    {
-   const Optional<system::GidType> in_group;
-   error = system::posix::temporarilyDropPrivileges(serverUser, in_group);
-   CHECK_ERROR(error, "Could not lower privilege to server user: " + serverUser.getUsername() + ".")
+      const Optional<system::GidType> in_group;
+      error = system::posix::temporarilyDropPrivileges(serverUser, in_group);
+      CHECK_ERROR(error, "Could not lower privilege to server user: " + serverUser.getUsername() + ".")
    }
 
    // Create the launcher communicator. For now this is always an StdIO communicator. Later, it could be dependant on

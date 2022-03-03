@@ -296,7 +296,7 @@ for I in "${!SRC_SOURCES[@]}"; do
         replace "$DEST_PATH" "(.*?)(launcher_plugins::date_time::)" "\1DateTime::"
         replace "$DEST_PATH" "boost::posix_time::ptime now = boost::posix_time::microsec_clock::universal_time\(\);" "DateTime now;"
         replace "$DEST_PATH" "([ \t]*)(return boost::posix_time::microsec_clock::universal_time\(\);)" "\1 return DateTime\(\);"
-        replace "$DEST_PATH" "                                                                   boost::posix_time::microsec_clock::universal_time\(\);" "            DateTime\(\);"
+        replace "$DEST_PATH" "                                                                   boost::posix_time::microsec_clock::universal_time\(\);" "" "" "" "DateTime\(\);"
         replace "$DEST_PATH" "boost::posix_time::time_duration rotateTime = boost::posix_time::hours\(24\) \* LogOptions.getRotationDays\(\);" "TimeDuration rotateTime\(TimeDuration\(24\).getHours\(\) \* LogOptions.getRotationDays\(\)\);"
         replace "$DEST_PATH" "([ \t]*return\s*)(\*)(impl\(\)\.Cause;)" "\1\3"
         replace "$DEST_PATH" "(.*?\.newUser\.)(get\(\))" "\1getValueOr\(User\(\)\)"
