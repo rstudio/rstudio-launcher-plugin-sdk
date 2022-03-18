@@ -69,7 +69,7 @@ public:
     * The most detailed log level is always used
     */
    MockLogDestination() :
-      ILogDestination("10",LogLevel::DEBUG, LogMessageFormatType::PRETTY, false)
+      ILogDestination("10", LogLevel::DEBUG, LogMessageFormatType::PRETTY, false)
    {
    }
    

@@ -74,7 +74,7 @@ Error LocalSecureCookie::initialize()
       if (error)
          return error;
       Optional<system::GidType> groupUser;
-      error = system::posix::temporarilyDropPrivileges(serverUser,groupUser);
+      error = system::posix::temporarilyDropPrivileges(serverUser, groupUser);
       if (error)
          return error;
    }
