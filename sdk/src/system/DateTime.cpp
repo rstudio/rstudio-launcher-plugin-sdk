@@ -256,6 +256,7 @@ Error DateTime::fromString(const std::string& in_timeStr,DateTime& out_dateTime)
 {
    return fromString(in_timeStr, ISO_8601_INPUT_FORMAT, out_dateTime);
 }
+
 Error DateTime::fromString(const std::string& in_timeStr,const std::string& in_format, DateTime& out_dateTime)
 {
    // Invalidate the DateTime so it won't act as the current time if this function fails.

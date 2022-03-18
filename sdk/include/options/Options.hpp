@@ -264,7 +264,8 @@ public:
    * @return The scratch path to which log files and other plugin data may be written.
    */
   const system::FilePath& getScratchPath() const;
-    /**
+
+   /**
    * @brief Gets path where debug logs should be written.
    *
    * @return The path where debug logs should be written.
