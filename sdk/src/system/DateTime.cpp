@@ -452,8 +452,7 @@ std::string DateTime::toString(const std::string& in_format) const
 }
 
 template <typename TimeType>
-     static std::string format(const TimeType& time,
-                   const std::string& format)
+     static std::string format( const TimeType& time, const std::__cxx11::string& format)
       {
       using namespace boost::posix_time;
 
@@ -469,14 +468,12 @@ template <typename TimeType>
       }
 
 // Template Instantiation =============================================================================================
-#define INSTANTIATE_GET_VALUE_TEMPLATE(in_type)                               \
-template                                                                      \
-std::string DateTime::format<in_type>(                         \
-    const std::string&,                                       \
-    in_type&);                                                 \
-INSTANTIATE_GET_VALUE_TEMPLATE( boost::posix_time::ptime)
-
-
+#define INSTANTIATE_FORMAT_TEMPLATE(in_type)                               \
+template                                                                   \
+std::string DateTime::format<in_type>(                                     \
+    const in_type&,                                                        \
+    const std::__cxx11::string&);                                                   \
+INSTANTIATE_FORMAT_TEMPLATE( boost::posix_time::ptime )
 } // namespace system
 } // namespace launcher_plugins
 } // namespace rstudio
