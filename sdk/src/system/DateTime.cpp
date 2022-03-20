@@ -452,7 +452,7 @@ std::string DateTime::toString(const std::string& in_format) const
 }
 
 template <typename TimeType>
-     static std::string format( const TimeType& time, const std::__cxx11::string& format)
+     static std::string format( const TimeType& time, const std::string& format)
       {
       using namespace boost::posix_time;
 
@@ -472,7 +472,7 @@ template <typename TimeType>
 template                                                                   \
 std::string DateTime::format<in_type>(                                     \
     const in_type&,                                                        \
-    const std::__cxx11::string&);                                                   \
+    const std::string&);                                                   \
 INSTANTIATE_FORMAT_TEMPLATE( boost::posix_time::ptime )
 } // namespace system
 } // namespace launcher_plugins
