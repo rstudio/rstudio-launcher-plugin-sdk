@@ -34,7 +34,7 @@ namespace launcher_plugins {
 namespace system {
 
 namespace {
-
+template <typename TimeType> std::string format (const TimeType&, const std::string&);
 
 constexpr char const* ISO_8601_OUTPUT_FORMAT = "%Y-%m-%dT%H:%M:%S%FZ";
 
@@ -450,6 +450,32 @@ std::string DateTime::toString(const std::string& in_format) const
 {
    return toString(in_format.c_str());
 }
+
+template <typename TimeType>
+     static std::string format(const TimeType& time,
+                   const std::string& format)
+      {
+      using namespace boost::posix_time;
+
+      // facet for http date (construct w/ a_ref == 1 so we manage memory)
+      time_facet httpDateFacet(1);
+      httpDateFacet.format(format.c_str());
+
+       // output and return the date
+         std::ostringstream dateStream;
+         dateStream.imbue(std::locale(dateStream.getloc(), &httpDateFacet));
+         dateStream << time;
+         return dateStream.str();
+      }
+
+// Template Instantiation =============================================================================================
+#define INSTANTIATE_GET_VALUE_TEMPLATE(in_type)                               \
+template                                                                      \
+std::string DateTime::format<in_type>(                         \
+    const std::string&,                                       \
+    in_type&);                                                 \
+INSTANTIATE_GET_VALUE_TEMPLATE( boost::posix_time::ptime)
+
 
 } // namespace system
 } // namespace launcher_plugins
