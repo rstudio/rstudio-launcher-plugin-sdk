@@ -34,7 +34,8 @@ namespace launcher_plugins {
 namespace system {
 
 namespace {
-template <typename TimeType> std::string format (const TimeType&, const std::string&);
+
+//template <typename TimeType>(TimeType&, std::string&);
 
 constexpr char const* ISO_8601_OUTPUT_FORMAT = "%Y-%m-%dT%H:%M:%S%FZ";
 
@@ -452,7 +453,7 @@ std::string DateTime::toString(const std::string& in_format) const
 }
 
 template <typename TimeType>
-     static std::string format( const TimeType& time, const std::string& format)
+     std::string format( const TimeType& time, const std::string& format)
       {
       using namespace boost::posix_time;
 
@@ -473,7 +474,8 @@ template                                                                   \
 std::string DateTime::format<in_type>(                                     \
     const in_type&,                                                        \
     const std::string&);                                                   \
-INSTANTIATE_FORMAT_TEMPLATE( boost::posix_time::ptime )
+
+INSTANTIATE_FORMAT_TEMPLATE(boost::posix_time::ptime)
 } // namespace system
 } // namespace launcher_plugins
 } // namespace rstudio

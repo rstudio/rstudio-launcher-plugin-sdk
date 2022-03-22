@@ -30,7 +30,6 @@
 #include "boost/date_time/posix_time/posix_time.hpp"
 
 #include <boost/date_time/local_time/local_time.hpp>
-
 namespace rstudio {
 namespace launcher_plugins {
 
@@ -296,7 +295,7 @@ public:
     * @return Success if in_timeStr is a valid ISO 8601 representation of a date and time; Error otherwise.
     */
     
-    template <typename TimeType>
+    /*template <typename TimeType>
      static std::string format(const TimeType& time,
                    const std::string& format)
       {
@@ -311,9 +310,9 @@ public:
          dateStream.imbue(std::locale(dateStream.getloc(), &httpDateFacet));
          dateStream << time;
          return dateStream.str();
-      }
-//template <typename TimeType>
-//static std::string format(const TimeType& time,  const std::string& format);
+      }*/
+template <typename TimeType>
+static std::string format(const TimeType& time,  const std::string& format);
 static Error fromString(const std::string& in_timeStr,DateTime& out_dateTime);
 static Error fromString(const std::string& in_timeStr, const std::string& in_format, DateTime& out_dateTime);
 
