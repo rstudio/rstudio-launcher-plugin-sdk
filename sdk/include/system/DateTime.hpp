@@ -27,9 +27,6 @@
 #include <string>
 
 #include <PImpl.hpp>
-#include "boost/date_time/posix_time/posix_time.hpp"
-
-#include <boost/date_time/local_time/local_time.hpp>
 namespace rstudio {
 namespace launcher_plugins {
 
@@ -250,8 +247,6 @@ class DateTime final
 {
 public:
 
-   static constexpr char const* ISO_8601_INPUT_FORMAT  = "%Y-%m-%dT%H:%M:%S%F%ZP";
-
    /**
     * @brief Constructor.
     *
@@ -280,6 +275,14 @@ public:
     */
     DateTime(std::time_t& in_time) noexcept;
    /**
+    * @brief Formatting template for time representations.
+    *
+    * @param time       Time representation object.
+    * @param format     Desired time format.
+    */
+    template <typename TimeType>
+    static std::string format(const TimeType& time,  const std::string& format);
+   /**
     * @brief Constructs a DateTime from an ISO 8601 string representation. The string must be in UTC time.
     *
     * Valid format:
@@ -294,29 +297,8 @@ public:
     *
     * @return Success if in_timeStr is a valid ISO 8601 representation of a date and time; Error otherwise.
     */
-    
-    /*template <typename TimeType>
-     static std::string format(const TimeType& time,
-                   const std::string& format)
-      {
-      using namespace boost::posix_time;
-
-      // facet for http date (construct w/ a_ref == 1 so we manage memory)
-      time_facet httpDateFacet(1);
-      httpDateFacet.format(format.c_str());
-
-       // output and return the date
-         std::ostringstream dateStream;
-         dateStream.imbue(std::locale(dateStream.getloc(), &httpDateFacet));
-         dateStream << time;
-         return dateStream.str();
-      }*/
-template <typename TimeType>
-static std::string format(const TimeType& time,  const std::string& format);
-static Error fromString(const std::string& in_timeStr,DateTime& out_dateTime);
-static Error fromString(const std::string& in_timeStr, const std::string& in_format, DateTime& out_dateTime);
-
-
+   static Error fromString(const std::string& in_timeStr,DateTime& out_dateTime);
+   static Error fromString(const std::string& in_timeStr, const std::string& in_format, DateTime& out_dateTime);
    /**
     * @brief Assignment operator.
     *
