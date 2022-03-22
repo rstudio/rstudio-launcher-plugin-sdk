@@ -35,9 +35,8 @@ namespace system {
 
 namespace {
 
-//template <typename TimeType>(TimeType&, std::string&);
-
 constexpr char const* ISO_8601_OUTPUT_FORMAT = "%Y-%m-%dT%H:%M:%S%FZ";
+constexpr char const* ISO_8601_INPUT_FORMAT  = "%Y-%m-%dT%H:%M:%S%F%ZP";
 
 } // anonymous namespace
 
@@ -453,7 +452,7 @@ std::string DateTime::toString(const std::string& in_format) const
 }
 
 template <typename TimeType>
-     std::string format( const TimeType& time, const std::string& format)
+     std::string DateTime::format( const TimeType& time, const std::string& format)
       {
       using namespace boost::posix_time;
 
