@@ -26,6 +26,9 @@
 
 #include <string>
 
+#include "boost/date_time/posix_time/posix_time.hpp"
+#include <boost/date_time/local_time/local_time.hpp>
+
 #include <PImpl.hpp>
 namespace rstudio {
 namespace launcher_plugins {
@@ -34,12 +37,9 @@ class Error;
 
 } // namespace launcher_plugins
 } // namespace rstudio
-
-
 namespace rstudio {
 namespace launcher_plugins {
 namespace system {
-
 
 // Forward Declaration
 class DateTime;
@@ -246,7 +246,7 @@ private:
 class DateTime final
 {
 public:
-
+   static constexpr char const* ISO_8601_INPUT_FORMAT  = "%Y-%m-%dT%H:%M:%S%F%ZP";
    /**
     * @brief Constructor.
     *
@@ -267,21 +267,14 @@ public:
     * @param in_other       The DateTime to moved into this.
     */
    DateTime(DateTime&& in_other) noexcept;
-   
+
    /**
     * @brief Constructor.
     *
     * @param in_time       The time to copy into DateTime.
     */
-    DateTime(std::time_t& in_time) noexcept;
-   /**
-    * @brief Formatting template for time representations.
-    *
-    * @param time       Time representation object.
-    * @param format     Desired time format.
-    */
-    template <typename TimeType>
-    static std::string format(const TimeType& time,  const std::string& format);
+   DateTime(std::time_t& in_time) noexcept;
+
    /**
     * @brief Constructs a DateTime from an ISO 8601 string representation. The string must be in UTC time.
     *
@@ -298,7 +291,17 @@ public:
     * @return Success if in_timeStr is a valid ISO 8601 representation of a date and time; Error otherwise.
     */
    static Error fromString(const std::string& in_timeStr,DateTime& out_dateTime);
+
    static Error fromString(const std::string& in_timeStr, const std::string& in_format, DateTime& out_dateTime);
+   /**
+    * @brief Formatting template for time representations.
+    *
+    * @param time       Time representation object.
+    * @param format     Desired time format.
+    */
+    template <typename TimeType>
+    static std::string format(const TimeType& time,  const std::string& format);
+
    /**
     * @brief Assignment operator.
     *
