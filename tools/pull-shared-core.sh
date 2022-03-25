@@ -324,13 +324,15 @@ for I in "${!SRC_SOURCES[@]}"; do
         replace "$DEST_PATH" "<system/ReaderWriterMutex.hpp>" "\"../system/ReaderWriterMutex.hpp\""
         replace "$DEST_PATH" "(.*?in_properties\.)(get\(\))" "\1getValueOr\(LogMessageProperties\(\)\)"
         replace "$DEST_PATH" "(.*?in_error\.getCause\(\))" "\1\.getValueOr(Error\(\)\)"
-        replace "$DEST_PATH" "(.*?)(launcher_plugins::)(date_time)(::format\(time, launcher_plugins::)(date_time::)(kIso8601Format)" "\1\2system::DateTime\4system::DateTime::ISO_8601_INPUT_FORMAT"
+        replace "$DEST_PATH" "(.*?)(launcher_plugins::)(date_time)(::format\(time, launcher_plugins::)(date_time::)(kIso8601Format)" "\1time.toString\("
         replace "$DEST_PATH" "([ \t]*boost::none)" "{}"
         replace "$DEST_PATH" "(#include <sstream>\n\n)" "\1#include <boost/algorithm/string.hpp>\n\n"
         replace "$DEST_PATH" "(#include <Noncopyable.hpp>\n#include <Optional.hpp>\n)\n(#include <system/DateTime.hpp>\n)(#include <Error.hpp>\n)(#include <logging/ILogDestination.hpp>\n)" "\3\1\4\2"
         replace "$DEST_PATH" "using\s*namespace\s*boost::posix_time;\n\s*ptime[^;]*;\n\n\s*oss[^,]*,\s*([^)]*)\)" "oss << system::DateTime().toString(\1)"
         replace "$DEST_PATH" "[^\n]*\n[^\n]*\n([ \t]*static\s*Logger)\*\s*(logger)\s*=\s*new\s*Logger\(\s*\);" "\1 \2;"
         replace "$DEST_PATH" "return\s*\*\s*logger;" "return logger;"
+        replace "$DEST_PATH" "ptime time = microsec_clock::universal_time\(\);" "system::DateTime time;"
+        replace "$DEST_PATH" "using namespace boost::posix_time;" ""
     fi
 
     if [[ "$SRC_FILE" == "json/Json.cpp" ]]; then

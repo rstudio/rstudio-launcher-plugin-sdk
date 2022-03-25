@@ -243,8 +243,8 @@ std::string formatLogMessage(
    const ErrorLocation& in_loggedFrom = ErrorLocation(),
    const Error& in_error = Success())
 {
-   using namespace boost::posix_time;
-   ptime time = microsec_clock::universal_time();
+   
+   system::DateTime time;
 
    // Don't allow newlines in messages since each log message should be one distinct line
    std::string message = boost::algorithm::trim_right_copy(in_message);
@@ -254,7 +254,7 @@ std::string formatLogMessage(
    {
       std::ostringstream oss;
 
-      oss << launcher_plugins::system::DateTime::format(time, launcher_plugins::system::DateTime::ISO_8601_INPUT_FORMAT)
+      oss << time.toString()
           << " [" << in_programId << "] ";
 
       if (in_error)
@@ -278,7 +278,7 @@ std::string formatLogMessage(
    else
    {
       json::Object logObject;
-      logObject["time"] = launcher_plugins::system::DateTime::format(time, launcher_plugins::system::DateTime::ISO_8601_INPUT_FORMAT);
+      logObject["time"] = time.toString();
       logObject["service"] = in_programId;
 
       std::ostringstream logLevel;
