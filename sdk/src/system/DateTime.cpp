@@ -35,6 +35,7 @@ namespace system {
 
 namespace {
 constexpr char const* ISO_8601_OUTPUT_FORMAT = "%Y-%m-%dT%H:%M:%S%FZ";
+constexpr char const* ISO_8601_INPUT_FORMAT  = "%Y-%m-%dT%H:%M:%S%F%ZP";
 } // anonymous namespace
 
 // TimeDuration ========================================================================================================
@@ -251,10 +252,10 @@ DateTime::DateTime(DateTime&& in_other) noexcept :
 
 Error DateTime::fromString(const std::string& in_timeStr,DateTime& out_dateTime)
 {
-   return fromString(in_timeStr, ISO_8601_INPUT_FORMAT, out_dateTime);
+   return fromString(in_timeStr, ISO_8601_INPUT_FORMAT , out_dateTime);
 }
 
-Error DateTime::fromString(const std::string& in_timeStr,const std::string& in_format, DateTime& out_dateTime)
+Error DateTime::fromString(const std::string& in_timeStr, const std::string& in_format, DateTime& out_dateTime)
 {
    // Invalidate the DateTime so it won't act as the current time if this function fails.
    out_dateTime.m_impl->Time = boost::posix_time::not_a_date_time;
@@ -448,30 +449,6 @@ std::string DateTime::toString(const std::string& in_format) const
    return toString(in_format.c_str());
 }
 
-template <typename TimeType>
-     std::string DateTime::format( const TimeType& time, const std::string& format)
-      {
-      using namespace boost::posix_time;
-
-      // facet for http date (construct w/ a_ref == 1 so we manage memory)
-      time_facet httpDateFacet(1);
-      httpDateFacet.format(format.c_str());
-
-       // output and return the date
-         std::ostringstream dateStream;
-         dateStream.imbue(std::locale(dateStream.getloc(), &httpDateFacet));
-         dateStream << time;
-         return dateStream.str();
-      }
-
-// Template Instantiation =============================================================================================
-#define INSTANTIATE_FORMAT_TEMPLATE(in_type)                               \
-template                                                                   \
-std::string DateTime::format<in_type>(                                     \
-    const in_type&,                                                        \
-    const std::string&);                                                   \
-
-INSTANTIATE_FORMAT_TEMPLATE(boost::posix_time::ptime)
 } // namespace system
 } // namespace launcher_plugins
 } // namespace rstudio
