@@ -250,9 +250,9 @@ DateTime::DateTime(DateTime&& in_other) noexcept :
 
 }
 
-Error DateTime::fromString(const std::string& in_timeStr,DateTime& out_dateTime)
+Error DateTime::fromString(const std::string& in_timeStr, DateTime& out_dateTime)
 {
-   return fromString(in_timeStr, ISO_8601_INPUT_FORMAT , out_dateTime);
+   return fromString(in_timeStr, ISO_8601_INPUT_FORMAT, out_dateTime);
 }
 
 Error DateTime::fromString(const std::string& in_timeStr, const std::string& in_format, DateTime& out_dateTime)
