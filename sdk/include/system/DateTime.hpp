@@ -244,8 +244,6 @@ private:
 class DateTime final
 {
 public:
-//   static constexpr char const* ISO_8601_INPUT_FORMAT  = "%Y-%m-%dT%H:%M:%S%F%ZP";
-   //static char const* ISO_8601_INPUT_FORMAT;
    /**
     * @brief Constructor.
     *
