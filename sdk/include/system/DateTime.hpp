@@ -290,6 +290,7 @@ public:
     * @return Success if in_timeStr is a valid ISO 8601 representation of a date and time; Error otherwise.
     */
    static Error fromString(const std::string& in_timeStr, DateTime& out_dateTime);
+
    /**
     * @brief Constructs a DateTime from a valid time format string representation. The string must be in UTC time.
     *
@@ -297,20 +298,14 @@ public:
     * https://www.boost.org/doc/libs/1_60_0/doc/html/date_time/date_time_io.html
     * 
     * @param in_timeStr             The string representation of the DateTime to construct.
-    * @param in_format              Desired time format. ISO 8601 by default.
+    * @param in_format              Desired time format.
     * @param out_dateTime           The newly constructed DateTime, if no error occurs.
     *
-    * @return Success if in_timeStr is a valid ISO 8601 representation of a date and time; Error otherwise.
+    * @return Success if in_timeStr is a valid ISO 8601 representation of a date and time according to the provided format; Error otherwise.
     */
    static Error fromString(const std::string& in_timeStr, const std::string& in_format, DateTime& out_dateTime);
    /**
-    * @brief Formatting template for time representations.
-    *
-    * @param time       Time representation object.
-    * @param format     Desired time format.
-    */
-   /**
-    * @brief Assignment operator.
+    *  * @brief Assignment operator.
     *
     * @param in_other   The DateTime to assign to this.
     *
