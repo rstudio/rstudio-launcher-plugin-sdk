@@ -26,8 +26,8 @@
 
 #include <string>
 
+#include <ctime>
 #include <PImpl.hpp>
-
 namespace rstudio {
 namespace launcher_plugins {
 
@@ -35,8 +35,6 @@ class Error;
 
 } // namespace launcher_plugins
 } // namespace rstudio
-
-
 namespace rstudio {
 namespace launcher_plugins {
 namespace system {
@@ -268,14 +266,23 @@ public:
    DateTime(DateTime&& in_other) noexcept;
 
    /**
-    * @brief Constructs a DateTime from an ISO 8601 string representation. The string must be in UTC time.
+    * @brief Constructor.
     *
-    * Valid format:
+    * @param in_time       The time to copy into DateTime.
+    */
+   DateTime(std::time_t& in_time) noexcept;
+
+   /**
+    * @brief Constructs a DateTime by calling FromString and passing 
+    * the default ISO 8601 string reperesentation. String must be in UTC time.
+    * 
+    * Default format:
     *       "%Y-%m-%dT%H:%M:%S%F%ZP"
     *       e.g. "2020-03-05T14:33:15.008765Z"
     *       e.g. "1995-10-31T02:06:22+8:00" (fractional seconds are 0)
     *       e.g. "1988-12-25T23:23:23.054321MST-06"
     *       e.g. "1972-04-18T00:01:51PST-08PDT+01,M4.1.0/02:00,M10.5.0/02:00" (Full Posix Time Zone String)
+    * 
     *
     * @param in_timeStr             The string representation of the DateTime to construct.
     * @param out_dateTime           The newly constructed DateTime, if no error occurs.
@@ -285,7 +292,20 @@ public:
    static Error fromString(const std::string& in_timeStr, DateTime& out_dateTime);
 
    /**
-    * @brief Assignment operator.
+    * @brief Constructs a DateTime from a valid time format string representation. The string must be in UTC time.
+    *
+    * Valid formats use the boost date_time flags here: 
+    * https://www.boost.org/doc/libs/1_60_0/doc/html/date_time/date_time_io.html
+    * 
+    * @param in_timeStr             The string representation of the DateTime to construct.
+    * @param in_format              Desired time format.
+    * @param out_dateTime           The newly constructed DateTime, if no error occurs.
+    *
+    * @return Success if in_timeStr is a valid ISO 8601 representation of a date and time according to the provided format; Error otherwise.
+    */
+   static Error fromString(const std::string& in_timeStr, const std::string& in_format, DateTime& out_dateTime);
+   /**
+    *  * @brief Assignment operator.
     *
     * @param in_other   The DateTime to assign to this.
     *

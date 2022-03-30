@@ -266,6 +266,13 @@ public:
   const system::FilePath& getScratchPath() const;
 
    /**
+   * @brief Gets path where debug logs should be written.
+   *
+   * @return The path where debug logs should be written.
+   */
+   const system::FilePath& getLoggingDir() const;
+
+   /**
     * @brief Gets the user to run as when root privileges are dropped.
     *
     * @param out_serverUser       The server user, if it exists.
@@ -287,6 +294,13 @@ public:
     * @return True if the plugin should run in uprivileged mode; false otherwise.
     */
    bool useUnprivilegedMode() const;
+   
+   /**
+    * @brief Gets whether debug logging is activated.
+    *
+    * @return True if the enableDebugLogging is true; false otherwise.
+    */
+   bool enableDebugLogging() const;
 
 private:
    /**
@@ -305,4 +319,3 @@ private:
 } // namespace rstudio
 
 #endif
-

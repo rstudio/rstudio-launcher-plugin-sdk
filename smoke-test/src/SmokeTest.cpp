@@ -416,7 +416,7 @@ Error SmokeTest::initialize()
    // Add an stderr logger.
    logging::addLogDestination(
       std::shared_ptr<logging::ILogDestination>(
-         new logging::StderrLogDestination(logging::LogLevel::DEBUG)));
+         new logging::StderrLogDestination("SmokeTestStderrLogging", logging::LogLevel::DEBUG, logging::LogMessageFormatType::PRETTY)));
 
    // There must be at least 2 threads.
    system::AsioService::startThreads(2);
@@ -426,7 +426,7 @@ Error SmokeTest::initialize()
    pluginOpts.IsShellCommand = false;
    pluginOpts.CloseStdIn = false;
    pluginOpts.UseSandbox = false;
-   pluginOpts.Arguments = { "--heartbeat-interval-seconds=0", "--enable-debug-logging=1" };
+   pluginOpts.Arguments = { "--heartbeat-interval-seconds=0", "--enable-debug-logging=1"};
    pluginOpts.RunAsUser = system::User(true); // Don't change users - run as whoever launched this.
 
    if (!system::posix::realUserIsRoot())

@@ -1,7 +1,7 @@
 /*
  * Error.cpp
  *
- * Copyright (C) 2020 by RStudio, PBC
+ * Copyright (C) 2022 by RStudio, PBC
  *
  * Unless you have received this program directly from RStudio pursuant to the terms of a commercial license agreement
  * with RStudio, then this program is licensed to you under the following terms:
@@ -29,6 +29,8 @@
 #include <system/FilePath.hpp>
 #include <logging/Logger.hpp>
 #include <SafeConvert.hpp>
+
+#include <Optional.hpp>
 
 using namespace rstudio::launcher_plugins::system;
 
@@ -180,10 +182,15 @@ struct Error::Impl
    std::string Name;
    std::string Message;
    ErrorProperties Properties;
-   Error Cause;
+   Optional<Error> Cause;
    ErrorLocation Location;
    bool Expected = false;
 };
+
+Error::Error() :
+   m_impl(new Impl())
+{
+}
 
 // This is a shallow copy because deep copy will only be performed on a write.
 Error::Error(const Error& in_other) :
@@ -305,15 +312,23 @@ std::string Error::asString() const
    ostr << logging::s_delim << " " << s_occurredAt << " "
         << logging::cleanDelimiters(getLocation().asString());
 
-   if (getCause())
+   if (hasCause())
    {
-      ostr << logging::s_delim << " " << s_causedBy << ": " << getCause().asString();
+      ostr << logging::s_delim << " " << s_causedBy << ": " << getCause().getValueOr(Error()).asString();
    }
 
    return ostr.str();
 }
 
-const Error& Error::getCause() const
+bool Error::hasCause() const
+{
+   if (impl().Cause)
+      return true;
+   else
+      return false;
+}
+
+const Optional<Error>& Error::getCause() const
 {
    return impl().Cause;
 }

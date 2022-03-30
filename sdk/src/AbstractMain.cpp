@@ -90,7 +90,7 @@ int configureScratchPath(
             ".")
 
       // Drop privileges to the server  user.
-      error = system::posix::temporarilyDropPrivileges(in_serverUser);
+      error = system::posix::temporarilyDropPrivileges(in_serverUser, {});
       CHECK_ERROR(error, "Could not lower privilege to server user: " + in_serverUser.getUsername() + ".")
 
       // Change the file mode to rwxr-x-r-x so everyone can read the files in the scratch path, but only the server user
@@ -195,18 +195,11 @@ int AbstractMain::run(int in_argc, char** in_argv)
    using namespace logging;
    setProgramId(getProgramId());
 
-   // Add a syslog destination.
-   addLogDestination(
-      std::shared_ptr<ILogDestination>(
-         new SyslogDestination(
-            LogLevel::INFO,
-            getProgramId())));
+   // Turn on stderr logging while options are parsed.
+   std::shared_ptr<ILogDestination> stderrLogDest(new StderrLogDestination("StderrLogging",LogLevel::INFO, LogMessageFormatType::PRETTY));
+   addLogDestination(stderrLogDest);
 
    logging::logInfoMessage("Starting plugin...");
-
-   // Turn on stderr logging while options are parsed.
-   std::shared_ptr<ILogDestination> stderrLogDest(new StderrLogDestination(LogLevel::INFO));
-   addLogDestination(stderrLogDest);
 
    // Initialize the default options. This must be done before the custom options are initialized.
    options::Options& options = options::Options::getInstance();
@@ -225,18 +218,35 @@ int AbstractMain::run(int in_argc, char** in_argv)
    if (ret != 0)
       return ret;
 
-   // Remove the stderr log destination.
-   removeLogDestination(stderrLogDest->getId());
-
-   if (options.getLogLevel() > LogLevel::INFO)
+   // If we are, restore root privileges.
+   if (!options.useUnprivilegedMode() && system::posix::realUserIsRoot())
    {
-      addLogDestination(
+      error = system::posix::restoreRoot();
+      CHECK_ERROR(error, "Could not restore root privilege.")
+   }
+
+   addLogDestination(
          std::unique_ptr<ILogDestination>(
             new FileLogDestination(
-               3,
+               "MainLogDestination",
                options.getLogLevel(),
+               LogMessageFormatType::PRETTY,
                getProgramId(),
-               options.getScratchPath())));
+               logging::FileLogOptions(options.getLoggingDir())
+               )));
+
+   // Ensure log directory is owned by the server user.
+   refreshAllLogDestinations(RefreshParams{ Optional<system::User> (serverUser), true});
+
+   // Remove the stderr log destination.
+   rstudio::launcher_plugins::logging::removeLogDestination(stderrLogDest->getId());
+
+   // Drop privileges to the server user.
+   if (system::posix::realUserIsRoot())
+   {
+      const Optional<system::GidType> in_group;
+      error = system::posix::temporarilyDropPrivileges(serverUser, in_group);
+      CHECK_ERROR(error, "Could not lower privilege to server user: " + serverUser.getUsername() + ".")
    }
 
    // Create the launcher communicator. For now this is always an StdIO communicator. Later, it could be dependant on
