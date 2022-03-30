@@ -243,7 +243,6 @@ std::string formatLogMessage(
    const ErrorLocation& in_loggedFrom = ErrorLocation(),
    const Error& in_error = Success())
 {
-   
    system::DateTime time;
 
    // Don't allow newlines in messages since each log message should be one distinct line
