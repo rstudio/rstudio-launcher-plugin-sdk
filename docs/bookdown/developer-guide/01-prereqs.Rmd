@@ -2,7 +2,7 @@
 
 ## Platform Support {#plat-support}
 
-Plugins developed with the SDK require the RStudio Launcher to work. The SDK is currently compatible with the version of the RStudio Launcher that is shipped with Rstudio Workbench v1.4. As such, the SDK will be supported on all of the platforms supported by RStudio Workbench v1.4, which can be found on the [Requirements for RStudio Workbench page](https://docs.rstudio.com/rsp/requirements/).
+Plugins developed with the SDK require the RStudio Launcher to work. The SDK is currently compatible with the version of the RStudio Launcher that is shipped with Rstudio Workbench v1.4. As such, the SDK will be supported on all of the platforms supported by RStudio Workbench v1.4, which can be found on the [Requirements for RStudio Workbench page](https://docs.rstudio.com/rsw/requirements/).
 
 ## Build Dependencies {#builddep}
 
