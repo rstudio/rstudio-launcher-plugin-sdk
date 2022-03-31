@@ -1,6 +1,6 @@
 # The RStudio Launcher {#launcher}
 
-The purpose of the RStudio Launcher is to provide a generic interface to integrate job scheduling systems with RStudio Server Pro and other RStudio products. The Launcher itself is not specific to R processes, and can launch arbitrary work through any job scheduling system for which a Plugin  exists. This section will describe the way that RStudio products may integrate with the Launcher, the way the Launcher communicates with and manages Plugins, and network architecture requirements.
+The purpose of the RStudio Launcher is to provide a generic interface to integrate job scheduling systems with RStudio Workbench and other RStudio products. The Launcher itself is not specific to R processes, and can launch arbitrary work through any job scheduling system for which a Plugin  exists. This section will describe the way that RStudio products may integrate with the Launcher, the way the Launcher communicates with and manages Plugins, and network architecture requirements.
 
 ## Public Interface {#launcher-pub}
 
@@ -18,7 +18,7 @@ Receiving requests, formatting and sending responses, and listening for signals 
 
 ## Network Architecture Requirements {#net-arch}
 
-As mentioned in section \@ref(launcher-pub), it is not necessary for the Launcher and the RStudio product which will make use of it to be running on the same machine. The RStudio product which will use the Launcher needs to be able to communicate with the launcher over HTTP or HTTPS on the configured port. The default Launcher port is `5559`, but it can be modified in `launcher.rstudio.conf`. In figure \@ref(fig:simple-net), a very simple network architecture is shown in which RStudio Server Pro is running on Host A and the Launcher and its Plugins are running on Host B. The Plugins must also be able to reach and communicate with their respective job scheduling systems.
+As mentioned in section \@ref(launcher-pub), it is not necessary for the Launcher and the RStudio product which will make use of it to be running on the same machine. The RStudio product which will use the Launcher needs to be able to communicate with the launcher over HTTP or HTTPS on the configured port. The default Launcher port is `5559`, but it can be modified in `launcher.rstudio.conf`. In figure \@ref(fig:simple-net), a very simple network architecture is shown in which RStudio Workbench is running on Host A and the Launcher and its Plugins are running on Host B. The Plugins must also be able to reach and communicate with their respective job scheduling systems.
 
 ```{r simple-net, echo=FALSE, eval=TRUE, fig.cap="Simple Launcher Network Architecture", fig.align="center"}
 knitr::include_graphics("images/simple-two-machine.png")
@@ -32,20 +32,20 @@ knitr::include_graphics("images/load-balanced.png")
 
 In order to work correctly with a load balanced architecture, the Plugin implementation must be able to return the same output from any Plugin which is part of the Launcher cluster. As each API call is described in detail in the following sections, requirements for an implementation of that API call which supports load balancing will be discussed.
 
-### RStudio Server Pro Integration {#rsp-int}
+### RStudio Workbench Integration {#rsp-int}
 
-When integrating the Launcher with RStudio Server Pro, there are two additional cases which must be considered when configuring the network: using Launcher Sessions, and using Launcher Jobs. Regardless of whether the Launcher is load balanced the network requirements stay the same, so the diagrams in this section will be based on the architecture describned in figure \@ref(fig:simple-net), but may be applied to the architecture described in figure \@ref(fig:load-balanced-net).
+When integrating the Launcher with RStudio Workbench, there are two additional cases which must be considered when configuring the network: using Launcher Sessions, and using Launcher Jobs. Regardless of whether the Launcher is load balanced the network requirements stay the same, so the diagrams in this section will be based on the architecture describned in figure \@ref(fig:simple-net), but may be applied to the architecture described in figure \@ref(fig:load-balanced-net).
 
-When using Launcher Sessions, the RStudio Server Pro process must be able to communicate with the R, Jupyter, or other session over TCP on an arbitrary port.
+When using Launcher Sessions, the RStudio Workbench process must be able to communicate with the R, Jupyter, or other session over TCP on an arbitrary port.
 
 ```{r session-net, echo=FALSE, eval=TRUE, fig.cap="Launcher Sessions", fig.align="center"}
 knitr::include_graphics("images/simple-two-machine-sessions.png")
 ```
 
-When using Launcher Jobs without Launcher Sessions, there are no special network considerations. However, when using Launcher Jobs with Launcher Sessions the R sessions must be able to communicate with RStudio Server Pro over HTTP(S), in the same way as an RStudio IDE user would.
+When using Launcher Jobs without Launcher Sessions, there are no special network considerations. However, when using Launcher Jobs with Launcher Sessions the R sessions must be able to communicate with RStudio Workbench over HTTP(S), in the same way as an RStudio IDE user would.
 
 ```{r session-job-net, echo=FALSE, eval=TRUE, fig.cap="Launcher Jobs with Launcher Sessions", fig.align="center"}
 knitr::include_graphics("images/sessions-and-jobs.png")
 ```
 
-For more details about configuring the RStudio Server and the Launcher, see the [RStudio Server Pro Administration Guide](https://docs.rstudio.com/ide/server-pro/).
+For more details about configuring the RStudio Workbench the Launcher, see the [RStudio Workbench Administration Guide](https://docs.rstudio.com/ide/server-pro/).
