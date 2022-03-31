@@ -54,9 +54,9 @@ fi
 DOWNLOAD_DIR="$(makeTmpDir rsandbox-dl)"
 RSW_VERSION="1.3.1073-1"
 if [[ "$OS_NAME" == "debian9" ]]; then
-  TAR_DIR="rsw-monitor-connect--$RSW_VERSION"
+  TAR_DIR="rsp-monitor-connect--$RSW_VERSION"
 else
-  TAR_DIR="rsw-monitor-connect-$OS_NAME-$RSW_VERSION"
+  TAR_DIR="rsp-monitor-connect-$OS_NAME-$RSW_VERSION"
 fi
 
 TAR_FILE="$TAR_DIR.tar.gz"
