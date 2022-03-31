@@ -704,7 +704,7 @@ QuickStartJobSource.cpp   QuickStartJobSource.cpp
 
 The `QuickStartJobStatusWatcher` doesn't actually update any Job statuses, as there is no QuickStart Job Scheduling System to pull jobs from. To reduce the amount of busy-work the QuickStart Plugin will do when run, the polling frequency of the Job Status Watcher is set to 1 minute. In reality, Job statuses should be kept much more up to date, on the order of seconds rather than minutes. 
 
-The Plugin developer may choose a fixed interval, such as 5 seconds, or allow the RStudio Server Pro administrator to decide the number of seconds using a configuration option.
+The Plugin developer may choose a fixed interval, such as 5 seconds, or allow the RStudio Workbench administrator to decide the number of seconds using a configuration option.
 
 ### Example {#todo-11-ex}
 
@@ -1076,7 +1076,7 @@ TODO Location             Impact
 ------------------------  ------------------------
 QuickStartJobSource.cpp   QuickStartJobSource.cpp
 
-Some use cases of the Launcher may require the ability to communicate with a remotely launched job. For example, when using the Launcher to run RStudio R Sessions, the RStudio Server needs to be able to communicate with the R Session over TCP. To facilitate this, the Plugin must be able to provide network information for each Job. 
+Some use cases of the Launcher may require the ability to communicate with a remotely launched job. For example, when using the Launcher to run RStudio R Sessions, the Rstudio Workbench needs to be able to communicate with the R Session over TCP. To facilitate this, the Plugin must be able to provide network information for each Job. 
 
 The Plugin developer should implement `IJobSource::getNetworkInfo` so that it populates the `out_networkInfo` object with the hostname and IP addresses of the host running the specified Job.
 

@@ -301,7 +301,7 @@ public:
     * @param in_format              Desired time format.
     * @param out_dateTime           The newly constructed DateTime, if no error occurs.
     *
-    * @return Success if in_timeStr is a valid ISO 8601 representation of a date and time according to the provided format; Error otherwise.
+    * @return Success if in_timeStr is a valid representation of a date and time according to the provided format; Error otherwise.
     */
    static Error fromString(const std::string& in_timeStr, const std::string& in_format, DateTime& out_dateTime);
    /**

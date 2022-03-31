@@ -33,7 +33,7 @@ not needed unless you wish to regenerate the Doxygen documentation.
 
 ## install-rsandbox.sh
 
-This script installs the `rsandbox` executable from the RStudio Server Pro session components. It is
+This script installs the `rsandbox` executable from the RStudio Workbench session components. It is
 required by the RStudio Launcher Plugin SDK to run child processes. Usage: 
 `./install-rsandbox.sh <platform>`. Valid platforms are:
 * `centos8`
