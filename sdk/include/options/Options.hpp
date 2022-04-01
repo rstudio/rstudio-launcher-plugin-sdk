@@ -247,9 +247,9 @@ public:
    const std::string& getPluginName() const;
 
    /**
-    * @brief Gets the path to the rsandbox executable provided by the RStudio Server Pro installation.
+    * @brief Gets the path to the rsandbox executable provided by the RStudio Workbench installation.
     *
-    * If RStudio Server Pro is installed to the default location, this value does not need to be set.
+    * If RStudio Workbench is installed to the default location, this value does not need to be set.
     *
     * @return The path to the rsandbox executable.
     */
