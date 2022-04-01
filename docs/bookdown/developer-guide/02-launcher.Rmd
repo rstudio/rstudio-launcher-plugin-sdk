@@ -32,7 +32,7 @@ knitr::include_graphics("images/load-balanced.png")
 
 In order to work correctly with a load balanced architecture, the Plugin implementation must be able to return the same output from any Plugin which is part of the Launcher cluster. As each API call is described in detail in the following sections, requirements for an implementation of that API call which supports load balancing will be discussed.
 
-### RStudio Workbench Integration {#rsp-int}
+### RStudio Workbench Integration {#rsw-int}
 
 When integrating the Launcher with RStudio Workbench, there are two additional cases which must be considered when configuring the network: using Launcher Sessions, and using Launcher Jobs. Regardless of whether the Launcher is load balanced the network requirements stay the same, so the diagrams in this section will be based on the architecture describned in figure \@ref(fig:simple-net), but may be applied to the architecture described in figure \@ref(fig:load-balanced-net).
 

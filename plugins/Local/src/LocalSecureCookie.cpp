@@ -41,7 +41,7 @@ Error LocalSecureCookie::initialize()
 {
    // ------------------------------------------------------------------------------------------------------------------
    // MAINTENANCE NOTE:
-   // We need to elevate privileges here to read the secure-cookie-key file since RSP installs it as owned-by-root.
+   // We need to elevate privileges here to read the secure-cookie-key file since RSW installs it as owned-by-root.
    // This is not recommended - for similar use cases it would be better to create any necessary files with server-user
    // ownership.
    // DO NOT DO THIS UNLESS ABSOLUTELY NECESSARY.
