@@ -113,7 +113,7 @@ try {
     def containers = [
       [os: 'bionic',    arch: 'amd64',    flavor: 'Release'],
       [os: 'bionic',    arch: 'amd64',    flavor: 'Debug'],
-      [os: 'rockylinux',   arch: 'x86_64',   flavor: 'Release']
+      [os: 'centos8',   arch: 'x86_64',   flavor: 'Release']
     ]
 
     // create the version we're about to build
