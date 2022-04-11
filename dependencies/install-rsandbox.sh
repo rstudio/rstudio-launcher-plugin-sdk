@@ -36,7 +36,7 @@ cd "$(readlink -f "$(dirname "${BASH_SOURCE[0]}")")"
 if [[ -z $1 ]]; then
   echo "Usage: ./install-rsandbox <os name>"
   echo "Valid os names:"
-  echo "  rockylinux"
+  echo "  centos8"
   echo "  debian9"
   exit 1
 else
