@@ -1,7 +1,7 @@
 ARG ARCH=amd64
 FROM --platform=linux/$ARCH rockylinux/rockylinux:8
 
-COPY dependencies/*.sh /tmp/
+COPY /dependencies/*.sh /tmp/
 RUN yum update -y && yum install -y sudo && /tmp/install-dependencies.sh --core
 RUN /tmp/install-rsandbox.sh rockylinux
 
