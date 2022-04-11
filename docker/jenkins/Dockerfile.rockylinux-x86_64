@@ -1,8 +1,9 @@
-FROM centos:8
+ARG ARCH=amd64
+FROM --platform=linux/$ARCH rockylinux/rockylinux:8
 
 COPY dependencies/*.sh /tmp/
 RUN yum update -y && yum install -y sudo && /tmp/install-dependencies.sh --core
-RUN /tmp/install-rsandbox.sh centos8
+RUN /tmp/install-rsandbox.sh rockylinux
 
 ARG JENKINS_GID=999
 ARG JENKINS_UID=999
