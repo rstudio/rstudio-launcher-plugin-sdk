@@ -1,4 +1,5 @@
-FROM centos:8
+ARG ARCH=x86_64
+FROM --platform=linux/$ARCH rockylinux/rockylinux:8
 
 COPY dependencies/*.sh /tmp/
 RUN yum update -y && yum install -y sudo && /tmp/install-dependencies.sh --core
