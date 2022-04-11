@@ -1,4 +1,4 @@
-FROM centos:8
+FROM rockylinux
 
 COPY dependencies/*.sh /tmp/
 RUN yum update -y && yum install -y sudo && /tmp/install-dependencies.sh --core
