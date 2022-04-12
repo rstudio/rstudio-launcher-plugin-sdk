@@ -1,4 +1,4 @@
-RStudio Launcher Software Development Kit 1.1.3
+RStudio Launcher Plugin Software Development Kit 1.1.3
 --------------------------------------------------------------------------------------------
 
 ### New
