@@ -28,7 +28,10 @@
 #include <memory.h>
 #include <netdb.h>
 #include <pwd.h>
+
+#ifdef __linux__
 #include <sys/prctl.h>
+#endif
 
 #include <Error.hpp>
 #include <system/User.hpp>
@@ -74,9 +77,11 @@ Error restorePrivilegesImpl(uid_t in_uid)
 
 Error enableCoreDumps()
 {
+#ifdef __linux__
    int res = ::prctl(PR_SET_DUMPABLE, 1);
    if (res == -1)
       return systemError(errno, ERROR_LOCATION);
+#endif
 
    return Success();
 }
