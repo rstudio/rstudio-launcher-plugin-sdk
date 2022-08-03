@@ -61,7 +61,7 @@ public:
     * 
     * @return Success if resource utilization streaming was started correctly; Error otherwise.
     */
-   virtual Error initialize() = 0;
+   virtual Error initialize() override = 0;
 
    /**
     * @brief Notifies that the data stream has completed.
