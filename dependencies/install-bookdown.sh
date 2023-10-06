@@ -49,7 +49,7 @@ if [[ $INSTALL_R -eq 1 ]]; then
     sudo yum install -y R
   else
     sudo apt-get -y  install apt-transport-https software-properties-common
-    sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9
+    sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9
     sudo add-apt-repository -y 'deb https://cloud.r-project.org/bin/linux/ubuntu bionic-cran35/'
     sudo apt update
     sudo apt-get -y install r-base wget

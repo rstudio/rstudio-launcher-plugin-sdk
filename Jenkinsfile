@@ -120,7 +120,9 @@ try {
     node('docker') {
       stage('Prepare Versioning Container') {
         prepareWorkspace()
-        container = pullBuildPush(image_name: 'jenkins/rlp-sdk', dockerfile: "docker/jenkins/Dockerfile.versioning", image_tag: "rlp-sdk-versioning", build_args: jenkins_user_build_args())
+        retry(1) {
+          container = pullBuildPush(image_name: 'jenkins/rlp-sdk', dockerfile: "docker/jenkins/Dockerfile.versioning", image_tag: "rlp-sdk-versioning", build_args: jenkins_user_build_args())
+        }
         container.inside() {
           stage('Bump Version') {
             def rlpSdkVersion = sh (
@@ -183,7 +185,9 @@ try {
       node ('docker') {
         stage('Prepare Packaging Container') {
           prepareWorkspace()
-          container = pullBuildPush(image_name: 'jenkins/rlp-sdk', dockerfile: "docker/jenkins/Dockerfile.packaging", image_tag: "rlp-sdk-packaging", build_args: jenkins_user_build_args())
+          retry(1) {
+            container = pullBuildPush(image_name: 'jenkins/rlp-sdk', dockerfile: "docker/jenkins/Dockerfile.packaging", image_tag: "rlp-sdk-packaging", build_args: jenkins_user_build_args())
+          }
           container.inside() {
             stage('Generate Documentation') {
               retry(1) {
