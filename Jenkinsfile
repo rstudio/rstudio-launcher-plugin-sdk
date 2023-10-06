@@ -26,7 +26,7 @@
 
 
 properties([
-    disableConcurrentBuilds(),
+    disableConcurrentBuilds(abortPrevious: true),
     buildDiscarder(logRotator(artifactDaysToKeepStr: '',
                               artifactNumToKeepStr: '',
                               daysToKeepStr: '',
