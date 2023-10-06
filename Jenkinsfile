@@ -77,14 +77,14 @@ def s3_upload() {
 
   // copy installer to s3
   sh "aws s3 cp ${buildFolder}/${packageFile} s3://rstudio-launcher-plugin-sdk/"
-  
+
   // copy documentation to s3
   sh "aws s3 sync docs/ApiRefHtml s3://docs.rstudio.com/rlps/apiref/${version}/"
   sh "aws s3 sync docs/ApiRefHtml s3://docs.rstudio.com/rlps/apiref/latest/"
-    
+
   sh "aws s3 sync docs/QuickStartHtml s3://docs.rstudio.com/rlps/quickstart/${version}/"
   sh "aws s3 sync docs/QuickStartHtml s3://docs.rstudio.com/rlps/quickstart/latest/"
-    
+
   sh "aws s3 sync docs/DevGuideHtml s3://docs.rstudio.com/rlps/devguide/${version}/"
   sh "aws s3 sync docs/DevGuideHtml s3://docs.rstudio.com/rlps/devguide/latest/"
 }
@@ -154,15 +154,19 @@ try {
           stage('Prepare B&T Container') {
             prepareWorkspace()
             def image_tag = "${current_container.os}-${current_container.arch}-${params.RLP_SDK_VERSION_MAJOR}.${params.RLP_SDK_VERSION_MINOR}"
-            withCredentials([usernameColonPassword(credentialsId: 'posit-jenkins', variable: "github_login")]) {
-              def github_args = '--build-arg GITHUB_LOGIN=${github_login}'
-              container = pullBuildPush(image_name: 'jenkins/rlp-sdk', dockerfile: "docker/jenkins/Dockerfile.${current_container.os}-${current_container.arch}", image_tag: image_tag, build_args: github_args + " " + jenkins_user_build_args())
+            retry(1) {
+              withCredentials([usernameColonPassword(credentialsId: 'posit-jenkins', variable: "github_login")]) {
+                def github_args = '--build-arg GITHUB_LOGIN=${github_login}'
+                container = pullBuildPush(image_name: 'jenkins/rlp-sdk', dockerfile: "docker/jenkins/Dockerfile.${current_container.os}-${current_container.arch}", image_tag: image_tag, build_args: github_args + " " + jenkins_user_build_args())
+              }
             }
           }
           stage('Build and Test') {
             container.inside("--privileged") {
               stage('Compile Source') {
-                build_source("${current_container.flavor}")
+                retry(1) {
+                  build_source("${current_container.flavor}")
+                }
               }
               stage('Run Tests') {
                 run_tests("${current_container.flavor}")
@@ -182,10 +186,14 @@ try {
           container = pullBuildPush(image_name: 'jenkins/rlp-sdk', dockerfile: "docker/jenkins/Dockerfile.packaging", image_tag: "rlp-sdk-packaging", build_args: jenkins_user_build_args())
           container.inside() {
             stage('Generate Documentation') {
-              generate_documentation()
+              retry(1) {
+                generate_documentation()
+              }
             }
             stage('Create Package') {
-              create_package()
+              retry(1) {
+                create_package()
+              }
             }
           }
           if (params.get('UPLOAD_PACKAGE') == true) {
