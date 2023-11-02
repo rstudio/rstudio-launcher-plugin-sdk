@@ -23,6 +23,10 @@
 #include <climits>
 #include <unistd.h>
 
+#ifndef HOST_NAME_MAX
+#define HOST_NAME_MAX _POSIX_HOST_NAME_MAX
+#endif
+
 #include <LocalOptions.hpp>
 #include <LocalPluginApi.hpp>
 
