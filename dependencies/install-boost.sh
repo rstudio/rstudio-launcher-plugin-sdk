@@ -29,7 +29,7 @@ set -e
 INSTALL_DIR=$(pwd)
 
 # Variables
-BOOST_VERSION_NUMBER="1.70.0"
+BOOST_VERSION_NUMBER="1.83.0"
 BOOST_VERSION="boost_$(echo "$BOOST_VERSION_NUMBER" | tr "." "_")"
 BOOST_TAR="$BOOST_VERSION.tar.bz2"
 BOOST_BUILD_DIR="boost-build"
@@ -65,7 +65,7 @@ then
    sudo ./bootstrap.sh
 
    # Build boost with bjam
-   sudo ./bjam                      \
+   sudo ./b2                    \
         "$BOOST_BJAM_FLAGS"         \
         variant=release             \
         cxxflags="-fPIC -std=c++11" \
