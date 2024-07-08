@@ -1,17 +1,14 @@
 FROM alpine:3.20
-RUN apk -v --update add \
+RUN apk -v --update --no-cache add \
         bash \
         python3 \
-        py-pip \
         git \
         groff \
         less \
         mailcap \
         sudo \
         && \
-    pip3 install --upgrade awscli s3cmd python-magic && \
-    apk -v --purge del py-pip && \
-    rm /var/cache/apk/* && \
+    apk add --no-cache aws-cli s3cmd py3-magic && \
     mkdir -p /scripts
 
 ARG JENKINS_GID=999
