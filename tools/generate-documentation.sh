@@ -31,6 +31,9 @@ if [[ -n $1 ]]; then
   VERSION=$1
 fi
 
+# Install bookdown
+Rscript -e "install.packages('bookdown')"
+
 cd "$(dirname "${BASH_SOURCE[0]}")/../docs"
 
 ./doxygen/generate-doxygen.sh "${VERSION}"
