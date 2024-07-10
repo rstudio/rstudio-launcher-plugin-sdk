@@ -32,7 +32,7 @@ if [[ -n $1 ]]; then
 fi
 
 # Install bookdown
-Rscript -e "install.packages('bookdown')"
+sudo Rscript -e "install.packages('bookdown')"
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../docs"
 
