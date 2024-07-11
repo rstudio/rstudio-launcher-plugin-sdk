@@ -86,6 +86,7 @@ fi
 # Install R libraries
 R -s --vanilla <<EOF
 if (!require("bookdown", quietly = TRUE)) {
+  options(repos = c(CRAN = "https://packagemanager.posit.co/all/__linux__/bionic/latest"))
   install.packages("bookdown", dependencies = TRUE)
 
   if (!require("bookdown", quietly = TRUE)) {
