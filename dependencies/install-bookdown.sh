@@ -84,4 +84,15 @@ if ! [ -d "${PANDOC_INSTALL_DIR}" ]; then
 fi
 
 # Install R libraries
-Rscript -e "if (!require(\"bookdown\", quietly = TRUE)) install.packages(\"bookdown\", dependencies = TRUE)"
+R -s --vanilla <<EOF
+if (!require("bookdown", quietly = TRUE)) {
+  install.packages("bookdown", dependencies = TRUE)
+
+  if (!require("bookdown", quietly = TRUE)) {
+    message("Unable to install bookdown.")
+    warnings()
+    q(status = 1)
+  }
+}
+
+EOF
