@@ -24,9 +24,7 @@ project(rlp_sdk_all)
 
 # include globals
 include(CMakeGlobals.txt)
-
 set(CMAKE_CXX_STANDARD 11)
-
 
 string(TOLOWER "${CMAKE_BUILD_TYPE}" build_type)
 if (NOT build_type STREQUAL "debug")
@@ -35,7 +33,7 @@ endif()
 
 # include boost
 if (NOT RLPS_BOOST_REQUESTED_VERSION)
-   set(RLPS_BOOST_REQUESTED_VERSION 1.70.0)
+   set(RLPS_BOOST_REQUESTED_VERSION 1.83.0)
 endif()
 set(Boost_NO_BOOST_CMAKE      OFF)
 set(Boost_USE_STATIC_LIBS     ON)
