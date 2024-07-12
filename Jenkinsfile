@@ -111,8 +111,8 @@ messagePrefix = "Jenkins ${env.JOB_NAME} build: <${env.BUILD_URL}display/redirec
 try {
   timestamps {
     def containers = [
-      [os: 'bionic',    arch: 'amd64',    flavor: 'Release'],
-      [os: 'bionic',    arch: 'amd64',    flavor: 'Debug'],
+      [os: 'focal',    arch: 'amd64',    flavor: 'Release'],
+      [os: 'focal',    arch: 'amd64',    flavor: 'Debug'],
       [os: 'centos8',   arch: 'x86_64',   flavor: 'Release']
     ]
 
