@@ -181,7 +181,7 @@ TEST_CASE("Create Async Processes")
 #endif
 
       // 1. No redirection, bad command
-      CHECK(cb1.StdErr == "Usage: grep [OPTION]... PATTERN [FILE]...\n"
+      CHECK(cb1.StdErr == "Usage: grep [OPTION]... PATTERNS [FILE]...\n"
                        "Try 'grep --help' for more information.\n");
       CHECK(cb1.StdOut == "");
       CHECK(cb1.ExitCode == 2);
