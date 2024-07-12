@@ -50,14 +50,9 @@ if [[ $INSTALL_R -eq 1 ]]; then
   else
     sudo apt-get -y  install apt-transport-https software-properties-common
     sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9
-    sudo add-apt-repository -y 'deb https://cloud.r-project.org/bin/linux/ubuntu focal-cran40/'
+    sudo add-apt-repository -y 'deb https://cloud.r-project.org/bin/linux/ubuntu bionic-cran35/'
     sudo apt update
-    sudo apt-get -y install \
-      libcurl4-openssl-dev \
-      libssl-dev \
-      libxml2-dev \
-      r-base \
-      wget
+    sudo apt-get -y install r-base wget
   fi
 fi
 
@@ -89,16 +84,4 @@ if ! [ -d "${PANDOC_INSTALL_DIR}" ]; then
 fi
 
 # Install R libraries
-R -s --vanilla <<EOF
-if (!require("bookdown", quietly = TRUE)) {
-  options(repos = c(CRAN = "https://packagemanager.posit.co/all/__linux__/focal/latest"))
-  install.packages("bookdown", dependencies = TRUE)
-
-  if (!require("bookdown", quietly = TRUE)) {
-    message("Unable to install bookdown.")
-    warnings()
-    q(status = 1)
-  }
-}
-
-EOF
+Rscript -e "if (!require(\"bookdown\", quietly = TRUE)) install.packages(\"bookdown\", dependencies = TRUE)"
