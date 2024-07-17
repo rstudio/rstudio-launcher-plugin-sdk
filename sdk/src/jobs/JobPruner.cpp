@@ -80,12 +80,16 @@ struct JobPruner::Impl: public std::enable_shared_from_this<JobPruner::Impl>
     * @return True if the job was pruned; false otherwise.
     */
    bool pruneJob(const std::string& in_jobId)
-   {
+   {  
+ 
       bool removeJob = false;
       LOCK_MUTEX(Mutex)
       {
          // Get the job as an admin user. If it doesn't exist, there's nothing to do.
          api::JobPtr job = JobRepo->getJob(in_jobId, system::User());
+         if(job->isCompleted())
+           return false
+
          if (job == nullptr)
             return false;
 
