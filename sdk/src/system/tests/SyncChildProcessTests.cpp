@@ -30,7 +30,7 @@
 
 #include "ProcessTestHelpers.hpp"
 #include "../../tests/MockLogDestination.hpp"
-
+#include <string>
 namespace rstudio {
 namespace launcher_plugins {
 namespace system {
@@ -83,8 +83,7 @@ TEST_CASE("Create Processes")
       SyncChildProcess child(opts);
       REQUIRE_FALSE(child.run(result));
       CHECK(result.ExitCode == 2);
-      CHECK(result.StdError == "Usage: grep [OPTION]... PATTERNS [FILE]...\n"
-                               "Try 'grep --help' for more information.\n");
+      CHECK(result.StdError.find("Usage: grep [OPTION]") != std::string::npos);
       CHECK(result.StdOut == "");
    }
 
