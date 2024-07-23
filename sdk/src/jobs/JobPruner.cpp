@@ -87,8 +87,6 @@ struct JobPruner::Impl: public std::enable_shared_from_this<JobPruner::Impl>
       {
          // Get the job as an admin user. If it doesn't exist, there's nothing to do.
          api::JobPtr job = JobRepo->getJob(in_jobId, system::User());
-         if(job->isCompleted())
-           return false
 
          if (job == nullptr)
             return false;
@@ -96,9 +94,13 @@ struct JobPruner::Impl: public std::enable_shared_from_this<JobPruner::Impl>
          system::DateTime expiry;
          LOCK_JOB(job)
          {
+                  if(job->isCompleted()) {
+
             // Check if we should remove the job.
             expiry = job->LastUpdateTime.getValueOr(job->SubmissionTime) + JobExpiryTime;
             removeJob = expiry <= system::DateTime();
+
+      
             if (removeJob)
                JobRepo->removeJob(in_jobId);
 
@@ -113,7 +115,9 @@ struct JobPruner::Impl: public std::enable_shared_from_this<JobPruner::Impl>
                startPruneTimer(in_jobId, expiry);
             }
          }
+         }
          END_LOCK_JOB
+         
       }
       END_LOCK_MUTEX
 
