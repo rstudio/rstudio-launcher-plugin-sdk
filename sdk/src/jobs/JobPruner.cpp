@@ -111,7 +111,7 @@ struct JobPruner::Impl: public std::enable_shared_from_this<JobPruner::Impl>
             }
           }
          }
-         END_LOCK_JOB         
+         END_LOCK_JOB
       }
       END_LOCK_MUTEX
 
