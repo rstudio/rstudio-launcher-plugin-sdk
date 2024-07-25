@@ -335,12 +335,10 @@ struct FileOutputStream::Impl
                if (!in_sharedThis->m_impl->WasErrorReported && !in_sharedThis->m_impl->WasOutputWritten)
                {
                   in_sharedThis->m_impl->WasErrorReported = true;
-                  in_sharedThis->reportError(
-                     Error(
-                        "FileOutputStreamError",
-                        2,
-                        message,
-                        ERROR_LOCATION));
+                  
+                              logging::logErrorMessage(
+                                message,
+                                ERROR_LOCATION);
                }
             }
             END_LOCK_MUTEX
