@@ -92,6 +92,7 @@ struct JobPruner::Impl: public std::enable_shared_from_this<JobPruner::Impl>
          system::DateTime expiry;
          LOCK_JOB(job)
          {
+            if(job->isCompleted()) {
             // Check if we should remove the job.
             expiry = job->LastUpdateTime.getValueOr(job->SubmissionTime) + JobExpiryTime;
             removeJob = expiry <= system::DateTime();
@@ -108,6 +109,7 @@ struct JobPruner::Impl: public std::enable_shared_from_this<JobPruner::Impl>
             {
                startPruneTimer(in_jobId, expiry);
             }
+          }
          }
          END_LOCK_JOB
       }
