@@ -328,8 +328,6 @@ struct FileOutputStream::Impl
 
                std::string message = "Stderr output received for OutputStream tail command: " + in_output;
                logging::logDebugMessage(message, ERROR_LOCATION);
-
-
          };
 
          callbacks.OnExit = std::bind(FileOutputStream::onExitCallback, WeakThis(in_sharedThis), in_outputType, _1);
