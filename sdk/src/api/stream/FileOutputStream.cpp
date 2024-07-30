@@ -325,23 +325,11 @@ struct FileOutputStream::Impl
 
          callbacks.OnStandardError = [in_sharedThis](const std::string& in_output)
          {
-            std::string message = "Error output received for OutputStream tail command: " + in_output;
-            logging::logErrorMessage(
-               message,
-               ERROR_LOCATION);
 
-            UNIQUE_LOCK_RECURSIVE_MUTEX(in_sharedThis->m_impl->Mutex)
-            {
-               if (!in_sharedThis->m_impl->WasErrorReported && !in_sharedThis->m_impl->WasOutputWritten)
-               {
-                  in_sharedThis->m_impl->WasErrorReported = true;
-                  
-                              logging::logErrorMessage(
-                                message,
-                                ERROR_LOCATION);
-               }
-            }
-            END_LOCK_MUTEX
+               std::string message = "Stderr output received for OutputStream tail command: " + in_output;
+               logging::logDebugMessage(message, ERROR_LOCATION);
+
+
          };
 
          callbacks.OnExit = std::bind(FileOutputStream::onExitCallback, WeakThis(in_sharedThis), in_outputType, _1);
