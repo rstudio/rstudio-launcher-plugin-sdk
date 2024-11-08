@@ -1,3 +1,12 @@
+RStudio Launcher Plugin Software Development Kit 1.1.4
+--------------------------------------------------------------------------------------------
+
+### New
+* Additional check to see if job is still running before pruning.
+
+* Log errors when tailing job output, instead of reporting the error, to avoid closing the stream.
+  
+
 RStudio Launcher Plugin Software Development Kit 1.1.3
 --------------------------------------------------------------------------------------------
 
