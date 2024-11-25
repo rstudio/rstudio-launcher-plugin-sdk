@@ -1,0 +1,32 @@
+name: Issue Automation
+on:
+  issues:
+    types:
+      - opened
+
+jobs:
+  issue:
+    # only run in rstudio/rstudio-launcher-plugin-sdk.
+    if: github.repository == 'rstudio/rstudio-launcher-plugin-sdk'
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: GitHub App Token
+        uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: Add to Launcher Project
+        uses: actions/add-to-project@v1.0.2
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          project-url: https://github.com/orgs/rstudio/projects/222
+
+      - name: Add Default Labels
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          github_token: ${{ steps.app-token.outputs.token }}
+          labels: |
+            launcher
