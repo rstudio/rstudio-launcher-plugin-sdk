@@ -22,7 +22,7 @@
 cmake_minimum_required(VERSION 3.14)
 project(rstudio_local_plugin)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 
 # include files
 file(GLOB_RECURSE LOCAL_HEADER_FILES "*.h*")
