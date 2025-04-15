@@ -157,7 +157,7 @@ try {
             prepareWorkspace()
             def image_tag = "${current_container.os}-${current_container.arch}-${params.RLP_SDK_VERSION_MAJOR}.${params.RLP_SDK_VERSION_MINOR}"
             retry(1) {
-              withCredentials([usernameColonPassword(credentialsId: 'posit-jenkins', variable: "github_login")]) {
+              withCredentials([usernameColonPassword(credentialsId: 'posit-jenkins-rstudio', variable: "github_login")]) {
                 def github_args = '--build-arg GITHUB_LOGIN=${github_login}'
                 container = pullBuildPush(image_name: 'jenkins/rlp-sdk', dockerfile: "docker/jenkins/Dockerfile.${current_container.os}-${current_container.arch}", image_tag: image_tag, build_args: github_args + " " + jenkins_user_build_args())
               }
