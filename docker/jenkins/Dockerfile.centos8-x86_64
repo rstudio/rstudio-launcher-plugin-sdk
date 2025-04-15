@@ -13,3 +13,6 @@ RUN /tmp/clean-gid-and-uid.sh $JENKINS_GID $JENKINS_UID
 RUN groupadd -g $JENKINS_GID jenkins && \
     useradd -m -d /var/lib/jenkins -u $JENKINS_UID -g jenkins jenkins && \
     echo "jenkins ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+# Workaround for sudo issues when running in CI: https://github.com/linux-pam/linux-pam/issues/876 and Launcher issue 1149
+RUN chmod u+r /etc/shadow
