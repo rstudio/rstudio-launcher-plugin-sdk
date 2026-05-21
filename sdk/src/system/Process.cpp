@@ -27,6 +27,7 @@
 #include <cstring>
 #include <dirent.h>
 #include <fcntl.h>
+#include <signal.h>
 #include <sys/resource.h>
 #include <sys/stat.h>
 #include <sys/wait.h>

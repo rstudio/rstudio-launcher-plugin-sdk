@@ -22,7 +22,7 @@
 cmake_minimum_required(VERSION 3.14)
 project(rstudio_launcher_plugin_smoke_test)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 
 # include files
 file(GLOB_RECURSE SMOKE_TEST_HEADER_FILES "*.h*")

@@ -22,7 +22,7 @@
 cmake_minimum_required(VERSION 3.14)
 project(rstudio_launcher_plugin_sdk)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 
 find_library(PTHREAD_LIBS pthread)
 
